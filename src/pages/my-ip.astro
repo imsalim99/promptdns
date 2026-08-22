@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="What Is My IP Address?"
+  description="See your public IP address instantly, with reverse DNS (PTR), ASN, ISP, and location, free, no ads maze, no signup."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">What Is My IP</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is My IP Address?</h1>
+    <p class="mt-4 text-lg text-ink-dim">Your public IP, reverse DNS, network, and approximate location, resolved the moment this page loads.</p>
+
+    <ToolPanel>
+      <div class="py-8 text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">Your public IP</p>
+        <p id="myip-value" class="mt-3 font-display text-4xl font-bold text-accent sm:text-5xl">…</p>
+        <button id="myip-copy" class="mt-4 rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Copy</button>
+      </div>
+
+      <div id="myip-cards" class="grid gap-3 sm:grid-cols-3"></div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What you’re seeing</h2>
+      <p>Your public IP is the address the internet sees (your router’s, shared by your whole network). The <strong>reverse DNS (PTR)</strong> record is resolved through our own DNS-over-HTTPS engine, it often reveals your ISP or hosting provider’s naming. ASN and location come from public IP intelligence databases and can be off by city blocks; the IP itself is exact.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/ip-lookup/">IP Lookup</a>, check any IP, not just yours</li>
+        <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a></li>
+        <li><a href="/ptr-record/">PTR records explained</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { getMyIp, ipInfo } from '../lib/ipinfo';
+
+  const valueEl = document.getElementById('myip-value')!;
+  const cardsEl = document.getElementById('myip-cards')!;
+  const copyBtn = document.getElementById('myip-copy') as HTMLButtonElement;
+
+  async function run() {
+    try {
+      const ip = await getMyIp();
+      valueEl.textContent = ip;
+      const info = await ipInfo(ip);
+      const rows: [string, string][] = [
+        ['Reverse DNS (PTR)', info.ptr ?? 'none set'],
+        ['Network (ASN)', info.asn ? `${info.asn}, ${info.org ?? ''}` : 'unknown'],
+        ['ISP', info.isp ?? 'unknown'],
+        ['Location', [info.city, info.region, info.country].filter(Boolean).join(', ') || 'unknown'],
+        ['IP type', info.type ?? 'unknown'],
+        ['Sources', info.via],
+      ];
+      cardsEl.innerHTML = '';
+      for (const [l, v] of rows) {
+        cardsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="text-xs text-ink-faint">${l}</div><div class="mt-1 break-words font-mono text-sm text-ink">${v}</div></div>`);
+      }
+    } catch {
+      valueEl.textContent = 'unavailable';
+      cardsEl.innerHTML = '<div class="rounded-lg border border-warn/30 bg-warn/10 p-4 text-sm text-warn">Could not reach the IP discovery service, check your connection.</div>';
+    }
+  }
+  run();
+
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(valueEl.textContent ?? '');
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+  });
+</script>

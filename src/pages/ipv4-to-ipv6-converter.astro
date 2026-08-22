@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+const converters = `
+`; 
+---
+<BaseLayout title="IPv4 to IPv6 Converter" description="Free IPv4 to IPv6 converter: map any IPv4 address to its IPv6-mapped and 6to4 forms instantly.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">IPv6 Converter</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IPv4 to IPv6 Converter</h1>
+    <p class="mt-4 text-lg text-ink-dim">Convert any IPv4 address to its IPv6-mapped form (::ffff:a.b.c.d) and 6to4 form (2002:…), computed locally.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="v6-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="v6-ip" type="text" value="192.168.1.1" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Convert</button>
+  </form>
+  <div id="v6-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="v6-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="v6-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/aaaa-record/">AAAA records</a> · <a href="/aaaa-record/">IPv4 vs IPv6</a> · <a href="/cidr-calculator/">CIDR calculator</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('v6-form') as HTMLFormElement;
+  const input = document.getElementById('v6-ip') as HTMLInputElement;
+  const statusEl = document.getElementById('v6-status')!;
+  const resultsEl = document.getElementById('v6-results')!;
+  const tbody = document.getElementById('v6-tbody')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const ip = input.value.trim();
+    const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    const oct = m?.slice(1).map(Number);
+    if (!oct || oct.some(n => n > 255)) { statusEl.textContent = 'Enter a valid IPv4 address.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
+    const hex = oct.map(n => n.toString(16).padStart(2, '0'));
+    const mapped = `::ffff:${ip}`;
+    const sixToFour = `2002:${hex[0]}${hex[1]}:${hex[2]}${hex[3]}::`;
+    const full = `0000:0000:0000:0000:0000:ffff:${((oct[0] << 8) | oct[1]).toString(16).padStart(4, '0')}:${((oct[2] << 8) | oct[3]).toString(16).padStart(4, '0')}`;
+    tbody.innerHTML = '';
+    for (const [k, v] of [['IPv6-mapped (common)', mapped], ['Full uncompressed', full], ['6to4 prefix', sixToFour]] as [string, string][]) {
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs text-accent">${v}</td></tr>`);
+    }
+    statusEl.textContent = `Converted ${ip}.`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    statusEl.classList.remove('hidden');
+    resultsEl.classList.remove('hidden');
+  });
+</script>

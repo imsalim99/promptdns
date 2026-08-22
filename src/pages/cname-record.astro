@@ -1,0 +1,91 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "CNAME",
+ "title": "CNAME Record: Canonical Names Explained",
+ "description": "CNAME records explained in depth: aliasing, the apex restriction, flattening, chaining risks, and how to audit your aliases.",
+ "intro": "A CNAME record aliases one hostname to another. Instead of saying 'www lives at this IP', it says 'www is whatever example.com is', so one change at the target updates every alias that follows it.",
+ "deepDive": [
+  "CNAME stands for Canonical Name, and the mechanics are exactly that: the alias is not an answer, it is a pointer to the canonical (real) name. When a resolver chasing www hits the CNAME, it restarts the lookup against the target and returns that answer, with a note that it arrived via alias. The client never notices unless it inspects the chain.",
+  "The famous restriction: a CNAME cannot coexist with other records at the same name, which bans it from the zone apex, because the apex must carry SOA and NS records to be a zone at all. Providers paper over this with ALIAS/ANAME pseudo-records or CNAME flattening, where the provider resolves the target server-side and publishes the resulting A record. Functionally similar, but the mechanisms differ enough to matter during debugging.",
+  "CNAME chains (alias to alias to target) multiply lookup latency and failure surface, and some resolvers cap the chase. Keep chains one hop deep, point at stable targets, and remember that a CNAME imports the target's availability: if the target stops resolving, every alias under it breaks with it."
+ ],
+ "example": "www.example.com.  3600  IN  CNAME  example.com.\ndocs                3600  IN  CNAME  yourname.getgridea.pages.hosted.",
+ "anatomy": [
+  [
+   "www.example.com.",
+   "The alias: the name users actually type or that services verify."
+  ],
+  [
+   "CNAME",
+   "The record type. A canonical hostname follows, never an IP."
+  ],
+  [
+   "example.com.",
+   "The target. The alias inherits whatever A/AAAA answers this name has."
+  ]
+ ],
+ "uses": [
+  "Pointing subdomains at hosted services: CDNs, GitHub Pages, helpdesks, landing page hosts",
+  "Keeping www automatically in sync with the apex",
+  "Managing many vanity hostnames that must always match one moving target"
+ ],
+ "steps": [
+  [
+   "Identify the target",
+   "Your service's DNS setup page gives you the exact hostname to point at. Copy it verbatim."
+  ],
+  [
+   "Create the CNAME",
+   "In your DNS panel, host 'www' (or the subdomain), type CNAME, value the target hostname."
+  ],
+  [
+   "Watch propagation",
+   "CNAME changes respect TTL like everything else; confirm with the propagation checker."
+  ],
+  [
+   "Verify the full chain",
+   "The lookup tool shows the alias resolving through to a final address; if the chain dead-ends, the target moved."
+  ]
+ ],
+ "mistakes": [
+  "Placing a CNAME at the apex; it is technically illegal and most providers reject it (use ALIAS/flattening)",
+  "Pointing a CNAME at an IP address; that is an A record's job",
+  "Long alias chains that add latency and break when an intermediate hop moves",
+  "Forgetting that a CNAME at a name blocks all other record types at that same name, including TXT verification records on that subdomain"
+ ],
+ "faqs": [
+  [
+   "Why can't I use CNAME at the root domain?",
+   "The apex must hold SOA and NS records, and CNAME cannot coexist with any other record type. Use ALIAS/ANAME or a provider that flattens."
+  ],
+  [
+   "Does a CNAME redirect traffic?",
+   "No. It aliases DNS resolution, not HTTP. Visitors still see the original hostname; changing the visible URL is an HTTP redirect."
+  ],
+  [
+   "Can a CNAME point to another domain I don't own?",
+   "Yes, and that is exactly how SaaS DNS verification works. The trade-off is you inherit their availability."
+  ],
+  [
+   "What is CNAME flattening?",
+   "A provider feature that resolves the CNAME target server-side and answers with plain A records, making CNAME-style pointing legal at the apex."
+  ]
+ ],
+ "related": [
+  [
+   "ALIAS/ANAME records",
+   "/alias-record/"
+  ],
+  [
+   "CNAME flattening explained",
+   "/cname-flattening/"
+  ],
+  [
+   "A records",
+   "/a-record/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

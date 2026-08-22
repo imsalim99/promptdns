@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="AI Crawler Log Analyzer — Which AI Bots Visit You?" description="Free AI crawler log analyzer: upload your server access log and see which AI bots (GPTBot, ClaudeBot, PerplexityBot...) actually visit, how often, and what they fetch.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">AI Log Analyzer</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Crawler Log Analyzer</h1>
+    <p class="mt-4 text-lg text-ink-dim">Upload an access log (Apache/nginx/CDN export, any format with user-agents) and see your real AI bot traffic: who visits, how often, what they fetch. Parsed locally, nothing uploaded.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="al-form" class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-line bg-panel/40 p-8 text-center">
+    <label for="al-file" class="btn-cta btn-shimmer cursor-pointer px-6 py-2.5 text-sm">Choose log file</label>
+    <input id="al-file" type="file" accept=".log,.txt,.csv" class="sr-only" />
+    <p id="al-name" class="text-xs text-ink-faint">or drag &amp; drop it here (up to ~50 MB)</p>
+  </form>
+  <div id="al-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="al-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-3"></div>
+  <div id="al-results" class="mt-4 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Bot</th><th>Requests</th><th>Top paths</th></tr></thead><tbody id="al-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/ai-crawlers-list/">The AI crawler list</a> · <a href="/ai-crawler-checker/">robots.txt AI checker</a> · <a href="/how-to-block-ai-crawlers/">Blocking AI crawlers</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { AI_BOTS } from '../lib/robots';
+  const fileInput = document.getElementById('al-file') as HTMLInputElement;
+  const nameEl = document.getElementById('al-name')!;
+  const statusEl = document.getElementById('al-status')!;
+  const cardsEl = document.getElementById('al-cards')!;
+  const resultsEl = document.getElementById('al-results')!;
+  const tbody = document.getElementById('al-tbody')!;
+  const setStatus = (c: string, t: string) => { statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${c}`; statusEl.textContent = t; statusEl.classList.remove('hidden'); };
+
+  async function analyze(file: File) {
+    nameEl.textContent = file.name;
+    setStatus('bg-panel-2 text-accent border border-line', 'Parsing log…');
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const hits = new Map<string, { count: number; paths: Map<string, number> }>();
+    let total = 0;
+    for (const line of lines) {
+      total++;
+      const ua = line.toLowerCase();
+      for (const bot of AI_BOTS) {
+        if (bot.tokens.some(t => ua.includes(t))) {
+          const e = hits.get(bot.name) ?? { count: 0, paths: new Map<string, number>() };
+          e.count++;
+          const path = line.match(/\s(?:\/[^\s"]*)/)?.[1] ?? '/';
+          e.paths.set(path, (e.paths.get(path) ?? 0) + 1);
+          hits.set(bot.name, e);
+          break;
+        }
+      }
+    }
+    if (!hits.size) { setStatus('bg-warn/10 text-warn border border-warn/30', `Parsed ${total.toLocaleString()} lines: no known AI bots found in user-agents.`); [cardsEl, resultsEl].forEach(e => e.classList.add('hidden')); return; }
+    const botTotal = [...hits.values()].reduce((s, h) => s + h.count, 0);
+    setStatus('bg-pass/10 text-pass border border-pass/30', `Parsed ${total.toLocaleString()} lines: ${botTotal.toLocaleString()} AI bot requests (${(botTotal / total * 100).toFixed(2)}%).`);
+    cardsEl.innerHTML = '';
+    for (const [k, v, cls] of [['AI requests', botTotal.toLocaleString(), 'text-accent'], ['Total lines', total.toLocaleString(), 'text-ink'], ['Bots seen', String(hits.size), 'text-violet-soft']] as [string, string, string][]) {
+      cardsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold ${cls}">${v}</div><div class="text-xs text-ink-faint">${k}</div></div>`);
+    }
+    cardsEl.classList.remove('hidden');
+    tbody.innerHTML = '';
+    for (const [name, h] of [...hits.entries()].sort((a, b) => b[1].count - a[1].count)) {
+      const top = [...h.paths.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p, n]) => `${p} (${n})`).join(', ');
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${name}</td><td class="font-mono text-xs">${h.count.toLocaleString()}</td><td class="font-mono text-[10px] text-ink-dim">${top}</td></tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+  }
+  fileInput.addEventListener('change', () => fileInput.files?.[0] && analyze(fileInput.files[0]));
+  (fileInput.closest('form') as HTMLElement).addEventListener('dragover', e => e.preventDefault());
+  (fileInput.closest('form') as HTMLElement).addEventListener('drop', (e) => { e.preventDefault(); const f = (e as DragEvent).dataTransfer?.files?.[0]; if (f) analyze(f); });
+</script>

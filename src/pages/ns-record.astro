@@ -1,0 +1,87 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "NS",
+ "title": "NS Record: Nameservers and Delegation",
+ "description": "NS records explained in depth: registry vs zone NS, lame delegation, transfer mechanics, and how to audit who really serves your DNS.",
+ "intro": "NS records declare which nameservers are authoritative for a name. They are the load-bearing wall of delegation: get them wrong and your entire zone, website and email included, stops answering.",
+ "deepDive": [
+  "There are two places NS records live, and confusing them causes most delegation incidents. The parent zone (.com registry) holds the delegation NS set you configure through your registrar. Your own zone also publishes NS records at its apex. When the two sets disagree, part of the internet asks servers that no longer hold your data, a state called lame delegation that shows up as intermittent SERVFAIL for a subset of users.",
+  "Changing DNS providers is therefore an ordered procedure, not a toggle: add the zone at the new provider first, verify it answers identically, then change the delegation at the registrar, then wait out the full TTL window (up to 48 hours, because registry delegations cache) before decommissioning the old servers. Reversing any of those steps creates an interval where some resolvers have nowhere valid to ask.",
+  "NS records also delegate subdomains. Pointing dev.example.com at a different provider's nameservers lets teams run their own zone without touching yours. The same correctness rules apply: the parent (you) must publish delegation matching what the child zone serves, glue records included when the child's nameservers live inside the delegated name."
+ ],
+ "example": "example.com.  86400  IN  NS  ns1.cloudflare.com.\nexample.com.  86400  IN  NS  ns2.cloudflare.com.",
+ "anatomy": [
+  [
+   "NS",
+   "The record type: an authoritative nameserver hostname follows."
+  ],
+  [
+   "86400",
+   "Delegation TTLs are long by design; registry-side caching makes NS changes slow."
+  ],
+  [
+   "ns1.cloudflare.com.",
+   "The nameserver. It must itself resolve to an A/AAAA record (glue, when hosted under the delegated name)."
+  ]
+ ],
+ "uses": [
+  "Delegating your domain to its DNS host (Cloudflare, Route 53, registrar DNS)",
+  "Delegating subdomains to other providers or teams",
+  "Verifying that a registrar transfer or provider switch actually completed"
+ ],
+ "steps": [
+  [
+   "Look up the delegation",
+   "An NS query on your domain shows what resolvers consider authoritative."
+  ],
+  [
+   "Compare with the zone",
+   "Your DNS provider's panel lists the NS set it publishes. Both sets must match exactly."
+  ],
+  [
+   "Test the servers directly",
+   "Querying each nameserver for your apex A record proves each one answers, not just the first."
+  ],
+  [
+   "After any switch, wait out the window",
+   "Keep the old provider answering for 48 hours before cancelling it."
+  ]
+ ],
+ "mistakes": [
+  "Changing NS records inside the old provider's panel and expecting the world to follow; the registry only hears your registrar",
+  "Mismatched sets between registry and zone, producing lame delegation and intermittent failures",
+  "Cancelling the old DNS plan the day after a switch, before long delegation TTLs expire",
+  "Four or more nameservers 'for reliability' without monitoring: slow or dead ones hurt more than fewer fast ones"
+ ],
+ "faqs": [
+  [
+   "Where do I change my nameservers?",
+   "At your registrar. The registrar tells the registry, and the registry's delegation is what resolvers follow."
+  ],
+  [
+   "Why do NS changes take up to 48 hours?",
+   "Registry delegations cache with long TTLs, independent of your zone's own records."
+  ],
+  [
+   "What is lame delegation?",
+   "The parent points at nameservers that don't authoritatively answer for your zone. Users see random SERVFAIL."
+  ],
+  [
+   "Do more nameservers mean more reliability?",
+   "Only if they are all healthy. A dead nameserver in the set adds latency and failure cases."
+  ]
+ ],
+ "related": [
+  [
+   "How DNS resolution works",
+   "/how-dns-works/"
+  ],
+  [
+   "SOA records (zone metadata)",
+   "/soa-record/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

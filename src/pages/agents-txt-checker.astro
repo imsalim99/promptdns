@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="agents.txt Checker — Verify Your Agent Instructions" description="Free agents.txt checker: fetch and validate the emerging agents.txt file that instructs AI agents accessing your site.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">agents.txt Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">agents.txt Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">agents.txt is an emerging convention giving AI agents machine-readable rules for your site. Check whether one is published and parse its directives.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="at-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="at-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check agents.txt</button>
+  </form>
+  <div id="at-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="at-raw" class="mt-4 hidden"><p class="mb-2 text-sm font-semibold text-ink">Content</p>
+    <pre id="at-content" class="max-h-72 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-ink-dim"></pre></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/what-is-llms-txt/">agents.txt explained</a> · <a href="/llms-txt-generator/">llms.txt generator</a> · <a href="/robots-txt-checker/">robots.txt checker</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { fetchText, hostOf } from '../lib/proxy';
+  import { looksLikeHtml } from '../lib/robots';
+  const form = document.getElementById('at-form') as HTMLFormElement;
+  const input = document.getElementById('at-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('at-status')!;
+  const rawEl = document.getElementById('at-raw')!;
+  const contentEl = document.getElementById('at-content')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const host = hostOf(input.value);
+    if (!host.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Fetching https://${host}/agents.txt…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    rawEl.classList.add('hidden');
+    const res = await fetchText(`https://${host}/agents.txt`);
+    if (!res.ok || looksLikeHtml(res.text)) { statusEl.textContent = `No agents.txt published at ${host} (this is still common, the spec is young).`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    contentEl.textContent = res.text.slice(0, 20000);
+    rawEl.classList.remove('hidden');
+    statusEl.textContent = `agents.txt found (${(res.text.length / 1024).toFixed(1)} KB, ${res.via}).`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+  });
+</script>

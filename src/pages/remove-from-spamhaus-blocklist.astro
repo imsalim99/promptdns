@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="How to Get Off the Spamhaus Blocklist (SBL, XBL, PBL)"  description="Spamhaus delisting guide: identify which Spamhaus list you are on, fix the root cause, and request removal the right way.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Spamhaus Removal</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Get Off the Spamhaus Blocklist</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Spamhaus operates several lists with different meanings and different cures. Half of all
+      delisting pain comes from treating them as one thing. Identify yours first, fix the cause,
+      then request removal.
+    </p>
+    <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
+      <table class="pdns-table">
+        <thead><tr><th>List</th><th>Why you are on it</th><th>The fix</th></tr></thead>
+        <tbody>
+          <tr><td class="font-mono text-xs text-accent">SBL</td><td class="text-sm text-ink-dim">Spam operations, phishing, malware associated with your IP or domain.</td><td class="text-sm text-ink-dim">Remove the malicious content/compromise, then contact Spamhaus with evidence.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">XBL / CSS</td><td class="text-sm text-ink-dim">Your IP shows exploit or open-proxy behavior.</td><td class="text-sm text-ink-dim">Clean the server, close the proxy, request re-scan.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">PBL</td><td class="text-sm text-ink-dim">Your IP is in dynamic/residential space that should not send direct mail.</td><td class="text-sm text-ink-dim">Send through your ISP's smarthost or a provider; or use the PBL removal form if genuinely static.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">DBL (domain)</td><td class="text-sm text-ink-dim">Your domain appeared in spam payloads.</td><td class="text-sm text-ink-dim">Stop the campaign/compromise sending it, then request DBL removal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rich-text mt-10">
+      <h2>The procedure</h2>
+      <ol class="list-decimal space-y-1.5 pl-5">
+        <li><strong>Look up your IP or domain</strong> in the Spamhaus lookup (zen.spamhaus.org returns codes telling you which list fired). Our <a href="/blacklist-checker/">blacklist checker</a> gives an honest first pass, with the caveat that Spamhaus refuses public-resolver queries.</li>
+        <li><strong>Fix the root cause completely.</strong> Compromised account, open redirect, misconfigured server, abused form: the listing returns if you only request removal.</li>
+        <li><strong>Request removal</strong> through the Spamhaus form for your list. Free for small volumes; include what happened and what changed.</li>
+        <li><strong>Watch propagation.</strong> Delisting flows to users of the data within hours; some filters cache longer.</li>
+      </ol>
+      <h2>Preventing the encore</h2>
+      <ul>
+        <li>Authenticate (SPF, DKIM, <a href="/dmarc/">DMARC</a>) so compromise is visible in reports, not discovered via listings.</li>
+        <li>Monitor: re-run the <a href="/blacklist-checker/">blacklist checker</a> weekly, or let <a href="/pricing/">monitoring</a> do it.</li>
+      </ul>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/get-off-barracuda-blocklist/">Barracuda delisting</a> and <a href="/sorbs-delisting-guide/">SORBS delisting</a></li>
+        <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What does DNSSEC protect against?', acceptedAnswer: { '@type': 'Answer', text: 'DNSSEC protects against tampered DNS answers: cache poisoning and on-path spoofing that redirect users to attacker-controlled servers. It does not encrypt DNS queries; that is DoH or DoT.' } },
+    { '@type': 'Question', name: 'Should I enable DNSSEC?', acceptedAnswer: { '@type': 'Answer', text: 'Yes if your DNS host and registrar integrate it cleanly (Cloudflare, Route 53, and major registrars do). The risk window is key rotation handled out of order.' } },
+    { '@type': 'Question', name: 'Why does DNSSEC break my whole domain?', acceptedAnswer: { '@type': 'Answer', text: 'Validating resolvers must refuse answers that fail verification. A stale DS record after key rotation breaks the chain of trust, so the entire domain returns SERVFAIL.' } },
+  ],
+};
+---
+<BaseLayout title="What Is DNSSEC and Should You Enable It?" description="DNSSEC explained: how signed zones and the chain of trust stop cache poisoning, the DS/DNSKEY relationship, and safe activation and rollover." schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNSSEC</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNSSEC?</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DNSSEC (DNS Security Extensions) adds cryptographic signatures to DNS answers, so a resolver
+      can prove the answer it received is the one your zone actually published. Without it, DNS is
+      trusted on vibes: whoever answers first wins.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>The threat it stops</h2>
+      <p>
+        Classic DNS responses are unauthenticated plaintext. An attacker positioned on the network, or
+        one who has poisoned a resolver's cache, can forge an answer that points your domain at their
+        server. Users type your URL, see your site load (from their fake copy), and hand over
+        credentials. DNSSEC closes exactly this hole: a forged answer cannot carry a valid signature,
+        so validating resolvers reject it instead of serving it.
+      </p>
+
+      <h2>How the chain of trust works</h2>
+      <p>
+        Your zone signs its records with private keys and publishes the public halves as
+        <a href="/dnskey-record/">DNSKEY records</a>. Self-published keys prove nothing on their own,
+        so the parent zone publishes a <a href="/ds-record/">DS record</a>: a digest of your key-signing
+        key. Validators walk root → TLD → your domain, checking each link against the DS above it.
+        Every link verifies, and your answers are provably yours. Any link breaks, and the resolver
+        must refuse the whole domain, which is why DNSSEC misconfiguration produces total outages
+        rather than partial ones.
+      </p>
+
+      <h2>What DNSSEC does not do</h2>
+      <ul>
+        <li>It does not encrypt queries; observers still see domains being resolved. Encryption is <a href="/doh-vs-dot/">DoH/DoT</a>.</li>
+        <li>It does not stop DDoS attacks against your nameservers.</li>
+        <li>It authenticates answers, not the content those answers lead to; TLS still does that job.</li>
+      </ul>
+
+      <h2>Enable it safely</h2>
+      <ol class="list-decimal space-y-1.5 pl-5">
+        <li>Turn on DNSSEC at your DNS host (a toggle on Cloudflare and Route 53).</li>
+        <li>Copy the DS record it shows you to your registrar, all four fields exactly.</li>
+        <li>Wait for propagation, then verify: our record lookup with DS selected should return your record, and the domain should resolve normally through Quad9 or Cloudflare (validating resolvers).</li>
+        <li>Let your provider handle key rotation. If rotating manually: publish the new key's DS, wait, then retire the old key. Never the reverse order.</li>
+      </ol>
+
+      <h2>Check your domain right now</h2>
+      <p>
+        Run the homepage <a href="/">security scanner</a>: the DNSSEC check looks for your DS record and
+        reports whether the zone is signed, alongside SPF, DKIM, DMARC, and AI readiness.
+      </p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ds-record/">DS records</a> and <a href="/dnskey-record/">DNSKEY records</a></li>
+        <li><a href="/enable-dnssec-cloudflare/">Enable DNSSEC in Cloudflare</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

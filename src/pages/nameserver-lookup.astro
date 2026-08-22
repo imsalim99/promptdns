@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Nameserver Lookup — Find NS + Their IPs" description="Free nameserver lookup: list every NS record for a domain and resolve each nameserver to its IP address.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Nameserver Lookup</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Nameserver Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">Find every nameserver for a domain, each resolved to its IP, so you can verify delegation at a glance.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="nsl-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="nsl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Find Nameservers</button>
+  </form>
+  <div id="nsl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="nsl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Nameserver</th><th>IPv4</th><th>IPv6</th></tr></thead><tbody id="nsl-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/ns-record/">NS records explained</a> · <a href="/delegation-checker/">Delegation checker</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  const form = document.getElementById('nsl-form') as HTMLFormElement;
+  const input = document.getElementById('nsl-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('nsl-status')!;
+  const resultsEl = document.getElementById('nsl-results')!;
+  const tbody = document.getElementById('nsl-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Finding nameservers for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const ns = await lookup(domain, 'NS', RESOLVERS[0]);
+    const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
+    if (!hosts.length) { statusEl.textContent = 'No NS records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; return; }
+    tbody.innerHTML = '';
+    for (const h of hosts) {
+      const [a, aaaa] = await Promise.all([lookup(h, 'A', RESOLVERS[0]), lookup(h, 'AAAA', RESOLVERS[0])]);
+      const v4 = a.answers.filter(x => x.type === 1).map(x => x.data).join(', ');
+      const v6 = aaaa.answers.filter(x => x.type === 28).map(x => x.data).join(', ');
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${h}</td><td class="font-mono text-xs">${v4 || '—'}</td><td class="font-mono text-xs text-ink-faint">${v6 || '—'}</td></tr>`);
+    }
+    statusEl.textContent = `${hosts.length} nameservers found for ${domain}.`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

@@ -1,0 +1,87 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "AAAA",
+ "title": "AAAA Record: IPv6 DNS Explained",
+ "description": "AAAA records explained in depth: IPv6 mapping, dual-stack best practice, common v6-only failure modes, and how to verify yours.",
+ "intro": "The AAAA record does what the A record does, but for IPv6: it maps a hostname to a 128-bit address. As IPv4 space runs dry, AAAA is how a dual-stack site stays reachable for the growing share of users on IPv6-preferred networks.",
+ "deepDive": [
+  "IPv6 addresses are eight groups of four hexadecimal digits, and DNS carries them in AAAA records exactly as IPv4 rides in A records. A hostname can have both record types at once, and should: that dual-stack setup lets each client pick the protocol it prefers, usually IPv6 when a route exists.",
+  "The failure mode unique to AAAA is asymmetric reachability. If you publish an AAAA record but the server's IPv6 path is broken (no route, firewalled port 443, or a tunnel that intermittently drops), IPv6-capable visitors experience timeouts while everyone else sees a perfect site. The bug hides from whoever tests on IPv4. Always test both protocols after publishing: load the site over a v6 proxy or a lookup tool that shows both record types.",
+  "Adoption is past the point of optionality: major mobile carriers run IPv6-preferred networks, and Google's stats have long shown a third or more of client connections arriving over v6. For a new deployment, configuring AAAA from day one is cheaper than retrofitting it."
+ ],
+ "example": "example.com.  3600  IN  AAAA  2606:2800:220:1:248:1893:25c8:1946",
+ "anatomy": [
+  [
+   "AAAA",
+   "The record type (read as 'quad-A'). One IPv6 address follows."
+  ],
+  [
+   "2606:2800:...",
+   "The address: eight colon-separated hexadecimal groups, often compressed with :: for runs of zeros."
+  ],
+  [
+   "3600",
+   "TTL in seconds, cached by resolvers like any other record."
+  ]
+ ],
+ "uses": [
+  "Serving your site over IPv6 alongside IPv4 (dual stack)",
+  "IPv6-only infrastructure and services",
+  "Meeting requirements of v6-preferred mobile carriers and enterprise networks"
+ ],
+ "steps": [
+  [
+   "Confirm your server has IPv6",
+   "Your host assigns a v6 address; it must be bound to the interface and listening on ports 80/443."
+  ],
+  [
+   "Open the firewall",
+   "An open v4 rule does nothing for v6. Allow inbound 80/443 on the v6 address explicitly."
+  ],
+  [
+   "Publish the AAAA record",
+   "Add it beside your A record in the DNS panel, TTL 3600."
+  ],
+  [
+   "Test both protocols",
+   "Load the site from a v6 connection and run our record lookup filtered to AAAA to confirm what the world sees."
+  ]
+ ],
+ "mistakes": [
+  "Publishing AAAA before the server actually answers on v6; every v6 visitor times out",
+  "Firewalling only IPv4; v6 traffic silently dropped",
+  "Typos in compressed notation; one wrong colon changes the address entirely",
+  "Treating v6 as optional while a growing share of mobile traffic prefers it"
+ ],
+ "faqs": [
+  [
+   "Do I need AAAA if I have an A record?",
+   "The site works without it, but IPv6-preferred clients then fall back to IPv4. For new deployments, publish both."
+  ],
+  [
+   "Can one hostname have A and AAAA records together?",
+   "Yes, and it should. That is exactly what dual-stack means."
+  ],
+  [
+   "Why does my site work for some users and not others?",
+   "Classic asymmetric IPv6 breakage: the AAAA record exists but the v6 path is dead. Test over both protocols."
+  ],
+  [
+   "Is AAAA slower than A?",
+   "No. Latency depends on routing, not record type, and v6 paths are often shorter."
+  ]
+ ],
+ "related": [
+  [
+   "A records",
+   "/a-record/"
+  ],
+  [
+   "Check AAAA records live",
+   "/dns-record-lookup/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

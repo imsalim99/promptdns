@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RecordLookupTool from '../components/RecordLookupTool.astro';
+---
+<BaseLayout title="A Record Lookup" description="A record lookup for any domain: see the IPv4 addresses it points to, with TTLs, live via DNS-over-HTTPS.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">A Record Lookup</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">A Record Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">The A record maps a hostname to its IPv4 address. Check yours to confirm where a domain points before and after migrations.</p>
+    <div class="mt-8"><RecordLookupTool type="A" label="A Record Lookup" hint="Lookups run in your browser via public DNS-over-HTTPS. Nothing is logged." /></div>
+    <article class="rich-text mt-12 max-w-none">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/a-record/">A records explained (guide)</a></li>
+        <li><a href="/dns-record-lookup/">All-in-one record lookup</a> and <a href="/dns-propagation-checker/">propagation checker</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>

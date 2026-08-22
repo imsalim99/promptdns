@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="DKIM Record Generator — Generate Keys in Your Browser" description="Free DKIM record generator: create a real 2048-bit RSA key pair in your browser, get the TXT record and private key file. Keys never leave your device.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">DKIM Generator</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Record Generator</h1>
+    <p class="mt-4 text-lg text-ink-dim">Generate a genuine 2048-bit RSA key pair locally in your browser: get the DNS TXT record, plus the private key download for your mail server. Nothing is transmitted.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="dkg-form" class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-3">
+      <div><label class="mb-1 block text-xs text-ink-faint">Domain</label>
+        <input id="dkg-domain" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" /></div>
+      <div><label class="mb-1 block text-xs text-ink-faint">Selector</label>
+        <input id="dkg-selector" type="text" value="pdns1" autocomplete="off" spellcheck="false" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" /></div>
+      <button type="submit" id="dkg-btn" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Generate Key Pair</button>
+      <p class="text-xs text-ink-faint">Uses WebCrypto (RSA-SHA256, 2048-bit). Private key is generated and exported entirely in your browser.</p>
+    </div>
+    <div class="grid gap-3">
+      <div>
+        <div class="flex items-center justify-between"><p class="text-sm font-semibold text-ink">DNS TXT record</p><button type="button" id="dkg-copy" class="rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Copy</button></div>
+        <pre id="dkg-record" class="mt-2 max-h-40 overflow-auto rounded-lg border border-line bg-panel-2 p-3 font-mono text-[10px] leading-relaxed text-accent-soft"></pre>
+        <p class="mt-1 text-xs text-ink-faint">Publish at <span class="font-mono" id="dkg-host">selector._domainkey.example.com</span></p>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-ink">Private key (PEM)</p>
+        <button type="button" id="dkg-download" class="mt-2 rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Download private key</button>
+      </div>
+    </div>
+  </form>
+  <div id="dkg-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/how-to-add-dkim-record/">How to add the record</a> · <a href="/dkim-record-checker/">DKIM checker</a> (verify after publishing) · <a href="/dkim-selector/">Selectors explained</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('dkg-form') as HTMLFormElement;
+  const domIn = document.getElementById('dkg-domain') as HTMLInputElement;
+  const selIn = document.getElementById('dkg-selector') as HTMLInputElement;
+  const statusEl = document.getElementById('dkg-status')!;
+  const recordEl = document.getElementById('dkg-record')!;
+  const hostEl = document.getElementById('dkg-host')!;
+  const copyBtn = document.getElementById('dkg-copy') as HTMLButtonElement;
+  const dlBtn = document.getElementById('dkg-download') as HTMLButtonElement;
+  const btn = document.getElementById('dkg-btn') as HTMLButtonElement;
+  let pem = '';
+
+  function b64(buf: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  }
+  function pemWrap(der: ArrayBuffer): string {
+    const b = b64(der).replace(/(.{64})/g, '$1\n');
+    return `-----BEGIN PRIVATE KEY-----\n${b}\n-----END PRIVATE KEY-----\n`;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = domIn.value.trim().toLowerCase();
+    const selector = selIn.value.trim().toLowerCase().replace(/\._domainkey.*$/, '');
+    if (!domain.includes('.') || !selector) { statusEl.textContent = 'Enter a domain and selector.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Generating…';
+    try {
+      const pair = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+      const spki = await crypto.subtle.exportKey('spki', pair.publicKey);
+      const pkcs8 = await crypto.subtle.exportKey('pkcs8', pair.privateKey);
+      pem = pemWrap(pkcs8);
+      const p = b64(spki);
+      const host = `${selector}._domainkey.${domain}`;
+      hostEl.textContent = host;
+      recordEl.textContent = `v=DKIM1; k=rsa; p=${p}`;
+      statusEl.textContent = `2048-bit RSA key pair generated locally. Publish the TXT record, install the private key on your server, then verify with the DKIM checker.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+      statusEl.classList.remove('hidden');
+    } catch {
+      statusEl.textContent = 'Key generation failed in this browser.';
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+      statusEl.classList.remove('hidden');
+    }
+    btn.disabled = false; btn.textContent = 'Generate Key Pair';
+  });
+  copyBtn.addEventListener('click', async () => { await navigator.clipboard.writeText(recordEl.textContent ?? ''); copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy', 1500); });
+  dlBtn.addEventListener('click', () => {
+    if (!pem) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([pem], { type: 'application/x-pem-file' }));
+    a.download = `${selIn.value || 'dkim'}.private.pem`;
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+</script>

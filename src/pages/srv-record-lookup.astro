@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RecordLookupTool from '../components/RecordLookupTool.astro';
+---
+<BaseLayout title="SRV Record Lookup" description="SRV record lookup: find service endpoints (SIP, XMPP, game servers) with priority, weight, and port.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SRV Record Lookup</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SRV Record Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">SRV records locate services by protocol. Verify clients can discover your servers.</p>
+    <div class="mt-8"><RecordLookupTool type="SRV" label="SRV Record Lookup" hint="Lookups run in your browser via public DNS-over-HTTPS. Nothing is logged." /></div>
+    <article class="rich-text mt-12 max-w-none">
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/srv-record/">SRV records explained (guide)</a></li>
+        <li><a href="/dns-record-lookup/">All-in-one record lookup</a> and <a href="/dns-propagation-checker/">propagation checker</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>

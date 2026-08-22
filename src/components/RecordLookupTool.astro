@@ -1,0 +1,75 @@
+---
+/**
+ * Dedicated per-record-type lookup tool page body.
+ * Used by the 12 record-lookup pages in the topical map.
+ */
+import ToolPanel from './ToolPanel.astro';
+interface Props { type: string; label: string; hint: string }
+const { type, label, hint } = Astro.props;
+---
+<ToolPanel>
+  <form data-record-form data-type={type} class="flex flex-col gap-3 sm:flex-row">
+    <label class="sr-only" for={`q-${type}`}>Domain</label>
+    <input id={`q-${type}`} type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+      class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Lookup {type}</button>
+  </form>
+  <div data-status class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div data-results class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table">
+      <thead><tr><th>Name</th><th>TTL</th><th>Value</th></tr></thead>
+      <tbody data-tbody></tbody>
+    </table>
+  </div>
+  <p class="mt-4 text-xs text-ink-faint">{hint}</p>
+</ToolPanel>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+
+  const form = document.querySelector('[data-record-form]') as HTMLFormElement;
+  const section = form.closest('section') as HTMLElement;
+  const input = form.querySelector('input') as HTMLInputElement;
+  const statusEl = section.querySelector('[data-status]') as HTMLElement;
+  const resultsEl = section.querySelector('[data-results]') as HTMLElement;
+  const tbody = section.querySelector('[data-tbody]') as HTMLElement;
+  const TYPE = form.dataset.type ?? 'A';
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) {
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+      statusEl.textContent = 'Enter a valid domain, e.g. example.com';
+      statusEl.classList.remove('hidden');
+      return;
+    }
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line';
+    statusEl.textContent = `Querying ${TYPE} records for ${domain}…`;
+    statusEl.classList.remove('hidden');
+    resultsEl.classList.add('hidden');
+
+    const res = await lookup(domain, TYPE as RecordType, RESOLVERS[0]);
+    if (res.status === 3) {
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+      statusEl.textContent = `NXDOMAIN: ${domain} does not exist.`;
+      return;
+    }
+    if (!res.answers.length) {
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+      statusEl.textContent = `No ${TYPE} records returned for ${domain}.`;
+      return;
+    }
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    statusEl.textContent = `${res.answers.length} ${TYPE} record${res.answers.length > 1 ? 's' : ''} found via ${res.resolver} (${res.ms} ms).`;
+    tbody.innerHTML = '';
+    for (const a of res.answers) {
+      tbody.insertAdjacentHTML('beforeend', `<tr>
+        <td class="font-mono text-xs text-ink-dim">${a.name}</td>
+        <td class="font-mono text-xs text-accent">${a.TTL}s</td>
+        <td><code>${a.data.replace(/</g, '&lt;')}</code></td>
+      </tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+  });
+</script>

@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="DKIM Record Checker, Verify Your DKIM Key"
+  description="Free DKIM record checker: look up any selector's DKIM public key, verify key type and length, and find weak 1024-bit keys."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DKIM Record Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Look up a DKIM public key by selector, verify it exists, check key type and length, and catch weak keys before Gmail does.</p>
+
+    <ToolPanel>
+      <form id="dkim-form" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <div>
+          <label for="dkim-selector" class="mb-1 block text-xs text-ink-faint">Selector</label>
+          <input id="dkim-selector" type="text" autocomplete="off" spellcheck="false" value="google" placeholder="google, selector1, k1, s1…"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        </div>
+        <div>
+          <label for="dkim-domain" class="mb-1 block text-xs text-ink-faint">Domain</label>
+          <input id="dkim-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        </div>
+        <button type="submit" class="btn-cta btn-shimmer self-end px-6 py-2.5 text-sm">Check DKIM</button>
+      </form>
+
+      <div id="dkim-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="dkim-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody id="dkim-tbody"></tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-xs text-ink-faint">Don't know your selector? Common ones: <span class="font-mono">google</span> (Workspace), <span class="font-mono">selector1/selector2</span> (Microsoft 365), <span class="font-mono">k1</span> (Mailchimp), <span class="font-mono">s1/s2</span> (Zoho), <span class="font-mono">mail</span>, <span class="font-mono">default</span>.</p>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What the DKIM checker looks for</h2>
+      <p>DKIM keys live at <code>selector._domainkey.yourdomain.com</code> as TXT records. This tool parses the key: version, key type (rsa/ed25519), and <strong>key length</strong>, 1024-bit keys are considered weak and are rejected by some receivers; 2048-bit is the current standard.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/spf-record-checker/">SPF Record Checker</a></li>
+        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a></li>
+        <li><a href="/dkim/">DKIM explained</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+
+  const form = document.getElementById('dkim-form') as HTMLFormElement;
+  const selInput = document.getElementById('dkim-selector') as HTMLInputElement;
+  const domInput = document.getElementById('dkim-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('dkim-status')!;
+  const resultsEl = document.getElementById('dkim-results')!;
+  const tbody = document.getElementById('dkim-tbody')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const selector = selInput.value.trim().replace(/\._domainkey\.$/, '');
+    const domain = normalizeDomain(domInput.value);
+    if (!selector || !domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter both a selector and a domain.'); return; }
+    const fqdn = `${selector}._domainkey.${domain}`;
+    setStatus('bg-panel-2 text-accent border border-line', `Looking up TXT at ${fqdn}…`);
+    resultsEl.classList.add('hidden');
+
+    const res = await lookup(fqdn, 'TXT', RESOLVERS[0]);
+    const key = txtRecords(res.answers).find((t) => t.includes('p='));
+    if (!key) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', `No DKIM key found at ${fqdn}. Either the selector is wrong or DKIM isn\u2019t set up.`);
+      return;
+    }
+
+    const v = key.match(/v=([A-Za-z0-9]+)/)?.[1];
+    const k = key.match(/k=([a-z0-9]+)/i)?.[1] ?? 'rsa';
+    const p = key.match(/p=([A-Za-z0-9+/=]+)/)?.[1] ?? '';
+    // base64 DER length ≈ bits: decoded bytes * 8 (rough, RSA modulus ≈ DER - ~24 bytes header)
+    const decodedLen = Math.floor((p.replace(/=+$/, '').length * 3) / 4);
+    const bits = Math.max(0, (decodedLen - 24) * 8);
+    const bitsLabel = k.toLowerCase() === 'ed25519' ? '256 (ed25519)' : `~${bits}`;
+    const weak = k.toLowerCase() !== 'ed25519' && bits > 0 && bits < 2048;
+
+    const rows: [string, string, string][] = [
+      ['Location', `<code>${fqdn}</code>`, ''],
+      ['Version', v ?? '(none)', ''],
+      ['Key type', k.toUpperCase(), ''],
+      ['Key size', bitsLabel, weak ? 'WEAK, upgrade to 2048-bit; some receivers reject 1024.' : 'Strong enough.'],
+      ['Public key', `<code class="break-all">${p.slice(0, 80)}${p.length > 80 ? '…' : ''}</code>`, `(${p.length} chars)`],
+    ];
+    tbody.innerHTML = '';
+    for (const [a, b, c] of rows) {
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${a}</td><td>${b} <span class="text-xs text-ink-faint">${c}</span></td></tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+    setStatus(weak ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30',
+      weak ? 'DKIM key found, but it is weak (under 2048-bit).' : 'DKIM key found and parsed.');
+  });
+</script>

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Structured Data / Schema Validator" description="Free schema validator: fetch any page, find its JSON-LD structured data, and validate that machines can parse it.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Schema Validator</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Structured Data Validator</h1>
+    <p class="mt-4 text-lg text-ink-dim">Fetch any page, extract its JSON-LD blocks, and validate the syntax machines depend on — the data layer AI systems and search engines read first.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="sv-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="sv-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Validate Schema</button>
+  </form>
+  <div id="sv-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="sv-results" class="mt-4 hidden grid gap-2"></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/ai-readiness-guide/">Structured data for AI</a> · <a href="/ai-readiness-checker/">AI readiness audit</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { fetchText, normalizeSite } from '../lib/proxy';
+  const form = document.getElementById('sv-form') as HTMLFormElement;
+  const input = document.getElementById('sv-url') as HTMLInputElement;
+  const statusEl = document.getElementById('sv-status')!;
+  const resultsEl = document.getElementById('sv-results')!;
+  const setStatus = (c: string, t: string) => { statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${c}`; statusEl.textContent = t; statusEl.classList.remove('hidden'); };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = normalizeSite(input.value);
+    if (!url.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a page URL.'); return; }
+    setStatus('bg-panel-2 text-accent border border-line', `Fetching ${url}…`);
+    resultsEl.innerHTML = ''; resultsEl.classList.add('hidden');
+    const res = await fetchText(url);
+    if (!res.ok) { setStatus('bg-warn/10 text-warn border border-warn/30', 'Could not fetch that page.'); return; }
+    const doc = new DOMParser().parseFromString(res.text, 'text/html');
+    const blocks = [...doc.querySelectorAll('script[type="application/ld+json"]')];
+    if (!blocks.length) { setStatus('bg-warn/10 text-warn border border-warn/30', 'No JSON-LD structured data found on that page.'); return; }
+    let ok = 0;
+    for (const b of blocks) {
+      const raw = (b.textContent ?? '').trim();
+      let verdict = ''; let cls = '';
+      try {
+        const j = JSON.parse(raw);
+        ok++;
+        const types = Array.isArray(j) ? j.map((x: any) => x['@type']).join(', ') : (j['@type'] ?? '?');
+        verdict = `Valid JSON-LD, @type: ${types}`;
+        cls = 'border-pass/30 bg-pass/10 text-pass';
+      } catch (err) {
+        verdict = `Invalid JSON: ${(err as Error).message}`;
+        cls = 'border-fail/30 bg-fail/10 text-fail';
+      }
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border ${cls} px-4 py-3 text-xs font-mono">${verdict}</div>`);
+    }
+    setStatus(ok === blocks.length ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-fail/10 text-fail border border-fail/30', `${blocks.length} JSON-LD block(s) found: ${ok} valid.`);
+    resultsEl.classList.remove('hidden');
+  });
+</script>

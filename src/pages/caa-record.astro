@@ -1,0 +1,96 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "CAA",
+ "title": "CAA Record: Controlling Certificate Issuance",
+ "description": "CAA records explained in depth: issue vs issuewild, iodef incident reporting, Let's Encrypt and vendor domains, and rollout mistakes.",
+ "intro": "A CAA record tells certificate authorities which of them are allowed to issue TLS certificates for your domain. It is a one-line record that closes the door on misissuance by every CA you don't explicitly trust.",
+ "deepDive": [
+  "The mechanics are cooperative but effective: before issuing, a CA checks your CAA set, and policy forbids issuing unless one of its issuance domains appears. Since 2017 the check is mandatory across the industry, so a tight CAA set genuinely constrains who can mint certificates for your names.",
+  "Two tags do the permitting. issue authorizes normal certificates and, unless overridden, wildcards too; issuewild independently governs wildcard issuance. Point them at the CA's documented issuance domain, not the marketing website: Let's Encrypt is letsencrypt.org, DigiCert is digicert.com, and each vendor documents the exact string. A third tag, iodef, is optional reporting: give a mailto or http endpoint and participating CAs will tell you when someone attempts an issuance your policy forbids, which is exactly the signal you want.",
+  "CAA inherits down your tree: a record at the apex applies to every subdomain unless a closer name overrides it. That enables per-team policies (a separate CA for *.dev) but also surprises: tightening the apex while a subdomain relies on another CA breaks its renewals. Roll out by listing every CA currently issuing for you first, confirming renewals, then trimming."
+ ],
+ "example": "example.com.  3600  IN  CAA  0 issue \"letsencrypt.org\"\nexample.com.  3600  IN  CAA  0 issuewild \";\"\nexample.com.  3600  IN  CAA  0 iodef \"mailto:security@example.com\"",
+ "anatomy": [
+  [
+   "0",
+   "The flags byte; 128 marks the record as critical, which non-understanding CAs must obey by refusing."
+  ],
+  [
+   "issue",
+   "Tag permitting issuance by the named CA."
+  ],
+  [
+   "issuewild",
+   "Wildcard-specific permission; absent, it inherits issue."
+  ],
+  [
+   "\"letsencrypt.org\"",
+   "The CA's issuance domain, exactly as its documentation specifies."
+  ],
+  [
+   "iodef",
+   "Where violation attempts get reported."
+  ]
+ ],
+ "uses": [
+  "Locking issuance to your actual CA or CAs",
+  "Separate wildcard policy from name policy",
+  "Getting alerted on out-of-policy issuance attempts",
+  "Certificate-control compliance requirements"
+ ],
+ "steps": [
+  [
+   "Inventory your CAs",
+   "Check current certificates (crt.sh or your inventory) for who issues for your domain today."
+  ],
+  [
+   "Publish permissive CAA first",
+   "One issue record per CA in use, so renewals continue uninterrupted."
+  ],
+  [
+   "Add iodef reporting",
+   "A security mailbox that someone actually monitors."
+  ],
+  [
+   "Tighten gradually",
+   "Remove CAs you no longer use, verify with the record lookup, and watch renewals for a full cycle."
+  ]
+ ],
+ "mistakes": [
+  "Using the CA's brand domain instead of the documented issuance domain",
+  "Forgetting issuewild inherits from issue and accidentally permitting or blocking wildcards",
+  "Tightening the apex while a subdomain's certificates come from another CA",
+  "Syntax slips (missing quotes, wrong tag) invalidating the whole set"
+ ],
+ "faqs": [
+  [
+   "What happens with no CAA records?",
+   "Any public CA may issue for your domain. CAA is the opt-in restriction layer."
+  ],
+  [
+   "Does CAA stop attackers issuing fraudulently?",
+   "It constrains compliant CAs. Combined with monitoring (crt.sh, Cert Spotter) it shrinks the misissuance surface."
+  ],
+  [
+   "Can I have CAA for multiple CAs?",
+   "Yes, one issue record per CA, all treated as permitted."
+  ],
+  [
+   "Why did my renewal fail after adding CAA?",
+   "The issuing CA's domain is missing or misspelled in your set. Check its docs for the exact string."
+  ]
+ ],
+ "related": [
+  [
+   "TXT records",
+   "/txt-record/"
+  ],
+  [
+   "Check CAA records",
+   "/dns-record-lookup/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

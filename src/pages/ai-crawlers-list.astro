@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const bots = [
+  ['GPTBot', 'OpenAI', 'Training data for OpenAI models (GPT).', 'Blocked by default? No; opt-out via robots or OpenAI\u2019s control page.'],
+  ['OAI-SearchBot', 'OpenAI', 'Search results inside ChatGPT Search.', 'Separate from GPTBot; blocking it removes you from ChatGPT answers.'],
+  ['ChatGPT-User', 'OpenAI', 'Live fetches when a ChatGPT user opens your link.', 'Acting as the user\u2019s agent; usually allowed.'],
+  ['ClaudeBot', 'Anthropic', 'Training + retrieval for Claude.', 'Anthropic documents both crawl and immediate-fetch use.'],
+  ['Google-Extended', 'Google', 'Gemini and Vertex AI training.', 'Does NOT affect Google Search or AI Overviews.'],
+  ['Googlebot', 'Google', 'Google Search indexing, feeds AI Overviews.', 'Blocking it removes you from Search itself.'],
+  ['PerplexityBot', 'Perplexity', 'The Perplexity answer engine index.', 'Also respects its own publisher program.'],
+  ['CCBot', 'Common Crawl', 'Open web crawl dataset used by many AI labs.', 'Legacy but still widely honored.'],
+  ['Bytespider', 'ByteDance', 'Data collection behind TikTok\u2019s AI stack.', 'Reputation for ignoring robots.txt; block at WAF if needed.'],
+  ['Applebot-Extended', 'Apple', 'Apple Intelligence training.', 'Distinct from Applebot (Siri/Search).'],
+  ['meta-externalagent', 'Meta', 'Meta AI training.', 'Successor naming of facebookexternalhit era agents.'],
+  ['Amazonbot', 'Amazon', 'Alexa and Amazon AI services.', 'Also feeds general Amazon infrastructure.'],
+];
+---
+<BaseLayout
+  title="The Complete List of AI Crawlers and Bots (2026)"
+  description="Every AI crawler that matters: GPTBot, ClaudeBot, Google-Extended, PerplexityBot, CCBot, Bytespider and more, with what each does and how to allow or block it."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">AI Crawlers List</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">The Complete List of AI Crawlers</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      AI systems read the web through identifiable user-agents. This is the working list of the ones
+      that matter in 2026: who runs them, what they feed, and the gotchas in each robots.txt rule.
+    </p>
+
+    <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
+      <table class="pdns-table">
+        <thead><tr><th>Bot</th><th>Vendor</th><th>What it does</th><th>Notes</th></tr></thead>
+        <tbody>
+          {bots.map(([name, vendor, purpose, note]) => (
+            <tr>
+              <td class="font-mono text-xs font-semibold text-accent">{name}</td>
+              <td class="text-sm text-ink">{vendor}</td>
+              <td class="text-sm text-ink-dim">{purpose}</td>
+              <td class="text-xs text-ink-faint">{note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rich-text mt-10">
+      <h2>The decision, not the default</h2>
+      <p>
+        There is no universally correct allow/block stance. Allowing AI crawlers puts your content
+        into training data and answer engines, which can mean citations and traffic, or uncompensated
+        reuse depending on your business. Blocking protects content but removes you from AI answers
+        as they become a discovery channel. The failure mode worth fixing is the accidental one:
+        rules written years ago, or a wildcard block that quietly excludes everything.
+      </p>
+      <h2>See where you stand</h2>
+      <p>
+        Run your domain through the <a href="/ai-crawler-checker/">AI Crawler Checker</a> for a
+        per-bot verdict against your live robots.txt, or the broader
+        <a href="/ai-readiness-checker/">AI Readiness audit</a>.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/how-to-block-ai-crawlers/">How to block AI crawlers</a></li>
+        <li><a href="/how-to-allow-ai-crawlers/">How to allow AI crawlers</a></li>
+        <li><a href="/robots-txt-guide/">robots.txt: the complete guide</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="TTL Checker — See Every Record's Cache Time" description="Free DNS TTL checker: see the time-to-live of every record on a domain to plan migrations and catch bloated caches.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">TTL Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS TTL Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">See the TTL of every DNS record on a domain. Planning a migration? Anything above 300 seconds is a wait you can avoid.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="ttl-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="ttl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TTLs</button>
+  </form>
+  <div id="ttl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="ttl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody id="ttl-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul>
+      <li><a href="/what-is-ttl-in-dns/">TTL explained</a> and <a href="/dns-propagation/">propagation</a></li>
+      <li><a href="/dns-record-lookup/">Record lookup</a></li>
+    </ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+  const form = document.getElementById('ttl-form') as HTMLFormElement;
+  const input = document.getElementById('ttl-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('ttl-status')!;
+  const resultsEl = document.getElementById('ttl-results')!;
+  const tbody = document.getElementById('ttl-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
+    statusEl.textContent = `Checking TTLs for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const types: RecordType[] = ['A','AAAA','MX','NS','TXT','SOA','CAA'];
+    const rows: { t: string; ttl: number; v: string }[] = [];
+    await Promise.all(types.map(async (t) => {
+      const r = await lookup(domain, t, RESOLVERS[0]);
+      for (const a of r.answers.slice(0, 4)) rows.push({ t, ttl: a.TTL, v: a.data });
+    }));
+    if (!rows.length) { statusEl.textContent = 'No records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    const min = Math.min(...rows.map(r => r.ttl));
+    statusEl.textContent = `${rows.length} records. Lowest TTL: ${min}s${min > 300 ? ' (lower to 300 a day before migrations)' : ' (migration-ready)'}.`;
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${min > 3600 ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
+    tbody.innerHTML = '';
+    for (const r of rows.sort((a, b) => a.ttl - b.ttl)) {
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${r.t}</td><td class="font-mono text-xs ${r.ttl > 3600 ? 'text-warn' : 'text-ink'}">${r.ttl}s</td><td><code>${r.v.replace(/</g, '&lt;').slice(0, 60)}</code></td></tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+  });
+</script>

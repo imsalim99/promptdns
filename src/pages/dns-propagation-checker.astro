@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PropagationChecker from '../components/PropagationChecker.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is DNS propagation?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'DNS propagation is the time it takes for DNS changes (new records, updated values, changed nameservers) to spread across the internet\u2019s resolvers and caches. It is governed by the TTL (time-to-live) of the old records, typically anywhere from a few minutes to 48 hours.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does DNS propagation take?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most DNS changes propagate within 1\u201324 hours. If you lowered your TTL before making the change, propagation is usually faster. Nameserver (NS) changes can take up to 48 hours because registrars and TLD registries cache delegation.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I check DNS propagation?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Query the same record across multiple independent public resolvers (like Cloudflare, Google, and Quad9). When they all return the same answer, your change has propagated. The tool on this page does exactly that, in your browser.',
+      },
+    },
+  ],
+};
+---
+<BaseLayout
+  title="DNS Propagation Checker, Global DNS Test"
+  description="Free DNS propagation checker: instantly check whether your DNS records have propagated across public resolvers. Supports A, AAAA, CNAME, MX, TXT, NS, SOA and more."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Propagation Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Propagation Checker</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">
+      Check whether your DNS changes have propagated. We query your record across independent
+      public resolvers, when they all agree, your change is live everywhere.
+    </p>
+
+    <div class="mt-8">
+      <PropagationChecker />
+    </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>How this DNS checker works</h2>
+      <p>
+        Every DNS lookup on this page runs in your browser using DNS-over-HTTPS (DoH) against
+        independent public resolvers: Cloudflare, Google, and Quad9. Each resolver keeps its own
+        cache, so comparing their answers tells you whether your new record has spread, or whether
+        some networks are still serving the old value.
+      </p>
+
+      <h2>What "propagated" means here</h2>
+      <p>
+        A change is fully propagated when every resolver returns the same answer set. If some
+        resolvers show old values, the mismatch is expected: they cached your previous record and
+        will refresh when its TTL (time-to-live) expires. You can lower your TTL before a planned
+        change to make this window shorter.
+      </p>
+
+      <h2>Tips for faster propagation</h2>
+      <ul>
+        <li><strong>Lower your TTL first</strong> (e.g. to 300 seconds) at least 24 hours before a migration, then make the change.</li>
+        <li><strong>Keep the old server live</strong> during propagation so cached traffic still works.</li>
+        <li><strong>Check the right record type</strong>, a site pointing problem is usually A/AAAA/CNAME; email problems are usually MX/SPF/TXT.</li>
+        <li><strong>Flush your local cache</strong> after changes, see <a href="/flush-dns-cache/">how to flush DNS cache</a> on Windows, macOS, Linux, and Chrome.</li>
+      </ul>
+
+      <h2>Related tools and guides</h2>
+      <ul>
+        <li><a href="/what-is-dns/">What is DNS?</a>, the complete guide</li>
+        <li><a href="/dns-propagation/">DNS propagation explained</a>, why it takes time</li>
+        <li><a href="/flush-dns-cache/">Flush your DNS cache</a> (all operating systems)</li>
+        <li><a href="/mx-record/">MX records explained</a>, email routing</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>

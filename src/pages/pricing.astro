@@ -1,0 +1,161 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { TOTAL_TOOLS } from '../data/tools';
+
+const tiers = [
+  {
+    name: 'Free', price: '$0', period: 'forever',
+    desc: 'Every web tool, free forever. Monitor one domain.',
+    features: [`All ${TOTAL_TOOLS} browser-side tools`, '1 domain monitored (DMARC)', '14-day report history', 'Community support'],
+    cta: 'Start free', href: '/', featured: false,
+  },
+  {
+    name: 'Starter', price: '$19', period: '/month',
+    desc: 'For freelancers and small sites that need eyes on DNS.',
+    features: ['3 domains monitored', 'DMARC + DNS change alerts', '3-month history', 'Email support'],
+    cta: 'Choose Starter', href: '/contact/', featured: false,
+  },
+  {
+    name: 'Pro', price: '$49', period: '/month',
+    desc: 'For teams sending real email volume.',
+    features: ['10 domains monitored', 'SPF Manager (flattening + hosted records)', 'AI Readiness Monitor', 'Deliverability tests', '1-year history'],
+    cta: 'Choose Pro', href: '/contact/', featured: true,
+  },
+  {
+    name: 'Business', price: '$99', period: '/month',
+    desc: 'For agencies managing client domains.',
+    features: ['25 domains monitored', 'White-label PDF reports', 'API access', 'Slack/Teams alerts', '5 team seats'],
+    cta: 'Contact sales', href: '/contact/', featured: false,
+  },
+];
+
+const matrix: [string, string, string, string, string][] = [
+  [`Free tools (all ${TOTAL_TOOLS})`, 'Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
+  ['Monitored domains', '1', '3', '10', '25'],
+  ['DMARC aggregate reports', '14 days', '3 months', '1 year', '3 years'],
+  ['DNS change + hijack alerts', '—', 'Email', 'Email + Slack/Teams', 'Email + Slack/Teams'],
+  ['Record-change history', '—', 'Yes', 'Yes', 'Yes'],
+  ['SPF Manager (auto-flattening)', '—', '—', 'Yes', 'Yes'],
+  ['Hosted SPF records', '—', '—', 'Yes', 'Yes'],
+  ['AI Readiness Monitor', '—', '—', 'Weekly', 'Weekly'],
+  ['AI crawler activity tracking', '—', '—', 'Yes', 'Yes'],
+  ['Email deliverability tests', '—', '—', 'Yes', 'Yes'],
+  ['White-label PDF reports', '—', '—', '—', 'Yes'],
+  ['API access', '—', '—', '—', 'Yes'],
+  ['Team seats', '1', '1', '2', '5'],
+  ['Support', 'Community', 'Email', 'Priority email', 'Priority + onboarding'],
+];
+
+const faqs = [
+  ['Are the tools really free forever?', 'Yes. All tools are free with no account, no limits, and no trial timers. Paid plans add automation: monitoring, alerts, history, and reports. One-off checks will never be paywalled.'],
+  ['What counts as a monitored domain?', 'A domain enrolled in continuous monitoring: DMARC report collection, DNS change detection, expiry checks, and (on Pro+) AI readiness tracking. Lookups you run manually are always unlimited and free.'],
+  ['What happens if I exceed my domain limit?', 'We keep monitoring and notify you; you can upgrade or remove domains any time. Nothing silently stops.'],
+  ['Can I cancel anytime?', 'Yes, plans are month-to-month (or annual with two months free). Cancelling keeps monitoring active until the paid period ends, then your account reverts to the Free plan.'],
+  ['Do you offer refunds?', 'Full refund within 14 days of any first payment, no questions asked.'],
+  ['How is billing handled?', 'Payments are processed by our merchant-of-record (Lemon Squeezy): they handle global taxes, invoices, and card security. We never see or store card numbers.'],
+  ['Do you have an MSP/agency program?', 'Yes, Business covers 25 domains with white-label reports; beyond that, volume pricing and multi-tenant dashboards are available on request.'],
+];
+---
+<BaseLayout
+  title="Pricing — Free Tools Forever, Monitoring From $19/mo"
+  description="PromptDNS pricing: all tools free forever. Starter $19/mo monitoring, Pro $49 with SPF Manager and AI Readiness, Business $99 with white-label reports and API. Full feature comparison."
+>
+  <div class="mx-auto max-w-6xl px-4 py-16 lg:px-8">
+    <div class="text-center">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Pricing</p>
+      <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">Free tools. Serious monitoring.</h1>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-ink-dim">
+        Every checker and lookup is free forever, no account needed. Subscriptions add the
+        things you shouldn't have to remember: monitoring, alerts, history, and reports.
+      </p>
+    </div>
+
+    <div class="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      {tiers.map((t) => (
+        <div class:list={[
+              'flex flex-col rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1',
+              t.featured ? 'border-accent/50 bg-gradient-to-b from-accent/10 to-violet/10 shadow-[0_0_60px_-20px_rgba(34,211,238,0.4)]' : 'border-line bg-panel/60',
+            ]}>
+          {t.featured && <p class="mb-3 w-fit rounded-full border border-accent/40 bg-accent/10 px-3 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">Most popular</p>}
+          <h2 class="font-display text-lg font-bold text-ink">{t.name}</h2>
+          <p class="mt-1 text-sm text-ink-dim">{t.desc}</p>
+          <p class="mt-5"><span class="font-display text-4xl font-bold text-ink">{t.price}</span><span class="text-sm text-ink-faint">{t.period}</span></p>
+          <ul class="mt-5 flex-1 space-y-2.5 text-sm text-ink-dim">
+            {t.features.map((f) => (
+              <li class="flex gap-2"><span class="text-pass">✔</span>{f}</li>
+            ))}
+          </ul>
+          <a href={t.href} class:list={[
+                'mt-6 block rounded-lg py-2.5 text-center text-sm font-semibold transition-transform hover:scale-[1.02]',
+                t.featured ? 'btn-cta btn-shimmer' : 'border border-line bg-panel-2 text-ink hover:border-accent/40',
+              ]}>{t.cta}</a>
+        </div>
+      ))}
+    </div>
+
+    <p class="mt-6 text-center text-sm text-ink-faint">
+      All plans: cancel anytime · full refund within 14 days · taxes handled by our merchant-of-record.
+      Need 25+ domains or managed enforcement? <a href="/contact/" class="text-accent hover:text-accent-soft">Talk to us</a>.
+    </p>
+
+    <!-- Feature comparison -->
+    <div class="mt-20">
+      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Compare every feature</h2>
+      <div class="mt-6 overflow-x-auto rounded-2xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead>
+            <tr>
+              <th class="min-w-[12rem]">Feature</th>
+              <th>Free</th>
+              <th>Starter</th>
+              <th class="text-accent">Pro</th>
+              <th>Business</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matrix.map(([feature, free, starter, pro, business]) => (
+              <tr>
+                <td class="text-sm text-ink">{feature}</td>
+                <td class="text-sm text-ink-dim">{free}</td>
+                <td class="text-sm text-ink-dim">{starter}</td>
+                <td class="text-sm font-medium text-accent">{pro}</td>
+                <td class="text-sm text-ink-dim">{business}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Add-ons -->
+    <div class="mt-16 grid gap-5 md:grid-cols-3">
+      {[
+        ['Extra domains', 'Add monitored domains to any plan in packs of 5. Volume pricing from 25 domains.', 'from $8/domain/mo'],
+        ['Managed enforcement', 'We take you from p=none to p=reject: records, provider fixes, and report reading handled for you.', 'custom'],
+        ['Historical data export', 'Full CSV export of your monitoring history for compliance and analysis.', 'Business feature'],
+      ].map(([title, desc, price]) => (
+        <div class="rounded-2xl border border-dashed border-line p-6">
+          <h3 class="font-display font-semibold text-ink">{title}</h3>
+          <p class="mt-1 font-mono text-xs text-accent">{price}</p>
+          <p class="mt-2 text-sm leading-relaxed text-ink-dim">{desc}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- FAQ -->
+    <div class="mx-auto mt-20 max-w-3xl">
+      <h2 class="text-center font-display text-2xl font-bold tracking-tight text-ink">Pricing questions</h2>
+      <div class="mt-8 grid gap-3">
+        {faqs.map(([q, a]) => (
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              {q}
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

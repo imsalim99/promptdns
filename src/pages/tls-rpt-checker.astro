@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="TLS-RPT Record Checker" description="Free TLS-RPT checker: verify the _smtp._tls TXT record and where your TLS failure reports are sent.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">TLS-RPT Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">TLS-RPT Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check the <span class="font-mono text-sm">_smtp._tls</span> TXT record: where providers send reports about TLS delivery failures.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="tr-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="tr-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TLS-RPT</button>
+  </form>
+  <div id="tr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="tr-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="tr-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/mta-sts/">MTA-STS explained</a> · <a href="/mta-sts-checker/">MTA-STS checker</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  const form = document.getElementById('tr-form') as HTMLFormElement;
+  const input = document.getElementById('tr-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('tr-status')!;
+  const resultsEl = document.getElementById('tr-results')!;
+  const tbody = document.getElementById('tr-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    statusEl.textContent = `Looking up _smtp._tls.${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const res = await lookup(`_smtp._tls.${domain}`, 'TXT', RESOLVERS[0]);
+    const rec = txtRecords(res.answers).find(t => t.toLowerCase().includes('tlsrpt'));
+    if (!rec) { statusEl.textContent = 'No TLS-RPT record found. You receive no TLS failure reports.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    const rua = rec.match(/rua=([^;]+)/i)?.[1] ?? '';
+    tbody.innerHTML = `<tr><td class="text-ink-dim">Record</td><td class="font-mono text-xs">${rec.replace(/</g, '&lt;')}</td></tr><tr><td class="text-ink-dim">Reports sent to</td><td class="font-mono text-xs text-accent">${rua.replace(/</g, '&lt;')}</td></tr>`;
+    statusEl.textContent = 'TLS-RPT record found.';
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

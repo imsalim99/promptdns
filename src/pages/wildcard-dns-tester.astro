@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Wildcard DNS Tester" description="Free wildcard DNS tester: check whether a domain answers for random subdomains, and what a wildcard matches.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Wildcard DNS Tester</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Wildcard DNS Tester</h1>
+    <p class="mt-4 text-lg text-ink-dim">Query random subdomains to detect wildcard records: hosts you never created that answer anyway.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="wc-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="wc-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Test Wildcard</button>
+  </form>
+  <div id="wc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="wc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Random host</th><th>Result</th></tr></thead><tbody id="wc-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul>
+      <li><a href="/dns-records/">Wildcard DNS records explained</a></li>
+      <li><a href="/dns-record-lookup/">Record lookup</a></li>
+    </ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  const form = document.getElementById('wc-form') as HTMLFormElement;
+  const input = document.getElementById('wc-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('wc-status')!;
+  const resultsEl = document.getElementById('wc-results')!;
+  const tbody = document.getElementById('wc-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Probing random subdomains of ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    tbody.innerHTML = '';
+    let answered = 0;
+    for (let i = 0; i < 3; i++) {
+      const rnd = 'wildcard-test-' + Math.random().toString(36).slice(2, 10);
+      const r = await lookup(`${rnd}.${domain}`, 'A', RESOLVERS[0]);
+      const ip = r.answers.find(x => x.type === 1)?.data;
+      if (ip) answered++;
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs">${rnd}.${domain}</td><td>${ip ? `<code>${ip}</code>` : '<span class="text-xs text-pass">NXDOMAIN (no wildcard)</span>'}</td></tr>`);
+    }
+    statusEl.textContent = answered ? `Wildcard detected: ${answered}/3 random hosts resolve. *.${domain} matches everything.` : 'No wildcard: random subdomains do not resolve.';
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${answered ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
+    resultsEl.classList.remove('hidden');
+  });
+</script>

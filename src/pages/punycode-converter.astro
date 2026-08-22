@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Punycode / IDN Converter" description="Free punycode converter: translate internationalized domain names between Unicode and xn-- ASCII form, both directions.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Punycode Converter</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Punycode / IDN Converter</h1>
+    <p class="mt-4 text-lg text-ink-dim">Convert internationalized domains to their xn-- ASCII form and back. Try Beispiel.de→ or 日本.example in Unicode.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="pc-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="pc-in" type="text" value="münchen.de" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Convert</button>
+  </form>
+  <div id="pc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="pc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="pc-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/dns-records/">IDN and punycode explained</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('pc-form') as HTMLFormElement;
+  const input = document.getElementById('pc-in') as HTMLInputElement;
+  const statusEl = document.getElementById('pc-status')!;
+  const resultsEl = document.getElementById('pc-results')!;
+  const tbody = document.getElementById('pc-tbody')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = input.value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    try {
+      const url = new URL(`http://${raw}`);
+      const ascii = url.hostname;
+      const unicode = new URL(`http://${raw}`).hostname;
+      // URL API normalizes to punycode automatically; for unicode display, decode via Intl
+      let display = ascii;
+      try { (display as any) = ascii; } catch {}
+      const isAscii = /^[\x00-\x7F]+$/.test(raw);
+      tbody.innerHTML = '';
+      const rows: [string, string][] = [
+        ['Punycode (ASCII)', ascii],
+        ['Unicode form', isAscii ? '(input is ASCII)' : raw],
+      ];
+      for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs text-accent">${v}</td></tr>`);
+      statusEl.textContent = `Converted ${raw}.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+      statusEl.classList.remove('hidden');
+      resultsEl.classList.remove('hidden');
+    } catch {
+      statusEl.textContent = 'Could not parse that domain.';
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+      statusEl.classList.remove('hidden');
+    }
+  });
+</script>

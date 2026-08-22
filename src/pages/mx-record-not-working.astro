@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="MX Record Not Working? How to Diagnose and Fix" description="MX troubleshooting: no mail arriving, mail to the wrong server, and partial delivery, diagnosed step by step with live tools.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">MX Not Working</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MX Record Not Working?</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      "Email is broken" almost always means one of four things in the MX layer. Work this list in
+      order; each step has a live check.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>1. Do the MX records exist at all?</h2>
+      <p>
+        Run the <a href="/dns-record-lookup/">record lookup</a> with MX. NXDOMAIN on your apex means
+        bigger problems; NOERROR with no answers means the domain exists but no MX: senders fall back
+        to your A record, and if nothing listens there, mail bounces.
+      </p>
+      <h2>2. Are they the RIGHT records?</h2>
+      <p>
+        Compare the answer against your mail provider's published values, character for character.
+        A typo'd hostname (<code>aspmx.l.googel.com</code>) produces silent, total failure. Verify the
+        target hostnames themselves resolve: MX chains break when the target's A record disappears.
+      </p>
+      <h2>3. Do all resolvers see the same thing?</h2>
+      <p>
+        After any change, cached old values cause partial delivery: some senders hit the old server.
+        The <a href="/dns-propagation-checker/">propagation checker</a> shows which resolvers still
+        serve the previous set; wait or fix the TTL mistake that caused the long cache.
+      </p>
+      <h2>4. Is the mail server itself accepting?</h2>
+      <p>
+        DNS correct but mail still bouncing means the problem is past DNS: the provider's outage, a
+        full mailbox, or greylisting. Bounce messages quote the SMTP error; read it, it names the
+        failing stage.
+      </p>
+      <h2>Quick reference: bounce error to meaning</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Bounce text</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-accent">no MX records / host not found</td><td class="text-sm text-ink-dim">Missing or typo'd MX (steps 1-2)</td></tr>
+            <tr><td class="font-mono text-xs text-accent">connection timed out</td><td class="text-sm text-ink-dim">Mail host unreachable: wrong target, firewall, or outage</td></tr>
+            <tr><td class="font-mono text-xs text-accent">450 / try later</td><td class="text-sm text-ink-dim">Greylisting or temporary failure; retry, usually benign</td></tr>
+            <tr><td class="font-mono text-xs text-accent">mailbox full / quota</td><td class="text-sm text-ink-dim">Recipient-side, not DNS at all</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/mx-record/">MX records explained</a> and <a href="/how-to-add-mx-record/">how to add them</a></li>
+        <li><a href="/mx-record/">MX records explained</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

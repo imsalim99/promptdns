@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Glue Record Checker" description="Free glue record checker: verify in-bailiwick nameservers resolve and delegation glue is consistent.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Glue Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Glue Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">When your nameservers live inside your own domain (ns1.yourdomain.com), the parent needs glue A records. Check which NS hosts are in-bailiwick and whether they resolve.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="gr-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="gr-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Glue</button>
+  </form>
+  <div id="gr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="gr-results" class="mt-6 hidden grid gap-2"></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/ns-record/">Glue records explained</a> · <a href="/delegation-checker/">Delegation checker</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  const form = document.getElementById('gr-form') as HTMLFormElement;
+  const input = document.getElementById('gr-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('gr-status')!;
+  const resultsEl = document.getElementById('gr-results')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Checking glue for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const ns = await lookup(domain, 'NS', RESOLVERS[0]);
+    const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
+    resultsEl.innerHTML = '';
+    let issues = 0;
+    for (const h of hosts) {
+      const a = await lookup(h, 'A', RESOLVERS[0]);
+      const ip = a.answers.find(x => x.type === 1)?.data;
+      const inBailiwick = h.endsWith('.' + domain);
+      if (!ip) issues++;
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 px-4 py-3">
+        <div class="flex justify-between"><span class="font-mono text-sm text-ink">${h}</span>
+        <span class="text-xs ${ip ? 'text-pass' : 'text-fail'}">${ip ? 'resolves' : 'NO GLUE/IP'}</span></div>
+        ${inBailiwick ? '<p class="mt-1 text-xs text-warn">In-bailiwick: parent zone must publish glue A records for this host.</p>' : ''}
+      </div>`);
+    }
+    statusEl.textContent = issues ? `${issues} nameserver(s) failed to resolve — likely missing glue.` : 'All nameservers resolve.';
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${issues ? 'bg-fail/10 text-fail border border-fail/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
+    resultsEl.classList.remove('hidden');
+  });
+</script>

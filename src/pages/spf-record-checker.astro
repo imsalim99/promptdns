@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="SPF Record Checker, Validate Your SPF"
+  description="Free SPF record checker: validate syntax, count DNS lookups against the 10-lookup limit, and find errors that break email deliverability."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Record Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check any domain's SPF record: syntax validation, mechanism-by-mechanism breakdown, and the all-important 10-DNS-lookup limit.</p>
+
+    <ToolPanel>
+      <form id="spf-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="spf-domain">Domain</label>
+        <input id="spf-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check SPF</button>
+      </form>
+
+      <div id="spf-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="spf-lookup" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm text-ink-dim">DNS lookups used</span>
+          <span id="spf-lookup-val" class="font-display text-3xl font-bold text-accent"></span>
+        </div>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
+          <div id="spf-lookup-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700"></div>
+        </div>
+        <p class="mt-2 text-xs text-ink-faint">SPF allows a maximum of 10 DNS lookups, exceeding it is a permerror and your SPF stops working.</p>
+      </div>
+
+      <div id="spf-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Term</th><th>Type</th><th>Explanation</th></tr></thead>
+          <tbody id="spf-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="spf-issues" class="mt-4 hidden grid gap-2"></div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this SPF checker validates</h2>
+      <p>It fetches your domain's TXT records over DNS-over-HTTPS and parses the <code>v=spf1</code> record term by term: every <code>include:</code>, <code>a</code>, <code>mx</code>, and <code>redirect=</code> counts toward the 10-DNS-lookup limit, the single most common way SPF breaks.</p>
+      <h2>Common problems it finds</h2>
+      <ul>
+        <li>More than 10 DNS lookups (permerror, receivers ignore your SPF)</li>
+        <li>Missing or weak <code>all</code> qualifier (<code>~all</code> vs <code>-all</code>)</li>
+        <li>Deprecated <code>ptr</code> mechanisms and unknown syntax</li>
+      </ul>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/spf-flattener/">SPF Flattener</a>, fix the 10-lookup limit automatically</li>
+        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a></li>
+        <li><a href="/dkim-record-checker/">DKIM Record Checker</a></li>
+        <li><a href="/spf-record/">SPF records explained</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { fetchSpf, parseSpf } from '../lib/spf';
+  import { normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('spf-form') as HTMLFormElement;
+  const input = document.getElementById('spf-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('spf-status')!;
+  const lookupBox = document.getElementById('spf-lookup')!;
+  const lookupVal = document.getElementById('spf-lookup-val')!;
+  const lookupBar = document.getElementById('spf-lookup-bar')!;
+  const resultsEl = document.getElementById('spf-results')!;
+  const tbody = document.getElementById('spf-tbody')!;
+  const issuesEl = document.getElementById('spf-issues')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('bg-panel-2 text-accent border border-line', `Fetching TXT records for ${domain}…`);
+    [lookupBox, resultsEl, issuesEl].forEach((el) => el.classList.add('hidden'));
+
+    const { found, record } = await fetchSpf(domain);
+    if (!found) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', `No SPF record found on ${domain}. Receivers cannot verify senders, Gmail and Yahoo require SPF.`);
+      return;
+    }
+    const parse = parseSpf(record);
+    setStatus(
+      parse.errors.length ? 'bg-fail/10 text-fail border border-fail/30'
+        : parse.warnings.length ? 'bg-warn/10 text-warn border border-warn/30'
+        : 'bg-pass/10 text-pass border border-pass/30',
+      parse.errors.length ? 'SPF record found, with errors that must be fixed.'
+        : parse.warnings.length ? 'SPF record found, valid, with warnings.'
+        : 'SPF record found and valid.'
+    );
+
+    lookupBox.classList.remove('hidden');
+    lookupVal.textContent = `${parse.lookupCount}/10`;
+    lookupBar.style.width = `${Math.min(100, parse.lookupCount * 10)}%`;
+    lookupBar.className = `h-full rounded-full transition-all duration-700 ${parse.lookupCount > 10 ? 'bg-fail' : parse.lookupCount > 8 ? 'bg-warn' : 'bg-gradient-to-r from-accent to-violet'}`;
+
+    tbody.innerHTML = `<tr><td colspan="3"><code>${record.replace(/</g, '&lt;')}</code></td></tr>`;
+    for (const t of parse.terms) {
+      tbody.insertAdjacentHTML('beforeend', `<tr>
+        <td class="font-mono text-xs ${t.countsLookup ? 'text-warn' : 'text-accent'}">${t.term}</td>
+        <td class="text-ink-dim">${t.kind}</td>
+        <td class="text-ink-dim">${t.note}</td>
+      </tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+
+    issuesEl.innerHTML = '';
+    for (const err of parse.errors) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail">✕ ${err}</div>`);
+    for (const w of parse.warnings) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn">▲ ${w}</div>`);
+    if (parse.errors.length || parse.warnings.length) issuesEl.classList.remove('hidden');
+  });
+</script>

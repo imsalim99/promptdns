@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="AI Crawler Checker, Is Your Site Blocking AI Bots?"
+  description="Free AI crawler checker: see whether GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot and other AI bots are allowed or blocked by your robots.txt."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">AI Crawler Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Crawler Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Audit any domain's robots.txt against 12 AI crawlers, find out who can train on and cite your content, and who's blocked.</p>
+
+    <ToolPanel>
+      <form id="aic-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="aic-domain">Domain</label>
+        <input id="aic-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check AI Access</button>
+      </form>
+
+      <div id="aic-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="aic-summary" class="mt-4 hidden grid gap-3 sm:grid-cols-4"></div>
+
+      <div id="aic-results" class="mt-6 hidden grid gap-2"></div>
+
+      <div id="aic-raw" class="mt-6 hidden">
+        <p class="mb-2 text-sm font-semibold text-ink">robots.txt (parsed rules per bot)</p>
+        <div id="aic-raw-content" class="grid gap-1"></div>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>Why this matters</h2>
+      <p>AI assistants (ChatGPT, Claude, Perplexity, Gemini) decide what they can read from your site using robots.txt user-agent rules like <code>GPTBot</code> and <code>Google-Extended</code>. Blocking them stops training and retrieval; allowing them puts your content into answers and citations. There is no single right answer, but you should decide deliberately, not by accident.</p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ai-crawlers-list/">The complete list of AI crawlers</a> (guide)</li>
+        <li><a href="/how-to-block-ai-crawlers/">How to block AI crawlers</a> / <a href="/how-to-allow-ai-crawlers/">allow them</a></li>
+        <li><a href="/llms-txt-generator/">llms.txt Generator</a>, the complement to robots.txt</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { fetchText, hostOf } from '../lib/proxy';
+  import { parseRobots, verdictsFor, looksLikeHtml } from '../lib/robots';
+
+  const form = document.getElementById('aic-form') as HTMLFormElement;
+  const input = document.getElementById('aic-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('aic-status')!;
+  const summaryEl = document.getElementById('aic-summary')!;
+  const resultsEl = document.getElementById('aic-results')!;
+  const rawEl = document.getElementById('aic-raw')!;
+  const rawContent = document.getElementById('aic-raw-content')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const host = hostOf(input.value);
+    if (!host.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    [summaryEl, resultsEl, rawEl].forEach((el) => el.classList.add('hidden'));
+    setStatus('bg-panel-2 text-accent border border-line', `Fetching https://${host}/robots.txt…`);
+
+    const res = await fetchText(`https://${host}/robots.txt`);
+    if (!res.ok || looksLikeHtml(res.text)) {
+      setStatus('bg-warn/10 text-warn border border-warn/30', `No readable robots.txt at ${host}, with no rules, every AI crawler is allowed by default.`);
+      return;
+    }
+
+    const { groups } = parseRobots(res.text);
+    const verdicts = verdictsFor(groups);
+    const allowed = verdicts.filter((v) => v.status === 'allowed' || v.status === 'no-rules').length;
+    const blocked = verdicts.filter((v) => v.status === 'blocked').length;
+    const partial = verdicts.filter((v) => v.status === 'partial').length;
+
+    setStatus('bg-pass/10 text-pass border border-pass/30', `robots.txt found (${res.via === 'relay' ? 'fetched via relay' : 'fetched directly'}), ${allowed} AI bots allowed, ${blocked} blocked.`);
+
+    summaryEl.innerHTML = '';
+    for (const [l, v, cls] of [['Allowed', String(allowed), 'text-pass'], ['Blocked', String(blocked), 'text-fail'], ['Partial', String(partial), 'text-warn'], ['Bots tracked', '12', 'text-accent']] as [string, string, string][]) {
+      summaryEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold ${cls}">${v}</div><div class="text-xs text-ink-faint">${l}</div></div>`);
+    }
+    summaryEl.classList.remove('hidden');
+
+    resultsEl.innerHTML = '';
+    for (const v of verdicts) {
+      const badge = v.status === 'blocked'
+        ? '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">BLOCKED</span>'
+        : v.status === 'partial'
+        ? '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">PARTIAL</span>'
+        : '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">ALLOWED</span>';
+      const note = v.status === 'no-rules' ? '<span class="text-xs text-ink-faint">no specific or wildcard rules, allowed by default</span>' : '';
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel/60 px-4 py-3">
+        <div>
+          <span class="font-mono text-sm text-ink">${v.bot.name}</span>
+          <span class="ml-2 text-xs text-ink-faint">${v.bot.vendor}, ${v.bot.purpose}</span>
+          ${note}
+        </div>
+        ${badge}
+      </div>`);
+    }
+    resultsEl.classList.remove('hidden');
+
+    rawContent.innerHTML = '';
+    for (const v of verdicts) {
+      if (v.rules.length) {
+        rawContent.insertAdjacentHTML('beforeend', `<div class="rounded border border-line bg-panel-2 p-3"><p class="font-mono text-xs text-accent">${v.bot.name}</p>${v.rules.map((r) => `<p class="font-mono text-xs text-ink-dim">${r}</p>`).join('')}</div>`);
+      }
+    }
+    rawEl.classList.remove('hidden');
+  });
+</script>

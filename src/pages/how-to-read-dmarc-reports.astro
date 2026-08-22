@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="How to Read DMARC Reports (XML Made Simple)"
+  description="How to read DMARC aggregate reports: the XML fields that matter, what pass/fail rows tell you, and how to turn reports into enforcement."
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Reading DMARC Reports</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Read DMARC Reports</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DMARC aggregate reports are XML files mailed to your <code class="font-mono text-accent-soft">rua</code>
+      address daily. Raw, they're unreadable; understood, they're a complete map of everything
+      sending mail as your domain, legitimate or not.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>The fields that matter</h2>
+      <ul>
+        <li><strong>report_metadata</strong>: who sent the report (Google, Microsoft...) and the date range it covers.</li>
+        <li><strong>policy_published</strong>: the DMARC policy they saw, confirming your DNS is what you think it is.</li>
+        <li><strong>Each record row</strong>: <code>source_ip</code> (who sent), <code>count</code> (how many messages), <code>header_from</code> (the From domain shown to users), and <code>auth_results</code> (raw SPF/DKIM outcomes).</li>
+        <li><strong>policy_evaluated</strong>: what the provider actually did: <code>disposition</code> none/quarantine/reject, plus aligned DKIM/SPF verdicts.</li>
+      </ul>
+
+      <h2>How to read a row</h2>
+      <p>
+        Alignment is the story. A row with SPF pass but DMARC fail usually means the sender is
+        legitimate but not aligned (a SaaS sending from its own domain); fix it by configuring that
+        service to send as yours. A row with everything failing from an IP you don't recognize is
+        spoofing, and your reason to move past <code>p=none</code>.
+      </p>
+
+      <h2>The weekly rhythm</h2>
+      <ol class="list-decimal space-y-1.5 pl-5">
+        <li>Collect the attachments (XML or zipped XML) each day or week.</li>
+        <li>Group rows by source IP and count: your top senders surface immediately.</li>
+        <li>Fix every legitimate source until pass rates sit at 100%.</li>
+        <li>Step the policy up: quarantine, then reject.</li>
+      </ol>
+
+      <h2>Skip the XML entirely</h2>
+      <p>
+        Drop any report file into the <a href="/dmarc-report-analyzer/">free DMARC report analyzer</a>:
+        summary cards, pass rates, top sources, and the full records table, parsed in your browser.
+      </p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dmarc/">DMARC: the complete guide</a></li>
+        <li><a href="/dmarc-record-generator/">DMARC record generator</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

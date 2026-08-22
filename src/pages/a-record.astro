@@ -1,0 +1,100 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "A",
+ "title": "A Record: What It Is, How It Works, and How to Fix It",
+ "description": "A records explained in depth: how IPv4 mapping works, anatomy, TTL strategy, round-robin behavior, common mistakes, and how to check yours live.",
+ "intro": "The A record is DNS's most fundamental answer: it maps a hostname to the IPv4 address of the server that hosts it. Every website visit, API call, and ping starts with someone, somewhere, reading an A record.",
+ "deepDive": [
+  "When a resolver asks your nameserver for example.com, the A record is the reply that says '203.0.113.10'. That single line is the difference between a name that works and a name that goes nowhere. Everything else in your zone, mail routing, security signatures, verification tokens, exists in service of the traffic that the A record directs.",
+  "One hostname can hold multiple A records, each pointing at a different address. Resolvers return all of them and clients typically pick the first, a behavior called round-robin DNS. It distributes load across servers, but be clear about what it is not: round-robin has no health checking, so a dead server keeps receiving its share of connections until you remove the record. For real failover you need a load balancer (one A record pointing at the balancer's IP) or a DNS provider with health-checked failover.",
+  "TTL strategy matters more with A records than with almost anything else in your zone, because A records change when servers do. A 24-hour TTL is efficient for a stable site, but it converts every migration into a day of split traffic. The professional pattern: drop the TTL to 300 seconds a full day before any planned change, make the change, confirm propagation, then raise the TTL back."
+ ],
+ "example": "example.com.   3600  IN  A  203.0.113.10\nwww            3600  IN  A  203.0.113.10\napi            300   IN  A  198.51.100.7",
+ "anatomy": [
+  [
+   "example.com.",
+   "The owner name. The bare apex is often written @ in provider UIs."
+  ],
+  [
+   "3600",
+   "TTL in seconds: how long resolvers worldwide may cache this answer."
+  ],
+  [
+   "IN",
+   "The class, short for Internet. Always IN in practice."
+  ],
+  [
+   "A",
+   "The record type. Exactly one IPv4 address follows."
+  ],
+  [
+   "203.0.113.10",
+   "The address. Must be a literal IPv4, not a hostname."
+  ]
+ ],
+ "uses": [
+  "Pointing your apex and www at your web server or CDN",
+  "Pointing subdomains (api, shop, staging) at individual servers",
+  "Round-robin distribution across several identical servers",
+  "Migration cutover: change one address and traffic follows"
+ ],
+ "steps": [
+  [
+   "Look it up",
+   "Run your domain through the PromptDNS A record lookup. You should see the address you expect, with its TTL."
+  ],
+  [
+   "Compare apex and www",
+   "Check both names. If only one exists, part of your audience gets errors depending on how they type your domain."
+  ],
+  [
+   "Verify propagation after changes",
+   "Run the propagation checker: when every resolver returns the new address, the change is fully live."
+  ],
+  [
+   "Confirm the server answers",
+   "DNS only points; it does not serve. If DNS is right but the site is down, the problem is on the server or firewall."
+  ]
+ ],
+ "mistakes": [
+  "Keeping an old server's IP after a migration; lower the TTL first, then cut over, then decommission",
+  "Assuming apex and www are the same record; they are two separate entries that both need to exist (or one should redirect to the other)",
+  "Using multiple A records as failover; round-robin happily sends traffic to a dead server",
+  "Pointing an A record at an address behind a home router with a changing IP; that scenario needs dynamic DNS"
+ ],
+ "faqs": [
+  [
+   "Can an A record point to a domain name?",
+   "No. A records point to literal IPv4 addresses only. If you want name-to-name pointing, that is a CNAME record."
+  ],
+  [
+   "How many A records can one name have?",
+   "As many as you like, and resolvers return them all. Multiple records mean round-robin distribution, not redundancy."
+  ],
+  [
+   "Why do I see the old IP after changing my A record?",
+   "Caches. Resolvers keep the previous answer until its TTL expires. Check the propagation checker and flush your local cache."
+  ],
+  [
+   "Do I need an A record if I use a CDN?",
+   "Yes in some form: either an A record at the CDN's edge IPs, or a CNAME/ALIAS to the CDN hostname. Follow your CDN's DNS instructions."
+  ]
+ ],
+ "related": [
+  [
+   "AAAA records (IPv6)",
+   "/aaaa-record/"
+  ],
+  [
+   "CNAME vs A records",
+   "/cname-record/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

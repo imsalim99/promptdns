@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="BIMI: Display Your Logo in Inboxes" description="BIMI explained: the DNS record that puts your verified logo next to your email, VMC requirements, and provider support.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">BIMI</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">BIMI: Your Logo in the Inbox</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      BIMI (Brand Indicators for Message Identification) lets participating mailbox providers show
+      your verified logo beside your authenticated email. It is the visible reward for having your
+      invisible authentication in order.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>Prerequisites (strictly enforced)</h2>
+      <ol class="list-decimal space-y-1.5 pl-5">
+        <li>SPF and DKIM passing with alignment.</li>
+        <li><a href="/dmarc/">DMARC</a> at enforcement: p=quarantine or p=reject at minimum for major providers.</li>
+        <li>A BIMI TXT record at <code>default._domainkey</code>-style location: <code>yourdomain._bimi</code>, carrying <code>v=BIMI1; l=...</code> pointing to your SVG logo.</li>
+        <li>A Verified Mark Certificate (VMC) for the big providers: a trademark-verified certificate proving you own the logo, purchased from a CA (DigiCert, Entrust).</li>
+      </ol>
+      <h2>The record</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">yourdomain.com.  IN  TXT  "v=BIMI1; l=https://yourdomain.com/logo.svg; a=https://yourdomain.com/vmc.pem"</pre>
+      <p>
+        The logo must be a tiny SVG in the BIMI profile spec; the <code>a=</code> tag carries the VMC.
+        Providers cache aggressively, so changes take time to appear.
+      </p>
+      <h2>Who shows it</h2>
+      <p>
+        Support is strongest in Apple Mail (iOS/macOS), Gmail (with VMC), Yahoo, and Fastmail.
+        Microsoft's rollout has been partial. Where supported, the effect is real: brand recognition
+        in the inbox row, and spoofers without your DNS cannot imitate it.
+      </p>
+      <h2>Is it worth it?</h2>
+      <p>
+        If you send significant volume to consumer inboxes and already run DMARC at enforcement, the
+        marginal cost is one SVG and a VMC fee. If you are still at p=none, BIMI is a later stop on
+        the same road: use the <a href="/dmarc-record-checker/">DMARC checker</a> to see where you stand.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dmarc/">DMARC explained</a></li>
+        <li><a href="/mta-sts/">MTA-STS</a>, the other advanced email-auth extension</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const sections = [
+  { href: '/what-is-dns/', title: 'What Is DNS?', desc: 'The Domain Name System explained from first principles.' },
+  { href: '/how-dns-works/', title: 'How DNS Works', desc: 'The step-by-step resolution walkthrough, from browser to authoritative server.' },
+  { href: '/dns-records/', title: 'DNS Record Types', desc: 'Every record type, A, AAAA, CNAME, MX, TXT, NS, SOA, PTR and more.' },
+  { href: '/dns-propagation/', title: 'DNS Propagation', desc: 'Why changes take time and how to make them faster.' },
+  { href: '/email-authentication/', title: 'Email Authentication', desc: 'SPF, DKIM, and DMARC, stop your mail going to spam.' },
+];
+---
+<BaseLayout
+  title="DNS: The Complete Guide (Hub)"
+  description="Learn DNS from zero: how the Domain Name System works, every record type, propagation, security, and email authentication, the complete guide for webmasters."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Guide</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS: The Complete Guide</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DNS (the Domain Name System) is the internet's address book: it translates domain names
+      like <code class="rounded border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-sm text-accent-soft">promptdns.com</code>
+      into the IP addresses computers use to connect. This hub connects every part of the system,
+      how it works, every record type, how to fix it when it breaks, and how to harden it.
+    </p>
+
+    <div class="mt-10 grid gap-4">
+      {sections.map((s) => (
+        <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
+          <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <h2 class="font-display font-semibold text-ink">Quick check</h2>
+      <p class="mt-1 text-sm text-ink-dim">
+        Want to test a domain right now? Run the
+        <a href="/dns-propagation-checker/" class="font-medium text-accent hover:text-accent-soft">DNS propagation checker</a>
+        or scan your whole domain from the <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

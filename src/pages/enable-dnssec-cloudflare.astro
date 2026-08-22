@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="How to Enable DNSSEC in Cloudflare" description="Enable DNSSEC in Cloudflare step by step: get the DS record, publish it at your registrar, and verify the chain of trust.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNSSEC in Cloudflare</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Enable DNSSEC in Cloudflare</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Cloudflare signs your zone automatically; your half of the job is publishing the DS record at
+      your registrar. Get the order right and the whole thing is a five-minute toggle.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>Step by step</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Open DNS settings</strong> in the Cloudflare dashboard for your domain and scroll to DNSSEC. Click Enable.</li>
+        <li><strong>Copy the DS record</strong> Cloudflare displays: key tag, algorithm (13), digest type (2), and the digest. Cloudflare also shows registrar-specific instructions for major registrars.</li>
+        <li><strong>Publish the DS at your registrar</strong> (where you bought the domain, not where DNS is hosted). Most registrars have an "Add DS record" flow under domain settings; some import it from the parent automatically once you paste the tuple.</li>
+        <li><strong>Wait for propagation</strong>, up to a few hours for the parent zone to serve the new DS.</li>
+        <li><strong>Verify the chain</strong>: our <a href="/dns-record-lookup/">record lookup</a> with DS selected should return the record, and your site should resolve normally through validating resolvers (Quad9, Cloudflare's own 1.1.1.1).</li>
+        <li><strong>Watch the dashboard status</strong> move to Active. If it stays "Pending", the registrar side hasn't landed.</li>
+      </ol>
+      <h2>The one warning that matters</h2>
+      <p>
+        Cloudflare handles key rotation for you. If you ever move DNS away from Cloudflare,
+        <strong>disable DNSSEC and wait out the DS TTL before switching nameservers</strong>: a
+        parent DS pointing at servers that no longer sign your zone is the classic domain-wide
+        SERVFAIL. See <a href="/what-is-dnssec/">what is DNSSEC</a> for the full mechanism.
+      </p>
+      <h2>Troubleshooting</h2>
+      <ul>
+        <li><em>Stuck on pending:</em> the DS at the registrar is missing a field or mangled; re-copy the tuple.</li>
+        <li><em>SERVFAIL after enabling:</em> almost always digest mismatch; compare the DS at the parent with the one Cloudflare shows.</li>
+        <li><em>Registrar without DS support:</em> rare now, but transfer to one that supports DNSSEC delegation.</li>
+      </ul>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ds-record/">DS records</a> and <a href="/dnskey-record/">DNSKEY records</a></li>
+        <li><a href="/what-is-dnssec/">What is DNSSEC?</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

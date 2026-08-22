@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What is an MX record?', acceptedAnswer: { '@type': 'Answer', text: 'A mail exchange (MX) record tells sending mail servers which host accepts email for your domain, and in what order to try them (the priority number).' } },
+    { '@type': 'Question', name: 'What MX priority means?', acceptedAnswer: { '@type': 'Answer', text: 'Lower numbers are tried first. 10 mail.example.com and 20 backup.example.com means: deliver to the priority-10 host; only use 20 if 10 is unreachable.' } },
+    { '@type': 'Question', name: 'Can I point MX at a CNAME?', acceptedAnswer: { '@type': 'Answer', text: 'No, MX records must point to a hostname that resolves to an A/AAAA record, never directly at another CNAME or an IP address.' } },
+  ],
+};
+---
+<BaseLayout title="MX Record: Mail Exchange Records Explained" description="MX records explained: what they do, how priority numbers work, common mistakes, and how to check yours in seconds." schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">MX Record</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MX Record: Mail Exchange Records Explained</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      The MX record answers one question for your domain: <strong class="text-ink">when someone sends
+      mail to you@yourdomain.com, which server receives it?</strong> Get it wrong and email silently
+      bounces, or worse, disappears.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>What an MX record looks like</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">example.com.  3600  IN  MX  10  mail1.example.com.
+example.com.  3600  IN  MX  20  mail2.example.com.</pre>
+      <p>
+        The parts: the domain, the TTL (3600 s), the class (IN), the type (MX), the
+        <strong>priority</strong> (10 and 20), and the <strong>mail host</strong>. Priority is
+        "lower wins": senders try the 10 first, and only fall back to 20 if it doesn't answer.
+        Equal priorities spread load across hosts.
+      </p>
+
+      <h2>The three rules people break</h2>
+      <ul>
+        <li><strong>MX must point to a name, not an IP.</strong> <code>MX 10 192.0.2.1</code> is invalid, point it at a hostname that has an A record.</li>
+        <li><strong>MX must not point at a CNAME.</strong> Many providers reject it (RFC 2181 §10.3).</li>
+        <li><strong>The target must resolve.</strong> A dangling mail host means bounced mail. Verify the target's A record after any migration.</li>
+      </ul>
+
+      <h2>How to check your MX records</h2>
+      <p>
+        Use the <a href="/dns-record-lookup/">DNS record lookup</a> with MX selected, you'll see every
+        record with its priority, straight from a public resolver. To see whether your new MX values
+        have spread everywhere yet, run the same check in the
+        <a href="/dns-propagation-checker/">propagation checker</a>.
+      </p>
+
+      <h2>Common symptoms of MX problems</h2>
+      <ul>
+        <li>Incoming mail bounces with "no MX records" or "host not found", records missing or misspelled.</li>
+        <li>Mail goes to the old server after a migration, old MX cached; lower your TTL before migrating.</li>
+        <li>Some providers work, others don't, mixed priorities or a broken backup host.</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/mx-record-not-working/">MX record not working? Diagnosis</a></li>
+        <li><a href="/spf-record/">SPF records</a>, who may <em>send</em> as you (MX handles receiving)</li>
+        <li><a href="/how-to-add-mx-record/">How to add MX records</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

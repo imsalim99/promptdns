@@ -1,0 +1,91 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "DNSKEY",
+ "title": "DNSKEY Records: DNSSEC's Public Keys",
+ "description": "DNSKEY records explained in depth: flags and the KSK/ZSK split, algorithm choices, rollover strategies, and validator expectations.",
+ "intro": "DNSKEY records publish the public halves of your zone's DNSSEC signing keys. Validators fetch them, match the key-signing key against the parent's DS record, and use the zone-signing key to verify the signatures on everything else.",
+ "deepDive": [
+  "Two roles, two keys, in any properly run zone. The key-signing key (KSK, flags 257) exists to sign the DNSKEY record set itself and is the key whose digest appears in the parent's DS. The zone-signing key (ZSK, flags 256) signs the everyday records. Splitting duties limits how often the operationally-risky KSK changes, while the ZSK can rotate freely.",
+  "Algorithms are a live compatibility question. RSA/SHA-256 (8) is the universal default; ECDSA P-256 (13) delivers equivalent security with far smaller records, which matters because big DNSSEC responses need to fit in packets; Ed25519 (15) is modern but still unevenly validated. Whatever you choose, the algorithm here must match what the DS record in the parent declares.",
+  "Rollover is where DNSKEY knowledge pays for itself. The two standard methods are pre-publish (introduce the new key, wait, switch signing, wait, retire the old) and double-signing (sign with both during the transition). Both exist to keep the chain unbroken for resolvers at every point in the TTL window; skipping the waits is how zones SERVFAIL themselves."
+ ],
+ "example": "example.com.  3600  IN  DNSKEY  257 3 13 ( base64-KSK... )\nexample.com.  3600  IN  DNSKEY  256 3 13 ( base64-ZSK... )",
+ "anatomy": [
+  [
+   "257 / 256",
+   "Flags: 257 marks the KSK (matches the parent's DS), 256 the ZSK."
+  ],
+  [
+   "3",
+   "Protocol field; fixed at 3."
+  ],
+  [
+   "13",
+   "Algorithm: 8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519."
+  ],
+  [
+   "(key)",
+   "The base64 public key material."
+  ]
+ ],
+ "uses": [
+  "Completing the DNSSEC validation chain (KSK to DS, ZSK to records)",
+  "Key rollovers without breaking validators",
+  "Auditing that the registrar-published keys match the zone's"
+ ],
+ "steps": [
+  [
+   "Inspect the key set",
+   "A DNSKEY lookup on your domain shows flags and algorithms at a glance."
+  ],
+  [
+   "Match KSK to DS",
+   "The 257-flagged key's tag should correspond to the DS at the parent; mismatch means a broken chain."
+  ],
+  [
+   "Prefer algorithm 13",
+   "Unless you have legacy constraints, ECDSA keeps responses small and validation fast."
+  ],
+  [
+   "Rotate with waits",
+   "Follow pre-publish or double-sign timing; the waits are the safety."
+  ]
+ ],
+ "mistakes": [
+  "Retiring a KSK whose digest the parent still references",
+  "Swapping flags so the DS-matching key signs records instead",
+  "1024-bit RSA keys: weak and inflated; prefer algorithm 13 or 15",
+  "Rollovers without waiting out TTLs at each phase"
+ ],
+ "faqs": [
+  [
+   "What is the difference between KSK and ZSK?",
+   "The KSK signs the key set and matches the parent's DS; the ZSK signs the zone's records. Separation limits risky KSK changes."
+  ],
+  [
+   "Do I ever edit DNSKEY records by hand?",
+   "Almost never. Signing software and DNS providers manage them; your job is publishing the DS and not breaking rotation order."
+  ],
+  [
+   "Which algorithm should I use?",
+   "ECDSA P-256 (13) for new deployments: strong, compact, widely validated."
+  ],
+  [
+   "Can DNSSEC work without a DS at the parent?",
+   "As an island that validators won't trust. The chain from the root is the point."
+  ]
+ ],
+ "related": [
+  [
+   "DS records",
+   "/ds-record/"
+  ],
+  [
+   "What is DNSSEC",
+   "/what-is-dnssec/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

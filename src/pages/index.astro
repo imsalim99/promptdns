@@ -1,0 +1,330 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroCanvas from '../components/HeroCanvas.astro';
+import DomainScanner from '../components/DomainScanner.astro';
+import { TOOL_CATEGORIES, TOTAL_TOOLS } from '../data/tools';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Are the tools really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, every checker, lookup, and generator on PromptDNS is free forever, with no account and no limits. Lookups run in your browser against public DNS-over-HTTPS resolvers.' } },
+    { '@type': 'Question', name: 'What do paid plans add?', acceptedAnswer: { '@type': 'Answer', text: 'Paid plans automate what you shouldn\u2019t have to remember: continuous DMARC and DNS monitoring, record-change alerts, SPF flattening with hosted records, AI readiness reports, and white-label PDFs for agencies.' } },
+    { '@type': 'Question', name: 'Do you store the domains I look up?', acceptedAnswer: { '@type': 'Answer', text: 'No. Lookups run client-side in your browser, domains are not sent to our servers, logged, or stored. See our privacy policy.' } },
+    { '@type': 'Question', name: 'Who is PromptDNS for?', acceptedAnswer: { '@type': 'Answer', text: 'Webmasters, developers, sysadmins, and agencies who run domains and email, anyone who needs to check, understand, or fix DNS and email authentication.' } },
+    { '@type': 'Question', name: 'How is this different from MXToolbox or EasyDMARC?', acceptedAnswer: { '@type': 'Answer', text: 'They cover one slice each, MXToolbox aging tools, EasyDMARC email-auth only. PromptDNS spans the whole domain layer: DNS records, propagation, email authentication, blocklists, and AI readiness, with every tool paired with a deeper guide.' } },
+    { '@type': 'Question', name: 'Can I use the tools commercially?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use them for client work, internal ops, or education, free of charge. Agencies can also white-label automated reports on the Business plan.' } },
+  ],
+};
+
+const stats = [
+  [String(TOTAL_TOOLS), 'tools live, all free'],
+  ['100%', 'browser-side lookups'],
+  ['0', 'signups required'],
+  ['12', 'record types supported'],
+];
+
+const howItWorks = [
+  ['Scan your domain', 'Type any domain into the analyzer. We check its DNS records, email authentication, and DNSSEC live, in seconds, without an account.'],
+  ['Read the verdict', 'A clear score, letter grade, and per-check cards show exactly what passes, what\u2019s missing, and why it matters for deliverability and security.'],
+  ['Fix and monitor', 'Follow the linked guides and tools to fix each issue, then let automated monitoring watch your domain and alert you when anything changes.'],
+];
+
+const products = [
+  {
+    name: 'PromptDNS Monitor', price: 'from $19/mo', tag: 'Core SaaS',
+    desc: 'Continuous DMARC, SPF, DKIM, and DNSSEC monitoring for every domain you run, with spoofing alerts and weekly summaries.',
+    features: ['Aggregate report ingestion', 'Failure + new-sender alerts', 'Enforcement roadmap tracking'],
+  },
+  {
+    name: 'SPF Manager', price: 'Pro feature', tag: 'Most sticky',
+    desc: 'Automatic SPF flattening and hosted records that always stay under the 10-lookup limit, even when your providers change their IPs.',
+    features: ['Managed flattening', 'Upstream change detection', 'One-click publishing'],
+  },
+  {
+    name: 'DNS Change Alerts', price: 'Starter+', tag: 'Webmaster pick',
+    desc: 'Records change, hijacks happen, and expirations sneak up. We watch your zone and tell you within minutes, not after customers do.',
+    features: ['Record-change detection', 'Nameserver drift', 'Domain expiry warnings'],
+  },
+  {
+    name: 'AI Readiness Monitor', price: 'Pro feature', tag: 'Unique',
+    desc: 'The product nobody else sells: weekly AI-visibility reports, crawler activity, robots/llms.txt compliance, and answer-engine citations.',
+    features: ['AI crawler tracking', 'llms.txt health', 'Citation monitoring'],
+  },
+  {
+    name: 'White-label Reports', price: 'Business', tag: 'For agencies',
+    desc: 'Branded PDF domain-health reports covering DNS, email auth, and AI readiness, the monthly report your clients actually read.',
+    features: ['Your logo, your domain', 'Scheduled delivery', 'Multi-client dashboard'],
+  },
+];
+
+const whyUs = [
+  ['Whole domain layer', 'DNS + email auth + blocklists + AI readiness in one place, not three different sites.'],
+  ['Privacy by design', 'Lookups run in your browser over public DoH resolvers. Nothing is logged.'],
+  ['Tools with teachers', 'Every tool links a real guide: syntax references, provider steps, fix-first troubleshooting.'],
+  ['Free means free', 'No trial timers, no locked columns, no signup walls on any tool, ever.'],
+  ['Live data, not stock', 'Results come from real queries at click time, including your own domain in every guide.'],
+  ['Built for the AI era', 'The first toolbox that treats AI crawlers, llms.txt, and answer engines as first-class DNS citizens.'],
+];
+
+const personas = [
+  ['Webmasters & site owners', 'Point domains safely, survive migrations, and know why a site stopped resolving, without reading RFCs.'],
+  ['Developers & sysadmins', 'Precise record-level answers, TTL-aware propagation checks, and zone diagnostics in one toolbox.'],
+  ['Agencies & email teams', 'Multi-domain monitoring, white-label reports, and the deliverability stack that keeps client mail out of spam.'],
+];
+
+const faqs = [
+  ['Are the tools really free?', 'Yes, every checker, lookup, and generator is free forever, with no account and no limits. Lookups run in your browser against public DNS-over-HTTPS resolvers; nothing is logged.'],
+  ['What do paid plans add?', 'Automation you shouldn\u2019t have to remember: continuous monitoring, alerts, hosted SPF records, AI readiness reports, and white-label PDFs. One-off checks will never be paywalled.'],
+  ['Do you store the domains I look up?', 'No. Lookups happen client-side, domains never reach our servers. See the privacy policy for the full picture.'],
+  ['How is this different from MXToolbox or EasyDMARC?', 'They each cover a slice. MXToolbox is aging infrastructure tools; EasyDMARC is email-auth only. PromptDNS spans the whole domain layer, DNS records, propagation, email authentication, blocklists, and AI readiness, with every tool paired with a deeper guide.'],
+  ['Can I use the tools for client work?', 'Yes, commercially too. Agencies can add white-label automated reports on the Business plan.'],
+];
+
+const toolDir = TOOL_CATEGORIES.map(({ cat, note, tools }) => ({ cat, note, tools: tools.map((t) => [t.name, t.href, t.desc]) }));
+const ticker = [
+  'DNS Propagation', 'SPF · DKIM · DMARC', 'DNSSEC', 'MX Records', 'llms.txt', 'AI Crawlers',
+  'PTR / Reverse DNS', 'CAA Records', 'Email Blacklists', 'TTL Optimization', 'AI Readiness', 'Nameservers',
+];
+---
+<BaseLayout
+  title="Free DNS & Email Authentication Tools"
+  description="Scan your domain's security, check DNS propagation, SPF, DKIM, DMARC, blacklists, and AI crawler access, free, instant, no signup."
+  schema={[faqSchema]}
+>
+  <!-- ============ HERO ============ -->
+  <section class="relative overflow-hidden">
+    <!-- CSS aura fallback layer (also visible under WebGL) -->
+    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+      <div class="aura aura-1 -left-40 -top-40"></div>
+      <div class="aura aura-2 -right-32 top-10"></div>
+      <div class="aura aura-3 left-1/3 bottom-0"></div>
+      <div class="aura aura-4 -left-20 bottom-10"></div>
+    </div>
+    <HeroCanvas />
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas/10 via-transparent to-canvas"></div>
+
+    <div class="relative mx-auto max-w-5xl px-4 pb-20 pt-24 text-center lg:pt-32">
+      <p class="reveal reveal-1 mx-auto w-fit rounded-full border border-line bg-panel/60 px-4 py-1.5 font-mono text-xs text-accent-soft backdrop-blur">
+        <span class="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-pass align-middle"></span>
+        DNS · EMAIL AUTH · AI READINESS
+      </p>
+
+      <h1 class="reveal reveal-2 font-display mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
+        Your domain's health,<br /><span class="gradient-text">decoded in seconds</span>
+      </h1>
+
+      <p class="reveal reveal-3 mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-dim">
+        Scan your DNS records, email authentication, and DNSSEC in one pass, then dig deeper
+        with 54 free tools and the most complete DNS guide on the internet.
+      </p>
+
+      <div class="reveal reveal-4 mt-10">
+        <DomainScanner />
+      </div>
+
+      <!-- Stats -->
+      <div class="reveal reveal-4 mx-auto mt-12 grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line/60 sm:grid-cols-4">
+        {stats.map(([v, l]) => (
+          <div class="bg-panel/80 px-4 py-5 backdrop-blur">
+            <div class="font-display text-2xl font-bold text-accent">{v}</div>
+            <div class="mt-0.5 text-xs text-ink-faint">{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TICKER ============ -->
+  <section class="relative overflow-hidden border-y border-line/60 bg-panel/40 py-4" aria-hidden="true">
+    <div class="ticker-track font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+      {[...ticker, ...ticker].map((t) => <span class="flex items-center gap-3 whitespace-nowrap"><span class="text-accent">//</span>{t}</span>)}
+    </div>
+  </section>
+
+  <!-- ============ TOOLS DIRECTORY ============ -->
+  <section id="tools" class="mx-auto max-w-7xl scroll-mt-24 px-4 py-20 lg:px-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">The toolbox</p>
+        <h2 class="font-display mt-2 text-3xl font-bold tracking-tight">Every tool, free forever</h2>
+        <p class="mt-2 text-sm text-ink-dim">
+          100% free, no account, no limits, lookups run in your browser.
+          Subscriptions only add <a href="/pricing/" class="text-accent hover:text-accent-soft">monitoring and alerts</a>.
+        </p>
+      </div>
+      <a href="/tools/" class="rounded-full border border-pass/30 bg-pass/10 px-3 py-1 font-mono text-xs text-pass hover:border-pass/60">56 tools — browse all →</a>
+    </div>
+
+    {toolDir.map((group) => (
+      <div class="mt-10">
+        <div class="flex flex-wrap items-baseline gap-3">
+          <h3 class="font-display text-lg font-bold text-ink">{group.cat}</h3>
+          <span class="text-xs text-ink-faint">{group.note}</span>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {group.tools.map(([title, href, desc]) => (
+            <a href={href} class="group relative overflow-hidden rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.25)]">
+              <h4 class="font-display font-semibold text-ink group-hover:text-accent">{title}</h4>
+              <p class="mt-2 text-[13px] leading-relaxed text-ink-dim">{desc}</p>
+              <span class="mt-3 inline-block font-mono text-xs text-accent opacity-0 transition-opacity group-hover:opacity-100">run tool →</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="border-t border-line/60 bg-panel/30">
+    <div class="mx-auto max-w-7xl px-4 py-20 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">How it works</p>
+        <h2 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">From "something's broken" to "here's the fix"</h2>
+      </div>
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        {howItWorks.map(([title, desc], i) => (
+          <div class="relative rounded-xl border border-line bg-panel/60 p-6">
+            <span class="font-display absolute -top-4 left-6 grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet text-sm font-bold text-canvas">{i + 1}</span>
+            <h3 class="font-display mt-3 text-lg font-semibold text-ink">{title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-ink-dim">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCTS ============ -->
+  <section id="products" class="scroll-mt-24">
+    <div class="mx-auto max-w-7xl px-4 py-20 lg:px-8">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="max-w-2xl">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-violet-soft">Products</p>
+          <h2 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Free tools answer today's question. Products watch every day after.</h2>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+            The tools are free forever. What we sell is <strong class="text-ink">automation, monitoring, and alerts</strong>,
+            the work you shouldn't have to remember to do manually.
+          </p>
+        </div>
+        <a href="/pricing/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">See pricing</a>
+      </div>
+      <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {products.map((p, i) => (
+          <div class:list={[
+                'flex flex-col rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1',
+                i === 1 ? 'border-accent/50 bg-gradient-to-b from-accent/10 to-violet/10 shadow-[0_0_60px_-20px_rgba(34,211,238,0.4)]' : 'border-line bg-panel/60 hover:border-violet/40',
+              ]}>
+            <div class="flex items-center justify-between">
+              <h3 class="font-display text-lg font-semibold text-ink">{p.name}</h3>
+              <span class="rounded-full border border-line bg-panel-2 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ink-dim">{p.tag}</span>
+            </div>
+            <p class="mt-1 font-mono text-xs text-accent">{p.price}</p>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">{p.desc}</p>
+            <ul class="mt-4 flex-1 space-y-2 text-sm text-ink-dim">
+              {p.features.map((f) => <li class="flex gap-2"><span class="text-pass">✔</span>{f}</li>)}
+            </ul>
+            <a href="/pricing/" class="mt-5 inline-block font-mono text-xs text-accent hover:text-accent-soft">plan details →</a>
+          </div>
+        ))}
+        <!-- Managed services card fills the grid -->
+        <div class="flex flex-col justify-center rounded-2xl border border-dashed border-line p-6 text-center">
+          <h3 class="font-display text-lg font-semibold text-ink">Managed enforcement</h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-dim">We get you from p=none to p=reject, records, providers, and reports handled for you.</p>
+          <a href="/contact/" class="mt-4 font-mono text-xs text-accent hover:text-accent-soft">talk to us →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY PROMPTDNS ============ -->
+  <section class="border-t border-line/60 bg-panel/30">
+    <div class="mx-auto max-w-7xl px-4 py-20 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Why PromptDNS</p>
+        <h2 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Built to be the last DNS tab you keep open</h2>
+      </div>
+      <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {whyUs.map(([title, desc]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <h3 class="font-display font-semibold text-ink">{title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-ink-dim">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PERSONAS ============ -->
+  <section>
+    <div class="mx-auto max-w-7xl px-4 py-20 lg:px-8">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Built for</p>
+        <h2 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Whoever owns the domain, owns the problem</h2>
+      </div>
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        {personas.map(([title, desc]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-6 text-center">
+            <h3 class="font-display text-lg font-semibold text-ink">{title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-ink-dim">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="border-t border-line/60 bg-panel/30">
+    <div class="mx-auto grid max-w-7xl gap-6 px-4 py-20 md:grid-cols-3 lg:px-8">
+      {[
+        { href: '/dns/', kicker: '01, Fundamentals', title: 'Learn DNS from zero', desc: 'How the Domain Name System works, every record type, and how to fix propagation problems.' },
+        { href: '/email-authentication/', kicker: '02, Deliverability', title: 'Stop going to spam', desc: 'Set up SPF, DKIM, and DMARC the right way, step-by-step for every provider and email service.' },
+        { href: '/ai-crawler-checker/', kicker: '03, AI Search', title: 'Get ready for AI search', desc: 'Check whether AI crawlers reach your site, generate an llms.txt, and score AI readiness.' },
+      ].map((c) => (
+        <a href={c.href} class="group rounded-xl border border-line bg-panel/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet/40 hover:shadow-[0_0_40px_-12px_rgba(139,92,246,0.25)]">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-violet-soft">{c.kicker}</p>
+          <h3 class="font-display mt-3 text-xl font-bold group-hover:text-accent">{c.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
+          <span class="mt-5 inline-block font-mono text-xs text-accent">read the guide →</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="border-t border-line/60 bg-panel/30">
+    <div class="mx-auto max-w-3xl px-4 py-20 lg:px-8">
+      <div class="text-center">
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">FAQ</p>
+        <h2 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Questions people actually ask</h2>
+      </div>
+      <div class="mt-10 grid gap-3">
+        {faqs.map(([q, a]) => (
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              {q}
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL CTA ============ -->
+  <section class="relative overflow-hidden border-t border-line/60">
+    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+      <div class="aura aura-1 -left-32 -top-32"></div>
+      <div class="aura aura-2 -right-32 -bottom-32"></div>
+    </div>
+    <div class="relative mx-auto max-w-3xl px-4 py-24 text-center">
+      <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Scan your domain. It takes ten seconds.</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-ink-dim">
+        Free forever, no account, nothing logged. See what the internet's machines really see when
+        they look at your domain.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="/" class="btn-cta btn-shimmer px-7 py-3 text-base">Analyze your domain</a>
+        <a href="/dns-propagation-checker/" class="rounded-lg border border-line bg-panel/60 px-7 py-3 font-semibold text-ink transition-all hover:border-accent/40 hover:-translate-y-0.5">Browse the tools</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

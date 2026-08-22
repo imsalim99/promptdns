@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="How to Block AI Crawlers (robots.txt, WAF, and DNS)"
+  description="How to block AI crawlers: the exact robots.txt rules for GPTBot, ClaudeBot, Google-Extended and friends, plus WAF-level blocking for bots that ignore robots.txt."
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Block AI Crawlers</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Block AI Crawlers</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Keeping AI systems off your content is a three-layer decision: robots.txt for the polite ones,
+      WAF rules for the ones that misbehave, and legal/technical walls for everything else. Here is
+      each layer, exactly.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>Layer 1: robots.txt (works for compliant bots)</h2>
+      <p>Drop this block into your robots.txt to refuse the major AI training crawlers:</p>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /</pre>
+      <p>
+        Note what is deliberately absent: Googlebot. Blocking it removes you from Google Search and
+        AI Overviews alike, which almost no site wants. Verify your rules with the
+        <a href="/ai-crawler-checker/">AI Crawler Checker</a> after saving.
+      </p>
+
+      <h2>Layer 2: WAF and network rules (for bots that ignore robots.txt)</h2>
+      <p>
+        robots.txt is a convention, not a fence. Bots with poor compliance reputations (Bytespider
+        historically among them) may fetch anyway. Cloudflare customers can enable managed AI-bot
+        rules or write a firewall rule on the user-agent string; any WAF can match
+        <code>User-Agent contains "Bytespider"</code> and issue a challenge or block. This layer
+        actually enforces.
+      </p>
+
+      <h2>Layer 3: authentication and paywalls</h2>
+      <p>
+        Content behind a login is not crawled, period. If your model is subscription content, the
+        reliable block is authentication plus rate limiting, with robots rules as the courtesy layer
+        on top.
+      </p>
+
+      <h2>Before you block everything</h2>
+      <ul>
+        <li>Blocking training crawlers does not remove you from search-style answers unless you also block their search bots (OAI-SearchBot, PerplexityBot).</li>
+        <li>Aggressive wildcard Disallow rules often take out legitimate crawlers with them; test changes with the <a href="/robots-txt-checker/">robots.txt checker</a>.</li>
+        <li>Vendors also run opt-out portals (OpenAI, Google) that operate independently of robots.txt.</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/how-to-allow-ai-crawlers/">How to allow AI crawlers</a> (the other direction)</li>
+        <li><a href="/ai-crawlers-list/">The complete list of AI crawlers</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

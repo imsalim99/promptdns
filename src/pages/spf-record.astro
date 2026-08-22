@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="SPF Record: The Complete Guide" description="SPF records explained: syntax, mechanisms, qualifiers, the 10-DNS-lookup limit, and how to fix broken SPF records.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Record</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record: The Complete Guide</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      SPF (Sender Policy Framework) is a TXT record that answers: <strong class="text-ink">which mail
+      servers are allowed to send email as my domain?</strong> Receivers check it on every message;
+      fail it and your mail goes to spam, or bounces.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>Anatomy of an SPF record</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">v=spf1 include:_spf.google.com include:sendgrid.net ip4:203.0.113.10 ~all</pre>
+      <ul>
+        <li><code>v=spf1</code>, the version; must come first.</li>
+        <li><code>include:</code>, pull in another domain's allowed senders.</li>
+        <li><code>ip4:</code> / <code>ip6:</code>, literal addresses that need no lookup.</li>
+        <li><code>a</code> / <code>mx</code>, "my website's IP" / "my mail servers".</li>
+        <li><code>~all</code>, the verdict for everyone else: softfail.</li>
+      </ul>
+
+      <h2>The qualifiers</h2>
+      <p>
+        Every mechanism can be prefixed: <code>+</code> pass (default), <code>-</code> hard fail
+        (reject), <code>~</code> soft fail (accept but penalize), <code>?</code> neutral. The one
+        that matters is on <code>all</code>: <code>~all</code> is the common safe default;
+        <code>-all</code> is stricter enforcement once you're confident every sender is listed.
+      </p>
+
+      <h2>The 10-lookup limit (where SPF breaks)</h2>
+      <p>
+        Each <code>include:</code>, <code>a</code>, <code>mx</code>, <code>exists:</code>, and
+        <code>redirect=</code> costs one DNS lookup during evaluation, and the hard limit is
+        <strong>10</strong>. Exceed it and your record evaluates to <code>permerror</code>: receivers
+        treat your SPF as broken, which is worse than having none. The fix is flattening, replacing
+        includes with their IP addresses. Run the <a href="/spf-record-checker/">SPF checker</a> to
+        count your lookups, then the free <a href="/spf-flattener/">SPF flattener</a> to fix them.
+      </p>
+
+      <h2>Only one SPF record</h2>
+      <p>
+        A domain may publish exactly one <code>v=spf1</code> TXT record. Multiple records = permerror.
+        If two departments "add their own SPF", they've broken both, merge them into one record.
+      </p>
+
+      <h2>Check yours now</h2>
+      <p>
+        Paste your domain into the <a href="/spf-record-checker/">SPF Record Checker</a> for a
+        term-by-term validation, or scan everything at once from the
+        <a href="/">homepage security scanner</a> (SPF + DKIM + DMARC + DNSSEC in one pass).
+      </p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dkim/">DKIM explained</a>, cryptographic signing</li>
+        <li><a href="/dmarc/">DMARC explained</a>, the policy layer on top</li>
+        <li><a href="/spf-record-syntax/">Full SPF syntax reference</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,87 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "PTR",
+ "title": "PTR Record: Reverse DNS Explained",
+ "description": "PTR records explained in depth: the in-addr.arpa zone, who controls reverse DNS, forward-confirmed matching, and the email reputation connection.",
+ "intro": "A PTR record answers the reverse question: given an IP, which hostname? Forward DNS maps names to addresses; PTR maps addresses back to names, in special reverse zones that most people never see until email starts bouncing.",
+ "deepDive": [
+  "Reverse DNS lives in the in-addr.arpa zone (ip6.arpa for IPv6), built by reversing the IP's octets. The address 203.0.113.10 becomes 10.113.0.203.in-addr.arpa, and its PTR record names the host. Because reverse zones are delegated alongside the IP space, control sits with whoever owns the address block: your hosting provider or ISP, not your domain registrar.",
+  "That ownership detail is the number-one confusion. You cannot create a PTR record for 198.51.100.5 in your domain's DNS panel; there is no such zone there. Cloud providers expose reverse-DNS settings on the instance or reserved-IP level, and dedicated-server hosts often require a matching forward record before accepting the change.",
+  "Mail is where PTR earns its reputation. Receiving servers run forward-confirmed reverse DNS: resolve the connecting IP's PTR, then resolve that hostname forward, and require the original IP in the answer. A missing or mismatched PTR is treated as a strong spam signal by most receivers, and several major providers reject outright. For any server that sends mail, set the PTR to the HELO hostname and make its A record point back to the same address."
+ ],
+ "example": "10.113.0.203.in-addr.arpa.  3600  IN  PTR  mail.example.com.",
+ "anatomy": [
+  [
+   "in-addr.arpa",
+   "The reverse zone: the IP's octets reversed, plus this suffix."
+  ],
+  [
+   "PTR",
+   "The record type: a hostname follows."
+  ],
+  [
+   "mail.example.com.",
+   "The name the IP resolves back to; ideally one that resolves forward to the same IP."
+  ]
+ ],
+ "uses": [
+  "Email deliverability: sending IPs need forward-confirmed reverse DNS",
+  "Readable logs and abuse reports: IPs become names",
+  "Network diagnostics and identifying who operates an address"
+ ],
+ "steps": [
+  [
+   "Check the current PTR",
+   "Our IP lookup resolves reverse DNS for any address, including yours."
+  ],
+  [
+   "Set it at the IP owner",
+   "In your cloud provider's panel (EC2 Elastic IP, VPS settings) or via your host's support."
+  ],
+  [
+   "Point the hostname forward",
+   "The PTR target's A record must resolve back to the same IP, or matching fails."
+  ],
+  [
+   "Match HELO",
+   "Configure your mail server to announce the same hostname in HELO/EHLO."
+  ]
+ ],
+ "mistakes": [
+  "Trying to set PTR in the domain's DNS panel; the reverse zone belongs to the IP owner",
+  "PTR pointing at a generic provider hostname that doesn't forward-resolve back",
+  "HELO announcing a name that doesn't match the PTR",
+  "Ignoring PTR until mail starts landing in spam or bouncing with policy errors"
+ ],
+ "faqs": [
+  [
+   "Who controls my PTR record?",
+   "Whoever owns the IP space: your hosting provider or ISP. Domain registrars have no say."
+  ],
+  [
+   "Why does reverse DNS matter for email?",
+   "Receivers verify the connecting IP has a matching forward-confirmed PTR; absence is scored as spammy."
+  ],
+  [
+   "Can one IP have multiple PTR records?",
+   "Technically possible, practically harmful: unpredictable which answer a receiver gets. Configure exactly one."
+  ],
+  [
+   "How do I check reverse DNS?",
+   "The PromptDNS IP lookup resolves the PTR for any address, plus ASN and network owner."
+  ]
+ ],
+ "related": [
+  [
+   "MX records (receiving mail)",
+   "/mx-record/"
+  ],
+  [
+   "IP Lookup tool",
+   "/ip-lookup/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

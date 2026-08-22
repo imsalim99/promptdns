@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="DNS Leak Test — Which Resolver Are You Using?" description="Free DNS leak test: detect which DNS resolvers actually answer your queries, and whether your VPN's resolver matches your VPN location.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">DNS Leak Test</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Leak Test</h1>
+    <p class="mt-4 text-lg text-ink-dim">A DNS leak means your queries bypass your VPN's resolver and reveal your browsing to your ISP. This test shows which resolvers actually handle your lookups.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <button id="dl-btn" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Leak Test</button>
+  <div id="dl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="dl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Resolver IP</th><th>Reverse DNS</th><th>Network</th></tr></thead><tbody id="dl-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none">
+      <h2>How to read it</h2>
+      <p>With a VPN active, every resolver shown should belong to your VPN provider or a neutral resolver you chose (1.1.1.1, 8.8.8.8). Seeing your local ISP's nameservers means your DNS leaks outside the tunnel.</p>
+      <h2>Fixes</h2>
+      <ul><li>Enable your VPN's DNS leak protection / kill switch.</li><li>Or set encrypted DNS (DoH) to your chosen resolver at OS level.</li></ul>
+      <h2>Related</h2><ul><li><a href="/how-dns-works/">What is a DNS resolver</a> · <a href="/doh-vs-dot/">DoH vs DoT</a></li></ul>
+    </article>
+  </div>
+</BaseLayout>
+<script>
+  import { ipInfo } from '../lib/ipinfo';
+  const btn = document.getElementById('dl-btn') as HTMLButtonElement;
+  const statusEl = document.getElementById('dl-status')!;
+  const resultsEl = document.getElementById('dl-results')!;
+  const tbody = document.getElementById('dl-tbody')!;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    statusEl.textContent = 'Triggering unique lookups and detecting resolvers…'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    resultsEl.classList.add('hidden');
+    tbody.innerHTML = '';
+    try {
+      const id = Math.random().toString(36).slice(2, 10);
+      const seen = new Set<string>();
+      // Generate unique subdomain queries via public DoH; the bash.ws test endpoint reports which resolvers asked
+      await fetch(`https://${id}.bash.ws/dnsleak/test?q=${id}`, { mode: 'no-cors' }).catch(() => {});
+      await new Promise(r => setTimeout(r, 1500));
+      const res = await fetch(`https://bash.ws/dnsleak/test?q=${id}`);
+      const data = (await res.json()) as any[];
+      const resolvers = data.filter((d) => d.type === 'dns' || d.type === 'conclusion') ;
+      let rows = 0;
+      for (const d of resolvers) {
+        if (d.ip && seen.has(d.ip)) continue;
+        if (d.ip) { seen.add(d.ip); rows++; }
+        tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${d.ip ?? ''}</td><td class="font-mono text-xs">${d.rdns1 ?? d.country_name ?? ''}</td><td class="text-xs text-ink-dim">${d.asn ?? ''} ${d.isp ?? ''}</td></tr>`);
+      }
+      if (!rows) throw new Error('no data');
+      statusEl.textContent = `${rows} resolver(s) detected answering your queries.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+      resultsEl.classList.remove('hidden');
+    } catch {
+      statusEl.textContent = 'The detection endpoint was unreachable from here. Try again, or use the interpretation guide below with your VPN active.';
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+    }
+    btn.disabled = false;
+  });
+</script>

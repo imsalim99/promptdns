@@ -1,0 +1,99 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "SOA",
+ "title": "SOA Record: Start of Authority Explained",
+ "description": "SOA records explained in depth: serial number discipline, refresh/retry/expire timers, negative caching, and transfer debugging.",
+ "intro": "The SOA record is your zone's ID card and maintenance schedule in one: who runs it, its version number, and the timers secondaries use to stay synchronized. Every zone has exactly one, and it encodes more operational meaning than any other record.",
+ "deepDive": [
+  "Two fields identify the zone: MNAME, the primary master nameserver, and RNAME, the responsible person's email written with a dot where the @ belongs. Nobody mails RNAME anymore, but tooling reads it, and it dates forgotten zones fascinatingly.",
+  "The serial number is the change counter. Secondaries compare serials to detect changes; a serial that fails to increase means your 'saved' edit propagates to exactly nowhere. The conventional format YYYYMMDDnn (date plus two-digit revision) keeps numbers monotonic and self-documenting. If a serial goes backwards, the standard recovery is jumping far forward, since secondaries only move up.",
+  "The four timers orchestrate secondary synchronization: refresh (how often secondaries poll for a new serial), retry (poll cadence after failure), expire (when secondaries give up and stop serving the zone), and minimum (the negative-caching TTL, how long resolvers may remember that a name doesn't exist). Defaults vary by software, and they are usually fine; they matter when zones are large, transfers are slow, or you are debugging why a secondary went rogue."
+ ],
+ "example": "example.com.  3600  IN  SOA  ns1.example.com. hostmaster.example.com. (\n                  2026082201 ; serial (YYYYMMDDnn)\n                  7200       ; refresh\n                  3600       ; retry\n                  1209600    ; expire\n                  3600 )     ; negative-cache minimum",
+ "anatomy": [
+  [
+   "MNAME",
+   "The primary master nameserver for the zone."
+  ],
+  [
+   "RNAME",
+   "Admin contact, first dot read as @."
+  ],
+  [
+   "serial",
+   "Version counter; must increase on every change or secondaries ignore the update."
+  ],
+  [
+   "refresh",
+   "Seconds between secondary polls for a new serial."
+  ],
+  [
+   "retry / expire",
+   "Retry cadence after a failed refresh, and when a secondary drops the zone entirely."
+  ],
+  [
+   "minimum",
+   "Negative-caching TTL for NXDOMAIN answers."
+  ]
+ ],
+ "uses": [
+  "Zone transfer synchronization between primary and secondary servers",
+  "Debugging stale secondaries (the serial did not increase)",
+  "Tuning how long 'name does not exist' answers cache"
+ ],
+ "steps": [
+  [
+   "Read your SOA",
+   "An SOA lookup shows the current serial and timers; providers auto-manage serials on panel edits."
+  ],
+  [
+   "After any change, watch the serial",
+   "It must increase. If you edit zone files by hand, this is the one field you must never forget."
+  ],
+  [
+   "Check secondaries serve the same serial",
+   "A mismatch means a transfer problem, not a caching problem."
+  ],
+  [
+   "Use negative caching deliberately",
+   "A 3600 minimum softens load from non-existent names without hiding new subdomains for long."
+  ]
+ ],
+ "mistakes": [
+  "Hand edits that forget to bump the serial, silently blocking replication",
+  "Writing RNAME with an @ instead of a dot",
+  "Expecting registrar-level changes to respect zone timers; delegation TTLs run on their own clock",
+  "Aggressively low refresh values hammering the primary for no benefit"
+ ],
+ "faqs": [
+  [
+   "What happens if the SOA serial doesn't increase?",
+   "Secondaries conclude nothing changed and keep serving the old zone. Your edit exists only on the primary."
+  ],
+  [
+   "What is negative caching?",
+   "Resolvers remembering NXDOMAIN answers for 'minimum' seconds, so repeated lookups of dead names don't hit your servers."
+  ],
+  [
+   "Who manages the serial?",
+   "DNS panels increment it automatically. Only hand-maintained zone files put the burden on you."
+  ],
+  [
+   "Can a zone have two SOA records?",
+   "No. Exactly one SOA at the apex is mandatory and standard."
+  ]
+ ],
+ "related": [
+  [
+   "NS records",
+   "/ns-record/"
+  ],
+  [
+   "DNS propagation explained",
+   "/dns-propagation/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

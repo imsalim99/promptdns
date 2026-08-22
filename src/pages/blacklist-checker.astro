@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="Blacklist Checker, Domain & IP Blocklist Lookup"
+  description="Free email blacklist checker: check your domain and sending IP against SURBL, URIBL, Spamhaus, Barracuda, SpamCop, SORBS and more."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Blacklist Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Blacklist Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check a domain (and optionally a sending IP) against the major email blocklists. One listing can send all your mail to spam, find out now.</p>
+
+    <ToolPanel>
+      <form id="bl-form" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <div>
+          <label for="bl-domain" class="mb-1 block text-xs text-ink-faint">Domain</label>
+          <input id="bl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        </div>
+        <div>
+          <label for="bl-ip" class="mb-1 block text-xs text-ink-faint">Sending IP (optional)</label>
+          <input id="bl-ip" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. 203.0.113.10"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        </div>
+        <button type="submit" class="btn-cta btn-shimmer self-end px-6 py-2.5 text-sm">Check Blacklists</button>
+      </form>
+
+      <div id="bl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="bl-summary" class="mt-4 hidden grid gap-3 sm:grid-cols-3"></div>
+
+      <div id="bl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Blocklist</th><th>Scope</th><th>Result</th><th>Detail</th></tr></thead>
+          <tbody id="bl-tbody"></tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-xs text-ink-faint">
+        Honesty note: some lists (Spamhaus, URIBL) refuse queries from public DNS resolvers. Those show as
+        “not checkable via public resolver” rather than false results, verify them on the list’s own website.
+      </p>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What to do if you’re listed</h2>
+      <p>Find the listing’s reason first (each list shows return codes), fix the cause, usually a compromised account, an open redirect, or a misconfigured server, then request delisting. Our guides walk through the big ones: <a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a>, <a href="/get-off-barracuda-blocklist/">Barracuda removal</a>, <a href="/sorbs-delisting-guide/">SORBS delisting</a>.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/spf-record-checker/">SPF Record Checker</a>, authentication issues often cause listings</li>
+        <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { checkDomainBlacklists, checkIpBlacklists } from '../lib/dnsbl';
+  import { normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('bl-form') as HTMLFormElement;
+  const domInput = document.getElementById('bl-domain') as HTMLInputElement;
+  const ipInput = document.getElementById('bl-ip') as HTMLInputElement;
+  const statusEl = document.getElementById('bl-status')!;
+  const summaryEl = document.getElementById('bl-summary')!;
+  const resultsEl = document.getElementById('bl-results')!;
+  const tbody = document.getElementById('bl-tbody')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(domInput.value);
+    const ip = ipInput.value.trim();
+    if (!domain.includes('.') && !ip) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a domain or an IP.'); return; }
+
+    tbody.innerHTML = '';
+    [summaryEl, resultsEl].forEach((el) => el.classList.add('hidden'));
+    const rows: { list: string; zone: string; note: string; status: string; detail: string; scope: string }[] = [];
+
+    if (domain.includes('.')) {
+      setStatus('bg-panel-2 text-accent border border-line', `Checking ${domain} against domain blocklists…`);
+      for (const r of await checkDomainBlacklists(domain, (m) => setStatus('bg-panel-2 text-accent border border-line', m))) {
+        rows.push({ ...r, scope: 'Domain' });
+      }
+    }
+    if (ip) {
+      setStatus('bg-panel-2 text-accent border border-line', `Checking ${ip} against IP blocklists…`);
+      for (const r of await checkIpBlacklists(ip, (m) => setStatus('bg-panel-2 text-accent border border-line', m))) {
+        rows.push({ ...r, scope: 'IP' });
+      }
+    }
+
+    const listed = rows.filter((r) => r.status === 'listed').length;
+    const clear = rows.filter((r) => r.status === 'clear').length;
+    const blocked = rows.filter((r) => r.status === 'blocked' || r.status === 'error').length;
+
+    setStatus(listed ? 'bg-fail/10 text-fail border border-fail/30' : 'bg-pass/10 text-pass border border-pass/30',
+      listed ? `${listed} blocklist${listed > 1 ? 's have you listed' : ' has you listed'}, fix before your next campaign.`
+             : `Clean, no listings found (${clear} checked${blocked ? `, ${blocked} not checkable via public resolvers` : ''}).`);
+
+    summaryEl.innerHTML = '';
+    for (const [l, v, cls] of [['Listed', String(listed), 'text-fail'], ['Clean', String(clear), 'text-pass'], ['Not checkable', String(blocked), 'text-warn']] as [string, string, string][]) {
+      summaryEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold ${cls}">${v}</div><div class="text-xs text-ink-faint">${l}</div></div>`);
+    }
+    summaryEl.classList.remove('hidden');
+
+    for (const r of rows) {
+      const badge = r.status === 'listed' ? '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">LISTED</span>'
+        : r.status === 'clear' ? '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">clean</span>'
+        : '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">n/a</span>';
+      tbody.insertAdjacentHTML('beforeend', `<tr>
+        <td class="font-medium text-ink">${r.list}<span class="block font-mono text-[10px] text-ink-faint">${r.zone}</span></td>
+        <td class="text-xs text-ink-dim">${r.scope}</td>
+        <td>${badge}</td>
+        <td class="text-xs text-ink-dim">${r.detail}</td>
+      </tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+  });
+</script>

@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="WHOIS Lookup — RDAP Domain Data" description="Free WHOIS lookup via RDAP: registrar, nameservers, status, creation and expiry dates for any domain.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">WHOIS Lookup</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">WHOIS Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">Modern RDAP lookup: registrar, dates, statuses, and nameservers for any domain, parsed into plain fields.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="wh-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="wh-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Lookup</button>
+  </form>
+  <div id="wh-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="wh-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody id="wh-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/domain-age-checker/">Domain age checker</a> · <a href="/domain-age-checker/">What is RDAP</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { fetchText, hostOf } from '../lib/proxy';
+  const form = document.getElementById('wh-form') as HTMLFormElement;
+  const input = document.getElementById('wh-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('wh-status')!;
+  const resultsEl = document.getElementById('wh-results')!;
+  const tbody = document.getElementById('wh-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = hostOf(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Querying RDAP for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const res = await fetchText(`https://rdap.org/domain/${domain}`);
+    if (!res.ok || res.text.startsWith('<')) { statusEl.textContent = 'No RDAP data returned for that domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    let j: any;
+    try { j = JSON.parse(res.text); } catch { statusEl.textContent = 'Could not parse RDAP response.'; return; }
+    const ev = (kind: string) => j.events?.find((x: any) => x.eventAction === kind)?.eventDate?.slice(0, 10);
+    const registrar = j.entities?.find((x: any) => x.roles?.includes('registrar'))?.handle ?? j.entities?.[0]?.handle ?? 'n/a';
+    const rows: [string, string][] = [
+      ['Domain', j.ldhName ?? domain],
+      ['Registrar', registrar],
+      ['Created', ev('registration') ?? 'n/a'],
+      ['Updated', ev('last changed') ?? ev('last update of RDAP database') ?? 'n/a'],
+      ['Expires', ev('expiration') ?? 'n/a'],
+      ['Status', (j.status ?? []).join(', ') || 'n/a'],
+      ['Nameservers', (j.nameservers ?? []).map((n: any) => n.ldhName).join(', ') || 'n/a'],
+    ];
+    tbody.innerHTML = '';
+    for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs">${String(v).replace(/</g, '&lt;')}</td></tr>`);
+    statusEl.textContent = `RDAP data for ${domain} (${res.via}).`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

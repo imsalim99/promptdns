@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="How to Add a DKIM Record (Any Provider)" description="How to add a DKIM record step by step: get the selector and key from your sending service, publish the TXT record, and verify it.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Add a DKIM Record</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Add a DKIM Record</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DKIM setup is a copy-precision exercise: your sending service hands you a selector and a public
+      key, you publish them as a TXT record at selector._domainkey, you verify. Here is the whole
+      procedure with the failure points marked.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>Step by step</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Get the values from your sender.</strong> Google Workspace, Microsoft 365, and every ESP generate the key pair and show you: the selector (host name fragment), and the TXT value starting <code>v=DKIM1; k=rsa; p=...</code>.</li>
+        <li><strong>Create the TXT record</strong> in your DNS host. Host/name: <code>selector._domainkey</code> (your provider may show the full <code>selector._domainkey.yourdomain.com</code>). Value: the key string verbatim. TTL 3600.</li>
+        <li><strong>Do not touch the key.</strong> No added spaces, no smart quotes, no truncation. If the value exceeds 255 characters your DNS host either splits it automatically or expects multiple quoted strings.</li>
+        <li><strong>Activate signing on the sender side.</strong> Publishing DNS does nothing until the service starts signing; in Google Workspace you must click "Start authentication", in M365 run Enable-DkimSigning.</li>
+        <li><strong>Verify end to end.</strong> The <a href="/dkim-record-checker/">DKIM checker</a> confirms the key resolves and reports its strength; then send yourself a message and check the <code>DKIM-Signature</code> header plus the receiver's <code>Authentication-Results</code>.</li>
+      </ol>
+      <h2>Common failure points</h2>
+      <ul>
+        <li>Host written as <code>_domainkey</code> alone, dropping the selector: wrong name, no resolution.</li>
+        <li>Key pasted with the quotes some panels add automatically, doubling them.</li>
+        <li>DNS published but sender-side signing never enabled: everything checks out except actual mail.</li>
+        <li>Multiple senders sharing one selector: they must each use their own.</li>
+      </ul>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dkim/">DKIM explained</a> and <a href="/dkim-selector/">selectors</a></li>
+        <li><a href="/dmarc/">DMARC: the layer above</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

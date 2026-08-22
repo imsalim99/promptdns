@@ -1,0 +1,365 @@
+@import "tailwindcss";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/*
+  PromptDNS Design System v2
+  DNA: dark cinematic canvas + electric accent + aura blobs + rotating conic
+  borders + gradient-shifting display text + staggered reveals (adapted from
+  the hackerstrip.com design language onto a researched infra palette).
+
+  Color theory (60-30-10, WCAG AA+ on dark):
+  - 60% deep space canvas #050810 / panel #0b1222
+  - 30% text: #f1f5f9 primary, #94a3b8 secondary
+  - 10% electric cyan #22d3ee -> violet #8b5cf6 gradients
+  - Semantic on dark: pass #4ade80 / fail #f87171 / warn #fbbf24
+*/
+@theme {
+  --color-canvas: #050810;
+  --color-panel: #0b1222;
+  --color-panel-2: #101a30;
+  --color-line: #1c2a47;
+
+  --color-ink: #f1f5f9;
+  --color-ink-dim: #9dabc4;
+  --color-ink-faint: #74829c;
+
+  --color-accent: #22d3ee;
+  --color-accent-soft: #67e8f9;
+  --color-violet: #8b5cf6;
+  --color-violet-soft: #a78bfa;
+
+  --color-pass: #4ade80;
+  --color-fail: #f87171;
+  --color-warn: #fbbf24;
+
+  --font-display: "Clash Display", "General Sans", "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Satoshi", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Consolas, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-canvas text-ink font-sans antialiased;
+  font-size: 16.5px;
+  line-height: 1.7;
+  letter-spacing: 0.005em;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+  color: #fff;
+}
+
+/* ---------- Display typography (Clash Display, readability-tuned) ---------- */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  /* taller lines + looser tracking keep Clash Display airy and legible */
+  line-height: 1.28;
+}
+.font-display.font-semibold { font-weight: 600; }
+.font-display.font-bold,
+.font-bold.font-display {
+  font-weight: 600;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--color-accent), var(--color-violet-soft), var(--color-accent));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-gradient-shift 8s linear infinite;
+}
+@keyframes text-gradient-shift {
+  0% { background-position: 0% }
+  100% { background-position: 300% }
+}
+
+/* ---------- Aura blobs (layered floating glows) ---------- */
+.aura {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.22;
+  pointer-events: none;
+  will-change: transform;
+}
+.aura-1 { width: 42rem; height: 42rem; background: var(--color-accent); animation: aura-float-1 26s ease-in-out infinite alternate; }
+.aura-2 { width: 36rem; height: 36rem; background: var(--color-violet); animation: aura-float-2 28s ease-in-out infinite alternate; }
+.aura-3 { width: 28rem; height: 28rem; background: #2563eb; animation: aura-float-3 22s ease-in-out infinite alternate; }
+.aura-4 { width: 30rem; height: 30rem; background: #0ea5e9; animation: aura-float-4 24s ease-in-out infinite alternate; }
+@keyframes aura-float-1 {
+  0% { transform: translate(-12%, -6%) scale(1) }
+  100% { transform: translate(10%, 8%) scale(1.15) }
+}
+@keyframes aura-float-2 {
+  0% { transform: translate(8%, 4%) scale(1.1) }
+  100% { transform: translate(-10%, -8%) scale(0.95) }
+}
+@keyframes aura-float-3 {
+  0% { transform: translate(0%, 10%) scale(0.9) }
+  100% { transform: translate(6%, -10%) scale(1.2) }
+}
+@keyframes aura-float-4 {
+  0% { transform: translate(-6%, -10%) scale(1.05) }
+  100% { transform: translate(12%, 6%) scale(0.9) }
+}
+
+/* ---------- Rotating conic-gradient border (featured cards only — not buttons) ---------- */
+.conic-border {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-panel);
+  border-radius: 0.75rem;
+}
+.conic-border::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--conic-angle, 0deg),
+    transparent 0deg,
+    color-mix(in oklab, var(--color-accent) 70%, transparent) 60deg,
+    var(--color-violet) 120deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  animation: conic-spin 4s linear infinite;
+}
+@property --conic-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes conic-spin {
+  to { --conic-angle: 360deg }
+}
+
+/* ---------- Unified CTA button (gradient + shimmer + lift) ---------- */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: linear-gradient(100deg, var(--color-accent), var(--color-violet));
+  color: var(--color-canvas);
+  font-family: var(--font-display);
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 8px 30px -10px color-mix(in oklab, var(--color-accent) 60%, transparent);
+}
+.btn-cta:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 12px 40px -10px color-mix(in oklab, var(--color-accent) 75%, transparent);
+}
+.btn-cta:active { transform: scale(0.98); }
+
+/* ---------- Dark rich text (guide/article pages) ---------- */
+.rich-text { color: var(--color-ink-dim); line-height: 1.75; }
+.rich-text h2 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 2.25rem 0 0.75rem;
+}
+.rich-text h3 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.5rem;
+}
+.rich-text p { margin: 0.75rem 0; }
+.rich-text ul { list-style: disc; padding-left: 1.35rem; margin: 0.75rem 0 1.25rem; }
+.rich-text li { margin: 0.35rem 0; }
+.rich-text a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.rich-text a:hover { color: var(--color-accent-soft); }
+.rich-text strong { color: var(--color-ink); font-weight: 600; }
+.rich-text code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-accent-soft);
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 0.375rem;
+  padding: 0.1rem 0.4rem;
+}
+
+/* ---------- Shimmer sweep button ---------- */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.btn-shimmer:hover::after {
+  transform: translateX(120%);
+}
+
+/* ---------- Navbar: fully solid so page text can never bleed through ---------- */
+.site-header {
+  background: var(--color-canvas); /* solid, zero transparency */
+  border-bottom: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+.site-header:hover,
+.site-header:focus-within {
+  background: color-mix(in oklab, var(--color-canvas) 82%, var(--color-panel)); /* still solid */
+  border-bottom-color: color-mix(in oklab, var(--color-accent) 35%, transparent);
+}
+/* soft moving sheen along the header bottom edge on hover */
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), var(--color-violet), transparent);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.site-header:hover::after,
+.site-header:focus-within::after {
+  opacity: 0.8;
+  animation: header-sheen 3.2s linear infinite;
+}
+@keyframes header-sheen {
+  0% { background-position: 100% 0 }
+  100% { background-position: -100% 0 }
+}
+
+/* solid dropdown/mega-menu panels (no transparency, no bleed) */
+.menu-panel {
+  background: #0d1626;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* nav items: simple animated underline, no background boxes */
+.nav-item { position: relative; }
+.nav-item::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.22s ease;
+}
+.nav-item:hover::after,
+.nav-item:focus-visible::after { transform: scaleX(1); }
+
+/* ---------- Footer giant animated wordmark ---------- */
+.footer-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3.5rem, 13vw, 11rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  background: linear-gradient(100deg,
+    color-mix(in oklab, var(--color-ink) 24%, transparent),
+    var(--color-accent) 38%,
+    var(--color-violet-soft) 52%,
+    color-mix(in oklab, var(--color-ink) 24%, transparent) 78%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-gradient-shift 9s linear infinite;
+  user-select: none;
+  white-space: nowrap;
+  /* glyph overhang (the "S" terminal) extends past the em box — pad so the
+     gradient and the wrapper's clip boundary cover it fully */
+  padding-inline: 0.1em;
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
+.footer-wordmark:hover {
+  filter: brightness(1.25);
+  transform: translateY(-2px);
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  animation: fade-in-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.reveal-1 { animation-delay: 0.1s }
+.reveal-2 { animation-delay: 0.25s }
+.reveal-3 { animation-delay: 0.4s }
+.reveal-4 { animation-delay: 0.55s }
+@keyframes fade-in-up {
+  to { opacity: 1; transform: translateY(0) }
+}
+
+/* ---------- Glass panel ---------- */
+.glass {
+  background: color-mix(in oklab, var(--color-panel) 72%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+}
+
+/* ---------- Ticker ---------- */
+.ticker-track {
+  display: flex;
+  gap: 3rem;
+  width: max-content;
+  animation: ticker-scroll 40s linear infinite;
+}
+@keyframes ticker-scroll {
+  to { transform: translateX(-50%) }
+}
+
+/* ---------- Tool result tables ---------- */
+.pdns-table {
+  @apply w-full text-sm;
+}
+.pdns-table th {
+  @apply px-3 py-2 text-left font-semibold text-ink-dim border-b border-line;
+}
+.pdns-table td {
+  @apply px-3 py-2 border-b border-line/50 align-top;
+}
+.pdns-table code {
+  @apply font-mono text-xs bg-panel-2 rounded px-1 py-0.5;
+}
+
+/* Light content pages keep their readable canvas */
+.page-light {
+  @apply bg-slate-50 text-slate-800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura, .conic-border::before, .gradient-text, .footer-wordmark, .ticker-track,
+  .btn-shimmer::after, .site-header::after {
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

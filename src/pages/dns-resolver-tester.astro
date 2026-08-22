@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import { RESOLVERS } from '../lib/doh';
+---
+<BaseLayout title="DNS Resolver Tester — Query Any DoH Server" description="Test any DNS resolver over DoH: pick a preset or enter a custom endpoint, query any record, and measure latency.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Resolver Tester</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Resolver Tester</h1>
+    <p class="mt-4 text-lg text-ink-dim">Query any DNS-over-HTTPS resolver: presets for the majors, or your own endpoint, with any record type and latency timing.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="rt2-form" class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+    <input id="rt2-domain" type="text" value="example.com" autocomplete="off" spellcheck="false" class="rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+    <select id="rt2-type" class="rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+      {['A','AAAA','MX','TXT','NS','SOA','CAA'].map((t) => <option value={t}>{t}</option>)}
+    </select>
+    <select id="rt2-resolver" class="rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+      {RESOLVERS.map((r) => <option value={r.id}>{r.name}</option>)}
+      <option value="custom">Custom endpoint…</option>
+    </select>
+    <button type="submit" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Query</button>
+  </form>
+  <input id="rt2-custom" type="text" placeholder="https://doh.example/dns-query" class="mt-3 hidden w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+  <div id="rt2-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="rt2-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Name</th><th>TTL</th><th>Value</th></tr></thead><tbody id="rt2-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/dns-speed-test/">Resolver speed benchmark</a> · <a href="/doh-vs-dot/">DoH vs DoT</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+  const form = document.getElementById('rt2-form') as HTMLFormElement;
+  const domIn = document.getElementById('rt2-domain') as HTMLInputElement;
+  const typeSel = document.getElementById('rt2-type') as HTMLSelectElement;
+  const resSel = document.getElementById('rt2-resolver') as HTMLSelectElement;
+  const customIn = document.getElementById('rt2-custom') as HTMLInputElement;
+  const statusEl = document.getElementById('rt2-status')!;
+  const resultsEl = document.getElementById('rt2-results')!;
+  const tbody = document.getElementById('rt2-tbody')!;
+  resSel.addEventListener('change', () => customIn.classList.toggle('hidden', resSel.value !== 'custom'));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(domIn.value);
+    const resolver = RESOLVERS.find(r => r.id === resSel.value);
+    const endpoint = resolver
+      ? resolver.url(domain, typeSel.value as RecordType)
+      : `${customIn.value}?name=${encodeURIComponent(domain)}&type=${typeSel.value}`;
+    statusEl.textContent = `Querying ${resSel.value === 'custom' ? customIn.value : resolver!.name}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const t0 = performance.now();
+    try {
+      const res = await fetch(endpoint, { headers: { Accept: 'application/dns-json' } });
+      const j = await res.json();
+      const ms = Math.round(performance.now() - t0);
+      const answers = j.Answer ?? [];
+      if (!answers.length) { statusEl.textContent = `NOERROR but no ${typeSel.value} records (${ms} ms).`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+      tbody.innerHTML = '';
+      for (const a of answers) tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-ink-dim">${a.name}</td><td class="font-mono text-xs text-accent">${a.TTL}s</td><td><code>${String(a.data).replace(/</g, '&lt;')}</code></td></tr>`);
+      resultsEl.classList.remove('hidden');
+      statusEl.textContent = `${answers.length} answer(s) from ${resSel.value === 'custom' ? 'custom endpoint' : resolver!.name} in ${ms} ms.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    } catch {
+      statusEl.textContent = 'Query failed: endpoint unreachable or missing CORS headers.';
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+    }
+  });
+</script>

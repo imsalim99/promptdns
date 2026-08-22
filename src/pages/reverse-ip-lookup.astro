@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Reverse IP Lookup — PTR for Any Address" description="Free reverse IP lookup: resolve any IPv4 or IPv6 address to its hostname (PTR record) with forward-confirmation.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Reverse IP Lookup</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Reverse IP Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">Resolve any IP to its hostname via PTR, then forward-confirm: does the hostname point back to the same address?</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="ri-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="ri-ip" type="text" value="8.8.8.8" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Reverse Lookup</button>
+  </form>
+  <div id="ri-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="ri-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody id="ri-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/ptr-record/">PTR records explained</a> · <a href="/ptr-record-lookup/">PTR record lookup</a> · <a href="/ip-lookup/">Full IP lookup</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS } from '../lib/doh';
+  import { reverseIp } from '../lib/dnsbl';
+  import { ptrOf } from '../lib/ipinfo';
+  const form = document.getElementById('ri-form') as HTMLFormElement;
+  const input = document.getElementById('ri-ip') as HTMLInputElement;
+  const statusEl = document.getElementById('ri-status')!;
+  const resultsEl = document.getElementById('ri-results')!;
+  const tbody = document.getElementById('ri-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ip = input.value.trim();
+    if (!ip) { statusEl.textContent = 'Enter an IP address.'; return; }
+    statusEl.textContent = `Resolving ${ip}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    resultsEl.classList.add('hidden');
+    const ptr = await ptrOf(ip);
+    if (!ptr) { statusEl.textContent = 'No PTR record for that address.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    const fwd = await lookup(ptr, ip.includes(':') ? 'AAAA' : 'A', RESOLVERS[0]);
+    const fwdIp = fwd.answers.find(x => x.type === (ip.includes(':') ? 28 : 1))?.data;
+    const confirmed = fwdIp === ip;
+    tbody.innerHTML = `
+      <tr><td class="text-ink-dim">PTR hostname</td><td class="font-mono text-xs text-accent">${ptr}</td></tr>
+      <tr><td class="text-ink-dim">Forward lookup</td><td class="font-mono text-xs">${fwdIp ?? 'no address'}</td></tr>
+      <tr><td class="text-ink-dim">Forward-confirmed</td><td class="text-sm ${confirmed ? 'text-pass' : 'text-warn'}">${confirmed ? 'Yes, matches' : 'No match (common for shared hosts)'}</td></tr>`;
+    statusEl.textContent = `${ip} → ${ptr}`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

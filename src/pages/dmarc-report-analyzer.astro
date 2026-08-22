@@ -1,0 +1,184 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="DMARC Report Analyzer, Read Aggregate Reports Free"
+  description="Free DMARC aggregate report analyzer: upload the XML or .zip your mailbox received and get a readable summary, senders, pass rates, and what to fix."
+>
+  <div class="mx-auto max-w-5xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Report Analyzer</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Report Analyzer</h1>
+    <p class="mt-4 text-lg text-ink-dim">Upload a DMARC aggregate report (<span class="font-mono text-sm">.xml</span> or the <span class="font-mono text-sm">.zip</span> your mailbox received) and get a readable breakdown, parsed entirely in your browser, nothing uploaded anywhere.</p>
+
+    <ToolPanel>
+      <form id="draf-form" class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-line bg-panel/40 p-8 text-center">
+        <svg class="h-10 w-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M12 16V4m0 0 4 4m-4-4-4 4" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" />
+        </svg>
+        <div>
+          <label for="draf-file" class="btn-cta btn-shimmer cursor-pointer px-6 py-2.5 text-sm">Choose report file</label>
+          <input id="draf-file" type="file" accept=".xml,.zip,.gz,text/xml,application/zip" class="sr-only" />
+          <p id="draf-name" class="mt-3 text-xs text-ink-faint">or drag &amp; drop it here</p>
+        </div>
+      </form>
+
+      <div id="draf-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="draf-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-4"></div>
+
+      <div id="draf-policy" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4 text-sm"></div>
+
+      <div id="draf-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Source IP</th><th>Count</th><th>From</th><th>SPF</th><th>DKIM</th><th>DMARC</th><th>Disposition</th></tr></thead>
+          <tbody id="draf-tbody"></tbody>
+        </table>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What a DMARC aggregate report contains</h2>
+      <p>Every mailbox provider that supports DMARC sends daily XML reports to your <code>rua</code> address listing every message that claimed to be from your domain: source IP, volume, SPF/DKIM results, and the disposition the provider applied. Reading them is how you find legitimate senders to fix, and imposters you didn't know about.</p>
+      <h2>Next step after analyzing</h2>
+      <p>When reports get daily, automation wins: <a href="/pricing/">PromptDNS monitoring</a> collects them automatically and alerts you when a new sender appears or pass rates drop.</p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/how-to-read-dmarc-reports/">How to read DMARC reports</a> (guide)</li>
+        <li><a href="/dmarc-record-generator/">DMARC Record Generator</a></li>
+        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { unzipSync, gunzipSync } from 'fflate';
+
+  const fileInput = document.getElementById('draf-file') as HTMLInputElement;
+  const nameEl = document.getElementById('draf-name')!;
+  const statusEl = document.getElementById('draf-status')!;
+  const cardsEl = document.getElementById('draf-cards')!;
+  const policyEl = document.getElementById('draf-policy')!;
+  const resultsEl = document.getElementById('draf-results')!;
+  const tbody = document.getElementById('draf-tbody')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  interface Row {
+    ip: string; count: number; from: string; spf: string; dkim: string; dmarc: string; disposition: string;
+  }
+
+  function parseXmlDoc(xml: string): { org: string; begin: string; end: string; policy: string; rows: Row[] } {
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    if (doc.querySelector('parsererror')) throw new Error('Invalid XML');
+    const meta = doc.getElementsByTagName('report_metadata')[0];
+    const org = meta?.getElementsByTagName('org_name')[0]?.textContent ?? 'unknown';
+    const range = meta?.getElementsByTagName('date_range')[0];
+    const fmt = (epoch?: string | null) => (epoch ? new Date(parseInt(epoch, 10) * 1000).toISOString().slice(0, 10) : '?');
+    const pub = doc.getElementsByTagName('policy_published')[0];
+    const pol = pub ? `${pub.getElementsByTagName('domain')[0]?.textContent ?? ''}: p=${pub.getElementsByTagName('p')[0]?.textContent ?? '?'}` : '';
+    const rows: Row[] = [];
+    for (const rec of doc.getElementsByTagName('record')) {
+      const ip = rec.getElementsByTagName('source_ip')[0]?.textContent ?? '?';
+      const count = parseInt(rec.getElementsByTagName('count')[0]?.textContent ?? '0', 10);
+      const from = rec.getElementsByTagName('header_from')[0]?.textContent ?? rec.getElementsByTagName('envelope_from')[0]?.textContent ?? '?';
+      const ev = rec.getElementsByTagName('policy_evaluated')[0];
+      const dmarc = `${ev?.getElementsByTagName('dkim')[0]?.textContent ?? '?'}/${ev?.getElementsByTagName('spf')[0]?.textContent ?? '?'}`;
+      const disposition = ev?.getElementsByTagName('disposition')[0]?.textContent ?? '?';
+      const auth = rec.getElementsByTagName('auth_results')[0];
+      const spfRes = auth?.getElementsByTagName('spf')[0]?.getElementsByTagName('result')[0]?.textContent ?? '?';
+      const dkimRes = auth?.getElementsByTagName('dkim')[0]?.getElementsByTagName('result')[0]?.textContent ?? 'none';
+      rows.push({ ip, count, from, spf: spfRes, dkim: dkimRes, dmarc, disposition });
+    }
+    return { org, begin: fmt(range?.getElementsByTagName('begin')[0]?.textContent), end: fmt(range?.getElementsByTagName('end')[0]?.textContent), policy: pol, rows };
+  }
+
+  async function extractXmls(file: File): Promise<string[]> {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (file.name.toLowerCase().endsWith('.gz')) {
+      return [new TextDecoder().decode(gunzipSync(buf))];
+    }
+    if (file.name.toLowerCase().endsWith('.zip')) {
+      const files = unzipSync(buf);
+      const xmls = Object.keys(files).filter((n) => n.toLowerCase().endsWith('.xml'));
+      if (!xmls.length) throw new Error('No XML found inside the zip');
+      return xmls.map((n) => new TextDecoder().decode(files[n]));
+    }
+    return [new TextDecoder().decode(buf)];
+  }
+
+  async function handleFile(file: File) {
+    nameEl.textContent = file.name;
+    setStatus('bg-panel-2 text-accent border border-line', 'Parsing…');
+    try {
+      const xmls = await extractXmls(file);
+      const reports = xmls.map(parseXmlDoc);
+      const rows = reports.flatMap((r) => r.rows).sort((a, b) => b.count - a.count);
+      if (!rows.length) throw new Error('No records found in the report');
+
+      const total = rows.reduce((s, r) => s + r.count, 0);
+      const passed = rows.filter((r) => r.dkim.includes('pass') || r.dmarc.startsWith('pass')).reduce((s, r) => s + r.count, 0);
+      const rejected = rows.filter((r) => r.disposition === 'reject').reduce((s, r) => s + r.count, 0);
+      const r0 = reports[0];
+
+      setStatus('bg-pass/10 text-pass border border-pass/30', `Parsed ${xmls.length} report${xmls.length > 1 ? 's' : ''} from ${r0.org} (${r0.begin} → ${r0.end}).`);
+
+      cardsEl.innerHTML = '';
+      const cards: [string, string][] = [
+        ['Messages analyzed', total.toLocaleString()],
+        ['SPF/DKIM pass', `${total ? Math.round((passed / total) * 100) : 0}%`],
+        ['Rejected by policy', rejected.toLocaleString()],
+        ['Unique sources', String(new Set(rows.map((r) => r.ip)).size)],
+      ];
+      for (const [l, v] of cards) {
+        cardsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-accent">${v}</div><div class="text-xs text-ink-faint">${l}</div></div>`);
+      }
+      cardsEl.classList.remove('hidden');
+
+      policyEl.innerHTML = `<span class="text-ink-dim">Published policy:</span> <span class="font-mono text-accent">${r0.policy}</span>`;
+      policyEl.classList.remove('hidden');
+
+      tbody.innerHTML = '';
+      for (const r of rows.slice(0, 100)) {
+        const badge = (s: string) => s === 'pass'
+          ? '<span class="rounded bg-pass/15 px-1.5 py-0.5 text-xs text-pass">pass</span>'
+          : `<span class="rounded bg-fail/15 px-1.5 py-0.5 text-xs text-fail">${s}</span>`;
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+          <td class="font-mono text-xs text-ink">${r.ip}</td>
+          <td class="font-mono text-xs text-ink">${r.count.toLocaleString()}</td>
+          <td class="font-mono text-xs text-ink-dim">${r.from}</td>
+          <td>${badge(r.spf)}</td>
+          <td>${badge(r.dkim)}</td>
+          <td class="font-mono text-xs">${r.dmarc}</td>
+          <td class="text-xs text-ink-dim">${r.disposition}</td>
+        </tr>`);
+      }
+      resultsEl.classList.remove('hidden');
+    } catch (err) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', `Could not parse that file: ${err instanceof Error ? err.message : 'unknown error'}`);
+    }
+  }
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files?.[0]) handleFile(fileInput.files[0]);
+  });
+  const dropZone = fileInput.closest('form')!;
+  ['dragover', 'drop'].forEach((ev) =>
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (ev === 'drop') {
+        const f = (e as DragEvent).dataTransfer?.files?.[0];
+        if (f) handleFile(f);
+      }
+    }),
+  );
+</script>

@@ -1,0 +1,173 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="AI Readiness Checker, Is Your Domain Machine-Readable?"
+  description="Free AI readiness audit: DNS health, DNSSEC, email authentication, AI crawler access, and llms.txt, one score for how well AI systems can understand and trust your domain."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">AI Readiness Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Readiness Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">One scan, ten checks: can AI systems reach your site, verify your domain, read your rules, and cite your content?</p>
+
+    <ToolPanel>
+      <form id="air-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="air-domain">Domain</label>
+        <input id="air-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Score AI Readiness</button>
+      </form>
+
+      <div id="air-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="air-score" class="mt-6 hidden flex items-center gap-6">
+        <div class="relative text-center">
+          <svg viewBox="0 0 120 120" class="h-36 w-36">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#1c2a47" stroke-width="10" />
+            <circle id="air-arc" cx="60" cy="60" r="52" fill="none" stroke="url(#air-grad)" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1)" />
+            <defs><linearGradient id="air-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22d3ee" /><stop offset="100%" stop-color="#8b5cf6" /></linearGradient></defs>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="air-score-val" class="font-display text-4xl font-bold tabular-nums">0</span>
+            <span class="text-[10px] uppercase tracking-widest text-ink-faint">/ 100</span>
+          </div>
+        </div>
+        <div>
+          <p id="air-verdict" class="font-display text-xl font-bold text-ink"></p>
+          <p id="air-verdict-desc" class="mt-1 text-sm leading-relaxed text-ink-dim"></p>
+        </div>
+      </div>
+
+      <div id="air-results" class="mt-6 hidden grid gap-2"></div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What “AI ready” means</h2>
+      <p>Answer engines and agents evaluate domains on the basics machines can verify: the site resolves (IPv4 + IPv6), the zone is signed (DNSSEC), mail is authenticated (SPF/DKIM/DMARC, phishing signals), AI crawlers aren’t accidentally blocked by robots.txt, and an llms.txt explains the content map. This audit checks all of it live.</p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ai-crawler-checker/">AI Crawler Checker</a>, the deep robots.txt audit</li>
+        <li><a href="/llms-txt-generator/">llms.txt Generator</a></li>
+        <li><a href="/ai-readiness-guide/">The AI readiness guide</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  import { fetchText, hostOf } from '../lib/proxy';
+  import { parseRobots, verdictsFor, looksLikeHtml } from '../lib/robots';
+
+  const form = document.getElementById('air-form') as HTMLFormElement;
+  const input = document.getElementById('air-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('air-status')!;
+  const scoreBox = document.getElementById('air-score')!;
+  const arc = document.getElementById('air-arc') as SVGCircleElement;
+  const scoreVal = document.getElementById('air-score-val')!;
+  const verdictEl = document.getElementById('air-verdict')!;
+  const verdictDesc = document.getElementById('air-verdict-desc')!;
+  const resultsEl = document.getElementById('air-results')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    [scoreBox, resultsEl].forEach((el) => el.classList.add('hidden'));
+
+    const checks: { label: string; status: 'pass' | 'warn' | 'fail' | 'unknown'; detail: string; points: number; max: number }[] = [];
+
+    // --- DNS layer ---
+    setStatus('bg-panel-2 text-accent border border-line', 'Checking DNS layer…');
+    const [a, aaaa, ds] = await Promise.all([
+      lookup(domain, 'A', RESOLVERS[0]),
+      lookup(domain, 'AAAA', RESOLVERS[0]),
+      lookup(domain, 'DS', RESOLVERS[0]),
+    ]);
+    const ips = a.answers.filter((x) => x.type === 1).length;
+    checks.push({ label: 'Website resolves (A record)', status: ips ? 'pass' : 'fail', detail: ips ? `${ips} A record(s)` : 'No A record', points: ips ? 15 : 0, max: 15 });
+    const v6 = aaaa.answers.filter((x) => x.type === 28).length;
+    checks.push({ label: 'IPv6 support (AAAA)', status: v6 ? 'pass' : 'warn', detail: v6 ? 'AAAA present' : 'No IPv6, fine today, future-facing minus', points: v6 ? 5 : 2, max: 5 });
+    const dnssec = ds.ok && ds.answers.length > 0;
+    checks.push({ label: 'DNSSEC signed zone', status: dnssec ? 'pass' : 'warn', detail: dnssec ? 'DS record published, verifiable responses' : 'Not signed, responses can be tampered in transit', points: dnssec ? 15 : 4, max: 15 });
+
+    // --- Email auth layer (phishing signal for AI/brand trust) ---
+    setStatus('bg-panel-2 text-accent border border-line', 'Checking email authentication…');
+    const txt = await lookup(domain, 'TXT', RESOLVERS[0]);
+    const spf = txtRecords(txt.answers).find((t) => t.toLowerCase().startsWith('v=spf1'));
+    checks.push({ label: 'SPF published', status: spf ? 'pass' : 'fail', detail: spf ? 'v=spf1 present' : 'Missing, spoofable domain', points: spf ? 10 : 0, max: 10 });
+    const dmarcRes = await lookup(`_dmarc.${domain}`, 'TXT', RESOLVERS[0]);
+    const dmarc = txtRecords(dmarcRes.answers).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
+    const pol = dmarc?.match(/\bp=(none|quarantine|reject)/i)?.[1]?.toLowerCase();
+    checks.push({
+      label: 'DMARC policy', status: dmarc ? (pol === 'reject' || pol === 'quarantine' ? 'pass' : 'warn') : 'fail',
+      detail: dmarc ? `p=${pol}` : 'Missing DMARC', points: dmarc ? (pol === 'reject' ? 15 : pol === 'quarantine' ? 12 : 7) : 0, max: 15,
+    });
+
+    // --- AI layer ---
+    setStatus('bg-panel-2 text-accent border border-line', 'Checking AI access (robots.txt, llms.txt)…');
+    const host = hostOf(domain);
+    const robots = await fetchText(`https://${host}/robots.txt`);
+    let aiBlocked = 0;
+    if (robots.ok && !looksLikeHtml(robots.text)) {
+      const verdicts = verdictsFor(parseRobots(robots.text).groups);
+      aiBlocked = verdicts.filter((v) => v.status === 'blocked').length;
+      checks.push({
+        label: 'AI crawlers allowed (robots.txt)', status: aiBlocked === 0 ? 'pass' : aiBlocked > 6 ? 'warn' : 'unknown',
+        detail: aiBlocked === 0 ? 'No AI bots blocked' : `${aiBlocked} of 12 tracked AI bots blocked, deliberate choice?`,
+        points: aiBlocked === 0 ? 20 : aiBlocked > 6 ? 6 : 12, max: 20,
+      });
+    } else {
+      checks.push({ label: 'AI crawlers allowed (robots.txt)', status: 'unknown', detail: 'No readable robots.txt, bots allowed by default', points: 15, max: 20 });
+    }
+
+    const llmsRes = await fetchText(`https://${host}/llms.txt`);
+    const llmsOk = llmsRes.ok && !looksLikeHtml(llmsRes.text) && llmsRes.text.trim().length > 0;
+    checks.push({ label: 'llms.txt published', status: llmsOk ? 'pass' : 'warn', detail: llmsOk ? 'Content map available to models' : 'No llms.txt, generate one for free', points: llmsOk ? 15 : 4, max: 15 });
+
+    setStatus('bg-panel-2 text-accent border border-line', 'Scoring…');
+
+    // --- Render ---
+    const total = checks.reduce((s, c) => s + c.points, 0);
+    const maxTotal = checks.reduce((s, c) => s + c.max, 0);
+    const score = Math.round((total / maxTotal) * 100);
+
+    verdictEl.textContent = score >= 85 ? 'AI ready' : score >= 60 ? 'Mostly ready' : score >= 35 ? 'Work to do' : 'Not machine-friendly';
+    verdictDesc.textContent = score >= 85
+      ? 'AI systems can reach, verify, and cite this domain.'
+      : score >= 60 ? 'The basics work; the cards below show what would move the score.'
+      : 'Several machine-verifiable signals are missing, see below.';
+    scoreBox.classList.remove('hidden');
+    arc.style.strokeDashoffset = String(326.7 * (1 - score / 100));
+    const t0 = performance.now();
+    (function tick() {
+      const k = Math.min(1, (performance.now() - t0) / 1200);
+      scoreVal.textContent = String(Math.round(score * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(tick);
+    })();
+
+    resultsEl.innerHTML = '';
+    for (const c of checks) {
+      const icon = c.status === 'pass' ? '✔' : c.status === 'fail' ? '✕' : c.status === 'warn' ? '▲' : '?';
+      const cls = c.status === 'pass' ? 'text-pass' : c.status === 'fail' ? 'text-fail' : 'text-warn';
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between gap-3 rounded-lg border border-line bg-panel/60 px-4 py-3">
+        <div><span class="${cls}">${icon}</span> <span class="text-sm font-medium text-ink">${c.label}</span>
+        <span class="block pl-5 text-xs text-ink-dim">${c.detail}</span></div>
+        <span class="font-mono text-xs text-ink-faint">${c.points}/${c.max}</span>
+      </div>`);
+    }
+    resultsEl.classList.remove('hidden');
+    setStatus('bg-pass/10 text-pass border border-pass/30', `AI readiness score for ${domain}: ${score}/100.`);
+  });
+</script>

@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What does DNS stand for?', acceptedAnswer: { '@type': 'Answer', text: 'Domain Name System. It is the internet\u2019s directory that translates human-readable domain names into IP addresses computers use to connect.' } },
+    { '@type': 'Question', name: 'Is DNS the same as a website host?', acceptedAnswer: { '@type': 'Answer', text: 'No. DNS only translates names to addresses and routes mail; the hosting server is where your site actually lives. You can change either independently.' } },
+    { '@type': 'Question', name: 'Who runs DNS?', acceptedAnswer: { '@type': 'Answer', text: 'No single entity. Root servers, TLD registries, registrars, DNS hosting providers, and public resolvers like Cloudflare and Google each operate one layer.' } },
+  ],
+};
+---
+<BaseLayout title="What Is DNS? The Domain Name System Explained" description="DNS explained from first principles: what the Domain Name System is, how names resolve to IP addresses, and why every website and email depends on it." schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">What Is DNS</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNS?</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DNS, the <strong class="text-ink">Domain Name System</strong>, is the internet's address book.
+      People remember <code>promptdns.com</code>; computers connect to <code>104.21.x.x</code>. DNS is
+      the system that translates between the two, billions of times per day, for every website visit
+      and every email delivery.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>The problem DNS solves</h2>
+      <p>
+        Every device on the internet is reachable by an IP address. IPv4 addresses look like
+        <code>192.0.2.1</code>; IPv6 addresses look like <code>2606:4700::1111</code>. Humans are
+        terrible at remembering numbers and great at remembering names, so in 1983, Paul Mockapetris
+        designed a global, distributed database that maps names to numbers. Forty-plus years later,
+        the same basic design runs the entire internet.
+      </p>
+
+      <h2>A hierarchy, not one computer</h2>
+      <p>DNS is a tree with four levels involved in every lookup:</p>
+      <ul>
+        <li><strong>Root servers</strong>, 13 logical names (hundreds of machines worldwide) that know where TLD servers live.</li>
+        <li><strong>TLD servers</strong>, responsible for each top-level domain (<code>.com</code>, <code>.org</code>, <code>.dev</code>).</li>
+        <li><strong>Authoritative nameservers</strong>, your domain's actual DNS host, holding the zone with all its records.</li>
+        <li><strong>Recursive resolvers</strong>, the "librarians" (like Cloudflare 1.1.1.1 or Google 8.8.8.8) that walk the tree on your behalf and cache the answers.</li>
+      </ul>
+
+      <h2>More than websites</h2>
+      <p>
+        DNS doesn't just point domains at servers. Records decide <strong>where your email goes</strong>
+        (MX), <strong>who may send as your domain</strong> (SPF, DKIM, DMARC), <strong>which certificate
+        authorities may issue your TLS certificates</strong> (CAA), and whether your zone's answers are
+        cryptographically signed (DNSSEC). When any of these break, the symptom is rarely "DNS error",
+        it's a site that won't load, or mail that lands in spam.
+      </p>
+
+      <h2>Check it yourself, right now</h2>
+      <p>
+        The fastest way to understand DNS is to watch it work. Run any domain through our
+        <a href="/dns-record-lookup/">DNS record lookup</a> to see exactly what the system returns,
+        or the <a href="/dns-propagation-checker/">propagation checker</a> to see how different
+        resolvers answer for the same name.
+      </p>
+
+      <h2>Key facts</h2>
+      <ul>
+        <li>Created in 1983 (RFC 882/883), standardized as RFC 1034/1035 in 1987.</li>
+        <li>Runs on UDP/TCP port 53 classically; encrypted as DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) today.</li>
+        <li>Caching with TTLs is why changes "propagate" rather than appearing instantly.</li>
+      </ul>
+
+      <h2>Next steps</h2>
+      <ul>
+        <li><a href="/how-dns-works/">How DNS works, the resolution walkthrough</a></li>
+        <li><a href="/dns-records/">Every DNS record type explained</a></li>
+        <li><a href="/dns-propagation/">DNS propagation, why changes take time</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

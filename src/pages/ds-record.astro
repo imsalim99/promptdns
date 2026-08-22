@@ -1,0 +1,91 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "DS",
+ "title": "DS Record: The DNSSEC Chain of Trust",
+ "description": "DS records explained in depth: key tags, algorithms, digests, activation and rollover procedure, and the SERVFAIL outage class they cause.",
+ "intro": "The DS record is the link in DNSSEC's chain of trust: published in the parent zone, it vouches for the child zone's key so validators can verify every signed answer below. It is also the record whose stale copy can take an entire domain offline with SERVFAIL.",
+ "deepDive": [
+  "DNSSEC works by chains. Your zone signs its records with private keys and publishes the public halves as DNSKEY records. But a key you publish yourself proves nothing; something the verifier already trusts must vouch for it. That voucher is the DS record: a digest of your key-signing key, placed one level up. Validating resolvers walk root to TLD to your domain, checking each link's signature against the DS above it. Any break, and the safe response is to fail: not 'wrong answer' but 'no answer', domain-wide.",
+  "That severity explains the operational fear around DS. The classic outage: a provider rotates its DNSSEC keys, your registrar still publishes the DS of the old key, and every validating resolver on earth returns SERVFAIL for your domain. The fix discipline is strict ordering: when rotating, publish the DS for the new key first, let it propagate, then retire the old key. When disabling DNSSEC, delete the DS and wait before dropping signatures.",
+  "The record itself packs four values: the key tag (a shorthand for which DNSKEY), the algorithm number (8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519), the digest type (2 SHA-256), and the digest itself. Providers and registrars that integrate well surface a copy-paste tuple; when copying by hand, whitespace or truncation in the digest is the usual killer."
+ ],
+ "example": "example.com.  3600  IN  DS  2371 13 2 1F987CC6583B6E1FD8C7F2D6BCB6A9C4C6B6A9C4C6B6A9C4C6B6A9C4",
+ "anatomy": [
+  [
+   "2371",
+   "Key tag identifying which DNSKEY this digest matches."
+  ],
+  [
+   "13",
+   "Algorithm: 8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519."
+  ],
+  [
+   "2",
+   "Digest type; 2 is SHA-256."
+  ],
+  [
+   "(hash)",
+   "The digest of the child's key. One bad character breaks validation."
+  ]
+ ],
+ "uses": [
+  "Activating DNSSEC at your registrar once your zone signs",
+  "Key rollovers, in the safe order",
+  "Root-causing domain-wide SERVFAIL incidents"
+ ],
+ "steps": [
+  [
+   "Enable signing at your DNS host",
+   "Cloudflare and major hosts toggle DNSSEC and display the DS tuple to publish."
+  ],
+  [
+   "Publish the DS at the registrar",
+   "Copy all four fields exactly; this is the chain link."
+  ],
+  [
+   "Wait, then validate",
+   "After propagation, a DS lookup should return your record, and validators (Quad9, Cloudflare) should resolve your domain normally."
+  ],
+  [
+   "Rotate in order",
+   "New key's DS first, propagate, then remove the old key."
+  ]
+ ],
+ "mistakes": [
+  "Rotating keys without updating the DS: domain-wide SERVFAIL",
+  "Truncated or whitespace-corrupted digests when copying manually",
+  "Deleting the DS while signatures still exist, or vice versa",
+  "Assuming DNSSEC validation failures show a nice error; users see timeouts and SERVFAIL"
+ ],
+ "faqs": [
+  [
+   "What is a DS record for?",
+   "It links a child zone's DNSSEC key to the parent zone, letting validators build an unbroken chain of trust from the root."
+  ],
+  [
+   "Where is the DS record published?",
+   "In the parent zone, configured through your registrar."
+  ],
+  [
+   "Why did my whole site go down after a DNSSEC change?",
+   "A broken chain, usually a stale DS after key rotation. Validators must refuse, so the domain SERVFAILs."
+  ],
+  [
+   "Is DNSSEC worth enabling?",
+   "It defeats cache-poisoning and answer tampering. With a well-integrated host and registrar it is a toggle; the danger zone is manual key handling."
+  ]
+ ],
+ "related": [
+  [
+   "DNSKEY records",
+   "/dnskey-record/"
+  ],
+  [
+   "What is DNSSEC",
+   "/what-is-dnssec/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

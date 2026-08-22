@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="The SPF 10-Lookup Limit Explained (and How to Stay Under It)"
+  description="The SPF 10-DNS-lookup limit explained: what counts as a lookup, why exceeding it causes permerror, and three ways to fix it."
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Lookup Limit</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">The SPF 10-Lookup Limit</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      SPF evaluation is deliberately capped: receivers will follow at most <strong class="text-ink">10 DNS
+      lookups</strong> per record. Cross that line and your SPF doesn't get stricter, it stops working
+      entirely, returning <code class="font-mono text-accent-soft">permerror</code>.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>What counts as a lookup</h2>
+      <ul>
+        <li><code>include:</code> each one, and each nested include inside it</li>
+        <li><code>a</code> and <code>mx</code> mechanisms (with or without a domain)</li>
+        <li><code>exists:</code></li>
+        <li><code>redirect=</code></li>
+      </ul>
+      <p>
+        What doesn't count: <code>ip4:</code> and <code>ip6:</code> (no DNS involved), <code>all</code>,
+        and <code>exp=</code>. A typical Google Workspace + one ESP record starts at 2-3 lookups; add a
+        helpdesk, a CRM, and a billing system and you can hit 10 before noticing.
+      </p>
+
+      <h2>Why the limit exists</h2>
+      <p>
+        Every lookup is a DNS query a receiver must make, per message, before it can even score your
+        mail. Without a cap, a single crafted record could turn every inbound email into a DNS
+        amplification attack. The cap is a DoS protection, and it's enforced strictly.
+      </p>
+
+      <h2>The three fixes</h2>
+      <ul>
+        <li><strong>Remove dead includes.</strong> Every service you stopped using is still spending lookups. Audit first.</li>
+        <li><strong>Flatten.</strong> Replace includes with their IP ranges: zero lookups, at the cost of tracking upstream changes. Our <a href="/spf-flattener/">free flattener</a> does this automatically.</li>
+        <li><strong>Use SPF on fewer subdomains</strong> and keep separate records per sending domain instead of one mega-record.</li>
+      </ul>
+
+      <h2>Check where you stand</h2>
+      <p>
+        The <a href="/spf-record-checker/">SPF checker</a> counts your lookups with a live meter. If
+        you're above 8, flatten before the next SaaS you add tips you over.
+      </p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/spf-record/">SPF: the complete guide</a></li>
+        <li><a href="/spf-flattener/">SPF Flattener (free)</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

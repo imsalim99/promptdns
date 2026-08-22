@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const sections = [
+  { href: '/spf-record/', title: 'SPF, Sender Policy Framework', desc: 'Which servers may send mail as your domain. Syntax, examples, and the 10-lookup limit.' },
+  { href: '/dkim/', title: 'DKIM, DomainKeys Identified Mail', desc: 'Cryptographic signing that proves mail wasn\u2019t tampered with in transit.' },
+  { href: '/dmarc/', title: 'DMARC, Policy + Reporting', desc: 'The policy layer that tells receivers what to do when SPF/DKIM fail, and reports back.' },
+  { href: '/bimi/', title: 'BIMI', desc: 'Display your verified logo in inboxes.' },
+  { href: '/mta-sts/', title: 'MTA-STS & TLS-RPT', desc: 'Enforce TLS for inbound mail and get failure reports.' },
+];
+---
+<BaseLayout
+  title="Email Authentication: SPF, DKIM & DMARC (Hub)"
+  description="Set up SPF, DKIM, and DMARC to stop spoofing and land in the inbox. Complete guides with syntax, examples, and provider-specific steps."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Email Authentication</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Email Authentication: SPF, DKIM & DMARC</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Email authentication proves your mail is really from you. Since Gmail, Yahoo, and Microsoft
+      began requiring SPF, DKIM, and DMARC for bulk senders, it is no longer optional. These
+      guides take you from first record to full enforcement.
+    </p>
+
+    <div class="mt-10 grid gap-4">
+      {sections.map((s) => (
+        <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
+          <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-12 rounded-xl border border-violet/25 bg-gradient-to-br from-violet/10 to-accent/10 p-6">
+      <h2 class="font-display font-semibold text-ink">Scan your domain</h2>
+      <p class="mt-1 text-sm text-ink-dim">
+        Check your SPF, DKIM, and DMARC in one pass with the
+        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a>,
+        live results, no signup.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

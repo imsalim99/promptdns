@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const updated = 'August 2026';
+---
+<BaseLayout
+  title="Privacy Policy"
+  description="PromptDNS privacy policy: browser-side lookups, no query logging, minimal analytics."
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Legal</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">Privacy Policy</h1>
+    <p class="mt-2 text-sm text-ink-faint">Last updated: {updated}</p>
+    <div class="rich-text mt-8">
+      <h2>The short version</h2>
+      <p>
+        DNS lookups you run on PromptDNS happen <strong>in your browser</strong>, directly
+        against public DNS-over-HTTPS resolvers (Cloudflare, Google, Quad9). The domains you
+        check are <strong>not sent to our servers, not stored, and not logged by us</strong>.
+      </p>
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Anonymous, aggregate usage analytics</strong> (page views, referrers, country) via privacy-friendly, cookieless measurement. It cannot identify you.</li>
+        <li><strong>Account data (if you create one):</strong> email address and the domains you monitor, when you subscribe to monitoring. Processed solely to provide the service.</li>
+        <li><strong>Payments</strong> are processed by our payment provider; we never see or store card numbers.</li>
+      </ul>
+      <h2>What we deliberately do not do</h2>
+      <ul>
+        <li>No logging of the domains or records you look up.</li>
+        <li>No advertising trackers or cross-site cookies.</li>
+        <li>No selling or sharing of personal data. Ever.</li>
+      </ul>
+      <h2>Third parties</h2>
+      <p>
+        Your browser talks directly to public DoH resolvers to perform lookups; those providers
+        process your queries under their own privacy policies. We use a payment provider for
+        subscriptions and a privacy-friendly analytics service. No other third parties receive
+        your data.
+      </p>
+      <h2>Your rights</h2>
+      <p>
+        You may request access, correction, export, or deletion of your account data at any
+        time via <code>privacy@promptdns.com</code>. Deleting your account deletes your monitored
+        domains and report history.
+      </p>
+      <h2>Changes</h2>
+      <p>
+        If this policy changes materially, we will announce it on this page with a new update
+        date. Continued use after changes constitutes acceptance.
+      </p>
+      <h2>Contact</h2>
+      <p>Privacy questions: <code>privacy@promptdns.com</code></p>
+    </div>
+  </div>
+</BaseLayout>

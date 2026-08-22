@@ -1,0 +1,91 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "TXT",
+ "title": "TXT Record: The Workhorse of Modern DNS",
+ "description": "TXT records explained in depth: the 255-character rule, SPF/DKIM/DMARC carriage, domain verification, and the mistakes that break email.",
+ "intro": "TXT records attach arbitrary text to a DNS name, which sounds trivial until you realize they carry the entire email-authentication stack, domain-ownership proofs for hundreds of services, and assorted machine-to-machine config.",
+ "deepDive": [
+  "Structurally, a TXT record is one or more quoted strings, each capped at 255 characters. Longer payloads, like DKIM public keys, are split into multiple strings that receivers concatenate in order. Providers usually handle the splitting; hand-editing zone files is where quoting bugs creep in.",
+  "The workhorse role: SPF lives at the apex as v=spf1..., DKIM public keys live at selector._domainkey subdomains, DMARC policy lives at _dmarc, and service verifications use their own prefixed names like _google-site-verify or _amazonses. This namespacing is why one domain can carry dozens of TXT records without collision, and it also means deleting a 'random string' record during cleanup can silently break email or a service integration months later.",
+  "SPF has a strict one-record rule: a name with two v=spf1 TXT strings evaluates to permerror, which receivers treat as no SPF at all. If two teams each added 'their' SPF, both are broken. The fix is always to merge mechanisms into one record, then re-check the 10-lookup budget."
+ ],
+ "example": "example.com.              IN  TXT  \"v=spf1 include:_spf.google.com include:sendgrid.net ~all\"\n_google-site-verify.  3600  IN  TXT  \"verification-token-here\"\ndefault._domainkey.   3600  IN  TXT  \"v=DKIM1; k=rsa; p=MIIBIjANBgkq...\"",
+ "anatomy": [
+  [
+   "TXT",
+   "The record type. One or more quoted strings follow."
+  ],
+  [
+   "\"v=spf1 ...\"",
+   "The payload. v= prefixes mark machine-readable dialects: SPF, DKIM, DMARC."
+  ],
+  [
+   "_dmarc / selector._domainkey",
+   "Prefixed subdomains namespace TXT records per protocol or service."
+  ]
+ ],
+ "uses": [
+  "SPF, DKIM public keys, and DMARC policy: the email-authentication stack",
+  "Domain ownership verification for Google, Microsoft, AWS, Stripe, and hundreds more",
+  "Machine-readable config: site verification, security policies like MTA-STS and TLS-RPT pointers"
+ ],
+ "steps": [
+  [
+   "Find what exists",
+   "A TXT lookup on your domain lists every record; the v= prefixes tell you which protocol each serves."
+  ],
+  [
+   "Check for duplicates",
+   "One v=spf1 per name, always. Two means both are broken."
+  ],
+  [
+   "Mind the 255 rule",
+   "Long values must split into quoted strings; our tools display the joined value receivers see."
+  ],
+  [
+   "Verify before deleting",
+   "Never remove an unexplained TXT record; it is probably a verification or authentication key something depends on."
+  ]
+ ],
+ "mistakes": [
+  "Two SPF records on one name: permerror, receivers ignore SPF entirely",
+  "Unquoted or mis-escaped strings that break parsing silently",
+  "Forgetting string splitting for keys longer than 255 characters",
+  "Cleanup sprees that delete verification records nobody could explain"
+ ],
+ "faqs": [
+  [
+   "How long can a TXT record be?",
+   "Each quoted string is capped at 255 characters, but a record can hold multiple strings that get concatenated, which is how long DKIM keys fit."
+  ],
+  [
+   "Can I have multiple TXT records on one name?",
+   "Yes for different purposes, no for SPF: exactly one v=spf1 record per name is valid."
+  ],
+  [
+   "Why did adding SPF break my email?",
+   "Most commonly a second v=spf1 record appeared, or the new include pushed past the 10-lookup limit. The SPF checker pinpoints both."
+  ],
+  [
+   "Do TXT records affect website speed?",
+   "No. They are only fetched by the systems that need them: mail servers and verification services."
+  ]
+ ],
+ "related": [
+  [
+   "SPF records",
+   "/spf-record/"
+  ],
+  [
+   "DKIM explained",
+   "/dkim/"
+  ],
+  [
+   "DMARC record syntax",
+   "/dmarc-record/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

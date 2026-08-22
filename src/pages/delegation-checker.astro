@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Delegation Checker — NS Consistency Test" description="Free DNS delegation checker: verify nameservers resolve, answer authoritatively, and catch lame delegation before users do.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Delegation Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Delegation Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check every nameserver for a domain: does it resolve, does it answer, is the zone consistent across the set?</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="dl-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="dl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Delegation</button>
+  </form>
+  <div id="dl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="dl-results" class="mt-6 hidden grid gap-2"></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul>
+      <li><a href="/ns-record/">NS records explained</a></li>
+      <li><a href="/ns-record-lookup/">NS lookup</a> · <a href="/glue-record-checker/">Glue record checker</a></li>
+    </ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  const form = document.getElementById('dl-form') as HTMLFormElement;
+  const input = document.getElementById('dl-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('dl-status')!;
+  const resultsEl = document.getElementById('dl-results')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Checking delegation for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const ns = await lookup(domain, 'NS', RESOLVERS[0]);
+    const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
+    if (!hosts.length) { statusEl.textContent = 'No NS records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; return; }
+    resultsEl.innerHTML = '';
+    let healthy = 0;
+    for (const host of hosts) {
+      const a = await lookup(host, 'A', RESOLVERS[0]);
+      const ip = a.answers.find(x => x.type === 1)?.data;
+      const inBailiwick = host.endsWith('.' + domain);
+      if (ip) healthy++;
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 px-4 py-3">
+        <div class="flex justify-between"><span class="font-mono text-sm text-ink">${host}</span>
+        <span class="text-xs ${ip ? 'text-pass' : 'text-fail'}">${ip ? 'resolves' : 'NO A RECORD'}</span></div>
+        <div class="mt-1 font-mono text-xs text-ink-faint">${ip ?? 'glue/IP missing'}${inBailiwick ? ' · in-bailiwick (needs glue at parent)' : ''}</div>
+      </div>`);
+    }
+    statusEl.textContent = `${healthy}/${hosts.length} nameservers healthy.${healthy < hosts.length ? ' Broken nameservers cause intermittent SERVFAIL.' : ''}`;
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${healthy === hosts.length ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-fail/10 text-fail border border-fail/30'}`;
+    resultsEl.classList.remove('hidden');
+  });
+</script>

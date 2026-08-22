@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="How to Get Delisted from SORBS" description="SORBS delisting guide: how SORBS listings work, the escalation timer, and the request process that actually works.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SORBS Delisting</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Get Delisted from SORBS</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      SORBS (Spam and Open-Relay Blocking System) lists IPs for spam-sending behavior, open relays,
+      and related abuse. It is best known for one policy quirk: new IPs and some listings carry an
+      automatic timeout, but requesting removal incorrectly can extend the wait.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>How SORBS listings behave</h2>
+      <ul>
+        <li>Many zones auto-expire (typically 48 hours to days) if the trigger stops.</li>
+        <li>Open-relay and exploit listings require proof of fix, not just time.</li>
+        <li>Requests from IPs that are still sending spam extend or re-list.</li>
+      </ul>
+      <h2>The working procedure</h2>
+      <ol class="list-decimal space-y-1.5 pl-5">
+        <li><strong>Confirm the listing and zone</strong> via the <a href="/blacklist-checker/">blacklist checker</a> or SORBS's own lookup (public-resolver queries may be refused).</li>
+        <li><strong>Stop the trigger</strong>: compromised account, open relay/proxy, spam run, or abused web form.</li>
+        <li><strong>Fix the posture</strong>: <a href="/spf-record-checker/">SPF</a>, <a href="/dkim-record-checker/">DKIM</a>, <a href="/dmarc-record-checker/">DMARC</a>, correct PTR, no direct sending from dynamic space.</li>
+        <li><strong>Submit one delisting request</strong> through the SORBS interface with a real explanation and the fix description.</li>
+        <li><strong>Respect the timer.</strong> If the listing carries an automatic expiry inside your window, waiting is often faster than requesting.</li>
+      </ol>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a> and <a href="/get-off-barracuda-blocklist/">Barracuda removal</a></li>
+        <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

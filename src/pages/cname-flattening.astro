@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="CNAME Flattening Explained (Cloudflare and Alternatives)" description="CNAME flattening explained: how providers resolve apex CNAMEs into A records, on-query vs on-publish modes, and when to use it.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">CNAME Flattening</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">CNAME Flattening Explained</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      The zone apex cannot hold a CNAME, but modern hosts want you to point the apex at a hostname.
+      Flattening resolves that contradiction: the provider quietly resolves the target and answers
+      with plain A records. You keep CNAME ergonomics; the internet sees legal DNS.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>How it works</h2>
+      <p>
+        You enter a CNAME at the root, something RFC rules technically forbid. Your DNS host, at
+        query time or publish time, resolves that target itself and returns the resulting IP
+        addresses as if they were ordinary A records. Cloudflare does this automatically for any apex
+        CNAME; Route 53 and DNSimple expose it as ALIAS records; some hosts offer both modes.
+      </p>
+      <h2>On-query vs on-publish</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th></th><th>Flatten on query</th><th>Flatten on publish</th></tr></thead>
+          <tbody>
+            <tr><td class="text-sm text-ink-dim">Freshness</td><td class="text-sm text-ink-dim">Always current</td><td class="text-sm text-ink-dim">Current as of last refresh + TTL</td></tr>
+            <tr><td class="text-sm text-ink-dim">Speed</td><td class="text-sm text-ink-dim">Slightly slower (resolution at edge)</td><td class="text-sm text-ink-dim">Fastest</td></tr>
+            <tr><td class="text-sm text-ink-dim">Failure mode</td><td class="text-sm text-ink-dim">Depends on provider resolvers</td><td class="text-sm text-ink-dim">Stale IPs after target changes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>When to use it</h2>
+      <ul>
+        <li>Pointing the apex at CDNs, load balancers, and PaaS hosts that give you a hostname, not an IP.</li>
+        <li>Escaping origin IPs that rotate without notice.</li>
+        <li>Anywhere you would use a <a href="/cname-record/">CNAME</a> if the name weren't the root.</li>
+      </ul>
+      <h2>The caveats</h2>
+      <ul>
+        <li>It is a provider feature, not portable DNS: moving your zone elsewhere means re-creating the setup there.</li>
+        <li>Only address records flatten; TXT verification living at the target does not transfer to your apex.</li>
+        <li>Keep TTLs modest (300) so answers track a moving target.</li>
+      </ul>
+      <h2>Verify yours</h2>
+      <p>
+        An A-record <a href="/dns-record-lookup/">lookup</a> on your apex returns the flattened
+        addresses; a CNAME lookup shows whether your provider exposes the underlying alias.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/alias-record/">ALIAS/ANAME records</a> and <a href="/cname-record/">CNAME records</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

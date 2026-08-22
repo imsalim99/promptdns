@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="SMTP Test — Mail Server Preflight" description="SMTP preflight check: MX routing, PTR, SPF/DKIM/DMARC, and blacklist status for any sending domain, plus the commands for deep testing.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">SMTP Test</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Preflight Test</h1>
+    <p class="mt-4 text-lg text-ink-dim">Browsers cannot open raw SMTP sockets, so this preflight checks everything around them: MX routing, reverse DNS, authentication records, and blocklists. Deep socket tests below.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="sm-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="sm-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Preflight</button>
+  </form>
+  <div id="sm-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="sm-results" class="mt-6 hidden grid gap-2"></div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none">
+      <h2>Deep tests from a terminal</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"># Test STARTTLS + handshake against the primary MX
+openssl s_client -starttls smtp -connect mail.example.com:587
+
+# Full SMTP dialogue (HELO, MAIL FROM, RCPT TO)
+swaks --to test@example.com --server mail.example.com</pre>
+      <h2>Related</h2><ul><li><a href="/mx-record-not-working/">MX troubleshooting</a> · <a href="/blacklist-checker/">Blacklist checker</a></li></ul>
+    </article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  import { ptrOf } from '../lib/ipinfo';
+  const form = document.getElementById('sm-form') as HTMLFormElement;
+  const input = document.getElementById('sm-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('sm-status')!;
+  const resultsEl = document.getElementById('sm-results')!;
+  const badge = (ok: boolean, partial = false) => partial
+    ? '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">partial</span>'
+    : ok ? '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">ok</span>'
+         : '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">missing</span>';
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Running SMTP preflight for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const [mx, txt, dm] = await Promise.all([
+      lookup(domain, 'MX', RESOLVERS[0]),
+      lookup(domain, 'TXT', RESOLVERS[0]),
+      lookup(`_dmarc.${domain}`, 'TXT', RESOLVERS[0]),
+    ]);
+    const mxHosts = mx.answers.filter(a => a.type === 15);
+    const spf = txtRecords(txt.answers).find(t => t.toLowerCase().startsWith('v=spf1'));
+    const dmarc = txtRecords(dm.answers).find(t => t.toLowerCase().startsWith('v=dmarc1'));
+    const firstMx = mxHosts[0]?.data.replace(/^\d+\s+/, '').replace(/\.$/, '');
+    const ptr = firstMx ? await ptrOf(await lookup(firstMx, 'A', RESOLVERS[0]).then(r => r.answers.find(x => x.type === 1)?.data ?? '')) : null;
+    resultsEl.innerHTML = '';
+    const rows: [string, boolean, string, boolean?][] = [
+      ['MX routing', mxHosts.length > 0, mxHosts.map(h => h.data).join(', ') || 'no MX records'],
+      ['SPF', !!spf, spf ? spf.slice(0, 70) : 'missing'],
+      ['DMARC', !!dmarc, dmarc ? dmarc.slice(0, 70) : 'missing'],
+      ['Reverse DNS (primary MX)', !!ptr, ptr ?? 'no PTR on mail host IP'],
+    ];
+    for (const [k, ok, v, partial] of rows) {
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between gap-3 rounded-lg border border-line bg-panel/60 px-4 py-3">
+        <div><span class="text-sm font-medium text-ink">${k}</span><span class="block font-mono text-[10px] text-ink-faint">${v.replace(/</g, '&lt;')}</span></div>
+        ${badge(ok, partial)}</div>`);
+    }
+    statusEl.textContent = 'Preflight complete. Terminal commands for full SMTP testing below.';
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

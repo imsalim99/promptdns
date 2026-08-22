@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="DMARC Record Checker, Check Your DMARC Policy"
+  description="Free DMARC record checker: validate your DMARC policy tags, alignment, and reporting configuration with a clear grade."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Record Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check any domain's DMARC record: policy strength, reporting configuration, alignment settings, graded A to F.</p>
+
+    <ToolPanel>
+      <form id="dmarc-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="dmarc-domain">Domain</label>
+        <input id="dmarc-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check DMARC</button>
+      </form>
+
+      <div id="dmarc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="dmarc-grade" class="mt-4 hidden flex items-center gap-4 rounded-lg border border-line bg-panel/60 p-4">
+        <span id="dmarc-grade-letter" class="font-display text-5xl font-bold text-accent"></span>
+        <div>
+          <p class="text-sm font-semibold text-ink" id="dmarc-grade-title"></p>
+          <p class="text-xs text-ink-dim" id="dmarc-grade-desc"></p>
+        </div>
+      </div>
+
+      <div id="dmarc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Tag</th><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody id="dmarc-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="dmarc-issues" class="mt-4 hidden grid gap-2"></div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>How DMARC is graded here</h2>
+      <p><strong>A</strong>, enforcement (p=reject) with reporting. <strong>B</strong>, quarantine with reporting. <strong>C</strong>, monitoring (p=none) with reports. <strong>D/F</strong>, missing pieces. Enforcement without rua, or no record at all, leaves you blind or spoofable.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/dmarc-record-generator/">DMARC Record Generator</a>, build a correct record</li>
+        <li><a href="/spf-record-checker/">SPF Record Checker</a> and <a href="/dkim-record-checker/">DKIM Record Checker</a></li>
+        <li><a href="/dmarc/">DMARC explained</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { parseDmarc } from '../lib/dmarc';
+  import { txtRecords } from '../lib/spf';
+
+  const form = document.getElementById('dmarc-form') as HTMLFormElement;
+  const input = document.getElementById('dmarc-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('dmarc-status')!;
+  const gradeBox = document.getElementById('dmarc-grade')!;
+  const gradeLetter = document.getElementById('dmarc-grade-letter')!;
+  const gradeTitle = document.getElementById('dmarc-grade-title')!;
+  const gradeDesc = document.getElementById('dmarc-grade-desc')!;
+  const resultsEl = document.getElementById('dmarc-results')!;
+  const tbody = document.getElementById('dmarc-tbody')!;
+  const issuesEl = document.getElementById('dmarc-issues')!;
+
+  const gradeMeta: Record<string, [string, string]> = {
+    A: ['Full enforcement with reporting', 'Spoofed mail is rejected and you can monitor everything.'],
+    B: ['Enforcement (quarantine) with reporting', 'Spoofed mail lands in spam. Consider moving to p=reject.'],
+    C: ['Monitoring only', 'p=none with reports, good start, but spoofed mail is still delivered.'],
+    D: ['Configured but incomplete', 'Policy exists but reporting is missing.'],
+    F: ['Not protectable', 'No usable DMARC configuration found.'],
+  };
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    [gradeBox, resultsEl, issuesEl].forEach((el) => el.classList.add('hidden'));
+    setStatus('bg-panel-2 text-accent border border-line', `Looking up _dmarc.${domain}…`);
+
+    const res = await lookup(`_dmarc.${domain}`, 'TXT', RESOLVERS[0]);
+    const record = txtRecords(res.answers).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
+    if (!record) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', `No DMARC record on ${domain}. Anyone can spoof this domain.`);
+      return;
+    }
+    const parse = parseDmarc(record);
+    setStatus(parse.errors.length ? 'bg-fail/10 text-fail border border-fail/30'
+      : parse.warnings.length ? 'bg-warn/10 text-warn border border-warn/30'
+      : 'bg-pass/10 text-pass border border-pass/30',
+      parse.errors.length ? 'DMARC record found, with errors.' : parse.warnings.length ? 'DMARC record found, with warnings.' : 'DMARC record found and healthy.');
+
+    const [t, d] = gradeMeta[parse.grade];
+    gradeLetter.textContent = parse.grade;
+    gradeTitle.textContent = t;
+    gradeDesc.textContent = d;
+    gradeBox.classList.remove('hidden');
+
+    tbody.innerHTML = `<tr><td colspan="3"><code>${record.replace(/</g, '&lt;')}</code></td></tr>`;
+    for (const tag of parse.tags) {
+      tbody.insertAdjacentHTML('beforeend', `<tr>
+        <td class="font-mono text-xs text-accent">${tag.tag}=</td>
+        <td class="font-mono text-xs text-ink">${tag.value.replace(/</g, '&lt;')}</td>
+        <td class="text-ink-dim">${tag.meaning}</td>
+      </tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+
+    issuesEl.innerHTML = '';
+    for (const err of parse.errors) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail">✕ ${err}</div>`);
+    for (const w of parse.warnings) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn">▲ ${w}</div>`);
+    if (parse.errors.length || parse.warnings.length) issuesEl.classList.remove('hidden');
+  });
+</script>

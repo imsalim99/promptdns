@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="SPF Record Generator — Build Your SPF Free" description="Free SPF record generator: add your senders (Google, Microsoft, ESPs, custom IPs) and get a valid v=spf1 record with lookup counting.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">SPF Generator</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Generator</h1>
+    <p class="mt-4 text-lg text-ink-dim">Pick your senders, choose a policy, get a valid record with a live lookup count.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="sg-form" class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <p class="mb-2 text-xs text-ink-faint">Sending services</p>
+      <div id="sg-services" class="grid gap-1.5 text-sm">
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:_spf.google.com" class="accent-cyan-400"> Google Workspace</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:spf.protection.outlook.com" class="accent-cyan-400"> Microsoft 365</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:sendgrid.net" class="accent-cyan-400"> SendGrid</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:mailgun.org" class="accent-cyan-400"> Mailgun</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:servers.mcsv.net" class="accent-cyan-400"> Mailchimp</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:zoho.com" class="accent-cyan-400"> Zoho</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="include:amazonses.com" class="accent-cyan-400"> Amazon SES</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="a" class="accent-cyan-400"> My own server (a)</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="mx" class="accent-cyan-400"> My mail servers (mx)</label>
+      </div>
+      <div class="mt-3 grid gap-2">
+        <input id="sg-ip" type="text" placeholder="Extra IP, e.g. 203.0.113.10" class="rounded-md border border-line bg-transparent px-3 py-2 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <input id="sg-include" type="text" placeholder="Extra include:, e.g. include:esp.example.com" class="rounded-md border border-line bg-transparent px-3 py-2 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+      </div>
+    </div>
+    <div>
+      <p class="mb-2 text-xs text-ink-faint">Policy for everyone else</p>
+      <select id="sg-all" class="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+        <option value="~all">~all softfail (recommended start)</option>
+        <option value="-all">-all hard fail (strict)</option>
+        <option value="?all">?all neutral</option>
+      </select>
+      <div class="mt-6">
+        <div class="flex items-center justify-between"><p class="text-sm font-semibold text-ink">Your SPF record</p><button type="button" id="sg-copy" class="rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Copy</button></div>
+        <pre id="sg-out" class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"></pre>
+        <p id="sg-count" class="mt-2 text-xs text-ink-faint"></p>
+      </div>
+    </div>
+  </form>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul>
+      <li><a href="/spf-record-checker/">SPF checker</a> (verify after publishing) · <a href="/spf-flattener/">flattener</a></li>
+      <li><a href="/spf-record-syntax/">Full syntax reference</a></li>
+    </ul></article>
+  </div>
+</BaseLayout>
+<script>
+  const boxes = [...document.querySelectorAll('#sg-services input')] as HTMLInputElement[];
+  const ipIn = document.getElementById('sg-ip') as HTMLInputElement;
+  const incIn = document.getElementById('sg-include') as HTMLInputElement;
+  const allSel = document.getElementById('sg-all') as HTMLSelectElement;
+  const out = document.getElementById('sg-out')!;
+  const count = document.getElementById('sg-count')!;
+  const copyBtn = document.getElementById('sg-copy') as HTMLButtonElement;
+  function render() {
+    const parts: string[] = [];
+    let lookups = 0;
+    for (const b of boxes) if (b.checked) { parts.push(b.value); if (/^(include|a$|mx$)/.test(b.value)) lookups++; }
+    const ip = ipIn.value.trim();
+    if (ip) parts.push(`ip4:${ip}`);
+    const inc = incIn.value.trim().replace(/^include:/, '');
+    if (inc) { parts.push(`include:${inc}`); lookups++; }
+    out.textContent = `v=spf1 ${parts.join(' ')}${parts.length ? ' ' : ''}${allSel.value}`;
+    count.textContent = lookups > 0 ? `${lookups} DNS lookups used (limit 10)${lookups > 8 ? ' — consider flattening' : ''}` : 'No DNS lookups: literal IPs only.';
+    count.className = `mt-2 text-xs ${lookups > 8 ? 'text-warn' : 'text-ink-faint'}`;
+  }
+  [ipIn, incIn, allSel, ...boxes].forEach(el => el.addEventListener('input', render));
+  render();
+  copyBtn.addEventListener('click', async () => { await navigator.clipboard.writeText(out.textContent ?? ''); copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy', 1500); });
+</script>

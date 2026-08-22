@@ -1,0 +1,138 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="llms.txt Generator, Free, Instant"
+  description="Generate an llms.txt file for your website: the markdown summary that helps AI assistants and agents understand and cite your content."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">llms.txt Generator</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">llms.txt Generator</h1>
+    <p class="mt-4 text-lg text-ink-dim">Build a valid <code class="font-mono text-accent-soft">llms.txt</code> for your site, the markdown file that tells language models what your content is and where the important pages live.</p>
+
+    <ToolPanel>
+      <form id="llm-form" class="grid gap-4">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label for="llm-url" class="mb-1 block text-xs text-ink-faint">Site URL</label>
+            <input id="llm-url" type="text" placeholder="https://example.com" autocomplete="off" spellcheck="false"
+              class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          </div>
+          <div class="flex items-end">
+            <button type="button" id="llm-fetch" class="w-full rounded-md border border-line bg-panel-2 px-4 py-2.5 text-sm font-medium text-ink hover:border-accent/40">Try to fetch title &amp; description</button>
+          </div>
+        </div>
+        <div>
+          <label for="llm-name" class="mb-1 block text-xs text-ink-faint">Site name (H1)</label>
+          <input id="llm-name" type="text" placeholder="Example Co."
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        </div>
+        <div>
+          <label for="llm-summary" class="mb-1 block text-xs text-ink-faint">One-sentence summary (blockquote)</label>
+          <textarea id="llm-summary" rows="2" placeholder="What your site is and who it serves."
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"></textarea>
+        </div>
+        <div>
+          <label for="llm-links" class="mb-1 block text-xs text-ink-faint">Links, one per line: <span class="font-mono">URL | Title | optional description</span></label>
+          <textarea id="llm-links" rows="6" placeholder="https://example.com/pricing | Pricing | Plans and free tier&#10;https://example.com/docs | Documentation | API reference and guides"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"></textarea>
+        </div>
+      </form>
+
+      <div id="llm-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div class="mt-6">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-ink">Your llms.txt</p>
+          <div class="flex gap-2">
+            <button id="llm-copy" class="rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Copy</button>
+            <button id="llm-download" class="rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Download</button>
+          </div>
+        </div>
+        <pre id="llm-out" class="mt-2 max-h-96 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"></pre>
+        <p class="mt-2 text-xs text-ink-faint">Publish at <span class="font-mono">https://yourdomain.com/llms.txt</span>, plain text, no headers required.</p>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What llms.txt is</h2>
+      <p>llms.txt is a proposed standard (llmstxt.org): a markdown file at your root that gives language models a curated map of your site, name, summary, and links with descriptions. Unlike robots.txt (which restricts), llms.txt <em>explains</em>. It complements your sitemap the way an abstract complements a paper.</p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/what-is-llms-txt/">What is llms.txt?</a> (full guide)</li>
+        <li><a href="/ai-crawler-checker/">AI Crawler Checker</a>, control access</li>
+        <li><a href="/llms-txt-syntax/">llms.txt syntax rules</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { buildLlmsTxt } from '../lib/robots';
+  import { fetchText, normalizeSite } from '../lib/proxy';
+
+  const urlIn = document.getElementById('llm-url') as HTMLInputElement;
+  const nameIn = document.getElementById('llm-name') as HTMLInputElement;
+  const summaryIn = document.getElementById('llm-summary') as HTMLTextAreaElement;
+  const linksIn = document.getElementById('llm-links') as HTMLTextAreaElement;
+  const fetchBtn = document.getElementById('llm-fetch') as HTMLButtonElement;
+  const statusEl = document.getElementById('llm-status')!;
+  const out = document.getElementById('llm-out')!;
+  const copyBtn = document.getElementById('llm-copy') as HTMLButtonElement;
+  const dlBtn = document.getElementById('llm-download') as HTMLButtonElement;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  function render() {
+    const links = linksIn.value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+      const [url, title, desc] = line.split('|').map((s) => s.trim());
+      return { url: url ?? '', title: title ?? url ?? '', desc };
+    });
+    const headings: string[] = [];
+    const sections = links.length ? [{ heading: 'Links', links }] : [];
+    out.textContent = buildLlmsTxt({
+      siteName: nameIn.value.trim() || urlIn.value.trim() || 'Your Site',
+      url: normalizeSite(urlIn.value || 'https://example.com'),
+      summary: summaryIn.value.trim() || 'Add a one-sentence summary of this site.',
+      sections,
+    });
+  }
+  [urlIn, nameIn, summaryIn, linksIn].forEach((el) => el.addEventListener('input', render));
+  render();
+
+  fetchBtn.addEventListener('click', async () => {
+    const url = normalizeSite(urlIn.value);
+    if (!url.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter your site URL first.'); return; }
+    setStatus('bg-panel-2 text-accent border border-line', 'Fetching page metadata…');
+    const res = await fetchText(url);
+    if (!res.ok) { setStatus('bg-warn/10 text-warn border border-warn/30', 'Could not fetch that page, fill the fields manually.'); return; }
+    const doc = new DOMParser().parseFromString(res.text, 'text/html');
+    const title = doc.querySelector('title')?.textContent?.trim();
+    const desc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim();
+    if (title && !nameIn.value) nameIn.value = title;
+    if (desc && !summaryIn.value) summaryIn.value = desc;
+    render();
+    setStatus('bg-pass/10 text-pass border border-pass/30', title ? `Found: “${title}”` : 'Page fetched, fill the fields manually.');
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(out.textContent ?? '');
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+  });
+  dlBtn.addEventListener('click', () => {
+    const blob = new Blob([out.textContent ?? ''], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'llms.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>

@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="DMARC Record Generator, Build Your DMARC Record"
+  description="Free DMARC record generator: pick your policy, alignment, and reporting addresses and get a copy-paste-ready DMARC TXT record."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Record Generator</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record Generator</h1>
+    <p class="mt-4 text-lg text-ink-dim">Configure your policy once and get a valid, copy-paste-ready DMARC record for your DNS.</p>
+
+    <ToolPanel>
+      <form id="gen-form" class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="gen-policy" class="mb-1 block text-xs text-ink-faint">Domain policy (p=)</label>
+          <select id="gen-policy" class="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+            <option value="none">none, monitor only (start here)</option>
+            <option value="quarantine">quarantine, fail to spam</option>
+            <option value="reject">reject, full enforcement</option>
+          </select>
+        </div>
+        <div>
+          <label for="gen-sp" class="mb-1 block text-xs text-ink-faint">Subdomain policy (sp=), optional</label>
+          <select id="gen-sp" class="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+            <option value="">inherit from p=</option>
+            <option value="none">none</option>
+            <option value="quarantine">quarantine</option>
+            <option value="reject">reject</option>
+          </select>
+        </div>
+        <div>
+          <label for="gen-pct" class="mb-1 block text-xs text-ink-faint">Apply to % of mail (pct=)</label>
+          <input id="gen-pct" type="number" min="1" max="100" value="100" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none" />
+        </div>
+        <div>
+          <label for="gen-rua" class="mb-1 block text-xs text-ink-faint">Report address (rua=)</label>
+          <input id="gen-rua" type="email" placeholder="dmarc@yourdomain.com" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        </div>
+        <div>
+          <label for="gen-ruf" class="mb-1 block text-xs text-ink-faint">Forensic reports (ruf=), optional</label>
+          <input id="gen-ruf" type="email" placeholder="(optional)" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="gen-adkim" class="mb-1 block text-xs text-ink-faint">DKIM align (adkim=)</label>
+            <select id="gen-adkim" class="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+              <option value="">relaxed (r)</option><option value="r">relaxed (r)</option><option value="s">strict (s)</option>
+            </select>
+          </div>
+          <div>
+            <label for="gen-aspf" class="mb-1 block text-xs text-ink-faint">SPF align (aspf=)</label>
+            <select id="gen-aspf" class="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+              <option value="">relaxed (r)</option><option value="r">relaxed (r)</option><option value="s">strict (s)</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <div class="mt-6">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-ink">Your DMARC record</p>
+          <button id="gen-copy" class="rounded-md border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-ink hover:border-accent/40">Copy</button>
+        </div>
+        <pre id="gen-out" class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"></pre>
+        <p class="mt-2 text-xs text-ink-faint">Publish as a TXT record at <code class="font-mono">_dmarc.yourdomain.com</code>.</p>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>The safe path to enforcement</h2>
+      <p>Start with <code>p=none</code> and a working <code>rua</code> address for 2–4 weeks: read the aggregate reports, fix every legitimate sender that fails SPF/DKIM, then step to <code>p=quarantine</code> (optionally with <code>pct</code> ramping 25 → 50 → 100), and finally <code>p=reject</code>.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a>, verify after publishing</li>
+        <li><a href="/how-to-read-dmarc-reports/">How to read DMARC reports</a> (guide)</li>
+        <li><a href="/dmarc-record-generator/">SPF Record Checker</a> companion</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { generateDmarc, type DmarcGenOptions } from '../lib/dmarc';
+
+  const ids = ['gen-policy', 'gen-sp', 'gen-pct', 'gen-rua', 'gen-ruf', 'gen-adkim', 'gen-aspf'] as const;
+  const els = Object.fromEntries(ids.map((id) => [id, document.getElementById(id) as HTMLSelectElement | HTMLInputElement]));
+  const out = document.getElementById('gen-out')!;
+  const copyBtn = document.getElementById('gen-copy') as HTMLButtonElement;
+
+  function render() {
+    const o: DmarcGenOptions = {
+      policy: (els['gen-policy'] as HTMLSelectElement).value as DmarcGenOptions['policy'],
+      subdomainPolicy: (els['gen-sp'] as HTMLSelectElement).value as DmarcGenOptions['subdomainPolicy'],
+      pct: Math.min(100, Math.max(1, parseInt((els['gen-pct'] as HTMLInputElement).value || '100', 10))),
+      rua: (els['gen-rua'] as HTMLInputElement).value,
+      ruf: (els['gen-ruf'] as HTMLInputElement).value,
+      adkim: (els['gen-adkim'] as HTMLSelectElement).value as DmarcGenOptions['adkim'],
+      aspf: (els['gen-aspf'] as HTMLSelectElement).value as DmarcGenOptions['aspf'],
+    };
+    out.textContent = generateDmarc(o);
+  }
+  ids.forEach((id) => els[id].addEventListener('input', render));
+  render();
+
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(out.textContent ?? '');
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+  });
+</script>

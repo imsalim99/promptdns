@@ -1,0 +1,96 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "SRV",
+ "title": "SRV Record: Locating Services with DNS",
+ "description": "SRV records explained in depth: the _service._proto naming scheme, priority and weight mechanics, and real deployments from SIP to Minecraft.",
+ "intro": "SRV records answer 'where is this service?' rather than 'where is this server?'. They carry priority, weight, and port alongside the target host, letting clients discover and load-balance a specific protocol on your domain.",
+ "deepDive": [
+  "The owner name is a strict two-part prefix: underscored service, underscored protocol, then your domain. _sip._tcp.example.com says 'the SIP service over TCP on this domain'. The convention looks alien next to plain hostnames, but it is what every SRV-aware client searches for, character for character.",
+  "Priority and weight work together. Priority is a hard order: clients try lower numbers first, exactly like MX. Among targets of equal priority, weight distributes connections proportionally, a 60/40 split for two servers both at priority 10. The port rides in the record itself, so the service can live on a non-standard port without clients hardcoding anything.",
+  "In practice you meet SRV in three worlds: VoIP and XMPP, where handsets and clients discover the server from the domain alone; Active Directory, where domain-joined machines locate Kerberos and LDAP via _kerberos._tcp and friends; and gaming, where a single SRV lets players connect with play.example.com while the real server sits on a hidden host and port. The target must resolve via A/AAAA; pointing SRV at a CNAME is technically tolerated but pointless."
+ ],
+ "example": "_sip._tcp.example.com.   3600  IN  SRV  10 60 5060 sip1.example.com.\n_sip._tcp.example.com.   3600  IN  SRV  10 40 5060 sip2.example.com.\n_minecraft._tcp.example. 3600  IN  SRV  0  5 25565 play.example.com.",
+ "anatomy": [
+  [
+   "_sip._tcp",
+   "Service and protocol prefix; both underscored, both mandatory."
+  ],
+  [
+   "priority",
+   "Lower tried first; equal priorities share traffic by weight."
+  ],
+  [
+   "weight",
+   "Relative share among same-priority targets (0-65535)."
+  ],
+  [
+   "5060",
+   "The port the service listens on."
+  ],
+  [
+   "sip1.example.com.",
+   "Target hostname; must have an A/AAAA record."
+  ]
+ ],
+ "uses": [
+  "SIP/VoIP provisioning and XMPP server discovery",
+  "Active Directory service location",
+  "Game server aliases (Minecraft and friends)",
+  "Any client that supports DNS-based service discovery"
+ ],
+ "steps": [
+  [
+   "Confirm the prefix",
+   "Get the exact _service._proto string from your software's docs; one wrong character makes it invisible."
+  ],
+  [
+   "Create the record",
+   "Host field gets the prefix, then priority, weight, port, and target in your panel's SRV fields."
+  ],
+  [
+   "Resolve the target",
+   "Verify the target hostname has an A record; SRV does not chase CNAME chains helpfully."
+  ],
+  [
+   "Test with a client",
+   "Or run an SRV lookup here to see exactly what clients discover."
+  ]
+ ],
+ "mistakes": [
+  "Missing the leading underscores in the prefix",
+  "Target without an A/AAAA record",
+  "Confusing weight with priority when the goal is ordering, not distribution",
+  "Expecting browsers to use SRV; they famously do not"
+ ],
+ "faqs": [
+  [
+   "Do browsers use SRV records?",
+   "No. Mainstream browsers skip SRV for websites; it exists for protocols and clients built to query it."
+  ],
+  [
+   "How do priority and weight differ?",
+   "Priority orders groups absolutely; weight splits load within one priority level."
+  ],
+  [
+   "Why underscores in the name?",
+   "They prevent collisions with real hostnames a human might create."
+  ],
+  [
+   "Can SRV point to a different domain?",
+   "Yes. Cross-domain targets are common for hosted services."
+  ]
+ ],
+ "related": [
+  [
+   "MX records: mail's specialized cousin",
+   "/mx-record/"
+  ],
+  [
+   "Check SRV records",
+   "/dns-record-lookup/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

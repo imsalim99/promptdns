@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const channels = [
+  { title: 'Email support', desc: 'Free plan: community best-effort. Paid plans: priority email support, 1–2 business days.', link: 'mailto:support@promptdns.com', label: 'support@promptdns.com' },
+  { title: 'Guides & docs', desc: 'Most questions are answered in the guide network, record types, email authentication, troubleshooting.', link: '/dns/', label: 'Browse the guides' },
+  { title: 'Bug reports', desc: 'A tool returning wrong results? Tell us the domain, the record type, and what you expected.', link: 'mailto:bugs@promptdns.com', label: 'bugs@promptdns.com' },
+  { title: 'Security disclosures', desc: 'Responsible disclosure welcome. We will acknowledge within 72 hours.', link: 'mailto:security@promptdns.com', label: 'security@promptdns.com' },
+];
+---
+<BaseLayout
+  title="Support"
+  description="PromptDNS support: email support channels, guides, bug reports, and security disclosures."
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Support</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">We answer fast.</h1>
+    <p class="mt-4 text-lg text-ink-dim">
+      PromptDNS is a tools-and-guides network, so most answers already exist in the guides.
+      For everything else, pick the right channel below.
+    </p>
+    <div class="mt-10 grid gap-4">
+      {channels.map((c) => (
+        <a href={c.link} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40">
+          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{c.title}</h2>
+          <p class="mt-1 text-sm text-ink-dim">{c.desc}</p>
+          <p class="mt-2 font-mono text-sm text-accent">{c.label}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

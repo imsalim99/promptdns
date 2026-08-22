@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="llms.txt Syntax and Format Rules" description="llms.txt syntax reference: required structure, heading levels, link format, optional sections, and validation rules.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">llms.txt Syntax</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">llms.txt Syntax and Format Rules</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      llms.txt is deliberately simple: GitHub-flavored markdown with a fixed shape. The constraint
+      is the point, machines parse it without ambiguity. Here is the whole grammar.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>The required shape</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"># Site Name (required H1, first line)
+
+> One-sentence summary of the site. (required blockquote, immediately after)
+
+## Optional section
+- [Link title](https://absolute-url): description after the colon
+- [Another](https://example.com/page): another description
+
+## Another optional section
+- [More](https://example.com/more): grouped links by topic</pre>
+      <h2>Rules that matter</h2>
+      <ul>
+        <li>Exactly one H1, first line: the site name.</li>
+        <li>One blockquote line directly beneath: the thesis of the site.</li>
+        <li>H2 sections group related links; keep them thematic (Docs, Tools, Pricing).</li>
+        <li>Links are markdown with <strong>absolute URLs</strong>; the text after the colon is the one-line description.</li>
+        <li>Plain UTF-8 text at <code>/llms.txt</code>; no auth, no redirects, no HTML wrapper.</li>
+        <li>Optional: a link to <code>llms-full.txt</code> for the complete flattened content.</li>
+      </ul>
+      <h2>Common mistakes</h2>
+      <ul>
+        <li>Relative URLs; consumers may not have a base context.</li>
+        <li>Marketing fluff in the blockquote; it should state what the site <em>is</em>.</li>
+        <li>Linking everything instead of the important pages; curation is the value.</li>
+        <li>Forgetting the file is publicly cached: update it with releases, not per-deploy.</li>
+      </ul>
+      <h2>Validate and generate</h2>
+      <p>
+        Build a spec-correct file with the <a href="/llms-txt-generator/">llms.txt generator</a>, and
+        confirm its presence (plus your robots.txt posture) with the
+        <a href="/ai-readiness-checker/">AI readiness audit</a>.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/what-is-llms-txt/">What is llms.txt?</a></li>
+        <li><a href="/robots-txt-guide/">robots.txt: the complete guide</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

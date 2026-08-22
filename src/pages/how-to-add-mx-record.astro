@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="How to Add MX Records for Email" description="How to add MX records step by step: get your mail provider's values, publish with correct priorities, avoid the classic mistakes, and verify.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Add MX Records</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Add MX Records</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      MX records route your incoming mail. Adding them is five minutes of careful copying from your
+      mail provider's instructions; the failure modes are all predictable.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>Step by step</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Open your mail provider's DNS instructions.</strong> Google Workspace, M365, Zoho, Proton all publish their exact MX hosts and priorities. Copy, do not retype.</li>
+        <li><strong>In your DNS host, create MX records</strong> on the root domain. Each line gets: host <code>@</code>, type MX, priority (10, 20, ...), value the mail hostname with its trailing dot if your host uses FQDNs.</li>
+        <li><strong>Remove old MX records completely.</strong> Mixed old and new sets mean some mail lands on the old server forever.</li>
+        <li><strong>Lower expectations, not TTLs.</strong> If migrating providers with users live, pre-set TTL 300 the day before so the cutover is minutes, not a day.</li>
+        <li><strong>Verify.</strong> The <a href="/dns-record-lookup/">record lookup</a> with MX selected shows your new set from a public resolver; the <a href="/dns-propagation-checker/">propagation checker</a> confirms every resolver agrees before you decommission the old host.</li>
+      </ol>
+      <h2>The classic mistakes</h2>
+      <ul>
+        <li>Pointing MX at an IP address; MX takes a hostname, always.</li>
+        <li>Priority confusion: lower number = higher priority; equal numbers load-balance.</li>
+        <li>Adding a new provider's MX while keeping the old ones "just in case": mail splits unpredictably.</li>
+        <li>Forgetting the subdomains: <code>mail.yourdomain.com</code> needs its own MX if it receives directly.</li>
+      </ul>
+      <h2>After the MX: complete receiving</h2>
+      <p>
+        MX routes mail, but deliverability of your <em>outbound</em> mail needs SPF, DKIM, and DMARC.
+        The homepage <a href="/">scanner</a> checks the whole stack in one pass.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/mx-record/">MX records explained</a></li>
+        <li><a href="/mx-record-not-working/">MX not working? Diagnosis</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

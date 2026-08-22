@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Domain Age Checker — How Old Is That Domain?" description="Free domain age checker: RDAP-based creation, update, and expiry dates, with the domain's age in years and days.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Domain Age Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Domain Age Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">How old is any domain? Creation date from registry RDAP data, with age computed in years and days.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="da-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="da-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Age</button>
+  </form>
+  <div id="da-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="da-big" class="mt-6 hidden text-center">
+    <p id="da-age" class="font-display text-5xl font-bold text-accent"></p>
+    <p class="mt-1 text-xs text-ink-faint">years old</p>
+  </div>
+  <div id="da-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Event</th><th>Date</th></tr></thead><tbody id="da-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/whois-lookup/">WHOIS/RDAP lookup</a> · <a href="/whois-lookup/">Does domain age matter for SEO?</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { fetchText, hostOf } from '../lib/proxy';
+  const form = document.getElementById('da-form') as HTMLFormElement;
+  const input = document.getElementById('da-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('da-status')!;
+  const bigEl = document.getElementById('da-big')!;
+  const ageEl = document.getElementById('da-age')!;
+  const resultsEl = document.getElementById('da-results')!;
+  const tbody = document.getElementById('da-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = hostOf(input.value);
+    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
+    statusEl.textContent = `Checking registry data for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    [bigEl, resultsEl].forEach(el => el.classList.add('hidden'));
+    const res = await fetchText(`https://rdap.org/domain/${domain}`);
+    if (!res.ok || res.text.startsWith('<')) { statusEl.textContent = 'No registry data available for that domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    let j: any;
+    try { j = JSON.parse(res.text); } catch { statusEl.textContent = 'Could not parse RDAP response.'; return; }
+    const ev = (kind: string) => j.events?.find((x: any) => x.eventAction === kind)?.eventDate?.slice(0, 10);
+    const created = ev('registration');
+    if (created) {
+      const years = ((Date.now() - new Date(created).getTime()) / (365.25 * 24 * 3600 * 1000));
+      ageEl.textContent = years.toFixed(1);
+      bigEl.classList.remove('hidden');
+    }
+    const rows: [string, string][] = [
+      ['Created', created ?? 'n/a'],
+      ['Updated', ev('last changed') ?? 'n/a'],
+      ['Expires', ev('expiration') ?? 'n/a'],
+    ];
+    tbody.innerHTML = '';
+    for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs">${v}</td></tr>`);
+    resultsEl.classList.remove('hidden');
+    statusEl.textContent = `Registry dates for ${domain} via RDAP.`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+  });
+</script>

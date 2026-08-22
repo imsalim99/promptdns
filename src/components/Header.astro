@@ -1,0 +1,115 @@
+---
+import { TOOL_CATEGORIES, NAV_MENU, TOTAL_TOOLS } from '../data/tools';
+
+const learnMenu = [
+  ['DNS Guide', 'Records, propagation, security', '/dns/'],
+  ['Record Types', 'A, AAAA, CNAME, MX, TXT & more', '/dns-records/'],
+  ['Email Authentication', 'SPF, DKIM, DMARC, BIMI', '/email-authentication/'],
+  ['About', 'Editorial standards', '/about/'],
+];
+---
+<header class="site-header sticky top-0 z-50">
+  <div class="mx-auto flex h-16 max-w-7xl items-center gap-10 px-4 lg:px-8">
+    <a href="/" class="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight" aria-label="PromptDNS home">
+      <span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-mono text-[10px] font-bold text-canvas">DNS</span>
+      <span>Prompt<span class="gradient-text">DNS</span></span>
+    </a>
+
+    <nav class="hidden items-center gap-2 text-[15px] font-normal lg:flex" aria-label="Main">
+      <!-- Tools mega menu: every tool, every category -->
+      <div class="group relative">
+        <button class="nav-item flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink" aria-expanded="false">
+          Tools
+          <svg class="h-3 w-3 opacity-60 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <div class="invisible absolute left-0 top-full z-50 w-[46rem] max-w-[92vw] translate-y-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <div class="menu-panel mt-2 grid grid-cols-4 gap-5 rounded-xl p-5">
+            {NAV_MENU.map((col) => (
+              <div>
+                <p class="mb-2 font-display text-xs font-semibold uppercase tracking-wider text-ink">{col.heading}</p>
+                {col.groups.map((g) => (
+                  <div class="mb-3 last:mb-0">
+                    <p class="mb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent">{g.sub}</p>
+                    <ul class="space-y-0.5">
+                      {g.tools.map(([label, href]) => (
+                        <li><a href={href} class="block text-xs leading-snug text-ink-dim transition-colors hover:text-accent">{label}</a></li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div class="col-span-4 border-t border-line pt-2 text-center">
+              <a href="/tools/" class="font-mono text-xs text-accent hover:text-accent-soft">Browse all {TOTAL_TOOLS} tools, categorized →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Learn dropdown -->
+      <div class="group relative">
+        <button class="nav-item flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink" aria-expanded="false">
+          Learn
+          <svg class="h-3 w-3 opacity-60 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <div class="invisible absolute left-0 top-full z-50 w-80 translate-y-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <div class="menu-panel mt-2 rounded-xl p-2">
+            {learnMenu.map(([title, desc, href]) => (
+              <a href={href} class="block rounded-lg px-3 py-2.5 transition-colors hover:text-accent">
+                <span class="text-sm font-medium">{title}</span>
+                <span class="block text-xs text-ink-faint">{desc}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <a href="/pricing/" class="nav-item rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink">Pricing</a>
+      <a href="/about/" class="nav-item rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink">About</a>
+      <a href="/contact/" class="nav-item rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink">Contact</a>
+    </nav>
+
+    <div class="ml-auto hidden items-center gap-4 lg:flex">
+      <a href="/about/" class="text-sm text-ink-dim transition-colors hover:text-ink">Log in</a>
+      <a href="/" class="btn-cta btn-shimmer px-4 py-2 text-sm">Get Started Free</a>
+    </div>
+
+    <!-- Mobile toggle -->
+    <button id="mobile-menu-btn" class="ml-auto grid h-9 w-9 place-items-center rounded-md border border-line lg:hidden" aria-label="Open menu" aria-expanded="false">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" /></svg>
+    </button>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div id="mobile-menu" class="hidden max-h-[70vh] overflow-y-auto border-t border-line/60 bg-canvas px-4 py-4 lg:hidden">
+    <nav class="grid gap-1 text-sm" aria-label="Mobile">
+      {TOOL_CATEGORIES.map((c) => (
+        <div class="mb-2">
+          <p class="px-2 pt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{c.cat}</p>
+          <div class="grid grid-cols-2 gap-x-3">
+            {c.tools.map((t) => (
+              <a href={t.href} class="rounded-md px-2 py-1.5 text-xs text-ink-dim hover:text-accent">{t.name}</a>
+            ))}
+          </div>
+        </div>
+      ))}
+      <p class="px-2 pt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Learn</p>
+      {learnMenu.map(([title, , href]) => (
+        <a href={href} class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">{title}</a>
+      ))}
+      <p class="px-2 pt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Company</p>
+      <a href="/pricing/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">Pricing</a>
+      <a href="/about/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">About</a>
+      <a href="/contact/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('mobile-menu-btn')!;
+  const menu = document.getElementById('mobile-menu')!;
+  btn.addEventListener('click', () => {
+    const open = menu.classList.toggle('hidden') === false;
+    btn.setAttribute('aria-expanded', String(open));
+  });
+</script>

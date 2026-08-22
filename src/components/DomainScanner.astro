@@ -1,0 +1,192 @@
+---
+/**
+ * DomainScanner, EasyDMARC-style hero widget with REAL checks:
+ * staged progress, animated score gauge, per-check cards.
+ * All lookups run client-side via DoH.
+ */
+import { RECORD_TYPES } from '../lib/doh';
+---
+<div id="domain-scanner" class="relative">
+  <!-- Scan input -->
+  <form id="scan-form" class="glass flex flex-col gap-2 rounded-xl p-2 shadow-[0_0_80px_-20px_rgba(34,211,238,0.35)] transition-shadow focus-within:shadow-[0_0_90px_-15px_rgba(34,211,238,0.55)] sm:flex-row">
+    <div class="flex flex-1 items-center gap-2 px-3">
+      <svg class="h-5 w-5 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" stroke-linecap="round" />
+      </svg>
+      <label class="sr-only" for="scan-domain">Domain name</label>
+      <input
+        id="scan-domain"
+        type="text"
+        inputmode="url"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Analyze your domain, e.g. example.com"
+        class="w-full bg-transparent py-3 font-mono text-sm text-ink placeholder:text-ink-faint focus:outline-none"
+      />
+    </div>
+    <button
+      type="submit"
+      id="scan-btn"
+      class="btn-shimmer rounded-lg bg-gradient-to-r from-accent to-violet px-7 py-3 font-display font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+    >
+      Analyze Security
+    </button>
+  </form>
+
+  <!-- Progress -->
+  <div id="scan-progress" class="mt-6 hidden">
+    <div class="flex items-center justify-between text-sm">
+      <span id="scan-stage" class="font-medium text-ink">Resolving…</span>
+      <span id="scan-pct" class="font-mono text-accent">0%</span>
+    </div>
+    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
+      <div id="scan-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-500"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="scan-results" class="mt-8 hidden">
+    <div class="flex flex-col items-center gap-8 md:flex-row md:items-start">
+      <!-- Score gauge -->
+      <div class="relative shrink-0 text-center">
+        <svg viewBox="0 0 120 120" class="h-44 w-44">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#1c2a47" stroke-width="10" />
+          <circle
+            id="gauge-arc"
+            cx="60" cy="60" r="52" fill="none" stroke="url(#gauge-grad)" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+            transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1)"
+          />
+          <defs>
+            <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22d3ee" /><stop offset="100%" stop-color="#8b5cf6" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="gauge-score" class="font-display text-5xl font-bold tabular-nums">0</span>
+          <span class="text-xs uppercase tracking-widest text-ink-faint">Score</span>
+        </div>
+      </div>
+
+      <!-- Domain + grade -->
+      <div class="flex-1 text-center md:text-left">
+        <p class="font-mono text-sm text-ink-faint">Security report for</p>
+        <p id="scan-domain-out" class="font-display text-2xl font-bold break-all"></p>
+        <p class="mt-2 text-sm leading-relaxed text-ink-dim" id="scan-verdict"></p>
+        <div class="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
+          <span id="scan-grade" class="rounded-md border border-line bg-panel px-3 py-1 font-mono text-xs"></span>
+          <span class="rounded-md border border-line bg-panel px-3 py-1 font-mono text-xs text-ink-dim">checked live via DNS-over-HTTPS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Check cards -->
+    <div id="scan-cards" class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/dns-propagation-checker/" class="text-sm font-medium text-accent hover:text-accent-soft">Run the propagation checker →</a>
+      <a href="/email-authentication/" class="text-sm font-medium text-accent hover:text-accent-soft">Fix email authentication →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { scanDomain } from '../lib/scan';
+
+  const form = document.getElementById('scan-form') as HTMLFormElement;
+  const input = document.getElementById('scan-domain') as HTMLInputElement;
+  const btn = document.getElementById('scan-btn') as HTMLButtonElement;
+  const progress = document.getElementById('scan-progress')!;
+  const stageEl = document.getElementById('scan-stage')!;
+  const pctEl = document.getElementById('scan-pct')!;
+  const barEl = document.getElementById('scan-bar')!;
+  const results = document.getElementById('scan-results')!;
+  const cardsEl = document.getElementById('scan-cards')!;
+  const gaugeArc = document.getElementById('gauge-arc')!;
+  const gaugeScore = document.getElementById('gauge-score')!;
+  const gradeEl = document.getElementById('scan-grade')!;
+
+  const stages = ['Resolving website records…', 'Checking email authentication…', 'Verifying DNSSEC…', 'Scoring…'];
+
+  // Prefill from ?domain=
+  const q = new URLSearchParams(location.search).get('domain');
+  if (q) { input.value = q; form.requestSubmit(); }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = input.value.trim();
+    if (!domain || !domain.includes('.')) {
+      input.focus();
+      input.classList.add('animate-pulse');
+      setTimeout(() => input.classList.remove('animate-pulse'), 1000);
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Scanning…';
+    results.classList.add('hidden');
+    progress.classList.remove('hidden');
+
+    const report = await scanDomain(domain, (i, label) => {
+      stageEl.textContent = label;
+      const pct = Math.round(((i + 1) / (stages.length + 1)) * 100);
+      pctEl.textContent = `${pct}%`;
+      barEl.style.width = `${pct}%`;
+    });
+
+    pctEl.textContent = '100%';
+    barEl.style.width = '100%';
+    setTimeout(() => progress.classList.add('hidden'), 350);
+
+    // Fill outputs
+    (document.getElementById('scan-domain-out') as HTMLElement).textContent = report.domain;
+    gradeEl.textContent = `Grade ${report.grade}`;
+    const fails = report.checks.filter((c) => c.status === 'fail').length;
+    const warns = report.checks.filter((c) => c.status === 'warn').length;
+    (document.getElementById('scan-verdict') as HTMLElement).textContent =
+      fails === 0 && warns === 0
+        ? 'Excellent, every check passed. Your DNS and email authentication are in great shape.'
+        : `${fails} failing, ${warns} needing attention. The cards below show exactly what to fix.`;
+
+    const statusIcon: Record<string, string> = {
+      pass: '<span class="text-pass">✔</span>',
+      warn: '<span class="text-warn">▲</span>',
+      fail: '<span class="text-fail">✕</span>',
+      unknown: '<span class="text-ink-faint">?</span>',
+    };
+    const statusRing: Record<string, string> = {
+      pass: 'border-pass/30', warn: 'border-warn/30', fail: 'border-fail/30', unknown: 'border-line',
+    };
+    cardsEl.innerHTML = '';
+    for (const c of report.checks) {
+      cardsEl.insertAdjacentHTML(
+        'beforeend',
+        `<div class="rounded-xl border ${statusRing[c.status]} bg-panel/70 p-4">
+           <div class="flex items-center justify-between gap-2">
+             <span class="text-sm font-semibold">${statusIcon[c.status]} ${c.label}</span>
+             <span class="font-mono text-xs text-ink-dim">${c.earned}/${c.weight}</span>
+           </div>
+           <p class="mt-1 font-mono text-xs text-accent">${c.value}</p>
+           <p class="mt-2 text-xs leading-relaxed text-ink-dim">${c.detail}</p>
+         </div>`,
+      );
+    }
+    results.classList.remove('hidden');
+
+    // Animate gauge + counter
+    const circumference = 326.7;
+    gaugeArc.style.strokeDashoffset = String(circumference * (1 - report.score / 100));
+    const t0 = performance.now();
+    const dur = 1200;
+    (function tick() {
+      const k = Math.min(1, (performance.now() - t0) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      gaugeScore.textContent = String(Math.round(report.score * eased));
+      if (k < 1) requestAnimationFrame(tick);
+    })();
+
+    btn.disabled = false;
+    btn.textContent = 'Analyze Security';
+    results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+</script>

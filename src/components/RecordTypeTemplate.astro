@@ -1,0 +1,111 @@
+---
+/**
+ * Commercial-grade document template for record-type pillar pages.
+ * Koray document-template method: one structure, deep per-type data.
+ * Target depth: 1,400-1,900 words per page.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export interface RecordTypeData {
+  type: string;
+  title: string;
+  description: string;
+  intro: string;
+  deepDive: string[];
+  example: string;
+  anatomy: [string, string][];
+  uses: string[];
+  steps: [string, string][];
+  mistakes: string[];
+  faqs: [string, string][];
+  related: [string, string][];
+}
+
+interface Props { data: RecordTypeData }
+const { data } = Astro.props;
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: data.faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+---
+<BaseLayout title={data.title} description={data.description} schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">{data.type} Record</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{data.title}</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">{data.intro}</p>
+
+    <div class="mt-8 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-5">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        <strong class="text-ink">Check yours now:</strong> run any domain through the live
+        <a href="/dns-record-lookup/" class="font-medium text-accent hover:text-accent-soft">{data.type} record lookup</a>,
+        then verify changes with the <a href="/dns-propagation-checker/" class="font-medium text-accent hover:text-accent-soft">propagation checker</a>.
+      </p>
+    </div>
+
+    <div class="rich-text mt-10">
+      <h2>How {data.type} records work in depth</h2>
+      {data.deepDive.map((p) => <p class="mt-3">{p}</p>)}
+
+      <h2>What it looks like</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">{data.example}</pre>
+
+      <h2>Anatomy of the record</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Part</th><th>Meaning</th></tr></thead>
+          <tbody>
+            {data.anatomy.map(([part, meaning]) => (
+              <tr><td class="font-mono text-xs font-semibold text-accent">{part}</td><td class="text-sm text-ink-dim">{meaning}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What it's used for</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        {data.uses.map((u) => <li class="leading-relaxed">{u}</li>)}
+      </ul>
+
+      <h2>Check yours, step by step</h2>
+      <ol class="mt-2 grid gap-3">
+        {data.steps.map(([title, desc], i) => (
+          <li class="flex gap-3">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-display text-xs font-bold text-canvas">{i + 1}</span>
+            <span><strong class="text-ink">{title}.</strong> <span class="text-ink-dim">{desc}</span></span>
+          </li>
+        ))}
+      </ol>
+
+      <h2>Common mistakes and how they break things</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        {data.mistakes.map((m) => <li class="leading-relaxed">{m}</li>)}
+      </ul>
+
+      <h2>Frequently asked questions</h2>
+      <div class="grid gap-3">
+        {data.faqs.map(([q, a]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-4">
+            <p class="font-semibold text-ink">{q}</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{a}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2>Related</h2>
+      <ul class="grid gap-2">
+        {data.related.map(([label, href]) => (
+          <li><a href={href} class="text-accent hover:text-accent-soft">{label} →</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

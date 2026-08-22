@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const records = [
+  ['A', 'Maps a domain to an IPv4 address.', '/a-record/'],
+  ['AAAA', 'Maps a domain to an IPv6 address.', '/aaaa-record/'],
+  ['CNAME', 'Aliases one domain to another.', '/cname-record/'],
+  ['MX', 'Routes email to your mail servers.', '/mx-record/'],
+  ['TXT', 'Holds text: SPF, DKIM, verification codes.', '/txt-record/'],
+  ['NS', 'Delegates the domain to its nameservers.', '/ns-record/'],
+  ['SOA', 'Zone metadata: serial, refresh, retry, TTLs.', '/soa-record/'],
+  ['PTR', 'Reverse DNS: IP back to a hostname.', '/ptr-record/'],
+  ['SRV', 'Locates specific services (SIP, XMPP).', '/srv-record/'],
+  ['CAA', 'Restricts which CAs may issue certificates.', '/caa-record/'],
+  ['ALIAS', 'CNAME-like record that works at the apex.', '/alias-record/'],
+  ['DS / DNSKEY', 'DNSSEC signing and delegation records.', '/ds-record/'],
+];
+---
+<BaseLayout
+  title="DNS Record Types: The Complete Reference (Hub)"
+  description="Every DNS record type explained: A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, ALIAS, DS and DNSKEY, what each does, syntax, and how to add them."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Record Types</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Record Types: The Complete Reference</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      A DNS zone is a set of records, and each record type answers a different question, where
+      is the server, where does mail go, who signs this zone, who may issue its certificates.
+      This reference covers every type with syntax, examples, and common errors.
+    </p>
+
+    <div class="mt-10 overflow-x-auto rounded-xl border border-line bg-panel/60 shadow-lg">
+      <table class="pdns-table">
+        <thead>
+          <tr><th>Type</th><th>What it does</th><th>Guide</th></tr>
+        </thead>
+        <tbody>
+          {records.map(([type, desc, href]) => (
+            <tr>
+              <td class="font-mono font-semibold text-accent">{type}</td>
+              <td class="text-ink-dim">{desc}</td>
+              <td><a href={href} class="font-medium text-accent hover:text-accent-soft">Read guide →</a></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="DNS Speed Test, Which Resolver Is Fastest?"
+  description="Free DNS response time test: measure resolver latency from your network with repeated lookups across Cloudflare, Google, and Quad9."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Response Time Test</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Response Time Test</h1>
+    <p class="mt-4 text-lg text-ink-dim">Measure resolver response times from your own network, repeated lookups, averaged latency, winner ranked. Useful before picking 1.1.1.1 or 8.8.8.8 as your system resolver.</p>
+
+    <ToolPanel>
+      <form id="st-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="st-domain">Test domain</label>
+        <input id="st-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Speed Test</button>
+      </form>
+
+      <div id="st-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="st-results" class="mt-6 hidden grid gap-4"></div>
+
+      <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>How to read it</h2>
+      <p>Lower is better, measured in milliseconds from <em>your</em> network, results differ by country and ISP. Averages include the first (cold) query; the “best” column shows warm-cache performance, which is what matters day-to-day. Differences under ~10 ms are imperceptible; pick on privacy and reliability instead.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/dns-record-lookup/">DNS Record Lookup</a></li>
+        <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a></li>
+        <li><a href="/doh-vs-dot/">DoH vs DoT explained</a> (guide)</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const RUNS = 4;
+  const form = document.getElementById('st-form') as HTMLFormElement;
+  const input = document.getElementById('st-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('st-status')!;
+  const resultsEl = document.getElementById('st-results')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value) || 'example.com';
+    const btn = form.querySelector('button') as HTMLButtonElement;
+    btn.disabled = true;
+    resultsEl.innerHTML = '';
+    resultsEl.classList.remove('hidden');
+
+    const avgs: { name: string; avg: number; best: number }[] = [];
+    for (const resolver of RESOLVERS) {
+      setStatus('bg-panel-2 text-accent border border-line', `Testing ${resolver.name} (${RUNS} queries)…`);
+      const times: number[] = [];
+      for (let i = 0; i < RUNS; i++) {
+        const res = await lookup(domain, 'A', resolver);
+        times.push(res.ms);
+      }
+      const avg = Math.round(times.reduce((s, t) => s + t, 0) / times.length);
+      const best = Math.min(...times);
+      avgs.push({ name: resolver.name, avg, best });
+    }
+
+    const slowest = Math.max(...avgs.map((a) => a.avg), 1);
+    const winner = [...avgs].sort((a, b) => a.avg - b.avg)[0];
+
+    resultsEl.innerHTML = '';
+    for (const r of [...avgs].sort((a, b) => a.avg - b.avg)) {
+      const pct = Math.round((r.avg / slowest) * 100);
+      resultsEl.insertAdjacentHTML('beforeend', `
+        <div>
+          <div class="mb-1 flex items-baseline justify-between">
+            <span class="text-sm font-medium text-ink">${r.name}</span>
+            <span class="font-mono text-xs text-ink-dim">avg ${r.avg} ms · best ${r.best} ms</span>
+          </div>
+          <div class="h-3 overflow-hidden rounded-full bg-panel-2">
+            <div class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700" style="width: ${pct}%"></div>
+          </div>
+        </div>`);
+    }
+    setStatus('bg-pass/10 text-pass border border-pass/30', `Fastest from your network: ${winner.name} (avg ${winner.avg} ms).`);
+    btn.disabled = false;
+  });
+</script>

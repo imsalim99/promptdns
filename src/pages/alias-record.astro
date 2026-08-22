@@ -1,0 +1,86 @@
+---
+import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
+const data = {
+ "type": "ALIAS/ANAME",
+ "title": "ALIAS/ANAME Records: CNAME Behavior at the Apex",
+ "description": "ALIAS/ANAME records explained in depth: the apex problem, provider implementations, flattening modes, and when not to use them.",
+ "intro": "You cannot put a CNAME at your zone's apex, but nearly every modern host wants exactly that. ALIAS and ANAME records are the industry's answer: provider-resolved pseudo-records that give apex domains CNAME ergonomics while answering as legal A records.",
+ "deepDive": [
+  "The restriction they work around is old and absolute: the apex must carry SOA and NS records, and CNAME cannot share a name with anything. So ALIAS/ANAME moves the resolution server-side. Your provider periodically (or per-query) resolves the target hostname and publishes the resulting addresses as ordinary A/AAAA records. The internet sees a perfectly legal apex; you get follow-the-target behavior.",
+  "Implementations differ in a way that matters operationally. Flatten-on-query resolves at request time: always fresh, slightly slower, dependent on the provider's resolvers. Flatten-on-publish resolves when you save and caches for the TTL: faster, but stale if the target changes quickly. Cloudflare flattens automatically for any apex CNAME; DNSimple and Route 53 offer explicit ALIAS records; some hosts implement nothing. The feature belongs to the DNS host, which means the zone must live where you configure it.",
+  "Short TTLs are the honest companion to ALIAS: the synthesized answer is only as current as your refresh interval, so a 300-second TTL is typical. And remember what ALIAS cannot carry: it resolves to addresses, so anything the target publishes besides A/AAAA (like its own TXT-based verification) does not teleport to your apex."
+ ],
+ "example": "example.com.  300  IN  ALIAS  target-service.net.\n; Cloudflare style: create a normal CNAME at the apex; flattening is automatic.",
+ "anatomy": [
+  [
+   "ALIAS / ANAME",
+   "Provider-specific pseudo-types, not standards-track. Portable meaning, non-portable mechanics."
+  ],
+  [
+   "target-service.net.",
+   "The origin hostname the provider resolves for you."
+  ],
+  [
+   "300",
+   "Short TTL so the synthesized A answers track a moving target."
+  ]
+ ],
+ "uses": [
+  "Pointing the apex at CDNs, load balancers, and PaaS hosts that hand you a hostname",
+  "Escaping hardcoded origin IPs that break when the provider rotates them"
+ ],
+ "steps": [
+  [
+   "Confirm provider support",
+   "Look for ALIAS, ANAME, or apex CNAME flattening in your DNS host's docs."
+  ],
+  [
+   "Get the target hostname",
+   "From your CDN or platform's domain setup instructions."
+  ],
+  [
+   "Create the record at the apex",
+   "Using the provider's ALIAS/ANAME flow, or a CNAME if it flattens automatically."
+  ],
+  [
+   "Verify what the world sees",
+   "An A lookup on your apex should return the provider-synthesized addresses."
+  ]
+ ],
+ "mistakes": [
+  "Expecting ALIAS to work after moving DNS elsewhere; it is a host feature, not a record you can export",
+  "Long TTLs defeating the freshness the record exists to provide",
+  "Assuming TXT verification on the target transfers to your apex; it does not",
+  "Confusing ALIAS with HTTP redirects; this is resolution-level, URLs do not change"
+ ],
+ "faqs": [
+  [
+   "Is ALIAS a real DNS record type?",
+   "No. It is synthesized by your provider into A/AAAA answers. That is why portability is limited."
+  ],
+  [
+   "What is the difference from CNAME flattening?",
+   "Mostly naming and where resolution happens (on publish vs on query). Behavior at the apex is equivalent."
+  ],
+  [
+   "Why is my ALIAS TTL low?",
+   "The synthesized answers must track the target; caching them long defeats the purpose."
+  ],
+  [
+   "Can I use ALIAS for www too?",
+   "You can, but www has no SOA/NS conflict, so a plain CNAME is the standard choice there."
+  ]
+ ],
+ "related": [
+  [
+   "CNAME records",
+   "/cname-record/"
+  ],
+  [
+   "CNAME flattening explained",
+   "/cname-flattening/"
+  ]
+ ]
+};
+---
+<RecordTypeTemplate data={data} />

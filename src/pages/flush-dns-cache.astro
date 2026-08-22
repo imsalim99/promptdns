@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const oses = [
+  ['Windows 10 / 11', 'ipconfig /flushdns', 'Command Prompt or PowerShell, run as Administrator is not required.'],
+  ['macOS (modern)', 'sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder', 'One line, both parts. Sudo required.'],
+  ['Linux (systemd)', 'sudo resolvectl flush-caches', 'Default on Ubuntu/Debian/Fedora today.'],
+  ['Linux (nscd)', 'sudo service nscd restart', 'Older servers using nscd.'],
+  ['Linux (dnsmasq)', 'sudo systemctl restart dnsmasq', 'Small-server default.'],
+  ['Chrome (any OS)', 'chrome://net-internals/#dns → Clear host cache', 'Also clear sockets at chrome://net-internals/#sockets.'],
+];
+---
+<BaseLayout title="How to Flush DNS Cache (Windows, macOS, Linux, Chrome)" description="Flush your DNS cache on every platform: Windows ipconfig /flushdns, macOS dscacheutil, Linux systemd-resolved, and Chrome's internal cache.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Flush DNS Cache</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Flush DNS Cache</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Changed a DNS record and still seeing the old site? Your own computer is often the last cache to
+      let go. Here is the flush command for every platform.
+    </p>
+
+    <div class="mt-8 grid gap-3">
+      {oses.map(([os, cmd, note]) => (
+        <div class="rounded-xl border border-line bg-panel/60 p-4">
+          <p class="font-semibold text-ink">{os}</p>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft">{cmd}</pre>
+          <p class="mt-1.5 text-xs text-ink-faint">{note}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="rich-text mt-10">
+      <h2>When flushing helps (and when it doesn't)</h2>
+      <p>
+        Flushing clears <em>your device's</em> cache. If the old record is still cached at your ISP's
+        resolver or a public resolver, flushing locally won't help, that cache expires on its TTL
+        schedule. Verify what resolvers currently see with the
+        <a href="/dns-propagation-checker/">propagation checker</a>: if the world sees the new value and
+        you don't, flush. If nobody sees it yet, wait.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/dns-propagation/">DNS propagation explained</a></li>
+        <li><a href="/site-down-after-dns-change/">Site down after a DNS change?</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

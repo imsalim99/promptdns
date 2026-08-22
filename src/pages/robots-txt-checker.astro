@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout
+  title="robots.txt Checker, Validate Your robots.txt"
+  description="Free robots.txt checker and validator: fetch any site's robots.txt, find syntax errors and unknown directives, and preview how crawlers read it."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">robots.txt Checker</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">robots.txt Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Fetch any site's robots.txt, validate its syntax line by line, catch directives crawlers ignore, and see the AI-bot verdicts.</p>
+
+    <ToolPanel>
+      <form id="rt-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="rt-domain">Domain</label>
+        <input id="rt-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check robots.txt</button>
+      </form>
+
+      <div id="rt-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="rt-issues" class="mt-4 hidden grid gap-2"></div>
+
+      <div id="rt-ai" class="mt-4 hidden grid gap-2"></div>
+
+      <div id="rt-raw-wrap" class="mt-6 hidden">
+        <p class="mb-2 text-sm font-semibold text-ink">robots.txt content</p>
+        <pre id="rt-raw" class="max-h-96 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-ink-dim"></pre>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What the validator checks</h2>
+      <p>Malformed lines (no colon), unknown directives crawlers silently ignore, empty <code>Disallow:</code> values (they allow everything, usually a mistake), oversized files (some crawlers stop reading), missing Sitemap lines, and how the 12 major AI bots interpret your rules.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/ai-crawler-checker/">AI Crawler Checker</a>, the AI-focused deep audit</li>
+        <li><a href="/llms-txt-generator/">llms.txt Generator</a></li>
+        <li><a href="/robots-txt-guide/">robots.txt: the complete guide</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { fetchText, hostOf } from '../lib/proxy';
+  import { parseRobots, verdictsFor, looksLikeHtml } from '../lib/robots';
+
+  const KNOWN_FIELDS = new Set(['user-agent', 'disallow', 'allow', 'crawl-delay', 'sitemap', 'host', 'clean-param', 'cache-control', 'comment']);
+
+  const form = document.getElementById('rt-form') as HTMLFormElement;
+  const input = document.getElementById('rt-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('rt-status')!;
+  const issuesEl = document.getElementById('rt-issues')!;
+  const aiEl = document.getElementById('rt-ai')!;
+  const rawWrap = document.getElementById('rt-raw-wrap')!;
+  const rawEl = document.getElementById('rt-raw')!;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const host = hostOf(input.value);
+    if (!host.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    [issuesEl, aiEl, rawWrap].forEach((el) => el.classList.add('hidden'));
+    setStatus('bg-panel-2 text-accent border border-line', `Fetching https://${host}/robots.txt…`);
+
+    const res = await fetchText(`https://${host}/robots.txt`);
+    if (!res.ok || looksLikeHtml(res.text)) {
+      setStatus('bg-warn/10 text-warn border border-warn/30', `No robots.txt found at ${host}, all crawlers are allowed by default.`);
+      return;
+    }
+    const txt = res.text;
+    rawEl.textContent = txt.length > 100000 ? txt.slice(0, 100000) + '\n… (truncated for display)' : txt;
+    rawWrap.classList.remove('hidden');
+
+    const issues: [string, 'err' | 'warn'][] = [];
+    const lines = txt.split(/\r?\n/);
+    lines.forEach((raw, i) => {
+      const line = raw.replace(/#.*$/, '').trim();
+      if (!line) return;
+      const colon = line.indexOf(':');
+      if (colon < 0) {
+        issues.push([`Line ${i + 1}: no colon, “${line.slice(0, 50)}”. Crawlers ignore malformed lines.`, 'err']);
+        return;
+      }
+      const field = line.slice(0, colon).trim().toLowerCase();
+      const value = line.slice(colon + 1).trim();
+      if (!KNOWN_FIELDS.has(field)) issues.push([`Line ${i + 1}: unknown directive “${field}:”, most crawlers ignore it.`, 'warn']);
+      if ((field === 'disallow' || field === 'allow') && !value) issues.push([`Line ${i + 1}: empty ${field}: value ${field === 'disallow' ? 'allows everything (usually a mistake)' : 'does nothing'}.`, 'warn']);
+    });
+    const { groups, sitemaps } = parseRobots(txt);
+    if (!sitemaps.length) issues.push(['No Sitemap: directive, add one so crawlers find all your pages.', 'warn']);
+    if (txt.length > 500000) issues.push([`File is ${(txt.length / 1024).toFixed(0)} KB, some crawlers stop reading robots.txt after 500 KB.`, 'err']);
+    if (!groups.some((g) => g.agents.includes('*'))) issues.push(['No User-agent: * group, rules may not apply to unlisted bots.', 'warn']);
+
+    issuesEl.innerHTML = '';
+    for (const [msg, kind] of issues) {
+      issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border ${kind === 'err' ? 'border-fail/30 bg-fail/10 text-fail' : 'border-warn/30 bg-warn/10 text-warn'} px-4 py-2 text-sm">${kind === 'err' ? '✕' : '▲'} ${msg}</div>`);
+    }
+    if (issues.length) issuesEl.classList.remove('hidden');
+
+    aiEl.innerHTML = '<p class="text-sm font-semibold text-ink">AI bot verdicts</p>';
+    for (const v of verdictsFor(groups)) {
+      const badge = v.status === 'blocked' ? '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">BLOCKED</span>'
+        : v.status === 'partial' ? '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">PARTIAL</span>'
+        : '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">ALLOWED</span>';
+      aiEl.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between rounded-lg border border-line bg-panel/60 px-4 py-2"><span class="font-mono text-xs text-ink">${v.bot.name}</span>${badge}</div>`);
+    }
+    aiEl.classList.remove('hidden');
+
+    setStatus(issues.some(([, k]) => k === 'err') ? 'bg-fail/10 text-fail border border-fail/30'
+      : issues.length ? 'bg-warn/10 text-warn border border-warn/30'
+      : 'bg-pass/10 text-pass border border-pass/30',
+      `robots.txt found (${txt.split(/\r?\n/).length} lines, ${(txt.length / 1024).toFixed(1)} KB), ${issues.length ? `${issues.length} issue${issues.length > 1 ? 's' : ''}` : 'no issues found'}.`);
+  });
+</script>

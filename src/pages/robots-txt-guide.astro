@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="robots.txt: The Complete Guide With Examples" description="robots.txt explained: syntax, user-agent groups, Disallow vs Allow, crawl-delay, sitemap directives, and the mistakes that deindex sites.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">robots.txt Guide</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">robots.txt: The Complete Guide</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      robots.txt is the first file crawlers request on every site: a plain-text rulebook saying which
+      user-agents may fetch which paths. It cannot force anything, but every major search and AI
+      crawler respects it, which makes it the single highest-leverage file in technical SEO.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>Anatomy</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Googlebot
+Disallow: /admin/
+Allow: /admin/public/
+
+User-agent: *
+Disallow: /cart/
+Disallow: /search
+
+Sitemap: https://example.com/sitemap.xml</pre>
+      <p>
+        Rules group by user-agent: consecutive <code>User-agent</code> lines share the block that
+        follows. <code>*</code> matches any bot without its own group. <code>Disallow</code> blocks a
+        path prefix; an empty value disallows nothing. <code>Allow</code> carves exceptions inside
+        disallowed trees. <code>Sitemap</code> lines can appear anywhere and should.
+      </p>
+      <h2>The rules behind the rules</h2>
+      <ul>
+        <li>It lives at the root, exactly <code>/robots.txt</code>, one per host, served as text/plain.</li>
+        <li>Most-specific group wins: a named bot ignores the wildcard group entirely.</li>
+        <li>Path matching is prefix-based; <code>/blog</code> also blocks <code>/blogroll</code>. Use trailing slashes deliberately.</li>
+        <li>Case matters for paths, not for directives.</li>
+        <li>Some crawlers stop reading after 500 KB.</li>
+      </ul>
+      <h2>Mistakes that cost real traffic</h2>
+      <ul>
+        <li><code>Disallow: /</code> shipped from staging: the classic site-wide deindex.</li>
+        <li>Blocking CSS/JS paths that pages need to render, degrading how search engines see the page.</li>
+        <li>Expecting robots.txt to hide content: it only prevents crawling, not indexing of linked URLs; use noindex or auth for that.</li>
+        <li>AI-era oversight: wildcard blocks written years ago now exclude GPTBot, ClaudeBot, and PerplexityBot too.</li>
+      </ul>
+      <h2>Check yours</h2>
+      <p>
+        The <a href="/robots-txt-checker/">robots.txt checker</a> validates syntax line by line and
+        shows AI-bot verdicts; the <a href="/ai-crawler-checker/">AI crawler checker</a> goes deeper
+        per bot.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/ai-crawlers-list/">The complete AI crawler list</a></li>
+        <li><a href="/how-to-block-ai-crawlers/">Blocking AI crawlers</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

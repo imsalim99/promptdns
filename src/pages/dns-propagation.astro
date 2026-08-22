@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'How long does DNS propagation take?', acceptedAnswer: { '@type': 'Answer', text: 'Most changes propagate in 1\u201324 hours, governed by the old record\u2019s TTL. Nameserver changes can take up to 48 hours because registries cache delegation.' } },
+    { '@type': 'Question', name: 'Can I speed up DNS propagation?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, before the change: lower your TTL to 300 seconds at least 24 hours ahead. After the change there is nothing to speed up, caches expire on their own schedule.' } },
+    { '@type': 'Question', name: 'Why do I still see the old site?', acceptedAnswer: { '@type': 'Answer', text: 'A cache between you and the authoritative server still holds the old record. Flush your local OS and browser caches first; if it persists elsewhere, wait out the TTL.' } },
+  ],
+};
+---
+<BaseLayout title="DNS Propagation: How Long It Takes and Why" description="DNS propagation explained: why changes take minutes to 48 hours, the role of TTL, timelines by record type, and how to check propagation live." schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Propagation</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Propagation</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      "Propagation" is the gap between <em>you</em> seeing a DNS change and <em>the whole internet</em>
+      seeing it. It exists because DNS is aggressively cached, and the cache lifetimes are set by you.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>Why it isn't instant</h2>
+      <p>
+        When you change a record, the authoritative server answers correctly immediately. But thousands
+        of resolvers worldwide still hold the old answer in cache, and each keeps it until its
+        <strong>TTL expires</strong>. Propagation isn't a delay in DNS, it's the waiting-out of every
+        cache that stored the previous value.
+      </p>
+
+      <h2>Typical timelines</h2>
+      <ul>
+        <li><strong>New record (no old value)</strong>, minutes; caches had nothing to hold.</li>
+        <li><strong>Changed record, TTL 300</strong>, usually under 10 minutes everywhere.</li>
+        <li><strong>Changed record, TTL 3600–86400</strong>, 1 to 24 hours.</li>
+        <li><strong>Nameserver (NS) changes</strong>, up to 48 hours: registrars and TLD registries cache delegation independently of your TTL.</li>
+      </ul>
+
+      <h2>Do it right: the migration checklist</h2>
+      <ul>
+        <li><strong>24+ hours before:</strong> lower TTL to 300 on the records you'll change.</li>
+        <li><strong>During:</strong> keep the old server running; make the DNS change.</li>
+        <li><strong>After:</strong> watch the <a href="/dns-propagation-checker/">propagation checker</a> until resolvers agree, then <a href="/flush-dns-cache/">flush your local caches</a>.</li>
+        <li><strong>Later:</strong> raise TTLs back up (fewer queries, faster answers).</li>
+      </ul>
+
+      <h2>Check propagation right now</h2>
+      <p>
+        The <a href="/dns-propagation-checker/">checker</a> queries your record across independent
+        public resolvers. When they all return the same answer, and it's your new one, propagation
+        is complete.
+      </p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/what-is-ttl-in-dns/">TTL explained</a></li>
+        <li><a href="/site-down-after-dns-change/">Site down after a DNS change?</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

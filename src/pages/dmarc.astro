@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What does DMARC do?', acceptedAnswer: { '@type': 'Answer', text: 'DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.' } },
+    { '@type': 'Question', name: 'What is a good DMARC policy?', acceptedAnswer: { '@type': 'Answer', text: 'Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.' } },
+    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.' } },
+  ],
+};
+---
+<BaseLayout title="DMARC: The Complete Guide" description="DMARC explained: policies (none, quarantine, reject), alignment, aggregate reports, and the safe road from monitoring to full enforcement." schema={[faq]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC: The Complete Guide</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      SPF and DKIM verify mail, but neither tells the receiver <em>what to do</em> when verification
+      fails. DMARC is the policy layer: it sets the consequence, requires alignment, and, crucially,
+      reports back to you.
+    </p>
+
+    <div class="rich-text mt-8">
+      <h2>The three policies</h2>
+      <ul>
+        <li><code>p=none</code>, monitor. Deliver the mail anyway, but send the domain owner aggregate reports.</li>
+        <li><code>p=quarantine</code>, accept failures but junk them (spam folder). Use <code>pct</code> to ramp: 25% → 50% → 100%.</li>
+        <li><code>p=reject</code>, refuse failures outright. Full enforcement; the end state.</li>
+      </ul>
+
+      <h2>Alignment: the DMARC twist</h2>
+      <p>
+        Passing SPF alone isn't enough, the <strong>From:</strong> domain must also <em>align</em>
+        with the SPF/DKIM domains. Relaxed alignment (the default) accepts matches on the
+        organizational domain (<code>news.mail.example.com</code> aligns with <code>example.com</code>);
+        strict requires exact matches. Alignment is why mail sent through an ESP fails DMARC until
+        you configure the ESP to sign with your domain.
+      </p>
+
+      <h2>Reports: the part nobody skips twice</h2>
+      <p>
+        With a <code>rua</code> address, every participating mailbox provider sends you daily XML
+        summaries: every message using your domain, its source IP, SPF/DKIM results, and the action
+        taken. This is how you discover the marketing SaaS sending as you, and the spoofers you
+        never knew about. Read them with the free
+        <a href="/dmarc-report-analyzer/">DMARC report analyzer</a>, or let
+        <a href="/pricing/">monitoring</a> parse them continuously.
+      </p>
+
+      <h2>The safe road to enforcement</h2>
+      <ul>
+        <li>Publish <code>p=none</code> + <code>rua</code> (use the <a href="/dmarc-record-generator/">generator</a>).</li>
+        <li>Read reports for 2–4 weeks; fix every legitimate sender (add to SPF, enable DKIM signing).</li>
+        <li>Step to <code>p=quarantine; pct=25</code>, watch, ramp to 100%.</li>
+        <li>Move to <code>p=reject</code>. Verify with the <a href="/dmarc-record-checker/">DMARC checker</a>.</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/spf-record/">SPF explained</a> · <a href="/dkim/">DKIM explained</a></li>
+        <li><a href="/dmarc-record/">DMARC record syntax reference</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

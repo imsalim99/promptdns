@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const steps = [
+  ['You type a domain', 'Your browser needs an IP address, so it asks the operating system\u2019s stub resolver.'],
+  ['Local cache check', 'The OS checks its own cache. A recent answer is returned instantly, no network trip.'],
+  ['Recursive resolver', 'Your configured resolver (e.g. 1.1.1.1 or your ISP\u2019s) receives the question and checks its cache next.'],
+  ['Root servers', 'On a miss, the resolver asks a root server: \u201cwho handles .com?\u201d It gets back the .com TLD servers.'],
+  ['TLD servers', 'The resolver asks the .com servers: \u201cwho is authoritative for example.com?\u201d It gets back your nameservers.'],
+  ['Authoritative answer', 'Your DNS host\u2019s server returns the actual record, the A record\u2019s IP, with a TTL.'],
+  ['Cached and returned', 'The resolver caches the answer for the TTL and hands the IP to your browser, which connects.'],
+];
+---
+<BaseLayout title="How DNS Works: The Step-by-Step Resolution Walkthrough" description="How DNS resolution actually works: caches, recursive resolvers, root and TLD servers, authoritative answers, and TTLs, the complete walkthrough.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">How DNS Works</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How DNS Works</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Typing a URL and getting a page feels instant. Behind it, a question travels through up to four
+      layers of the internet and comes back, usually in under 50 ms. Here is the whole journey.
+    </p>
+
+    <div class="mt-10 grid gap-3">
+      {steps.map(([title, desc], i) => (
+        <div class="flex gap-4 rounded-xl border border-line bg-panel/60 p-4">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-display text-sm font-bold text-canvas">{i + 1}</span>
+          <div>
+            <p class="font-semibold text-ink">{title}</p>
+            <p class="mt-0.5 text-sm text-ink-dim">{desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="rich-text mt-12">
+      <h2>The two kinds of DNS servers</h2>
+      <p>
+        <strong>Recursive resolvers</strong> do the asking, they walk the tree on your behalf and cache
+        answers. <strong>Authoritative servers</strong> do the answering, they hold the actual records
+        for specific zones. A resolver might serve millions of users; an authoritative server serves
+        the domains it hosts. Our <a href="/dns-propagation-checker/">propagation checker</a> works by
+        asking several independent resolvers the same question and comparing their cached answers.
+      </p>
+
+      <h2>TTL: why answers stick around</h2>
+      <p>
+        Every record carries a <strong>time-to-live</strong>, the number of seconds a resolver may
+        keep serving the cached answer. A 3600-second TTL means a change can take up to an hour to
+        appear anywhere; a 300-second TTL means minutes. This caching is why the system scales, and
+        also why <a href="/dns-propagation/">propagation</a> isn't instant.
+      </p>
+
+      <h2>What can break at each step</h2>
+      <ul>
+        <li><strong>Cache stale</strong> → old IP served; fix: wait out the TTL or <a href="/flush-dns-cache/">flush your local cache</a>.</li>
+        <li><strong>Delegation broken</strong> → registry NS records don't match your zone; check with a record lookup on the NS type.</li>
+        <li><strong>Record missing</strong> → NXDOMAIN; the name doesn't exist in the authoritative zone.</li>
+        <li><strong>Resolver failure</strong> → SERVFAIL; try another resolver in our <a href="/dns-speed-test/">speed test</a>.</li>
+      </ul>
+
+      <h2>Keep going</h2>
+      <ul>
+        <li><a href="/what-is-dns/">What is DNS?</a>, the foundations</li>
+        <li><a href="/dns-records/">DNS record types</a>, the full reference</li>
+        <li><a href="/dns-record-lookup/">Try a live lookup</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

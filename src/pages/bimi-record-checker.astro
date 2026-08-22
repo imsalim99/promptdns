@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="BIMI Record Checker" description="Free BIMI record checker: verify your BIMI TXT record, logo URL, and VMC reference at default._bimi.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">BIMI Checker</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">BIMI Record Checker</h1>
+    <p class="mt-4 text-lg text-ink-dim">Check your BIMI record at <span class="font-mono text-sm">default._bimi.yourdomain.com</span>: version, logo URL, and certificate.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="bimi-form" class="flex flex-col gap-3 sm:flex-row">
+    <input id="bimi-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check BIMI</button>
+  </form>
+  <div id="bimi-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="bimi-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Tag</th><th>Value</th><th>Meaning</th></tr></thead><tbody id="bimi-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/bimi/">BIMI explained</a> · <a href="/dmarc-record-checker/">DMARC checker (prerequisite)</a></li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  const form = document.getElementById('bimi-form') as HTMLFormElement;
+  const input = document.getElementById('bimi-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('bimi-status')!;
+  const resultsEl = document.getElementById('bimi-results')!;
+  const tbody = document.getElementById('bimi-tbody')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    statusEl.textContent = `Looking up default._bimi.${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const res = await lookup(`default._bimi.${domain}`, 'TXT', RESOLVERS[0]);
+    const rec = txtRecords(res.answers).find(t => t.toLowerCase().includes('bimi'));
+    if (!rec) { statusEl.textContent = 'No BIMI record found. BIMI requires DMARC at enforcement first.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    const v = rec.match(/v=([^;]+)/i)?.[1] ?? '';
+    const l = rec.match(/l=([^;]+)/i)?.[1] ?? '';
+    const a = rec.match(/a=([^;]+)/i)?.[1] ?? '';
+    tbody.innerHTML = '';
+    for (const [tag, val, meaning] of [['v=', v, 'Version (BIMI1)'], ['l=', l, 'Logo SVG URL'], ['a=', a, 'VMC certificate (empty = no VMC, Gmail requires one)']] as [string, string, string][]) {
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${tag}</td><td class="font-mono text-xs">${val.replace(/</g, '&lt;') || '(missing)'}</td><td class="text-xs text-ink-dim">${meaning}</td></tr>`);
+    }
+    statusEl.textContent = 'BIMI record found and parsed.';
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    resultsEl.classList.remove('hidden');
+  });
+</script>

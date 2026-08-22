@@ -1,0 +1,106 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import { RECORD_TYPES } from '../lib/doh';
+---
+<BaseLayout
+  title="DNS Record Lookup, A, AAAA, MX, TXT, NS & More"
+  description="Free DNS record lookup: query any domain's A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, DS or DNSKEY records with TTLs."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Record Lookup</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Record Lookup</h1>
+    <p class="mt-4 text-lg text-ink-dim">Query any record type on any domain, full answers with TTLs, straight from a public resolver over DNS-over-HTTPS.</p>
+
+    <ToolPanel>
+      <form id="rl-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="rl-domain">Domain</label>
+        <input id="rl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <label class="sr-only" for="rl-type">Record type</label>
+        <select id="rl-type" class="rounded-md border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+          {RECORD_TYPES.map((t) => <option value={t.value}>{t.label}</option>)}
+        </select>
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Lookup</button>
+      </form>
+
+      <div id="rl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="rl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Name</th><th>TTL</th><th>Type</th><th>Value</th></tr></thead>
+          <tbody id="rl-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-3 text-sm">
+        <a id="rl-propagate" href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">Check this record's propagation →</a>
+        <a href="/dns-records/" class="text-accent hover:text-accent-soft">Record types explained →</a>
+      </div>
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>Reading the results</h2>
+      <p><strong>TTL</strong> is how long resolvers may cache the answer (seconds), it's why changes take time to spread. The <strong>Type</strong> column tells you what the record does; every type has a full guide in the <a href="/dns-records/">record types reference</a>. Empty answers with NOERROR mean the record type exists for the name but has no values; NXDOMAIN means the name itself doesn't exist.</p>
+      <h2>Related tools</h2>
+      <ul>
+        <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a>, compare across resolvers</li>
+        <li><a href="/dns-speed-test/">DNS Speed Test</a>, which resolver is fastest for you</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+
+  const form = document.getElementById('rl-form') as HTMLFormElement;
+  const input = document.getElementById('rl-domain') as HTMLInputElement;
+  const typeSel = document.getElementById('rl-type') as HTMLSelectElement;
+  const statusEl = document.getElementById('rl-status')!;
+  const resultsEl = document.getElementById('rl-results')!;
+  const tbody = document.getElementById('rl-tbody')!;
+  const propLink = document.getElementById('rl-propagate') as HTMLAnchorElement;
+
+  const TYPE_NAMES: Record<number, string> = { 1: 'A', 28: 'AAAA', 5: 'CNAME', 15: 'MX', 16: 'TXT', 2: 'NS', 6: 'SOA', 12: 'PTR', 33: 'SRV', 257: 'CAA', 43: 'DS', 48: 'DNSKEY' };
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('bg-panel-2 text-accent border border-line', `Querying ${typeSel.value} records for ${domain}…`);
+    resultsEl.classList.add('hidden');
+
+    const res = await lookup(domain, typeSel.value as RecordType, RESOLVERS[0]);
+    propLink.href = `/dns-propagation-checker/?domain=${encodeURIComponent(domain)}`;
+
+    if (!res.ok && res.status === 3) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', `NXDOMAIN, ${domain} does not exist.`);
+      return;
+    }
+    if (!res.answers.length) {
+      setStatus('bg-warn/10 text-warn border border-warn/30', `NOERROR but no ${typeSel.value} records returned for ${domain}.`);
+      return;
+    }
+
+    setStatus('bg-pass/10 text-pass border border-pass/30', `${res.answers.length} ${typeSel.value} record${res.answers.length > 1 ? 's' : ''} found (via ${res.resolver}, ${res.ms} ms).`);
+    tbody.innerHTML = '';
+    for (const a of res.answers) {
+      tbody.insertAdjacentHTML('beforeend', `<tr>
+        <td class="font-mono text-xs text-ink-dim">${a.name}</td>
+        <td class="font-mono text-xs text-accent">${a.TTL}s</td>
+        <td class="font-mono text-xs text-ink">${TYPE_NAMES[a.type] ?? a.type}</td>
+        <td><code>${a.data.replace(/</g, '&lt;')}</code></td>
+      </tr>`);
+    }
+    resultsEl.classList.remove('hidden');
+  });
+</script>

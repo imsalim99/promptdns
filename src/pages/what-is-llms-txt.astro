@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="What Is llms.txt? The AI Content Map Explained" description="llms.txt explained: the proposed markdown standard that helps language models understand your site, how it differs from robots.txt, and how to publish one.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">What Is llms.txt</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is llms.txt?</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      llms.txt is a proposed standard: a markdown file at your site root that gives language models
+      a curated map of what your content is and where the important pages live. Think of it as an
+      abstract and table of contents written for machines that read your whole site anyway.
+    </p>
+    <div class="rich-text mt-8">
+      <h2>The problem it solves</h2>
+      <p>
+        Models and AI agents visiting your site today crawl pages the way a stranger walks into a
+        building: everything is technically visible, nothing is labeled, and the important rooms look
+        identical to the boilerplate. llms.txt states the thesis of your site in one blockquote line
+        and then lists the pages that matter, each with a one-sentence description. Retrieval systems
+        and agents that support the convention get a clean entry point; those that don't simply
+        ignore the file, so there is no downside to publishing one.
+      </p>
+      <h2>What it looks like</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"># PromptDNS
+
+> Free DNS, email authentication, and domain health tools with guides for every record type.
+
+## Tools
+- [DNS Propagation Checker](https://promptdns.com/dns-propagation-checker/): check changes across public resolvers.
+- [SPF Flattener](https://promptdns.com/spf-flattener/): fix the 10-lookup limit free.
+
+## Guides
+- [What Is DNS?](https://promptdns.com/what-is-dns/): the Domain Name System explained.</pre>
+      <h2>llms.txt vs robots.txt</h2>
+      <p>
+        Opposite jobs. <a href="/robots-txt-guide/">robots.txt</a> restricts: which crawlers may fetch
+        what. llms.txt explains: what this site is and what is worth reading. You need both thinking
+        behind them, but they never conflict: one gates access, the other guides comprehension.
+      </p>
+      <h2>Publish yours in two minutes</h2>
+      <p>
+        The <a href="/llms-txt-generator/">free llms.txt generator</a> builds the file from your site
+        name, a one-line summary, and your link list (it can even fetch your title and description
+        automatically), then hands you copy-paste or download output. Verify the result with the
+        <a href="/ai-readiness-checker/">AI readiness audit</a>.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/llms-txt-syntax/">llms.txt syntax rules</a></li>
+        <li><a href="/how-to-allow-ai-crawlers/">Allowing AI crawlers</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Email Header Analyzer — Parse Received Chains" description="Free email header analyzer: paste headers to decode the Received chain, SPF/DKIM/DMARC results, and sending path.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Header Analyzer</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Email Header Analyzer</h1>
+    <p class="mt-4 text-lg text-ink-dim">Paste full message headers (show original / view source) to see the delivery path, authentication results, and delays, parsed in your browser.</p>
+    <div class="mt-8">
+<ToolPanel>
+  <form id="eha-form" class="grid gap-3">
+    <textarea id="eha-input" rows="8" placeholder="Paste full email headers here (from your mail client's Show Original / View Source)…" class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"></textarea>
+    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm w-fit">Analyze Headers</button>
+  </form>
+  <div id="eha-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+  <div id="eha-summary" class="mt-4 hidden grid gap-2"></div>
+  <div id="eha-results" class="mt-4 hidden overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Hop</th><th>From</th><th>By</th><th>Delay</th></tr></thead><tbody id="eha-tbody"></tbody></table>
+  </div>
+</ToolPanel>
+    </div>
+    <article class="rich-text mt-12 max-w-none"><h2>Related</h2><ul><li><a href="/spf-record-checker/">SPF</a> · <a href="/dkim-record-checker/">DKIM</a> · <a href="/dmarc-record-checker/">DMARC</a> checkers</li></ul></article>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('eha-form') as HTMLFormElement;
+  const ta = document.getElementById('eha-input') as HTMLTextAreaElement;
+  const statusEl = document.getElementById('eha-status')!;
+  const summaryEl = document.getElementById('eha-summary')!;
+  const resultsEl = document.getElementById('eha-results')!;
+  const tbody = document.getElementById('eha-tbody')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = ta.value.trim();
+    if (!raw) { statusEl.textContent = 'Paste headers first.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
+    const lines = raw.split(/\r?\n/);
+    // unfold continuation lines
+    const unfolded: string[] = [];
+    for (const line of lines) {
+      if (/^[ \t]/.test(line) && unfolded.length) unfolded[unfolded.length - 1] += ' ' + line.trim();
+      else unfolded.push(line);
+    }
+    const get = (name: string): string[] => unfolded.filter(l => l.toLowerCase().startsWith(name.toLowerCase() + ':'));
+
+    const authRes = get('authentication-results')[0] ?? '(none)';
+    const dkimSig = get('dkim-signature')[0] ?? '(none)';
+    const from = get('from')[0] ?? '(none)';
+    const subject = get('subject')[0] ?? '(none)';
+
+    // Received chain with timestamps
+    const recs = get('received');
+    const hops: { by: string; from: string; t?: Date }[] = [];
+    for (const r of recs) {
+      const by = r.match(/by\s+([^\s;]+)/i)?.[1] ?? '?';
+      const from = r.match(/from\s+([^\s;(]+)/i)?.[1] ?? '?';
+      const dm = r.match(/;\s*(.+)$/)?.[1];
+      const t = dm ? new Date(dm) : undefined;
+      hops.push({ by, from, t: !isNaN(t?.getTime() as number) ? t : undefined });
+    }
+    summaryEl.innerHTML = '';
+    const cards: [string, string, string][] = [
+      ['From', from.replace(/^from:\s*/i, '').slice(0, 80), ''],
+      ['Subject', subject.replace(/^subject:\s*/i, '').slice(0, 80), ''],
+      ['SPF', (authRes.match(/spf=([a-z]+)/i)?.[1] ?? '?'), (authRes.match(/spf=pass/i) ? 'text-pass' : authRes.match(/spf=fail/i) ? 'text-fail' : 'text-warn')],
+      ['DKIM', (authRes.match(/dkim=([a-z]+)/i)?.[1] ?? 'none'), (authRes.match(/dkim=pass/i) ? 'text-pass' : authRes.match(/dkim=fail/i) ? 'text-fail' : 'text-warn')],
+      ['DMARC', (authRes.match(/dmarc=([a-z]+)/i)?.[1] ?? 'not evaluated'), (authRes.match(/dmarc=pass/i) ? 'text-pass' : 'text-warn')],
+      ['Selector', (dkimSig.match(/[;\s]d=([^;]+)/i)?.[1] ?? '?') + ' / ' + (dkimSig.match(/[;\s]s=([^;]+)/i)?.[1] ?? '?'), ''],
+    ];
+    for (const [k, v, cls] of cards) {
+      summaryEl.insertAdjacentHTML('beforeend', `<div class="flex items-baseline justify-between gap-4 rounded-lg border border-line bg-panel/60 px-4 py-2.5"><span class="text-xs text-ink-faint">${k}</span><span class="font-mono text-xs ${cls || 'text-ink'} break-all text-right">${v}</span></div>`);
+    }
+    summaryEl.classList.remove('hidden');
+
+    tbody.innerHTML = '';
+    const rev = [...hops].reverse(); // oldest first
+    let prev: Date | undefined;
+    rev.forEach((h, i) => {
+      let delay = '—';
+      if (h.t && prev) delay = `+${Math.max(0, Math.round((h.t.getTime() - prev.getTime()) / 1000))}s`;
+      if (h.t) prev = h.t;
+      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs">${i + 1}</td><td class="font-mono text-xs text-ink-dim">${h.from}</td><td class="font-mono text-xs text-accent">${h.by}</td><td class="font-mono text-xs">${delay}</td></tr>`);
+    });
+    resultsEl.classList.remove('hidden');
+    statusEl.textContent = `${hops.length} Received hops parsed.`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    statusEl.classList.remove('hidden');
+  });
+</script>

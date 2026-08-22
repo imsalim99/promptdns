@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="SPF Record Syntax: Every Mechanism and Qualifier" description="Complete SPF syntax reference: every mechanism (include, ip4, ip6, a, mx, exists), every qualifier, modifiers, and evaluation order.">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Syntax</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Syntax: The Complete Reference</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      An SPF record is one TXT string, evaluated left to right, first match wins. Every term is a
+      qualifier glued to a mechanism, plus a couple of modifiers. This is every piece of that grammar.
+    </p>
+    <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
+      <table class="pdns-table">
+        <thead><tr><th>Term</th><th>Kind</th><th>Lookup?</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="font-mono text-xs text-accent">v=spf1</td><td class="text-xs text-ink-faint">version</td><td class="text-xs">no</td><td class="text-sm text-ink-dim">Required first token.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">ip4:1.2.3.4</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">no</td><td class="text-sm text-ink-dim">Matches that IPv4 (CIDR ranges allowed).</td></tr>
+          <tr><td class="font-mono text-xs text-accent">ip6:...</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">no</td><td class="text-sm text-ink-dim">Matches an IPv6 address or range.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">a / a:domain</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">1</td><td class="text-sm text-ink-dim">Matches the domain's A/AAAA records.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">mx / mx:domain</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">1</td><td class="text-sm text-ink-dim">Matches the domain's MX hosts' addresses.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">include:domain</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">1</td><td class="text-sm text-ink-dim">Evaluates another domain's SPF; a pass there is a pass here.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">exists:domain</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">1</td><td class="text-sm text-ink-dim">Matches if the name resolves at all (rare, macro use).</td></tr>
+          <tr><td class="font-mono text-xs text-accent">ptr / ptr:domain</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">0</td><td class="text-sm text-ink-dim">Deprecated reverse-DNS match; remove it.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">all</td><td class="text-xs text-ink-faint">mechanism</td><td class="text-xs">no</td><td class="text-sm text-ink-dim">Matches everything; its qualifier sets the default verdict.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">redirect=domain</td><td class="text-xs text-ink-faint">modifier</td><td class="text-xs">1</td><td class="text-sm text-ink-dim">Replace evaluation with another domain's record.</td></tr>
+          <tr><td class="font-mono text-xs text-accent">exp=text</td><td class="text-xs text-ink-faint">modifier</td><td class="text-xs">no</td><td class="text-sm text-ink-dim">Explanation string for failures; rarely used.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rich-text mt-10">
+      <h2>The qualifiers</h2>
+      <ul>
+        <li><code>+</code> pass (default when no qualifier is written)</li>
+        <li><code>-</code> hard fail: receivers should reject</li>
+        <li><code>~</code> soft fail: accept but penalize; the common safe default on <code>~all</code></li>
+        <li><code>?</code> neutral: no assertion either way</li>
+      </ul>
+      <h2>Evaluation in one paragraph</h2>
+      <p>
+        The receiver walks terms left to right against the connecting IP. First mechanism that matches
+        returns its qualifier's verdict and evaluation stops. If nothing matches, <code>all</code>
+        catches the remainder, which is why your terminal qualifier defines your posture. Every
+        include/a/mx/exists/redirect costs one of the
+        <a href="/spf-lookup-limit/">10 permitted lookups</a>; exceeding them returns permerror, a
+        broken record. Test any change with the <a href="/spf-record-checker/">SPF checker</a>.
+      </p>
+      <h2>Related</h2>
+      <ul>
+        <li><a href="/spf-record/">SPF: the complete guide</a></li>
+        <li><a href="/spf-flattener/">SPF flattener</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
