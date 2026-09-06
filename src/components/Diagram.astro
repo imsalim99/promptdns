@@ -1,179 +1,336 @@
 ---
-/** PromptDNS SVG Diagram Library — brand-consistent dark-theme diagrams.
- *  Usage: <Diagram name="dnssec-chain" caption="The DNSSEC chain of trust" />
+/** PromptDNS SVG Diagram Library — direct Astro templating, no string helpers.
+ *  Usage: <Diagram name="resolution" caption="..." />
  */
 interface Props { name: string; caption: string }
 const { name, caption } = Astro.props;
-const A = '#22d3ee', V = '#8b5cf6', LINE = '#1c2a47', DIM = '#9dabc4', INK = '#f1f5f9', FAIL = '#f87171', PASS = '#4ade80', WARN = '#fbbf24';
-const box = (x:number,y:number,w:number,h:number,label:string,sub?:string,stroke:string=LINE) =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#0b1222" stroke="${stroke}"/>` +
-  `<text x="${x+w/2}" y="${y+h/2-(sub?6:0)}" text-anchor="middle" fill="${INK}" font-size="13" font-weight="600">${label}</text>` +
-  (sub ? `<text x="${x+w/2}" y="${y+h/2+14}" text-anchor="middle" fill="${DIM}" font-size="9">${sub}</text>` : '');
-const arrow = (x1:number,y1:number,x2:number,y2:number,color:string=A,label?:string,dash?:boolean) =>
-  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.5" ${dash?'stroke-dasharray="4 3"':''} marker-end="url(#pdns-arr)"/>` +
-  (label ? `<text x="${(x1+x2)/2}" y="${(y1+y2)/2-6}" text-anchor="middle" fill="${DIM}" font-size="9">${label}</text>` : '');
-const badge = (x:number,y:number,text:string,color:string) =>
-  `<rect x="${x}" y="${y}" width="${text.length*8+16}" height="24" rx="6" fill="${color}22" stroke="${color}55"/>` +
-  `<text x="${x+(text.length*8+16)/2}" y="${y+16}" text-anchor="middle" fill="${color}" font-size="10" font-weight="600">${text}</text>`;
 ---
 <figure class="my-8 not-prose">
   <div class="overflow-x-auto rounded-xl border border-line bg-panel/60 p-4">
-    <svg viewBox="0 0 720 {name === 'dnssec-chain' ? 280 : name === 'dmarc-tree' ? 260 : 200}" class="min-w-[560px]" role="img" aria-label={caption}>
+    <svg viewBox="0 0 720 210" class="min-w-[560px]" role="img" aria-label={caption}>
       <defs>
         <marker id="pdns-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6" fill="none" stroke={A}/>
+          <path d="M0,0 L6,3 L0,6" fill="none" stroke="#22d3ee"/>
         </marker>
       </defs>
 
-      {name === 'resolution' && <g>
-        {box(10,78,100,44,'Browser')}{box(160,78,110,44,'Resolver','recursive')}{box(320,78,100,44,'Root + TLD','')}
-        {box(470,78,120,44,'Authoritative','your DNS host')}{box(630,78,80,44,'Website','')}
-        {arrow(110,95,155,95,A,'query')}{arrow(270,95,315,95,A,'referral')}
-        {arrow(420,95,465,95,A,'query')}{arrow(590,95,625,95,A,'connect')}
-        {arrow(625,115,590,115,V,'answer',true)}{arrow(465,115,420,115,V,'cached',true)}
-        {arrow(315,115,270,115,V,'cached',true)}{arrow(155,115,110,115,V,'delivered',true)}
-        <text x="360" y="165" text-anchor="middle" fill={DIM} font-size="10">solid = query direction · dashed = cached response · every hop caches until TTL expires</text>
-      </g>}
+      {name === 'resolution' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="78" width="100" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="60" y="100" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Browser</text>
+          <rect x="160" y="78" width="110" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="215" y="100" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Resolver</text>
+          <rect x="320" y="78" width="100" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="370" y="100" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Root+TLD</text>
+          <rect x="470" y="78" width="120" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="530" y="100" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Authoritative</text>
+          <rect x="630" y="78" width="80" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="670" y="100" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Website</text>
+          <line x1="110" y1="95" x2="155" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="132" y="88" text-anchor="middle" fill="#9dabc4" font-size="9">query</text>
+          <line x1="270" y1="95" x2="315" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="420" y1="95" x2="465" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="590" y1="95" x2="625" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="625" y1="115" x2="590" y2="115" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="465" y1="115" x2="420" y2="115" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="315" y1="115" x2="270" y2="115" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="155" y1="115" x2="110" y2="115" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="360" y="155" text-anchor="middle" fill="#9dabc4" font-size="10">solid = query · dashed = cached response · every hop caches until TTL</text>
+        </g>
+      )}
 
-      {name === 'authtrio' && <g>
-        {box(10,16,150,40,'SPF','which servers may send',A)}{box(10,80,150,40,'DKIM','proves mail is intact',A)}
-        {box(10,144,150,40,'DMARC','policy + reports',A)}
-        {arrow(160,36,280,92,A)}{arrow(160,100,280,100,A)}{arrow(160,164,280,108,A)}
-        {box(280,78,160,48,'Receiver','checks all three',V)}
-        {arrow(440,90,510,90,A,'pass')}
-        {badge(510,78,'INBOX',PASS)}{arrow(440,110,510,130,FAIL,'fail')}
-        {badge(510,124,'SPAM / REJECT',FAIL)}
-        <text x="360" y="190" text-anchor="middle" fill={DIM} font-size="10">DMARC requires at least one pass (SPF or DKIM) with domain alignment</text>
-      </g>}
+      {name === 'authtrio' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="16" width="150" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="85" y="34" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="600">SPF</text>
+          <text x="85" y="50" text-anchor="middle" fill="#9dabc4" font-size="9">which servers may send</text>
+          <rect x="10" y="80" width="150" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="85" y="98" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="600">DKIM</text>
+          <text x="85" y="114" text-anchor="middle" fill="#9dabc4" font-size="9">proves mail is intact</text>
+          <rect x="10" y="144" width="150" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="85" y="162" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="600">DMARC</text>
+          <text x="85" y="178" text-anchor="middle" fill="#9dabc4" font-size="9">policy + reports</text>
+          <line x1="160" y1="36" x2="280" y2="92" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="160" y1="100" x2="280" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="160" y1="164" x2="280" y2="108" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="280" y="78" width="160" height="48" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="360" y="98" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="600">Receiver</text>
+          <text x="360" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">checks all three</text>
+          <line x1="440" y1="90" x2="510" y2="90" stroke="#4ade80" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="475" y="82" text-anchor="middle" fill="#4ade80" font-size="10">pass</text>
+          <rect x="510" y="76" width="100" height="28" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="560" y="94" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600">INBOX</text>
+          <line x1="440" y1="110" x2="510" y2="140" stroke="#f87171" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="475" y="134" text-anchor="middle" fill="#f87171" font-size="10">fail</text>
+          <rect x="510" y="130" width="140" height="28" rx="6" fill="#f8717122" stroke="#f8717155"/>
+          <text x="580" y="148" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">SPAM / REJECT</text>
+          <text x="360" y="200" text-anchor="middle" fill="#9dabc4" font-size="10">DMARC requires at least one pass (SPF or DKIM) with domain alignment</text>
+        </g>
+      )}
 
-      {name === 'propagation' && <g>
-        <line x1="30" y1="90" x2="690" y2="90" stroke={LINE} stroke-width="2"/>
-        {[[40,'T=0'],[160,'T+5min'],[320,'T+1hr'],[490,'T+24hr'],[640,'done']].map(([x,t],i) => (
-          <g><circle cx={x} cy={90} r={i===4?8:6} fill={i===4?PASS:A}/>
-          <text x={x} y={72} text-anchor="middle" fill={INK} font-size="10">{t}</text></g>
-        ))}
-        <rect x="180" y="104" width="300" height="28" rx="6" fill="#101a30" stroke={LINE}/>
-        <text x="330" y="122" text-anchor="middle" fill={WARN} font-size="10">old answers still served from resolver caches</text>
-        <text x="360" y="160" text-anchor="middle" fill={DIM} font-size="10">lower TTL to 300s a day before planned changes</text>
-      </g>}
+      {name === 'propagation' && (
+        <g font-family="ui-monospace,monospace" font-size="11">
+          <line x1="30" y1="90" x2="690" y2="90" stroke="#1c2a47" stroke-width="2"/>
+          <circle cx="40" cy="90" r="6" fill="#22d3ee"/>
+          <text x="40" y="72" text-anchor="middle" fill="#f1f5f9" font-size="10">T=0</text>
+          <circle cx="160" cy="90" r="6" fill="#22d3ee"/>
+          <text x="160" y="72" text-anchor="middle" fill="#f1f5f9" font-size="10">T+5min</text>
+          <circle cx="320" cy="90" r="6" fill="#22d3ee"/>
+          <text x="320" y="72" text-anchor="middle" fill="#f1f5f9" font-size="10">T+1hr</text>
+          <circle cx="490" cy="90" r="6" fill="#22d3ee"/>
+          <text x="490" y="72" text-anchor="middle" fill="#f1f5f9" font-size="10">T+24hr</text>
+          <circle cx="640" cy="90" r="8" fill="#4ade80"/>
+          <text x="640" y="72" text-anchor="middle" fill="#4ade80" font-size="10">done</text>
+          <rect x="180" y="104" width="300" height="28" rx="6" fill="#101a30" stroke="#1c2a47"/>
+          <text x="330" y="122" text-anchor="middle" fill="#fbbf24" font-size="10">old answers still served from resolver caches</text>
+          <text x="360" y="160" text-anchor="middle" fill="#9dabc4" font-size="10">lower TTL to 300s a day before planned changes</text>
+        </g>
+      )}
 
-      {name === 'dnssec-chain' && <g>
-        {box(10,20,140,40,'Root Zone','trust anchor',V)}
-        {box(10,100,140,40,'.com Registry','TLD',V)}
-        {box(10,180,140,40,'Your Domain','example.com',V)}
-        {arrow(80,60,80,95,A,'DS')}{arrow(80,140,80,175,A,'DS')}
-        {box(280,20,160,40,'Validating Resolver','checks every link',A)}
-        {arrow(270,40,275,40,A)}
-        {box(280,100,200,44,'DNSKEY','KSK + ZSK',A)}
-        {arrow(380,144,380,175,A,'signs')}
-        {box(380,180,220,40,'Your Records','signed with ZSK',LINE)}
-        <text x="360" y="250" text-anchor="middle" fill={DIM} font-size="10">every link must verify: one break = SERVFAIL for the entire domain</text>
-      </g>}
+      {name === 'dnssec-chain' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="20" width="140" height="40" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="80" y="38" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Root Zone</text>
+          <text x="80" y="54" text-anchor="middle" fill="#9dabc4" font-size="9">trust anchor</text>
+          <rect x="10" y="100" width="140" height="40" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="80" y="118" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">.com Registry</text>
+          <text x="80" y="134" text-anchor="middle" fill="#9dabc4" font-size="9">TLD</text>
+          <rect x="10" y="180" width="140" height="40" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="80" y="198" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Your Domain</text>
+          <text x="80" y="214" text-anchor="middle" fill="#9dabc4" font-size="9">example.com</text>
+          <line x1="80" y1="60" x2="80" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="110" y="80" fill="#22d3ee" font-size="10">DS</text>
+          <line x1="80" y1="140" x2="80" y2="175" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="110" y="160" fill="#22d3ee" font-size="10">DS</text>
+          <rect x="280" y="20" width="160" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="360" y="38" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Validating Resolver</text>
+          <text x="360" y="54" text-anchor="middle" fill="#9dabc4" font-size="9">checks every link</text>
+          <line x1="270" y1="40" x2="275" y2="40" stroke="#22d3ee" stroke-width="1.5"/>
+          <rect x="280" y="100" width="200" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="380" y="118" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">DNSKEY</text>
+          <text x="380" y="136" text-anchor="middle" fill="#9dabc4" font-size="9">KSK + ZSK</text>
+          <line x1="380" y1="144" x2="380" y2="175" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="410" y="162" fill="#22d3ee" font-size="10">signs</text>
+          <rect x="380" y="180" width="220" height="40" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="490" y="198" text-anchor="middle" fill="#9dabc4" font-size="12">Your Records (signed with ZSK)</text>
+          <text x="360" y="260" text-anchor="middle" fill="#f87171" font-size="10">every link must verify: one break = SERVFAIL for the entire domain</text>
+        </g>
+      )}
 
-      {name === 'dmarc-tree' && <g>
-        {box(10,90,160,44,'Message arrives','From: your domain',A)}
-        {arrow(170,112,210,112,A)}
-        {box(210,60,120,36,'SPF pass?','')}
-        {box(210,120,120,36,'DKIM pass?','')}
-        {arrow(170,100,205,80,A)}{arrow(170,124,205,140,A)}
-        {arrow(330,78,370,95,A)}{arrow(330,138,370,110,A)}
-        {box(370,90,140,36,'Aligned?','domain match',V)}
-        {arrow(510,108,540,108,PASS,'yes')}
-        {badge(540,96,'ACCEPT',PASS)}
-        {arrow(510,125,540,155,FAIL,'no')}
-        {badge(540,148,'p= POLICY',FAIL)}
-        <text x="360" y="230" text-anchor="middle" fill={DIM} font-size="10">p=none delivers anyway · p=quarantine sends to spam · p=reject drops the message</text>
-      </g>}
+      {name === 'dmarc-tree' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="90" width="160" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="90" y="112" text-anchor="middle" fill="#f1f5f9" font-size="13" font-weight="600">Message arrives</text>
+          <text x="90" y="128" text-anchor="middle" fill="#9dabc4" font-size="9">From: your domain</text>
+          <line x1="170" y1="100" x2="210" y2="82" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="170" y1="124" x2="210" y2="142" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="210" y="60" width="120" height="36" rx="8" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="270" y="82" text-anchor="middle" fill="#f1f5f9" font-size="11">SPF pass?</text>
+          <rect x="210" y="120" width="120" height="36" rx="8" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="270" y="142" text-anchor="middle" fill="#f1f5f9" font-size="11">DKIM pass?</text>
+          <line x1="330" y1="78" x2="370" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="330" y1="138" x2="370" y2="110" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="370" y="90" width="140" height="36" rx="8" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="440" y="112" text-anchor="middle" fill="#f1f5f9" font-size="11">Aligned? domain match</text>
+          <line x1="510" y1="98" x2="540" y2="98" stroke="#4ade80" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="525" y="90" text-anchor="middle" fill="#4ade80" font-size="10">yes</text>
+          <rect x="540" y="84" width="100" height="28" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="590" y="102" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600">ACCEPT</text>
+          <line x1="510" y1="125" x2="540" y2="155" stroke="#f87171" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="525" y="147" text-anchor="middle" fill="#f87171" font-size="10">no</text>
+          <rect x="540" y="146" width="120" height="28" rx="6" fill="#f8717122" stroke="#f8717155"/>
+          <text x="600" y="164" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">p= POLICY</text>
+          <text x="360" y="230" text-anchor="middle" fill="#9dabc4" font-size="10">p=none delivers anyway · p=quarantine to spam · p=reject drops the message</text>
+        </g>
+      )}
 
-      {name === 'spf-eval' && <g>
-        {box(10,78,140,44,'Incoming mail','connects from IP',A)}
-        {arrow(150,100,180,100,A)}
-        {box(180,78,200,44,'Read SPF record','v=spf1 ...',V)}
-        {arrow(380,90,420,90,A,'first match wins')}
-        {box(420,30,120,36,'MATCH','qualifier decides','',PASS)}
-        {box(420,78,120,36,'NO MATCH','try next term','',WARN)}
-        {box(420,126,120,36,'>10 lookups','permerror: broken','',FAIL)}
-        {arrow(540,48,580,48,PASS,'+all / ip4:')}
-        {arrow(540,96,580,96,WARN,'~all')}
-        {arrow(540,144,580,144,FAIL,'-all')}
-        {badge(580,38,'PASS',PASS)}{badge(580,86,'SOFTFAIL',WARN)}{badge(580,134,'FAIL',FAIL)}
-      </g>}
+      {name === 'spf-eval' && (
+        <g font-family="ui-monospace,monospace" font-size="11">
+          <rect x="10" y="78" width="140" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="80" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Incoming mail</text>
+          <text x="80" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">connects from an IP</text>
+          <line x1="150" y1="100" x2="180" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="180" y="78" width="200" height="44" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="280" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Read SPF: v=spf1 ...</text>
+          <text x="280" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">first match wins</text>
+          <line x1="380" y1="90" x2="420" y2="52" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="400" y="60" text-anchor="middle" fill="#9dabc4" font-size="9">match</text>
+          <line x1="380" y1="100" x2="420" y2="100" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="400" y="92" text-anchor="middle" fill="#9dabc4" font-size="9">no match</text>
+          <line x1="380" y1="112" x2="420" y2="148" stroke="#f87171" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="400" y="138" text-anchor="middle" fill="#f87171" font-size="9">&gt;10 lookups</text>
+          <rect x="420" y="30" width="110" height="32" rx="8" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="475" y="50" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600">MATCH</text>
+          <rect x="420" y="84" width="110" height="32" rx="8" fill="#fbbf2422" stroke="#fbbf2455"/>
+          <text x="475" y="104" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">NO MATCH</text>
+          <rect x="420" y="138" width="110" height="32" rx="8" fill="#f8717122" stroke="#f8717155"/>
+          <text x="475" y="158" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">PERMERROR</text>
+          <text x="580" y="45" text-anchor="middle" fill="#4ade80" font-size="10">pass</text>
+          <text x="580" y="105" text-anchor="middle" fill="#fbbf24" font-size="10">softfail</text>
+          <text x="580" y="160" text-anchor="middle" fill="#f87171" font-size="10">broken</text>
+        </g>
+      )}
 
-      {name === 'delegation' && <g>
-        {box(10,78,130,44,'Visitor','types your domain',A)}
-        {arrow(140,100,180,100,A)}
-        {box(180,78,130,44,'Resolver','checks cache',V)}
-        {arrow(310,100,350,100,A,'NS query')}
-        {box(350,78,140,44,'Registry / Parent','holds NS glue',V)}
-        {arrow(490,100,530,100,A,'referral')}
-        {box(530,78,160,44,'Your Nameservers','authoritative answers',A)}
-        {arrow(610,122,610,155,A,'A record')}
-        {badge(560,160,'IP ADDRESS',PASS)}
-        <text x="360" y="185" text-anchor="middle" fill={DIM} font-size="10">the referral chain must be unbroken: one dead nameserver = intermittent failures</text>
-      </g>}
+      {name === 'delegation' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="78" width="120" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="70" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Visitor</text>
+          <line x1="130" y1="100" x2="175" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="175" y="78" width="130" height="44" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="240" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Resolver</text>
+          <line x1="305" y1="100" x2="345" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="325" y="92" text-anchor="middle" fill="#9dabc4" font-size="9">NS query</text>
+          <rect x="345" y="78" width="140" height="44" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="415" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Registry/Parent</text>
+          <line x1="485" y1="100" x2="525" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="505" y="92" text-anchor="middle" fill="#9dabc4" font-size="9">referral</text>
+          <rect x="525" y="78" width="160" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="605" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Your Nameservers</text>
+          <line x1="605" y1="122" x2="605" y2="155" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="630" y="142" fill="#22d3ee" font-size="10">A record</text>
+          <rect x="560" y="160" width="120" height="24" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="620" y="176" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">IP ADDRESS</text>
+          <text x="360" y="200" text-anchor="middle" fill="#9dabc4" font-size="10">the referral chain must be unbroken: one dead nameserver = intermittent failures</text>
+        </g>
+      )}
 
-      {name === 'dkim-signing' && <g>
-        {box(10,20,140,40,'Your Server','holds private key',A)}
-        {arrow(80,60,80,85,A,'signs headers + body')}
-        {box(10,85,140,40,'Signed Email','DKIM-Signature header',V)}
-        {arrow(80,125,80,150,A,'sends via SMTP')}
-        {box(10,150,140,40,'Recipient Server','wants to verify',LINE)}
-        {arrow(150,170,200,170,A,'1. reads s= selector')}
-        {box(200,150,200,40,'DNS TXT','selector._domainkey',A)}
-        {arrow(400,170,450,170,A,'2. fetches public key')}
-        {box(450,150,160,40,'Verify signature','pass or fail',V)}
-        {badge(470,130,'PASS',PASS)}{badge(550,130,'FAIL',FAIL)}
-      </g>}
+      {name === 'dkim-signing' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="20" width="140" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="80" y="38" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Your Server</text>
+          <text x="80" y="54" text-anchor="middle" fill="#9dabc4" font-size="9">holds private key</text>
+          <line x1="80" y1="60" x2="80" y2="85" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="110" y="76" fill="#9dabc4" font-size="9">signs headers + body</text>
+          <rect x="10" y="85" width="140" height="40" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="80" y="103" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Signed Email</text>
+          <text x="80" y="119" text-anchor="middle" fill="#9dabc4" font-size="9">DKIM-Signature header</text>
+          <line x1="80" y1="125" x2="80" y2="150" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="110" y="142" fill="#9dabc4" font-size="9">sends via SMTP</text>
+          <rect x="10" y="150" width="140" height="40" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="80" y="168" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Recipient Server</text>
+          <text x="80" y="184" text-anchor="middle" fill="#9dabc4" font-size="9">wants to verify</text>
+          <line x1="150" y1="170" x2="195" y2="170" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="172" y="162" text-anchor="middle" fill="#9dabc4" font-size="9">1. reads s= selector</text>
+          <rect x="200" y="150" width="200" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="300" y="170" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">DNS TXT</text>
+          <text x="300" y="186" text-anchor="middle" fill="#9dabc4" font-size="9">selector._domainkey</text>
+          <line x1="400" y1="170" x2="445" y2="170" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="422" y="162" text-anchor="middle" fill="#9dabc4" font-size="9">2. fetches key</text>
+          <rect x="450" y="150" width="160" height="40" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="530" y="170" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Verify signature</text>
+          <text x="530" y="186" text-anchor="middle" fill="#9dabc4" font-size="9">pass or fail</text>
+          <rect x="440" y="120" width="80" height="24" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="480" y="136" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">PASS</text>
+          <rect x="530" y="120" width="80" height="24" rx="6" fill="#f8717122" stroke="#f8717155"/>
+          <text x="570" y="136" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">FAIL</text>
+        </g>
+      )}
 
-      {name === 'blocklist-query' && <g>
-        {box(10,78,140,44,'Mail Server','checks sending IP',A)}
-        {arrow(150,100,190,100,A,'1. reverse IP')}
-        {box(190,78,170,44,'in-addr.arpa query','reversed octets',V)}
-        {arrow(360,100,400,100,A,'2. append blocklist zone')}
-        {box(400,78,180,44,'DNSBL query','IP.zen.spamhaus.org',A)}
-        {arrow(580,90,620,90,PASS,'127.0.0.4')}
-        {badge(620,78,'LISTED',FAIL)}
-        {arrow(580,110,620,130,A,'NXDOMAIN')}
-        {badge(620,120,'CLEAN',PASS)}
-        <text x="360" y="165" text-anchor="middle" fill={DIM} font-size="10">answer exists = listed · NXDOMAIN = clean · each list uses unique return codes</text>
-      </g>}
+      {name === 'blocklist-query' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="78" width="140" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="80" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Mail Server</text>
+          <text x="80" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">checks sending IP</text>
+          <line x1="150" y1="100" x2="185" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="167" y="92" text-anchor="middle" fill="#9dabc4" font-size="9">1. reverse IP</text>
+          <rect x="190" y="78" width="170" height="44" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="275" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">in-addr.arpa</text>
+          <text x="275" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">reversed octets</text>
+          <line x1="360" y1="100" x2="395" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="377" y="92" text-anchor="middle" fill="#9dabc4" font-size="9">2. append zone</text>
+          <rect x="400" y="78" width="180" height="44" rx="10" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="490" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">DNSBL query</text>
+          <text x="490" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">IP.zen.spamhaus.org</text>
+          <line x1="580" y1="90" x2="620" y2="80" stroke="#f87171" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="600" y="74" text-anchor="middle" fill="#f87171" font-size="10">127.0.0.4</text>
+          <rect x="620" y="66" width="90" height="24" rx="6" fill="#f8717122" stroke="#f8717155"/>
+          <text x="665" y="82" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">LISTED</text>
+          <line x1="580" y1="110" x2="620" y2="130" stroke="#4ade80" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="600" y="128" text-anchor="middle" fill="#4ade80" font-size="10">NXDOMAIN</text>
+          <rect x="620" y="122" width="80" height="24" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="660" y="138" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">CLEAN</text>
+          <text x="360" y="170" text-anchor="middle" fill="#9dabc4" font-size="10">answer exists = listed · NXDOMAIN = clean · each list uses unique return codes</text>
+        </g>
+      )}
 
-      {name === 'wildcard' && <g>
-        {box(10,78,160,44,'Query: foo.example.com','(does not exist)',A)}
-        {arrow(170,100,210,100,A)}
-        {box(210,60,140,36,'*.example.com','wildcard matches','',WARN)}
-        {box(210,110,140,36,'NXDOMAIN','no wildcard','',FAIL)}
-        {arrow(350,78,400,90,WARN,'wildcard')}
-        {arrow(350,128,400,112,FAIL,'exact miss')}
-        {badge(400,80,'RETURNS IP',WARN)}{badge(400,100,'NXDOMAIN',PASS)}
-        <text x="360" y="170" text-anchor="middle" fill={DIM} font-size="10">wildcards match every unlisted subdomain: useful for multi-tenant apps, dangerous when accidental</text>
-      </g>}
+      {name === 'wildcard' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="78" width="160" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="90" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">foo.example.com</text>
+          <text x="90" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">(does not exist)</text>
+          <line x1="170" y1="100" x2="210" y2="82" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="190" y="74" text-anchor="middle" fill="#fbbf24" font-size="9">wildcard</text>
+          <line x1="170" y1="120" x2="210" y2="142" stroke="#4ade80" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="190" y="152" text-anchor="middle" fill="#4ade80" font-size="9">exact miss</text>
+          <rect x="210" y="60" width="140" height="36" rx="8" fill="#0b1222" stroke="#fbbf2455"/>
+          <text x="280" y="82" text-anchor="middle" fill="#fbbf24" font-size="11">*.example.com</text>
+          <rect x="210" y="112" width="140" height="36" rx="8" fill="#0b1222" stroke="#1c2a47"/>
+          <text x="280" y="134" text-anchor="middle" fill="#9dabc4" font-size="11">NXDOMAIN</text>
+          <line x1="350" y1="78" x2="395" y2="90" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="350" y1="130" x2="395" y2="118" stroke="#4ade80" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="400" y="66" width="120" height="24" rx="6" fill="#fbbf2422" stroke="#fbbf2455"/>
+          <text x="460" y="82" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">RETURNS IP</text>
+          <rect x="400" y="110" width="120" height="24" rx="6" fill="#4ade8022" stroke="#4ade8055"/>
+          <text x="460" y="126" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">NXDOMAIN</text>
+          <text x="360" y="175" text-anchor="middle" fill="#9dabc4" font-size="10">wildcards match every unlisted subdomain: useful for multi-tenant apps, dangerous when accidental</text>
+        </g>
+      )}
 
-      {name === 'ttl-lifecycle' && <g>
-        {box(10,20,150,44,'Record Published','TTL = 3600s',A)}
-        {arrow(85,64,85,90,A)}
-        {box(10,90,150,44,'Resolver Caches','for 1 hour',V)}
-        {arrow(85,134,85,158,A)}
-        {box(10,158,150,44,'You Edit Record','new value + TTL',WARN)}
-        {arrow(160,42,220,42,A)}
-        {box(220,20,160,44,'Old Answer Served','until cache expires',WARN)}
-        {arrow(300,64,300,90,A,'TTL expires')}
-        {box(220,90,160,44,'New Answer Served','propagation complete',PASS)}
-        {arrow(300,134,300,160,A,'raise TTL')}
-        {box(220,160,160,44,'Back to Normal','TTL 3600',PASS)}
-        <text x="360" y="195" text-anchor="middle" fill={DIM} font-size="10">the old TTL governs the window: lower it BEFORE the change, not after</text>
-      </g>}
+      {name === 'ttl-lifecycle' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="20" width="150" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="85" y="38" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Record Published</text>
+          <text x="85" y="54" text-anchor="middle" fill="#9dabc4" font-size="9">TTL = 3600s</text>
+          <line x1="85" y1="64" x2="85" y2="90" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="10" y="90" width="150" height="44" rx="10" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="85" y="108" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Resolver Caches</text>
+          <text x="85" y="124" text-anchor="middle" fill="#9dabc4" font-size="9">for 1 hour</text>
+          <line x1="85" y1="134" x2="85" y2="158" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="110" y="150" fill="#fbbf24" font-size="9">you edit record</text>
+          <rect x="10" y="158" width="150" height="44" rx="10" fill="#0b1222" stroke="#fbbf2455"/>
+          <text x="85" y="176" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="600">You Edit Record</text>
+          <text x="85" y="192" text-anchor="middle" fill="#9dabc4" font-size="9">new value + TTL</text>
+          <line x1="160" y1="42" x2="220" y2="42" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="220" y="20" width="160" height="44" rx="10" fill="#0b1222" stroke="#fbbf2455"/>
+          <text x="300" y="38" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="600">Old Answer Served</text>
+          <text x="300" y="54" text-anchor="middle" fill="#9dabc4" font-size="9">until cache expires</text>
+          <line x1="300" y1="64" x2="300" y2="90" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="330" y="80" fill="#9dabc4" font-size="9">TTL expires</text>
+          <rect x="220" y="90" width="160" height="44" rx="10" fill="#0b1222" stroke="#4ade8055"/>
+          <text x="300" y="108" text-anchor="middle" fill="#4ade80" font-size="12" font-weight="600">New Answer Served</text>
+          <text x="300" y="124" text-anchor="middle" fill="#9dabc4" font-size="9">propagation complete</text>
+          <line x1="300" y1="134" x2="300" y2="160" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="330" y="150" fill="#9dabc4" font-size="9">raise TTL</text>
+          <rect x="220" y="160" width="160" height="44" rx="10" fill="#0b1222" stroke="#4ade8055"/>
+          <text x="300" y="178" text-anchor="middle" fill="#4ade80" font-size="12" font-weight="600">Back to Normal</text>
+          <text x="300" y="194" text-anchor="middle" fill="#9dabc4" font-size="9">TTL 3600</text>
+          <text x="360" y="220" text-anchor="middle" fill="#9dabc4" font-size="10">the old TTL governs the window: lower it BEFORE the change, not after</text>
+        </g>
+      )}
 
-      {name === 'autodiscover' && <g>
-        {box(10,78,130,44,'Mail Client','learns email address',A)}
-        {arrow(140,90,175,90,A,'probes in order')}
-        {box(175,30,170,36,'autodiscover','CNAME to autodiscover',A)}
-        {box(175,80,170,36,'autoconfig','CNAME to autoconfig',V)}
-        {box(175,130,170,36,'_autodiscover._tcp','SRV record',WARN)}
-        {arrow(345,48,390,60,A)}{arrow(345,98,390,90,A)}{arrow(345,148,390,120,A)}
-        {box(390,78,180,44,'Server Settings','found: hostname, port, TLS',PASS)}
-        <text x="360" y="160" text-anchor="middle" fill={DIM} font-size="10">clients try all three paths; any hit provides the settings</text>
-      </g>}
+      {name === 'autodiscover' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <rect x="10" y="78" width="130" height="44" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="75" y="100" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Mail Client</text>
+          <text x="75" y="116" text-anchor="middle" fill="#9dabc4" font-size="9">learns email address</text>
+          <line x1="140" y1="90" x2="175" y2="60" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="140" y1="100" x2="175" y2="100" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="140" y1="110" x2="175" y2="140" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="175" y="42" width="170" height="36" rx="8" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="260" y="64" text-anchor="middle" fill="#f1f5f9" font-size="11">autodiscover CNAME</text>
+          <rect x="175" y="82" width="170" height="36" rx="8" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="260" y="104" text-anchor="middle" fill="#f1f5f9" font-size="11">autoconfig CNAME</text>
+          <rect x="175" y="122" width="170" height="36" rx="8" fill="#0b1222" stroke="#fbbf2455"/>
+          <text x="260" y="144" text-anchor="middle" fill="#fbbf24" font-size="11">_autodiscover._tcp SRV</text>
+          <line x1="345" y1="60" x2="390" y2="85" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="345" y1="100" x2="390" y2="95" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="345" y1="140" x2="390" y2="110" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="390" y="78" width="180" height="44" rx="10" fill="#0b1222" stroke="#4ade8055"/>
+          <text x="480" y="98" text-anchor="middle" fill="#f1f5f9" font-size="12" font-weight="600">Server Settings</text>
+          <text x="480" y="116" text-anchor="middle" fill="#4ade80" font-size="9">found: hostname, port, TLS</text>
+          <text x="360" y="185" text-anchor="middle" fill="#9dabc4" font-size="10">clients try all three paths; any hit provides the settings</text>
+        </g>
+      )}
     </svg>
   </div>
   <figcaption class="mt-2 text-center text-xs text-ink-faint">{caption}</figcaption>
