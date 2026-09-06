@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Email Deliverability: The Complete Guide"
+  description="Email deliverability explained: authentication, sender reputation, blocklists, warm-up, and the infrastructure decisions that keep mail in the inbox."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Email Deliverability</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Email Deliverability: The Complete Guide</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Deliverability is the discipline of getting mail delivered to the inbox instead of the spam
+      folder or a bounce. It rests on four pillars: authentication (proving you are you),
+      reputation (earned by behavior), infrastructure (IPs, PTR, TLS), and recipient engagement.
+      This hub connects every piece.
+    </p>
+
+    <div class="mt-10 grid gap-4">
+      {[
+        { href: '/why-emails-go-to-spam/', title: 'Why emails go to spam', desc: 'The 14 causes, strongest first, with the fix for each.' },
+        { href: '/email-bounced-reasons/', title: 'Why emails bounce', desc: 'Hard vs soft bounces, SMTP codes, and the handling routine.' },
+        { href: '/email-sending-reputation/', title: 'Sender reputation', desc: 'How IP and domain reputation are built, damaged, and repaired.' },
+        { href: '/how-to-warm-up-email-server/', title: 'Warm-up schedule', desc: 'Ramp a new server or domain over 4-6 weeks safely.' },
+        { href: '/dedicated-vs-shared-ip/', title: 'Dedicated vs shared IP', desc: 'Which sending infrastructure your volume actually needs.' },
+        { href: '/list-unsubscribe-header/', title: 'List-Unsubscribe headers', desc: 'The one-click unsubscribe requirement, implemented.' },
+        { href: '/imap-vs-smtp/', title: 'IMAP vs SMTP vs POP3', desc: 'Which protocol does what, and ports that matter.' },
+      ].map((s) => (
+        <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
+          <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <h2 class="font-display font-semibold text-ink">Start with the diagnosis</h2>
+      <p class="mt-1 text-sm text-ink-dim">
+        Run the <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> (SPF, DKIM,
+        DMARC, DNSSEC in one pass), then the <a href="/blacklist-checker/" class="font-medium text-accent hover:text-accent-soft">blacklist checker</a>.
+        Authentication and listings account for most deliverability failures.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

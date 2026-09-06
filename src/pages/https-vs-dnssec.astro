@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "If I have HTTPS, do I still need DNSSEC?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes: TLS cannot help if DNS redirects users before they ever reach your real server. DNSSEC closes that pre-connection gap."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does DNSSEC encrypt my DNS queries?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: it signs answers so tampering is detectable. Encrypting the queries themselves is DoH/DoT."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which is harder to deploy?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "TLS is now near-automatic (Let's Encrypt, platform defaults). DNSSEC is a toggle at good providers; the risk zone is manual key rotation."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do both affect SEO?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "HTTPS is a confirmed (small) ranking signal and mandatory for modern browser UX. DNSSEC is a trust and reliability signal."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens if either fails?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "TLS failure: a visible certificate warning users can click past. DNSSEC failure: SERVFAIL, no page at all. Different symptoms, same outage effect."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is DNSSEC why my mail fails?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Unrelated layers: mail authentication is SPF/DKIM/DMARC. But a DNSSEC misconfiguration takes down web AND mail resolution together."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="HTTPS vs DNSSEC: Encryption vs Authentication | PromptDNS"
+  description="HTTPS vs DNSSEC compared: TLS encrypts and authenticates your web connection, DNSSEC authenticates DNS answers, and you need to understand both layers."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">HTTPS vs DNSSEC: Encryption vs Authentication</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">HTTPS vs DNSSEC: Encryption vs Authentication</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">HTTPS and DNSSEC both protect trust on the internet, at different layers: TLS protects the connection between browser and server; DNSSEC protects the DNS answers that led the browser there. They complement each other and neither substitutes for the other.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The layers</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th>HTTPS (TLS)</th><th>DNSSEC</th></tr></thead><tbody><tr><td class="text-sm font-medium text-ink">Protects</td><td class="text-sm text-ink-dim">Web traffic content + server identity</td><td class="text-sm text-ink-dim">DNS answers from tampering</td></tr><tr><td class="text-sm font-medium text-ink">Trust anchor</td><td class="text-sm text-ink-dim">Certificate Authorities</td><td class="text-sm text-ink-dim">The DNS root chain</td></tr><tr><td class="text-sm font-medium text-ink">Encryption</td><td class="text-sm text-ink-dim">Yes (confidentiality)</td><td class="text-sm text-ink-dim">No (signatures only)</td></tr><tr><td class="text-sm font-medium text-ink">Failure mode</td><td class="text-sm text-ink-dim">Browser warning</td><td class="text-sm text-ink-dim">SERVFAIL (no answer)</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Why both</h2>
+      <p>Without DNSSEC, an attacker who can poison your resolver’s cache can point your domain at their server; TLS makes the browser warn, but users click through warnings. Without TLS, valid DNS answers still deliver users to a server that reads everything. Defense in depth: <a href="/what-is-dnssec/">DNSSEC</a> guarantees the address is genuinely yours; <a href="/what-is-ssl-tls/">TLS</a> guarantees the session to it is private and intact.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The deployment checklist</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li>TLS everywhere, HTTP redirected, HSTS enabled.</li><li>DNSSEC enabled at your DNS host with the DS published at the registrar.</li><li>CAA records restricting which CAs may issue for you.</li><li>Validate the whole stack with the <a href="/">homepage security scanner</a>.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">If I have HTTPS, do I still need DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: TLS cannot help if DNS redirects users before they ever reach your real server. DNSSEC closes that pre-connection gap.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNSSEC encrypt my DNS queries?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: it signs answers so tampering is detectable. Encrypting the queries themselves is DoH/DoT.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which is harder to deploy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TLS is now near-automatic (Let's Encrypt, platform defaults). DNSSEC is a toggle at good providers; the risk zone is manual key rotation.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do both affect SEO?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">HTTPS is a confirmed (small) ranking signal and mandatory for modern browser UX. DNSSEC is a trust and reliability signal.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if either fails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TLS failure: a visible certificate warning users can click past. DNSSEC failure: SERVFAIL, no page at all. Different symptoms, same outage effect.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNSSEC why my mail fails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Unrelated layers: mail authentication is SPF/DKIM/DMARC. But a DNSSEC misconfiguration takes down web AND mail resolution together.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/what-is-ssl-tls/" class="text-accent hover:text-accent-soft">What is SSL/TLS →</a></li><li><a href="/doh-vs-dot/" class="text-accent hover:text-accent-soft">DoH vs DoT →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

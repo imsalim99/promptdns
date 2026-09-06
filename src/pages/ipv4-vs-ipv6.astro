@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is IPv6 faster than IPv4?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Often slightly, on carrier networks that prefer it: fewer NAT hops. On well-peered v4 paths the difference is imperceptible."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I have to choose one?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: dual-stack (both) is the standard deployment."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does IPv6 exist if NAT works?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "NAT breaks end-to-end connectivity and merely delays exhaustion; IPv6 restores direct addressing at global scale."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is IPv6 more secure?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "IPsec support was designed in from the start, and scan-space is astronomically larger, but real security still depends on your configuration."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I test IPv6 connectivity?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Publish an AAAA record and load the site from a v6 connection, or use online v6 checkers; our AAAA lookup confirms what DNS publishes."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is 6to4 or Teredo?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Legacy transition tunnels; modern deployments prefer native dual-stack and disable tunneling."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="IPv4 vs IPv6: The Key Differences | PromptDNS"
+  description="IPv4 vs IPv6 compared: address space, notation, NAT, security model, and why dual-stack is the practical answer for every modern site."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">IPv4 vs IPv6: The Key Differences</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IPv4 vs IPv6: The Key Differences</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">IPv4 gives the internet about 4.3 billion addresses; IPv6 gives it 340 undecillion. That single difference drives everything else: exhaustion, NAT, carrier transitions, and why AAAA records exist alongside A records.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Side by side</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th>IPv4</th><th>IPv6</th></tr></thead><tbody><tr><td class="text-sm font-medium text-ink">Address size</td><td class="text-sm text-ink-dim">32-bit</td><td class="text-sm text-ink-dim">128-bit</td></tr><tr><td class="text-sm font-medium text-ink">Total addresses</td><td class="text-sm text-ink-dim">~4.3 billion</td><td class="text-sm text-ink-dim">~340 undecillion</td></tr><tr><td class="text-sm font-medium text-ink">Notation</td><td class="text-sm text-ink-dim">203.0.113.10 (decimal, dotted)</td><td class="text-sm text-ink-dim">2606:2800::1946 (hex, colon)</td></tr><tr><td class="text-sm font-medium text-ink">NAT</td><td class="text-sm text-ink-dim">Ubiquitous (address scarcity workaround)</td><td class="text-sm text-ink-dim">Unnecessary by design</td></tr><tr><td class="text-sm font-medium text-ink">DNS record</td><td class="text-sm text-ink-dim">A</td><td class="text-sm text-ink-dim">AAAA</td></tr><tr><td class="text-sm font-medium text-ink">Broadcast</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">No (multicast instead)</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Why dual-stack is the answer</h2>
+      <p>Neither protocol is going away soon: IPv4 carries legacy and much of the existing internet; IPv6 is where mobile carriers and new networks prefer to live. Servers should answer on both (A + AAAA records, listeners on both stacks), which is exactly what our <a href="/aaaa-record/">AAAA guide</a> walks through. The failure mode to avoid is publishing AAAA without a working v6 path: v6-preferring clients time out while v4 users never notice.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">What changes for webmasters</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li>Firewall rules must cover the v6 address explicitly.</li><li>Reverse DNS exists in both worlds (in-addr.arpa and ip6.arpa).</li><li>Log analysis: the same visitor can appear under two addresses.</li><li>Security groups and allowlists need both entries.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is IPv6 faster than IPv4?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Often slightly, on carrier networks that prefer it: fewer NAT hops. On well-peered v4 paths the difference is imperceptible.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I have to choose one?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: dual-stack (both) is the standard deployment.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does IPv6 exist if NAT works?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">NAT breaks end-to-end connectivity and merely delays exhaustion; IPv6 restores direct addressing at global scale.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is IPv6 more secure?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">IPsec support was designed in from the start, and scan-space is astronomically larger, but real security still depends on your configuration.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I test IPv6 connectivity?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish an AAAA record and load the site from a v6 connection, or use online v6 checkers; our AAAA lookup confirms what DNS publishes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is 6to4 or Teredo?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Legacy transition tunnels; modern deployments prefer native dual-stack and disable tunneling.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/aaaa-record/" class="text-accent hover:text-accent-soft">AAAA record guide →</a></li><li><a href="/a-record/" class="text-accent hover:text-accent-soft">A record guide →</a></li><li><a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">Check your AAAA records →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

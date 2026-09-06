@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Which one is my real IP?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "For the internet: the public one (our What Is My IP tool shows it). The 192.168.x.x address on your laptop is local-only."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can two networks use the same private IPs?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, constantly: millions of homes all use 192.168.1.x. They never see each other, so no conflict."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are private IPs more secure?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "They are unreachable from outside, which is its own protection, but it is not a substitute for host security."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What about 127.0.0.1?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "That is the loopback: the machine itself, a third category entirely (link-local and loopback are also non-routable)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I make a private server public?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only by exposing it through the gateway: port forwarding, a reverse proxy, or a public load balancer."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do cloud providers use these ranges?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes: VPCs in AWS, Azure, and GCP are built on private ranges with public gateways."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Public vs Private IP Addresses | PromptDNS"
+  description="Public vs private IP addresses explained: RFC 1918 ranges, NAT translation, when each matters, and how to tell which one you are looking at."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Public vs Private IP Addresses</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Public vs Private IP Addresses</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Private IP addresses only work inside a local network; public IPs are routable on the internet. The distinction is defined by three reserved ranges, and confusing them causes a whole genre of configuration failure.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The private ranges (RFC 1918)</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th>Range</th><th>Size</th><th>Typical use</th></tr></thead><tbody><tr><td class="font-mono text-xs text-accent">10.0.0.0/8</td><td class="text-sm text-ink-dim">16.7M addresses</td><td class="text-sm text-ink-dim">Large enterprise networks</td></tr><tr><td class="font-mono text-xs text-accent">172.16.0.0/12</td><td class="text-sm text-ink-dim">1M addresses</td><td class="text-sm text-ink-dim">Mid-size networks, some clouds</td></tr><tr><td class="font-mono text-xs text-accent">192.168.0.0/16</td><td class="text-sm text-ink-dim">65k addresses</td><td class="text-sm text-ink-dim">Home routers, small offices</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How they relate</h2>
+      <p>Your laptop holds a private address (192.168.1.x from the router). Your router holds the single public IP (from your ISP) and translates between the two via NAT. Everything behind the router shares the public identity. Cloud VPCs work the same way at larger scale: instances get private IPs, a gateway holds the public one.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Where the confusion bites</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li>Publishing a private IP in a public DNS record: the site resolves only inside your network.</li><li>Expecting a private IP to be reachable remotely: it is not routable, by design.</li><li>Firewall rules written for the public interface applied to private ranges (or vice versa).</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which one is my real IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">For the internet: the public one (our What Is My IP tool shows it). The 192.168.x.x address on your laptop is local-only.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can two networks use the same private IPs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, constantly: millions of homes all use 192.168.1.x. They never see each other, so no conflict.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Are private IPs more secure?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">They are unreachable from outside, which is its own protection, but it is not a substitute for host security.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What about 127.0.0.1?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">That is the loopback: the machine itself, a third category entirely (link-local and loopback are also non-routable).</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I make a private server public?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only by exposing it through the gateway: port forwarding, a reverse proxy, or a public load balancer.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do cloud providers use these ranges?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: VPCs in AWS, Azure, and GCP are built on private ranges with public gateways.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/public-vs-private-ip/" class="text-accent hover:text-accent-soft">NAT explained →</a></li><li><a href="/my-ip/" class="text-accent hover:text-accent-soft">What Is My IP →</a></li><li><a href="/public-vs-private-ip/" class="text-accent hover:text-accent-soft">Reserved IP ranges →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is List-Unsubscribe the same as the unsubscribe link in my footer?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: the footer link is content; the header is metadata clients read to offer a native one-click unsubscribe. Bulk senders need both."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens without it?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Gmail and Yahoo's 2024 sender requirements classify non-compliant bulk mail toward rejection, and complaint rates rise because unsubscribing is harder than reporting spam."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does one-click unsubscribe need a confirmation page?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: confirmation pages defeat the point. One click, immediate opt-out, brief confirmation notice afterwards."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I use it for transactional email?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Transactional mail is generally exempt, but including the header harms nothing and respects user choice."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="List-Unsubscribe Headers: Requirements and Setup | PromptDNS"
+  description="The List-Unsubscribe header explained: one-click unsubscribe requirements from Gmail and Yahoo, header syntax, and how ESPs implement it."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">List-Unsubscribe Headers: Requirements and Setup</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">List-Unsubscribe Headers: Requirements and Setup</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">The List-Unsubscribe header is a machine-readable unsubscribe instruction inside the email itself. Since 2024 it is effectively mandatory: Gmail and Yahoo require a one-click unsubscribe for bulk senders, and enforcement means rejection, not just spam-foldering.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the header looks like</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">List-Unsubscribe: &lt;https://example.com/unsub/user-token&gt;, &lt;mailto:unsub@example.com?subject=unsubscribe&gt;
+List-Unsubscribe-Post: List-Unsubscribe=One-Click</pre>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The pieces</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li><strong class="text-ink">URL method:</strong> a link that unsubscribes in one click, without login or confirmation page (that is what List-Unsubscribe-Post: One-Click demands).</li><li><strong class="text-ink">mailto method:</strong> an unsubscribe address the client can email; legacy but still accepted.</li><li>The mail client renders its own native Unsubscribe button from this header, above your content.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it gets set up</h2>
+      <p>You rarely add it by hand: reputable ESPs (Mailchimp, Klaviyo, SendGrid and friends) add the header automatically to campaigns. Your jobs are: keep the unsubscribe landing flow one-click compliant, never require login to unsubscribe, process opt-outs promptly, and verify the header exists on your live mail (view original message, check the headers).</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is List-Unsubscribe the same as the unsubscribe link in my footer?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: the footer link is content; the header is metadata clients read to offer a native one-click unsubscribe. Bulk senders need both.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens without it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail and Yahoo's 2024 sender requirements classify non-compliant bulk mail toward rejection, and complaint rates rise because unsubscribing is harder than reporting spam.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does one-click unsubscribe need a confirmation page?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: confirmation pages defeat the point. One click, immediate opt-out, brief confirmation notice afterwards.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use it for transactional email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Transactional mail is generally exempt, but including the header harms nothing and respects user choice.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/why-emails-go-to-spam/" class="text-accent hover:text-accent-soft">Gmail and Yahoo sender requirements →</a></li><li><a href="/why-emails-go-to-spam/" class="text-accent hover:text-accent-soft">Why emails go to spam →</a></li><li><a href="/email-deliverability/" class="text-accent hover:text-accent-soft">Email deliverability hub →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

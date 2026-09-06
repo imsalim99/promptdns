@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Do bounces hurt deliverability?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, and rapidly: bounce rates above roughly 2% begin degrading inbox placement, and hard-bounce-heavy sending is a spam-trap magnet. Suppress bounces the day they happen."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the difference between a bounce and a spam complaint?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A bounce is the server refusing delivery before or at arrival; a complaint is a recipient marking your mail as spam after receiving it. Both damage reputation; complaints hurt more per event."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can a hard bounce be temporary?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Rarely: a full mailbox that is later emptied, or a domain temporarily misconfigured. But the safe default is to treat 5.1.1 unknown-user as permanent."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Should I re-verify old lists before sending?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes: lists older than six months accumulate dead addresses. Email verification services catch most hard bounces before you send."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does greylisting mean my mail failed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: greylisting (421/450) is a deliberate first-contact deferral. Legitimate servers retry, and the mail delivers on the second attempt."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I see my bounce rate?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Your ESP's campaign dashboard shows it; the sender-side log (postfix, SES) gives per-recipient codes for deeper analysis."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Why Emails Bounce: Hard vs Soft Bounces | PromptDNS"
+  description="Email bounces explained: hard vs soft bounce types, what each SMTP code means, and the fix for the most common bounce reasons."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Why Emails Bounce: Hard vs Soft Bounces</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Why Emails Bounce: Hard vs Soft Bounces</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">A bounce is the receiving mail server refusing your message and returning it with a reason code. Every bounce falls into two families, and telling them apart decides whether you fix, retry, or remove the address forever.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Hard bounces: permanent failure</h2>
+      <p>The address is invalid and will never work: the mailbox does not exist, the domain has no mail setup, or the recipient server actively blocks you permanently. Codes like <code>550 5.1.1</code> (unknown user) are hard failures.</p><p><strong class="text-ink">The only correct action is removal.</strong> Continuing to send to hard bounces destroys your sender reputation and walks you toward spam traps.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Soft bounces: temporary failure</h2>
+      <p>The problem is transient: a full mailbox (<code>552</code>), the server is temporarily down (<code>421</code>), greylisting is deferring you (<code>450</code>), or the message is too large (<code>552 message size</code>). Retry with backoff: most soft bounces deliver on the second or third attempt spaced hours apart.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The bounce codes that matter most</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th>Code</th><th>Meaning</th><th>Action</th></tr></thead><tbody><tr><td class="font-mono text-xs text-accent">550 5.1.1</td><td class="text-sm text-ink-dim">User unknown</td><td class="text-sm text-ink-dim">Remove address (hard)</td></tr><tr><td class="font-mono text-xs text-accent">550 5.7.1</td><td class="text-sm text-ink-dim">Message rejected by policy</td><td class="text-sm text-ink-dim">Check authentication and blocklists</td></tr><tr><td class="font-mono text-xs text-accent">421 / 450</td><td class="text-sm text-ink-dim">Temporary failure, greylisting</td><td class="text-sm text-ink-dim">Retry with backoff</td></tr><tr><td class="font-mono text-xs text-accent">552</td><td class="text-sm text-ink-dim">Mailbox full / message too large</td><td class="text-sm text-ink-dim">Retry later; reduce attachments</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The bounce-handling routine</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>Parse every bounce for its code (your ESP usually classifies them automatically).</li><li>Suppress hard bounces immediately, permanently.</li><li>Retry soft bounces three times over 48 hours, then suppress.</li><li>Watch your bounce rate: above ~2% starts hurting inbox placement at Gmail and Yahoo.</li></ol>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do bounces hurt deliverability?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, and rapidly: bounce rates above roughly 2% begin degrading inbox placement, and hard-bounce-heavy sending is a spam-trap magnet. Suppress bounces the day they happen.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between a bounce and a spam complaint?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A bounce is the server refusing delivery before or at arrival; a complaint is a recipient marking your mail as spam after receiving it. Both damage reputation; complaints hurt more per event.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a hard bounce be temporary?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Rarely: a full mailbox that is later emptied, or a domain temporarily misconfigured. But the safe default is to treat 5.1.1 unknown-user as permanent.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I re-verify old lists before sending?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: lists older than six months accumulate dead addresses. Email verification services catch most hard bounces before you send.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does greylisting mean my mail failed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: greylisting (421/450) is a deliberate first-contact deferral. Legitimate servers retry, and the mail delivers on the second attempt.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I see my bounce rate?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your ESP's campaign dashboard shows it; the sender-side log (postfix, SES) gives per-recipient codes for deeper analysis.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/why-emails-go-to-spam/" class="text-accent hover:text-accent-soft">Why emails go to spam →</a></li><li><a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">Blacklist checker →</a></li><li><a href="/email-authentication/" class="text-accent hover:text-accent-soft">Email authentication hub →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>
