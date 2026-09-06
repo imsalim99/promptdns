@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DNS Security: Hijacking, Poisoning, Tunneling & Defense"
+  description="DNS security cluster: hijacking, cache poisoning, amplification attacks, tunneling, rebinding — how each attack works and the layered defense that stops them."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Security</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Security</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      DNS is the internet's trust layer: every website visit, email delivery, and API call
+      depends on DNS answers being correct. These guides cover the attacks that exploit DNS
+      and the defenses that stop them.
+    </p>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Attack Types</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/dns-hijacking/', title: 'DNS Hijacking', desc: 'Registrar compromise, on-path interception, cache poisoning. How attacks work and the layered defense.' },
+          { href: '/dns-cache-poisoning/', title: 'Cache Poisoning', desc: 'How forged records end up in resolver caches, the Kaminsky attack, and why DNSSEC is the answer.' },
+          { href: '/dns-amplification-attack/', title: 'Amplification Attacks', desc: 'How open resolvers are weaponized for DDoS, and how to prevent your server from being used.' },
+          { href: '/dns-tunneling/', title: 'DNS Tunneling', desc: 'Data exfiltration through DNS queries, detection signals, and prevention.' },
+          { href: '/dns-rebinding-explained/', title: 'DNS Rebinding', desc: 'Bypassing the same-origin policy using DNS time gaps to access internal networks.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Defense</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/what-is-dnssec/', title: 'DNSSEC', desc: 'Cryptographically signed answers that make forgeries detectable.' },
+          { href: '/dnssec-checker/', title: 'DNSSEC Checker', desc: 'Verify your DS records, DNSKEYs, and algorithm strength.' },
+          { href: '/caa-record/', title: 'CAA Records', desc: 'Restrict which CAs can issue certificates for your domain.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        <strong class="text-ink">Verify your security posture:</strong> run the
+        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> (DNSSEC,
+        SPF, DKIM, DMARC in one pass), then confirm records with the
+        <a href="/dns-record-lookup/" class="font-medium text-accent hover:text-accent-soft">DNS record lookup</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

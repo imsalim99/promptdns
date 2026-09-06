@@ -65,7 +65,7 @@ for t in ['a','aaaa','cname','mx','ns','txt','soa','ptr','srv','caa','ds','dnske
 for s, l in [('dns-hijacking','DNS Hijacking'),('dns-cache-poisoning','DNS Cache Poisoning'),
              ('dns-amplification-attack','DNS Amplification Attacks'),('dns-tunneling','DNS Tunneling'),
              ('dns-rebinding-explained','DNS Rebinding')]:
-    add(s, l, D, ('DNS Security', '/dns-hijacking/'))
+    add(s, l, D, ('DNS Security', '/dns-security/'))
 
 add('dns-error-messages', 'DNS Error Messages', D)
 add('what-is-dnssec', 'What Is DNSSEC', D)
