@@ -352,8 +352,7 @@ for slug, d in COMPARISONS.items():
       "description": f"{a} vs {b} compared: pricing, network, features, and the honest verdict for websites, teams, and AWS shops.",
       "intro": f"Both are excellent anycast DNS networks. The right choice depends on what you want DNS to do besides answering queries.",
       "rows": d["rows"], "colA": a, "colB": b,
-      "steps": [("The short version", d["verdict"])], "faqs": provider_faqs(a)[:4] + [("Which is faster to resolve?","Both run global anycast networks; real-world differences are milliseconds and vary by region. Decide on features, integration, and cost.")],
-      "faqs": [("Can I switch later?","Yes, DNS hosts are swappable: create the zone at the new host, delegate, wait out the 48-hour window before cancelling.")],
+      "steps": [("The short version", d["verdict"])], "faqs": provider_faqs(a)[:4] + [("Which is faster to resolve?","Both run global anycast networks; real-world differences are milliseconds and vary by region. Decide on features, integration, and cost."), ("Can I switch later?","Yes, DNS hosts are swappable: create the zone at the new host, delegate, wait out the 48-hour window before cancelling.")],
       "related": [["DNS providers hub","/dns-providers/"], ["What is DNS?","/what-is-dns/"]],
     }); n+=1
 

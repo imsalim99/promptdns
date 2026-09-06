@@ -48,6 +48,26 @@ const data = {
  ],
  "faqs": [
   [
+   "How long do DNS changes take in Cloudflare DNS?",
+   "The provider serves new values quickly, but resolvers keep old answers until each record's TTL expires. Verify live values with the record lookup, then watch the propagation checker until resolvers agree."
+  ],
+  [
+   "Where do I find Cloudflare DNS's nameservers?",
+   "This playbook's nameservers guide covers the exact location. They are the delegation pair your registrar must point at for {name} to be authoritative."
+  ],
+  [
+   "Should I lower TTL before changing records in Cloudflare DNS?",
+   "Yes, for anything planned: set TTL to 300 seconds at least one old-TTL cycle ahead, make the change, confirm propagation, then restore the TTL."
+  ],
+  [
+   "Can I keep email with one provider and DNS in Cloudflare DNS?",
+   "Yes: DNS host and mail provider are independent. Publish the mail provider's MX, SPF, DKIM, and DMARC records in {name}, and keep those records unproxied."
+  ],
+  [
+   "Which is faster to resolve?",
+   "Both run global anycast networks; real-world differences are milliseconds and vary by region. Decide on features, integration, and cost."
+  ],
+  [
    "Can I switch later?",
    "Yes, DNS hosts are swappable: create the zone at the new host, delegate, wait out the 48-hour window before cancelling."
   ]
