@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "AWeber",
+ "cat": "ESP",
+ "include": "include:aweber.com",
+ "selector": "custom",
+ "quirk": "AWeber authenticates via DKIM CNAMEs under your list's sending domain; the include applies to their shared infrastructure.",
+ "steps": [
+  [
+   "Add the sending domain",
+   "Account settings, Sender domains / Domains: add and verify."
+  ],
+  [
+   "SPF",
+   "Add include:aweber.com where the setup page lists it."
+  ],
+  [
+   "DKIM",
+   "Publish the CNAMEs AWeber displays, then verify each."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does AWeber need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for AWeber?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

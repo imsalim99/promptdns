@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "SocketLabs",
+ "cat": "ESP",
+ "include": "include:mailsocketlabs.com",
+ "selector": "custom",
+ "quirk": "SocketLabs assigns a unique SPF include per account (visible in the control panel); DKIM selectors are created per sending domain.",
+ "steps": [
+  [
+   "Create the sending domain",
+   "Control Panel, Sending Domains: add your domain."
+  ],
+  [
+   "SPF",
+   "Copy your account-specific include from the panel (it differs from other customers') and add it."
+  ],
+  [
+   "DKIM",
+   "Create/select a selector, publish the TXT SocketLabs displays, then validate in-panel."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does SocketLabs need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for SocketLabs?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

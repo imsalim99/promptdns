@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "SMTP2GO",
+ "cat": "ESP",
+ "include": "include:smtp2go.net",
+ "selector": "custom",
+ "quirk": "SMTP2GO's sender-domain flow generates DKIM CNAMEs and a tracking CNAME; SPF include applies to their default sending path.",
+ "steps": [
+  [
+   "Add the sender domain",
+   "Settings, Sender Domains: add and open the DNS instructions."
+  ],
+  [
+   "SPF",
+   "Add include:smtp2go.net to your record."
+  ],
+  [
+   "DKIM",
+   "Publish the CNAMEs shown, then verify each row turns green in SMTP2GO."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does SMTP2GO need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for SMTP2GO?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

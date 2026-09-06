@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Intercom",
+ "cat": "SaaS",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "Intercom uses a custom sending domain with CNAMEs for DKIM and tracking; there is no manual SPF include, records are generated per workspace.",
+ "steps": [
+  [
+   "Set the sending domain",
+   "Settings, Sending domain: enter mail.yourdomain.com style address."
+  ],
+  [
+   "Publish the CNAMEs",
+   "Intercom displays DKIM and tracking CNAMEs; add them, wait for verification."
+  ],
+  [
+   "SPF",
+   "If the setup page lists an include for your region, add it; CNAME-based setups need none."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Intercom need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Intercom?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

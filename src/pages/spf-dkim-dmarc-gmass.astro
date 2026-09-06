@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "GMass",
+ "cat": "Cold outreach",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "GMass sends from inside your Gmail, so Google's own SPF/DKIM already authenticate the mail; no provider records exist, alignment comes from the Gmail From address.",
+ "steps": [
+  [
+   "Nothing to publish",
+   "GMass rides Gmail's infrastructure: SPF and DKIM are Google's and already pass."
+  ],
+  [
+   "DMARC alignment",
+   "Use your custom domain as the Gmail alias (via Google Workspace) for alignment; free @gmail.com From addresses break brand alignment."
+  ],
+  [
+   "Deliverability",
+   "Focus on mailbox warm-up and volume pacing, which GMass handles in-app."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does GMass need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for GMass?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

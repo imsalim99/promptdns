@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Amazon SES",
+ "cat": "ESP",
+ "include": "include:amazonses.com",
+ "selector": "custom",
+ "quirk": "SES DKIM is easiest as CNAMEs (three of them) generated per identity; Easy DKIM in the console handles key rotation automatically.",
+ "steps": [
+  [
+   "Verify the identity",
+   "SES Console, Identities: create a domain identity, choose Easy DKIM (2048-bit), copy the three CNAMEs."
+  ],
+  [
+   "SPF",
+   "Add include:amazonses.com to your record if you send via SES's default MAIL FROM; a custom MAIL FROM domain changes this."
+  ],
+  [
+   "DMARC alignment",
+   "Set a custom MAIL FROM subdomain (mail.yourdomain.com) so SPF aligns under relaxed rules."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Amazon SES need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Amazon SES?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

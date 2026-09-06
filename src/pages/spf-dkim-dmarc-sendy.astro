@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Sendy",
+ "cat": "ESP",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "Sendy is self-hosted on your Amazon SES credentials: the records to publish are Amazon SES identity records (DKIM CNAMEs + optional MAIL FROM), nothing Sendy-specific.",
+ "steps": [
+  [
+   "Verify the SES identity",
+   "Set up the domain as an SES identity (Easy DKIM CNAMEs, optional custom MAIL FROM)."
+  ],
+  [
+   "SPF",
+   "Add include:amazonses.com (or rely on the custom MAIL FROM SPF) per your SES setup."
+  ],
+  [
+   "Configure Sendy",
+   "Point Sendy's campaign domain at the verified identity; DKIM signing happens in SES."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Sendy need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Sendy?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

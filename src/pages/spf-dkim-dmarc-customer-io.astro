@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Customer.io",
+ "cat": "ESP",
+ "include": "include:_spf.customer.io",
+ "selector": "custom",
+ "quirk": "Customer.io's dedicated sending domain creates three CNAMEs (bounce, DKIM, tracking) plus an SPF include for the region.",
+ "steps": [
+  [
+   "Add the sending domain",
+   "Settings, Senders: add your domain and open the generated DNS list."
+  ],
+  [
+   "Publish",
+   "Add all displayed records (they include region-specific SPF include and DKIM), then verify."
+  ],
+  [
+   "Test",
+   "Send the pre-flight test mail Customer.io offers before going live."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Customer.io need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Customer.io?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

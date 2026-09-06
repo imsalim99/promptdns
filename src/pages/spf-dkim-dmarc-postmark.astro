@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Postmark",
+ "cat": "ESP",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "Postmark requires a DKIM key plus a Return-Path CNAME per sender signature; the SPF include (spf.mtasv.net) is legacy and current setups favor the return-path CNAME.",
+ "steps": [
+  [
+   "Add the sender signature",
+   "Sender Signatures: add your from-address/domain and complete verification."
+  ],
+  [
+   "DKIM + Return-Path",
+   "Postmark displays a DKIM TXT and a Return-Path CNAME; add both in DNS and confirm each turns verified."
+  ],
+  [
+   "SPF",
+   "If your account shows spf.mtasv.net instructions, add that include; on CNAME-based setups no SPF edit is needed."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Postmark need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Postmark?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

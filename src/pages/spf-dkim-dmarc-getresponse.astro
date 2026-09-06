@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "GetResponse",
+ "cat": "ESP",
+ "include": "include:_spf.getresponse.com",
+ "selector": "custom",
+ "quirk": "GetResponse uses CNAME-based domain authentication: DKIM plus a return-path CNAME; add both, not just SPF.",
+ "steps": [
+  [
+   "Add the domain",
+   "Settings, Domains: add and start verification."
+  ],
+  [
+   "SPF",
+   "Add include:_spf.getresponse.com to your record."
+  ],
+  [
+   "DKIM + return path",
+   "Publish the CNAMEs displayed (DKIM and bounces return-path), then finish verification."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does GetResponse need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for GetResponse?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Brevo (Sendinblue)",
+ "cat": "ESP",
+ "include": "include:spf.brevo.org",
+ "selector": "brevo",
+ "quirk": "Brevo renamed from Sendinblue; old tutorials show the sendinblue.com include, but current accounts authenticate under brevo.org records shown in your dashboard.",
+ "steps": [
+  [
+   "Add and authenticate the domain",
+   "Senders, Domains, add your domain, then complete the displayed DNS records (DKIM TXT + return-path CNAME)."
+  ],
+  [
+   "SPF",
+   "If the dashboard asks for an SPF edit, use the include it displays (spf.brevo.org on current accounts)."
+  ],
+  [
+   "DKIM",
+   "The TXT record Brevo displays IS the DKIM key; publish it, then authenticate."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Brevo (Sendinblue) need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Brevo (Sendinblue)?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

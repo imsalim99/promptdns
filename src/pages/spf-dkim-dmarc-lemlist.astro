@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Lemlist",
+ "cat": "Cold outreach",
+ "include": "include:spf.lemlist.com",
+ "selector": "custom",
+ "quirk": "Lemlist's deliverability package creates a custom tracking domain and DKIM; the SPF include attaches to the mailbox domain you connect.",
+ "steps": [
+  [
+   "Connect the mailbox",
+   "Settings: connect via Google/Microsoft; Lemlist runs a deliverability check."
+  ],
+  [
+   "SPF",
+   "Add include:spf.lemlist.com to the mailbox domain's record if Lemlist's check lists it."
+  ],
+  [
+   "DKIM + tracking",
+   "Publish the DKIM TXT and the tracking CNAME from Lemlist's setup; verify both."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Lemlist need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Lemlist?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

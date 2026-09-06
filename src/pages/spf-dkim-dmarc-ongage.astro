@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Ongage",
+ "cat": "ESP",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "Ongage is an MTA platform: authentication records are per connected SMTP vendor and per sending domain, generated inside the panel.",
+ "steps": [
+  [
+   "Add the sending domain",
+   "Domains: add, and Ongage lists records for your chosen vendor."
+  ],
+  [
+   "Publish",
+   "Add the SPF include and DKIM records shown for that vendor pairing."
+  ],
+  [
+   "Seed test",
+   "Run Ongage's seed-list test before scaling sends."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Ongage need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Ongage?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

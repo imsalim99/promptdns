@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Klaviyo",
+ "cat": "ESP",
+ "include": "dashboard",
+ "selector": "klaviyo",
+ "quirk": "Klaviyo is DKIM-centric: it provisions a dedicated sending domain (return-path CNAME) plus DKIM CNAMEs; there is often no SPF include to add at all.",
+ "steps": [
+  [
+   "Dedicated sending domain",
+   "Account, Settings, Domains: enter your sending domain; Klaviyo generates a return-path CNAME and two DKIM CNAMEs."
+  ],
+  [
+   "Publish",
+   "Add all three CNAMEs in DNS, then click Verify in Klaviyo."
+  ],
+  [
+   "DMARC alignment",
+   "Because the return-path and DKIM d= use your domain, mail aligns under relaxed alignment once verified."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Klaviyo need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Klaviyo?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

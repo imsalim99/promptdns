@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Atlassian (Jira/Confluence)",
+ "cat": "SaaS",
+ "include": "include:spf.mta.atlassian.com",
+ "selector": "custom",
+ "quirk": "Atlassian's notification mail comes from their notification domain; DKIM is managed by Atlassian once your domain is verified in admin.",
+ "steps": [
+  [
+   "Verify the domain",
+   "admin.atlassian.com, Domains: add and verify your domain."
+  ],
+  [
+   "SPF",
+   "Add include:spf.mta.atlassian.com to your record."
+  ],
+  [
+   "DKIM",
+   "Atlassian signs with their infrastructure once the domain is verified; no manual DKIM record is typically required."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Atlassian (Jira/Confluence) need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Atlassian (Jira/Confluence)?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

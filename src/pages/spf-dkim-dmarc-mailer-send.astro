@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "MailerSend",
+ "cat": "ESP",
+ "include": "include:mailer-send.com",
+ "selector": "custom",
+ "quirk": "MailerSend (transactional sibling ofMailerLite) uses SPF include, DKIM TXT, and a tracking CNAME, all generated per domain.",
+ "steps": [
+  [
+   "Add the domain",
+   "Domains: add your sending domain."
+  ],
+  [
+   "Publish",
+   "Add the SPF include, DKIM TXT, and tracking CNAME displayed; wait for all three to verify."
+  ],
+  [
+   "Senders",
+   "Create sender identities on the verified domain before sending."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does MailerSend need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for MailerSend?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

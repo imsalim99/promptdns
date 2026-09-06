@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Mandrill (Mailchimp transactional)",
+ "cat": "ESP",
+ "include": "include:spf.mandrillapp.com",
+ "selector": "mandrill",
+ "quirk": "Mandrill requires the signing domain to be verified in Mailchimp first; DKIM CNAMEs live under mandrill._domainkey.",
+ "steps": [
+  [
+   "Verify the sending domain",
+   "Mailchimp, Mandrill: add and verify the domain (SPF/DKIM records displayed)."
+  ],
+  [
+   "SPF",
+   "Add include:spf.mandrillapp.com to your record."
+  ],
+  [
+   "DKIM",
+   "Add the CNAME at mandrill._domainkey as displayed, then verify in Mandrill."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Mandrill (Mailchimp transactional) need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Mandrill (Mailchimp transactional)?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

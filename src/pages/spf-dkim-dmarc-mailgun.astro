@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Mailgun",
+ "cat": "ESP",
+ "include": "include:mailgun.org",
+ "selector": "smtp",
+ "quirk": "Mailgun has two modes: mg.yourdomain.com subdomain (recommended, keeps tracking separate) or bare root domain; records differ between them.",
+ "steps": [
+  [
+   "Add and verify the domain",
+   "Sending, Domain setup: enter the sending domain (mg.yourdomain.com recommended)."
+  ],
+  [
+   "SPF",
+   "If using the root sending domain, add include:mailgun.org. Subdomain setups put the SPF on the subdomain as Mailgun instructs."
+  ],
+  [
+   "DKIM",
+   "Add the TXT DKIM record Mailgun displays (selector shown on the domain page), then verify."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Mailgun need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Mailgun?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

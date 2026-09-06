@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "WooCommerce",
+ "cat": "Ecommerce",
+ "include": "dashboard",
+ "selector": "custom",
+ "quirk": "WooCommerce's default wp_mail sends via your own server; authentication depends on an SMTP plugin (like WP Mail SMTP) whose provider records you then publish.",
+ "steps": [
+  [
+   "Route mail through an authenticated provider",
+   "Install an SMTP plugin (WP Mail SMTP, Postmark, Brevo plugin) and connect an authenticated sending service."
+  ],
+  [
+   "SPF/DKIM",
+   "Publish the records THAT PROVIDER specifies; WooCommerce itself adds none."
+  ],
+  [
+   "DMARC",
+   "Once the provider passes, your DMARC record governs, same as any other sender."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does WooCommerce need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for WooCommerce?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

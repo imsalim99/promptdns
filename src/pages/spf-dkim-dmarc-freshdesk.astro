@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Freshdesk",
+ "cat": "Helpdesk",
+ "include": "include:email.freshdesk.com",
+ "selector": "custom",
+ "quirk": "Freshdesk portal forwarding plus SPF/DKIM are separate toggles; skipping the portal CNAME breaks reply threading even when authentication passes.",
+ "steps": [
+  [
+   "Add the support mailbox",
+   "Admin, Email: connect your support address and the portal forwarding CNAME."
+  ],
+  [
+   "SPF",
+   "Add include:email.freshdesk.com to your record (on the domain Freshdesk sends from)."
+  ],
+  [
+   "DKIM",
+   "Admin, Email, Authentication: enable DKIM and add the TXT displayed."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Freshdesk need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Freshdesk?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Drip",
+ "cat": "ESP",
+ "include": "include:_spf.dripemail2.com",
+ "selector": "custom",
+ "quirk": "Drip uses CNAME-based DKIM plus its SPF include; the custom sending domain setup also creates a bounce CNAME.",
+ "steps": [
+  [
+   "Add the sending domain",
+   "Account settings, Sending domains: add your domain."
+  ],
+  [
+   "SPF",
+   "Add include:_spf.dripemail2.com to your record."
+  ],
+  [
+   "DKIM + bounce",
+   "Publish the CNAMEs Drip displays (DKIM and bounce domain), then verify each."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Drip need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Drip?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

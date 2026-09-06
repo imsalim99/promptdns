@@ -1,0 +1,139 @@
+---
+/**
+ * Shared document template for per-service SPF/DKIM/DMARC setup guides
+ * (the ESP matrix — Koray document-template method, deep per-service data).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export interface EspData {
+  name: string;
+  cat: string;
+  include: string;      // SPF include value, or 'dashboard' if provider-assigned
+  selector: string;     // DKIM selector hint
+  quirk: string;        // the one thing people get wrong with this service
+  steps: [string, string][];
+  faqs: [string, string][];
+}
+
+interface Props { data: EspData }
+const { data } = Astro.props;
+const d = data;
+
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: d.faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+};
+---
+<BaseLayout
+  title={`Set Up SPF, DKIM & DMARC for ${d.name} (Step by Step)`}
+  description={`Complete ${d.name} email authentication setup: add the SPF include, publish DKIM, and configure DMARC, verified with free tools.`}
+  schema={[faq]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">{d.name}</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">{d.cat}</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF, DKIM &amp; DMARC for {d.name}</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Everything {d.name} needs to send authenticated mail as your domain: the SPF include, the DKIM
+      setup, and the DMARC record that ties it together, in the correct order.
+    </p>
+
+    <div class="mt-8 rounded-xl border border-warn/30 bg-warn/10 p-5">
+      <p class="text-sm leading-relaxed text-ink-dim"><strong class="text-warn">{d.name} gotcha:</strong> {d.quirk}</p>
+    </div>
+
+    <div class="rich-text mt-10">
+      <h2>Step 1: Verify your domain in {d.name}</h2>
+      <p>
+        Before any records, {d.name} must recognize your domain. In {d.name}'s settings, find
+        <strong class="text-ink">Sending domains / Sender authentication / Verified domains</strong>,
+        add your domain, and complete whatever verification it asks for (usually a TXT token or a
+        dashboard confirmation). Records you publish before this step often don't activate.
+      </p>
+
+      <h2>Step 2: Add {d.name} to your SPF record</h2>
+      {d.include === 'dashboard'
+        ? <p>{d.name} assigns your SPF value when you authenticate the domain: the dashboard displays an <code>include:</code> string (or a return-path CNAME that plays the same role). Copy it from there rather than from an old tutorial; providers rotate infrastructure, and the dashboard value is always current.</p>
+        : <p>Add <code>{d.include}</code> as a mechanism to your existing SPF record. On a typical domain the record then looks like:</p>}
+      {d.include !== 'dashboard' && (
+        <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">v=spf1 include:_spf.google.com {d.include} ~all</pre>
+      )}
+      <p class="mt-3">
+        Rules that matter: your domain has exactly <strong class="text-ink">one</strong> SPF record (two = permerror),
+        and every <code>include:</code> costs one of the
+        <a href="/spf-lookup-limit/" class="text-accent hover:text-accent-soft">10 allowed DNS lookups</a>.
+        If you're stacking several services, run the
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a> after this step;
+        if the meter is near 10, the <a href="/spf-flattener/" class="text-accent hover:text-accent-soft">SPF flattener</a> fixes it free.
+      </p>
+
+      <h2>Step 3: Publish {d.name}'s DKIM key</h2>
+      <p>
+        In {d.name}'s domain/authentication settings, generate the DKIM key. {d.name} shows you a
+        DNS record to create:
+      </p>
+      <ul>
+        <li>Type <strong class="text-ink">CNAME</strong> or <strong class="text-ink">TXT</strong>, exactly as their dialog states.</li>
+        <li>Host/name: <code>{d.selector === 'custom' ? 'the selector they display (e.g. s1._domainkey)' : d.selector + '._domainkey'}</code>.</li>
+        <li>Value: the long key string. Paste it verbatim; no added quotes or spaces.</li>
+      </ul>
+      <p>
+        Once the record propagates (minutes), click the verify/generate button in {d.name} so the
+        service starts actually signing mail. Publishing DNS without triggering the signer is the
+        classic half-done setup. Confirm the key is live with the
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+
+      <h2>Step 4: Publish (or update) DMARC</h2>
+      <p>
+        Create a TXT record at <code>_dmarc.yourdomain.com</code>. Starting value, with your address
+        in the reporting tag:
+      </p>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com</pre>
+      <p>
+        With {d.name} now passing SPF and DKIM, your aggregate reports will show aligned passes.
+        After a clean reporting cycle, step the policy up to quarantine, then reject, using the
+        roadmap in the <a href="/dmarc/" class="text-accent hover:text-accent-soft">DMARC guide</a>.
+        Build the record with the <a href="/dmarc-record-generator/" class="text-accent hover:text-accent-soft">DMARC generator</a>,
+        verify with the <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>.
+      </p>
+
+      <h2>Step 5: Verify the whole stack</h2>
+      <p>
+        Send a test message from {d.name} to yourself, then open its
+        <strong class="text-ink">Show original / View source</strong> and check the
+        <code>Authentication-Results</code> line: SPF pass, DKIM pass, DMARC pass. Or scan everything
+        at once with the <a href="/" class="text-accent hover:text-accent-soft">homepage security scanner</a>.
+      </p>
+
+      <h2>Frequently asked questions</h2>
+      <div class="grid gap-3">
+        {d.faqs.map(([q, a]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-4">
+            <p class="font-semibold text-ink">{q}</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{a}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2>Verify your setup</h2>
+      <div class="grid gap-2">
+        <a href="/spf-record-checker/" class="rounded-lg border border-line bg-panel/60 px-4 py-3 text-sm font-medium text-ink transition hover:border-accent/40 hover:text-accent">SPF Record Checker, check the include and lookup count →</a>
+        <a href="/dkim-record-checker/" class="rounded-lg border border-line bg-panel/60 px-4 py-3 text-sm font-medium text-ink transition hover:border-accent/40 hover:text-accent">DKIM Record Checker, confirm the key is live →</a>
+        <a href="/dmarc-record-checker/" class="rounded-lg border border-line bg-panel/60 px-4 py-3 text-sm font-medium text-ink transition hover:border-accent/40 hover:text-accent">DMARC Record Checker, grade your policy →</a>
+      </div>
+
+      <h2>Related guides</h2>
+      <ul>
+        <li><a href="/spf-record/">SPF: the complete guide</a></li>
+        <li><a href="/dkim/">DKIM explained</a></li>
+        <li><a href="/dmarc/">DMARC: the complete guide</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

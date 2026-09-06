@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Instantly",
+ "cat": "Cold outreach",
+ "include": "include:spf.instantly2.com",
+ "selector": "custom",
+ "quirk": "Instantly requires per-mailbox SPF/DKIM setup: each sending mailbox's domain gets an include plus a custom DKIM record displayed per account.",
+ "steps": [
+  [
+   "Add the sending mailbox",
+   "Email accounts: connect the mailbox; Instantly shows its SPF/DKIM instructions."
+  ],
+  [
+   "SPF",
+   "Add the include displayed for that mailbox's domain."
+  ],
+  [
+   "DKIM",
+   "Instantly can generate a new DKIM for the domain; publish the TXT it shows and verify."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Instantly need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Instantly?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Zendesk",
+ "cat": "Helpdesk",
+ "include": "include:mail.zendesk.com",
+ "selector": "custom",
+ "quirk": "Zendesk needs a CNAME from your support subdomain (support.yourdomain.com) to their host, plus SPF and DKIM on that subdomain.",
+ "steps": [
+  [
+   "Brand the subdomain",
+   "Admin Center, Channels, Email: connect support.yourdomain.com (CNAME to mail.zendesk.com)."
+  ],
+  [
+   "SPF",
+   "On the support subdomain, add include:mail.zendesk.com."
+  ],
+  [
+   "DKIM",
+   "In the Zendesk email setup, enable DKIM and add the TXT it displays for the subdomain."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Zendesk need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Zendesk?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

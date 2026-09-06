@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "Campaign Monitor",
+ "cat": "ESP",
+ "include": "include:_spf.createsend.com",
+ "selector": "custom",
+ "quirk": "Campaign Monitor's custom return-path (via CNAME) is what aligns SPF; DKIM CNAMEs are per-client when you use agency setups.",
+ "steps": [
+  [
+   "Authenticate the domain",
+   "Account settings, Sender domains: add the domain and view records."
+  ],
+  [
+   "SPF",
+   "Add include:_spf.createsend.com to your record."
+  ],
+  [
+   "DKIM + return path",
+   "Publish the DKIM CNAME and the return-path CNAME displayed, then verify."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does Campaign Monitor need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for Campaign Monitor?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

@@ -1,0 +1,39 @@
+---
+import EspSetupTemplate from '../components/EspSetupTemplate.astro';
+const data = {
+ "name": "ActiveCampaign",
+ "cat": "ESP",
+ "include": "include:spf.em-send.com",
+ "selector": "custom",
+ "quirk": "ActiveCampaign's include varies by sending pool and account age: the exact value shown in Settings, Sender domain is authoritative.",
+ "steps": [
+  [
+   "Add the sending domain",
+   "Settings, Sender domain: add and verify."
+  ],
+  [
+   "SPF",
+   "Add the include displayed (recent accounts use spf.em-send.com; older ones differ)."
+  ],
+  [
+   "DKIM",
+   "Generate the DKIM in the same screen, publish the CNAME/TXT, then verify."
+  ]
+ ],
+ "faqs": [
+  [
+   "Does ActiveCampaign need its own DMARC record?",
+   "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."
+  ],
+  [
+   "Where do I find the exact DNS values for ActiveCampaign?",
+   "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."
+  ],
+  [
+   "Can I use this domain with multiple sending services?",
+   "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ]
+ ]
+};
+---
+<EspSetupTemplate data={data} />

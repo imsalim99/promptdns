@@ -1,6 +1,24 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
+/** slug -> display name, built from the ESP matrix filenames via the tools data is not
+ *  available here, so maintain the mapping used by the generator in one place. */
+const espNames: Record<string, string> = Object.fromEntries([
+  ['sendgrid','SendGrid'],['mailchimp','Mailchimp'],['hubspot','HubSpot'],['zoho-mail','Zoho Mail'],
+  ['brevo','Brevo (Sendinblue)'],['klaviyo','Klaviyo'],['postmark','Postmark'],['mailgun','Mailgun'],
+  ['mandrill','Mandrill'],['salesforce','Salesforce'],['pipedrive','Pipedrive'],['zendesk','Zendesk'],
+  ['freshdesk','Freshdesk'],['atlassian','Atlassian (Jira/Confluence)'],['intercom','Intercom'],
+  ['activecampaign','ActiveCampaign'],['constant-contact','Constant Contact'],['mailerlite','MailerLite'],
+  ['getresponse','GetResponse'],['aweber','AWeber'],['mailjet','Mailjet'],['moosend','Moosend'],
+  ['campaign-monitor','Campaign Monitor'],['customer-io','Customer.io'],['sparkpost','SparkPost'],
+  ['amazon-ses','Amazon SES'],['smtp2go','SMTP2GO'],['socketlabs','SocketLabs'],['shopify-email','Shopify Email'],
+  ['woocommerce','WooCommerce'],['bigcommerce','BigCommerce'],['woodpecker','Woodpecker'],
+  ['instantly','Instantly'],['lemlist','Lemlist'],['reply-io','Reply.io'],['gmass','GMass'],
+  ['sendy','Sendy'],['drip','Drip'],['dotdigital','Dotdigital'],['ongage','Ongage'],
+  ['pepipost','Pepipost (Netcore)'],['mailer-send','MailerSend'],
+]);
+const slugToName = (slug: string) => espNames[slug] ?? slug;
+
 const sections = [
   { href: '/spf-record/', title: 'SPF, Sender Policy Framework', desc: 'Which servers may send mail as your domain. Syntax, examples, and the 10-lookup limit.' },
   { href: '/dkim/', title: 'DKIM, DomainKeys Identified Mail', desc: 'Cryptographic signing that proves mail wasn\u2019t tampered with in transit.' },
@@ -31,6 +49,38 @@ const sections = [
           <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
           <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
         </a>
+      ))}
+    </div>
+
+    <!-- Per-service setup matrix -->
+    <div class="mt-16">
+      <div class="flex flex-wrap items-center gap-4 border-b border-line pb-4">
+        <span class="h-9 w-1.5 rounded-full bg-gradient-to-b from-accent to-violet" aria-hidden="true"></span>
+        <div class="flex-1">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Setup guides for every service</h2>
+          <p class="mt-0.5 text-sm text-ink-faint">SPF, DKIM, and DMARC setup, step by step, for 42 sending platforms</p>
+        </div>
+      </div>
+
+      {(
+        [
+          ['Email & marketing platforms', ['sendgrid','mailchimp','brevo','klaviyo','mailgun','mandrill','postmark','mailjet','moosend','campaign-monitor','customer-io','sparkpost','smtp2go','socketlabs','drip','dotdigital','ongage','pepipost','mailer-send','amazon-ses','activecampaign','constant-contact','mailerlite','getresponse','aweber']],
+          ['CRM & business tools', ['hubspot','salesforce','pipedrive','zendesk','freshdesk','atlassian','intercom']],
+          ['Ecommerce', ['shopify-email','woocommerce','bigcommerce']],
+          ['Cold outreach', ['woodpecker','instantly','lemlist','reply-io','gmass']],
+          ['Self-hosted', ['sendy']],
+        ] as [string, string[]][]
+      ).map(([label, slugs]) => (
+        <div class="mt-6">
+          <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{label}</p>
+          <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {slugs.map((slug) => (
+              <a href={`/spf-dkim-dmarc-${slug}/`} class="rounded-lg border border-line bg-panel/60 px-4 py-2.5 text-sm text-ink-dim transition-all hover:border-accent/40 hover:text-accent">
+                {slugToName[slug] ?? slug}
+              </a>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
 
