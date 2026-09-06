@@ -30,42 +30,14 @@ import { RESOLVERS } from '../lib/doh';
 </ToolPanel>
 
     <ToolArticle slug="dns-resolver-tester" />
-    </div>
 
-
-    <div id="post-tool-cta" class="hidden mt-8 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6 not-prose">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h3 class="font-display font-bold text-ink text-base">Found issues?</h3>
-          <p class="mt-1 text-sm text-ink-dim">Get a full prioritized report, or let our experts fix everything for you.</p>
-        </div>
-        <div class="flex gap-3 flex-wrap">
-          <a href="/pricing/" class="rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-medium text-ink hover:border-accent/40 transition">Get Full Report — $9</a>
-          <a href="/pricing/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Fix My Domain</a>
-        </div>
+    <div class="mt-10 flex items-center gap-3 rounded-xl border border-line bg-panel/40 px-5 py-3">
+      <span class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent to-violet font-display text-xs font-bold text-canvas">PD</span>
+      <div>
+        <p class="text-sm font-medium text-ink">PromptDNS Team</p>
+        <p class="text-xs text-ink-faint">Last updated: August 2026</p>
       </div>
     </div>
-
-    // Show CTA when tool results appear
-    (function() {
-      var targets = document.querySelectorAll('[id$="-status"], [id$="-results"], [id$="-output"], [id$="-tbody"], [id$="-cards"]');
-      if (!targets.length) return;
-      var obs = new MutationObserver(function(mutations) {
-        for (var m of mutations) {
-          var el = m.target;
-          if (el && !el.classList.contains('hidden') && el.innerHTML.trim().length > 20) {
-            var cta = document.getElementById('post-tool-cta');
-            if (cta) cta.classList.remove('hidden');
-            obs.disconnect();
-            return;
-          }
-        }
-      });
-      targets.forEach(function(el) {
-        obs.observe(el, { attributes: true, childList: true, subtree: true });
-      });
-    })();
-
     </div>
 </div>
 </BaseLayout>
