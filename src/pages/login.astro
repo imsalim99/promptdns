@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Sign In — PromptDNS" description="Sign in to PromptDNS with a magic link. No passwords.">
+  <div class="mx-auto max-w-md px-4 py-20">
+    <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">Sign in</span></nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink">Sign in to PromptDNS</h1>
+    <p class="mt-3 text-ink-dim">No passwords. Enter your email and we'll send you a one-time sign-in link, valid for 15 minutes.</p>
+
+    <div class="mt-8">
+<ToolPanel>
+      <form id="li-form" class="grid gap-3">
+        <label class="sr-only" for="li-email">Email address</label>
+        <input id="li-email" type="email" required autocomplete="email" placeholder="you@company.com"
+          class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Send sign-in link</button>
+      </form>
+      <div id="li-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+      <div id="li-devlink" class="mt-3 hidden">
+        <a id="li-devlink-a" href="#" class="btn-cta btn-shimmer block w-full px-4 py-2.5 text-center text-sm">Complete sign-in →</a>
+        <p class="mt-2 text-xs text-ink-faint">Dev mode: email sending activates once RESEND_API_KEY is set. This button appears only then-during setup.</p>
+      </div>
+</ToolPanel>
+    </div>
+
+    <p class="mt-8 text-center text-sm text-ink-faint">
+      New here? The same link creates your account. All 56 tools work without signing in.
+    </p>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('li-form') as HTMLFormElement;
+  const email = document.getElementById('li-email') as HTMLInputElement;
+  const statusEl = document.getElementById('li-status')!;
+  const devBox = document.getElementById('li-devlink')!;
+  const devLink = document.getElementById('li-devlink-a') as HTMLAnchorElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line';
+    statusEl.textContent = 'Sending your sign-in link…';
+    statusEl.classList.remove('hidden');
+    try {
+      const res = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.value }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? 'Something went wrong.');
+      if (j.sent) {
+        statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+        statusEl.textContent = `Check your inbox: the sign-in link for ${email.value} is on its way.`;
+      } else if (j.link) {
+        statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+        statusEl.textContent = 'Email sending is not configured yet — use the button below.';
+        devLink.href = j.link;
+        devBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
+      statusEl.textContent = (err as Error).message;
+    }
+  });
+</script>

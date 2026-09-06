@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+---
+<BaseLayout title="Dashboard — PromptDNS" description="Your PromptDNS dashboard: monitored domains, alerts, and reports.">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Dashboard</p>
+        <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Monitored domains</h1>
+        <p id="db-email" class="mt-1 text-sm text-ink-faint"></p>
+      </div>
+      <form action="/api/auth/logout" method="post">
+        <button class="rounded-lg border border-line bg-panel/60 px-4 py-2 text-sm text-ink-dim transition hover:border-fail/40 hover:text-fail" type="submit">Sign out</button>
+      </form>
+    </div>
+
+    <div class="mt-8">
+<ToolPanel>
+      <form id="db-form" class="flex flex-col gap-3 sm:flex-row">
+        <input id="db-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Add a domain to monitor, e.g. example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Monitor domain</button>
+      </form>
+      <div id="db-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+      <div id="db-list" class="mt-6 grid gap-3"></div>
+      <div id="db-empty" class="mt-6 hidden rounded-xl border border-dashed border-line p-8 text-center">
+        <p class="font-display text-lg font-semibold text-ink">No domains yet</p>
+        <p class="mt-1 text-sm text-ink-dim">Add your first domain above — monitoring includes DMARC reports, DNS change alerts, and expiry checks as they activate on your plan.</p>
+      </div>
+</ToolPanel>
+    </div>
+
+    <div class="mt-10 grid gap-4 sm:grid-cols-3">
+      {[
+        ['Coming next', 'DMARC report ingestion', 'Automatic collection via dmarc@promptdns.com once email routing is enabled.'],
+        ['Coming next', 'DNS change alerts', 'Record-change and nameserver-drift detection on a daily schedule.'],
+        ['Coming next', 'AI readiness reports', 'Weekly machine-readability scoring for every monitored domain.'],
+      ].map(([tag, title, desc]) => (
+        <div class="rounded-xl border border-dashed border-line bg-panel/40 p-5">
+          <span class="rounded-full border border-violet/40 bg-violet/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-violet-soft">{tag}</span>
+          <h3 class="font-display mt-3 font-semibold text-ink">{title}</h3>
+          <p class="mt-1 text-sm leading-relaxed text-ink-dim">{desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+<script>
+  const form = document.getElementById('db-form') as HTMLFormElement;
+  const input = document.getElementById('db-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('db-status')!;
+  const listEl = document.getElementById('db-list')!;
+  const emptyEl = document.getElementById('db-empty')!;
+  const emailEl = document.getElementById('db-email')!;
+
+  async function load() {
+    const res = await fetch('/api/domains');
+    if (res.status === 401) { location.href = '/login/'; return; }
+    const j = await res.json();
+    render(j.domains ?? []);
+  }
+  function render(domains: { name: string; added_at: string }[]) {
+    emptyEl.classList.toggle('hidden', domains.length > 0);
+    listEl.innerHTML = '';
+    for (const d of domains) {
+      listEl.insertAdjacentHTML('beforeend', `
+        <div class="flex items-center justify-between gap-4 rounded-lg border border-line bg-panel/60 px-4 py-3">
+          <div>
+            <span class="font-mono text-sm text-accent">${d.name}</span>
+            <span class="ml-2 text-xs text-ink-faint">added ${d.added_at.slice(0, 10)}</span>
+          </div>
+          <a href="/?domain=${encodeURIComponent(d.name)}" class="font-mono text-xs text-ink-dim hover:text-accent">scan now →</a>
+        </div>`);
+    }
+  }
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/domains', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: input.value }),
+    });
+    const j = await res.json();
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${res.ok ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-fail/10 text-fail border border-fail/30'}`;
+    statusEl.textContent = res.ok ? `${j.name} is now monitored.` : j.error ?? 'Something went wrong.';
+    statusEl.classList.remove('hidden');
+    if (res.ok) { input.value = ''; load(); }
+  });
+  load();
+</script>
