@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What TTL should load-balanced records use?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Low: 60-300 seconds, so failover and reweighting take effect quickly."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can DNS failover replace a load balancer?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: DNS removes dead servers after detection delay, while a load balancer stops sending traffic to dead nodes per-connection, instantly."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which providers support health checks?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Route 53, NS1, Constellix, and enterprise tiers of most managed DNS providers. Free tiers generally do not."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do CDN and DNS balancing interact?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The CDN does per-request balancing at the edge; your DNS points users at the nearest edge. Both layers, different jobs."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is split-horizon DNS?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Different answers for internal vs external queries: internal users get private IPs, external users get public ones."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="DNS Load Balancing: Techniques Compared | PromptDNS"
+  description="DNS load balancing explained: round-robin, weighted, latency-based, and health-checked failover, with the limits of each approach."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Load Balancing</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Load Balancing</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS can distribute traffic across servers by returning different answers to the same query. It is the simplest load balancing layer that exists, with sharp limits you must design around.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The techniques</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td class="text-sm text-ink-dim">Round-robin</td><td class="text-sm text-ink-dim">Multiple A records, returned in rotation</td><td class="text-sm text-ink-dim">Simple; no health checking</td></tr><tr><td class="text-sm text-ink-dim">Weighted</td><td class="text-sm text-ink-dim">Traffic split by ratio</td><td class="text-sm text-ink-dim">Controlled rollout, canary releases</td></tr><tr><td class="text-sm text-ink-dim">Latency-based</td><td class="text-sm text-ink-dim">Answer from the fastest region for each user</td><td class="text-sm text-ink-dim">Requires provider support (Route 53)</td></tr><tr><td class="text-sm text-ink-dim">Geo / geoproximity</td><td class="text-sm text-ink-dim">Answer based on user location</td><td class="text-sm text-ink-dim">Data residency, regional content</td></tr><tr><td class="text-sm text-ink-dim">Health-checked failover</td><td class="text-sm text-ink-dim">Monitor endpoints; remove dead ones automatically</td><td class="text-sm text-ink-dim">Real resilience (provider feature)</td></tr><tr><td class="text-sm text-ink-dim">Weighted + health</td><td class="text-sm text-ink-dim">Canary with automatic rollback</td><td class="text-sm text-ink-dim">Advanced (Route 53, NS1)</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The limits you must respect</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Resolvers cache answers for the TTL: failover takes at least one TTL to propagate everywhere.</li><li class="leading-relaxed">Round-robin keeps sending traffic to a dead server until you remove its record.</li><li class="leading-relaxed">DNS balancing balances QUERIES, not connections: a single user makes one lookup and hammers one server.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The practical stack</h2>
+      <p>For anything beyond hobby scale: DNS-level distribution (geo or weighted) pointing at health-checked load balancers, which handle per-connection decisions. DNS steers regions; load balancers steer sessions. Verify both layers with the <a href="/dns-propagation-checker/">propagation checker</a> after changes.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What TTL should load-balanced records use?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Low: 60-300 seconds, so failover and reweighting take effect quickly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can DNS failover replace a load balancer?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: DNS removes dead servers after detection delay, while a load balancer stops sending traffic to dead nodes per-connection, instantly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which providers support health checks?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Route 53, NS1, Constellix, and enterprise tiers of most managed DNS providers. Free tiers generally do not.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do CDN and DNS balancing interact?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The CDN does per-request balancing at the edge; your DNS points users at the nearest edge. Both layers, different jobs.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is split-horizon DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different answers for internal vs external queries: internal users get private IPs, external users get public ones.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">Propagation checker →</a></li><li><a href="/dns-failover/" class="text-accent hover:text-accent-soft">DNS failover guide →</a></li><li><a href="/cloudflare-vs-route53/" class="text-accent hover:text-accent-soft">Provider comparison →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Does HSTS affect SEO?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Google indexes HTTPS preferentially; HSTS signals and enforces commitment. Redirects remain necessary for HTTP requests."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I exclude one subdomain?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Not with includeSubDomains active: that flag covers everything. Plan subdomains before enabling it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is HSTS for cookies?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The same idea applies to cookies (Secure flag): HSTS complements it by forcing the transport itself."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "I set max-age=0 to disable HSTS. Did it work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "For browsers that saw the header: yes, max-age=0 expires the policy. Preload list removal is separate and slow."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does my CDN handle HSTS?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Cloudflare and others can inject it; check the response header to confirm what is actually being sent."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="HSTS: HTTP Strict Transport Security | PromptDNS"
+  description="HSTS explained: how the Strict-Transport-Security header forces HTTPS permanently, protects against downgrade attacks, and the risks of getting it wrong."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">HSTS: HTTP Strict Transport Security</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">HSTS: HTTP Strict Transport Security</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">HSTS is one response header that changes your security posture permanently: once a browser sees it for your domain, it refuses to connect over HTTP at all, eliminating downgrade attacks and the "type http:// manually" gap.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The header</h2>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">Strict-Transport-Security: max-age=31536000; includeSubDomains; preload</pre><ul class="list-disc space-y-1.5 pl-5 mt-3"><li><strong class="text-ink">max-age:</strong> how long the browser remembers (seconds). Start small (300) while testing, raise to 31536000 once confident.</li><li><strong class="text-ink">includeSubDomains:</strong> forces HTTPS on every subdomain, including ones you add later.</li><li><strong class="text-ink">preload:</strong> permission to embed you in the browser-built-in list; the strongest form, and effectively irreversible.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">What HSTS stops</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li>SSL-stripping attacks: the man-in-the-middle trick of downgrading to HTTP.</li><li>Users typing http:// or clicking http links on the first visit after the policy is cached.</li><li>Warnings suppressed: browsers fail hard instead of offering an override.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The deployment ritual</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>Confirm HTTPS works on the apex, www, and every subdomain.</li><li>Send max-age=300 for a week; watch for breakage.</li><li>Raise to max-age=86400, then 31536000.</li><li>Only then add includeSubDomains, and preload last, after submitting to hstspreload.org.</li></ol><p>Rolling back preload is genuinely slow (list removal takes weeks through browser releases). Never preload a domain whose subdomains you do not fully control.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does HSTS affect SEO?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Google indexes HTTPS preferentially; HSTS signals and enforces commitment. Redirects remain necessary for HTTP requests.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I exclude one subdomain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not with includeSubDomains active: that flag covers everything. Plan subdomains before enabling it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is HSTS for cookies?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The same idea applies to cookies (Secure flag): HSTS complements it by forcing the transport itself.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">I set max-age=0 to disable HSTS. Did it work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">For browsers that saw the header: yes, max-age=0 expires the policy. Preload list removal is separate and slow.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my CDN handle HSTS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Cloudflare and others can inject it; check the response header to confirm what is actually being sent.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/ssl-tls/" class="text-accent hover:text-accent-soft">SSL/TLS hub →</a></li><li><a href="/mixed-content-fix/" class="text-accent hover:text-accent-soft">Mixed content fixes →</a></li><li><a href="/tls-versions-explained/" class="text-accent hover:text-accent-soft">TLS versions →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

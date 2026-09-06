@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What happens if a CA is hacked?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Browsers revoke trust in the CA or its intermediates; certificates stop working. CAs have died this way, which is why the system self-corrects."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why do certificates go into public logs?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Certificate Transparency makes every issuance observable, so fraudulent certificates for your domain become detectable within hours."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can a CA issue for any domain?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only after domain-control validation, and only if your CAA records permit that CA."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is a root program?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The policy bundle a browser or OS maintains: which roots are trusted, and under what requirements (Chrome, Mozilla, Microsoft, Apple each run one)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need a paid certificate for e-commerce?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: DV certificates provide identical encryption. Compliance and customer perception, not crypto, are the arguments for paid tiers."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Certificate Authorities and the Web of Trust | PromptDNS"
+  description="Certificate authorities explained: how CAs vouch for certificates, the web of trust, validation levels, and CAA records that constrain issuance."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Certificate Authorities Explained</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Certificate Authorities Explained</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">A Certificate Authority (CA) is an organization that browsers pre-trust to vouch for the link between a domain and a public key. Every HTTPS connection starts with that trust: the CA is the third party that makes first contact with a stranger safe.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How the trust works</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>Root CAs are embedded in operating systems and browsers (a few dozen organizations).</li><li>Roots sign intermediate CAs; intermediates sign your certificates: a chain from browser trust to your domain.</li><li>CAs verify control of the domain before issuing (email, DNS, or file challenge), then the certificate is public in Certificate Transparency logs.</li></ol>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Validation levels</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li><strong class="text-ink">Domain Validation (DV):</strong> proof you control the domain. Minutes, free (Let’s Encrypt). All a standard site needs.</li><li><strong class="text-ink">Organization Validation (OV):</strong> adds verified company details.</li><li><strong class="text-ink">Extended Validation (EV):</strong> deepest vetting; browsers no longer visually distinguish it much, so its practical value has narrowed.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Trust is enforced, not assumed</h2>
+      <p>CAs get audited and misissuance gets punished: when a CA fails, browsers distrust them (multiple have died this way). Your levers: <a href="/caa-record/">CAA records</a> restrict which CAs may issue for you, and Certificate Transparency monitoring alerts you when certificates appear that you did not request.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if a CA is hacked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Browsers revoke trust in the CA or its intermediates; certificates stop working. CAs have died this way, which is why the system self-corrects.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do certificates go into public logs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Certificate Transparency makes every issuance observable, so fraudulent certificates for your domain become detectable within hours.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a CA issue for any domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only after domain-control validation, and only if your CAA records permit that CA.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a root program?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The policy bundle a browser or OS maintains: which roots are trusted, and under what requirements (Chrome, Mozilla, Microsoft, Apple each run one).</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need a paid certificate for e-commerce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: DV certificates provide identical encryption. Compliance and customer perception, not crypto, are the arguments for paid tiers.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/ssl-tls/" class="text-accent hover:text-accent-soft">SSL/TLS hub →</a></li><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/what-is-ssl-tls/" class="text-accent hover:text-accent-soft">What is SSL/TLS →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

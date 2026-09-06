@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Which ports must be open for a website?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Inbound 80 and 443 on the web server; everything else can stay closed. Management ports (22/3389) should be restricted to known IPs."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does closing ports improve security?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Reducing the exposed surface always helps, but hardening the services behind open ports matters more."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I check open ports?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "From outside: an online port scanner against your address. From the server: ss -tlnp or netstat -tlnp."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is port forwarding?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Telling a NAT router to send inbound traffic on one port to a specific internal device: the workaround for hosting behind NAT."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Common Network Ports: The Reference List | PromptDNS"
+  description="The common network ports reference: web, mail, DNS, remote access, and database ports with what each protocol does and safe defaults."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Common Network Ports</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Common Network Ports</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Ports are numbered doors on a machine: the port in a connection decides which program answers. Firewalls and servers live and die by getting this list right.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The ports that matter</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td class="text-sm text-ink-dim">80</td><td class="text-sm text-ink-dim">HTTP</td><td class="text-sm text-ink-dim">Web, unencrypted (redirects to HTTPS)</td></tr><tr><td class="text-sm text-ink-dim">443</td><td class="text-sm text-ink-dim">HTTPS</td><td class="text-sm text-ink-dim">Web, encrypted: the modern default</td></tr><tr><td class="text-sm text-ink-dim">53</td><td class="text-sm text-ink-dim">DNS</td><td class="text-sm text-ink-dim">Queries (UDP) and zone transfers (TCP)</td></tr><tr><td class="text-sm text-ink-dim">25</td><td class="text-sm text-ink-dim">SMTP</td><td class="text-sm text-ink-dim">Server-to-server mail relay</td></tr><tr><td class="text-sm text-ink-dim">587</td><td class="text-sm text-ink-dim">SMTP submission</td><td class="text-sm text-ink-dim">User outgoing mail with STARTTLS</td></tr><tr><td class="text-sm text-ink-dim">465</td><td class="text-sm text-ink-dim">SMTPS</td><td class="text-sm text-ink-dim">User outgoing mail, implicit TLS</td></tr><tr><td class="text-sm text-ink-dim">993</td><td class="text-sm text-ink-dim">IMAPS</td><td class="text-sm text-ink-dim">Receiving mail, encrypted</td></tr><tr><td class="text-sm text-ink-dim">995</td><td class="text-sm text-ink-dim">POP3S</td><td class="text-sm text-ink-dim">Receiving mail (POP), encrypted</td></tr><tr><td class="text-sm text-ink-dim">22</td><td class="text-sm text-ink-dim">SSH</td><td class="text-sm text-ink-dim">Remote server administration</td></tr><tr><td class="text-sm text-ink-dim">3389</td><td class="text-sm text-ink-dim">RDP</td><td class="text-sm text-ink-dim">Windows remote desktop</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Well-known vs ephemeral</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">0-1023 are well-known ports reserved for core services; servers listen there.</li><li class="leading-relaxed">49152-65535 are ephemeral: your browser picks a random one as the source port for each connection.</li><li class="leading-relaxed">Firewalls block inbound on ephemeral ranges by default; that is correct and normal.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which ports must be open for a website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Inbound 80 and 443 on the web server; everything else can stay closed. Management ports (22/3389) should be restricted to known IPs.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does closing ports improve security?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reducing the exposed surface always helps, but hardening the services behind open ports matters more.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check open ports?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">From outside: an online port scanner against your address. From the server: ss -tlnp or netstat -tlnp.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is port forwarding?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Telling a NAT router to send inbound traffic on one port to a specific internal device: the workaround for hosting behind NAT.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/dns-port-numbers/" class="text-accent hover:text-accent-soft">DNS port numbers →</a></li><li><a href="/smtp-tester/" class="text-accent hover:text-accent-soft">SMTP preflight →</a></li><li><a href="/smtp-tester/" class="text-accent hover:text-accent-soft">Email ports guide →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>
