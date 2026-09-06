@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthorByline from '../components/AuthorByline.astro';
+import Diagram from '../components/Diagram.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -72,6 +74,8 @@ const faqSchema = {
       servers are allowed to send email as my domain?</strong> Receivers check it on every message;
       fail it and your mail goes to spam, or bounces.
     </p>
+    <Diagram name="spf-eval" caption="How SPF evaluation works: first match wins" />
+
 
     <div class="rich-text mt-8">
       <h2>Anatomy of an SPF record</h2>
@@ -125,5 +129,7 @@ const faqSchema = {
         <li><a href="/spf-record-syntax/">Full SPF syntax reference</a></li>
       </ul>
     </div>
+
+    <AuthorByline />
   </div>
 </BaseLayout>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
@@ -72,6 +73,8 @@ const faqSchema = {
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Cache Poisoning Explained</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS cache poisoning injects a forged answer into a resolver's cache. Until the TTL expires, every user of that resolver receives the attacker's IP instead of yours: no warning, no error, just the wrong destination.</p>
+    <Diagram name="resolution" caption="The resolution path that cache poisoning targets" />
+
     <div class="rich-text mt-8">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">How the attack works</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li>The attacker triggers a lookup for target.com at a vulnerable resolver.</li><li>Before the authoritative server answers, the attacker floods the resolver with forged responses.</li><li>If a forged response matches the query (correct transaction ID, source port, and question), the resolver accepts and caches it.</li><li>Every subsequent user of that resolver gets the attacker’s IP for target.com until the TTL expires.</li></ol>

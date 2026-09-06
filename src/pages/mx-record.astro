@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthorByline from '../components/AuthorByline.astro';
+import Diagram from '../components/Diagram.astro';
 const faq = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -23,6 +25,8 @@ const faq = {
       mail to you@yourdomain.com, which server receives it?</strong> Get it wrong and email silently
       bounces, or worse, disappears.
     </p>
+    <Diagram name="authtrio" caption="How SPF, DKIM, and DMARC work together on every message" />
+
 
     <div class="rich-text mt-8">
       <h2>What an MX record looks like</h2>
@@ -67,5 +71,7 @@ example.com.  3600  IN  MX  20  mail2.example.com.</pre>
         <li><a href="/how-to-add-mx-record/">How to add MX records</a></li>
       </ul>
     </div>
+
+    <AuthorByline />
   </div>
 </BaseLayout>

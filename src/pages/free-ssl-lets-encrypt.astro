@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
@@ -62,6 +63,8 @@ const faqSchema = {
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Let’s Encrypt: Free Certificates</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">Let's Encrypt is a free, automated certificate authority that made HTTPS universal. Certificates last 90 days by design and renew automatically via the ACME protocol: the cost of TLS dropped to zero, and the excuse to skip it vanished with it.</p>
+    <Diagram name="authtrio" caption="The authentication stack complementing TLS" />
+
     <div class="rich-text mt-8">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">How ACME works</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li>An ACME client on your server (certbot, acme.sh, or your host’s built-in integration) requests a certificate for your domain.</li><li>Let’s Encrypt challenges control: HTTP-01 (a file at a known URL) or DNS-01 (a TXT record).</li><li>Verified: the certificate issues, valid 90 days.</li><li>The client renews automatically at 60 days; the cycle never stops.</li></ol>

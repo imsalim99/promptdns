@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthorByline from '../components/AuthorByline.astro';
+import Diagram from '../components/Diagram.astro';
 const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
@@ -72,6 +74,8 @@ const faqSchema = {
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Hijacking: How Attacks Work and How to Stop Them</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS hijacking redirects your domain's traffic by manipulating DNS answers. The victim never sees your server. This is one of the most damaging attacks because it is invisible to users and can persist for hours or days.</p>
+    <Diagram name="resolution" caption="How DNS resolution works, and where hijacking intercepts" />
+
     <div class="rich-text mt-8">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">The three attack vectors</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">Registrar hijack:</strong> the attacker gains access to your registrar account (via phishing, credential stuffing, or a registrar breach) and changes your nameservers or A records to point at their infrastructure. This is the most damaging form because it is authoritative.</li><li class="leading-relaxed"><strong class="text-ink">On-path (MITM):</strong> the attacker intercepts unencrypted DNS queries between the user and the resolver and forges answers. Defeated by DNSSEC (authentication) and DoH/DoT (encryption).</li><li class="leading-relaxed"><strong class="text-ink">Cache poisoning:</strong> the attacker injects forged records into a resolver’s cache. Defeated by DNSSEC and randomizing source ports/query IDs.</li></ul>
@@ -94,5 +98,7 @@ const faqSchema = {
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">DNS propagation checker →</a></li><li><a href="/" class="text-accent hover:text-accent-soft">Homepage security scanner →</a></li></ul>
     </div>
+
+    <AuthorByline />
   </div>
 </BaseLayout>

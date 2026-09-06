@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthorByline from '../components/AuthorByline.astro';
+import Diagram from '../components/Diagram.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -72,6 +74,8 @@ const faqSchema = {
       is cryptographically signed with a private key, and receivers verify the signature against the
       public key you publish in DNS.
     </p>
+    <Diagram name="dkim-signing" caption="How DKIM signing and verification work" />
+
 
     <div class="rich-text mt-8">
       <h2>How it works, end to end</h2>
@@ -115,5 +119,7 @@ const faqSchema = {
         <li><a href="/spf-record/">SPF explained</a> · <a href="/dmarc/">DMARC explained</a></li>
       </ul>
     </div>
+
+    <AuthorByline />
   </div>
 </BaseLayout>
