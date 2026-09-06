@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "How long does Google Workspace authentication take?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "SPF verifies immediately after DNS propagation. DKIM takes effect after you click Start authentication and DNS propagates (minutes to hours)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need to add SPF for each user?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: SPF is published once at the domain level and covers all users on the Google Workspace account."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What if I also use another email service?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Add that service’s include to the same SPF record, and set up DKIM separately in that service. Watch the 10-lookup limit as services stack."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does my Gmail still show sent via or sent on behalf of?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "This indicates alignment issues: the From address and the authenticated domain must match. Ensure you’re sending from your own domain, not gmail.com."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I use a subdomain for Google Workspace?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, but it’s unusual. Most organizations use the primary domain for email and subdomains for other services."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the default DKIM key length in Google Workspace?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "2048-bit RSA, which is the current standard. Older accounts may have 1024-bit keys: regenerate to upgrade."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Set Up SPF, DKIM & DMARC for Google Workspace | PromptDNS"
+  description="Google Workspace SPF DKIM DMARC setup"
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Set Up SPF, DKIM & DMARC for Google Workspace</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Set Up SPF, DKIM & DMARC for Google Workspace</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Complete Google Workspace email authentication: generate the DKIM key in Admin Console, add the SPF include, and publish DMARC, step by step.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 1: Add the SPF include</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">In your DNS panel, create or edit your SPF TXT record at the root domain.</li><li class="leading-relaxed">Add <code>include:_spf.google.com</code> to the existing record (or create: <code>v=spf1 include:_spf.google.com ~all</code>).</li><li class="leading-relaxed">Verify with the <a href="/spf-record-checker/">SPF checker</a>: it should show 1 lookup and pass.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 2: Generate and publish DKIM</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Admin Console, Apps, Google Workspace, Gmail, Authenticate email.</li><li class="leading-relaxed">Select your domain and click Generate new record. Google creates a 2048-bit RSA key with selector google.</li><li class="leading-relaxed">Publish the TXT record at google._domainkey.yourdomain.com with the value Google displays.</li><li class="leading-relaxed">Back in the Admin Console, click Start authentication to activate signing.</li><li class="leading-relaxed">Verify with the <a href="/dkim-record-checker/">DKIM checker</a> using selector google.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 3: Publish DMARC</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Create a TXT record at _dmarc.yourdomain.com.</li><li class="leading-relaxed">Start with: <code>v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com</code>.</li><li class="leading-relaxed">Read the aggregate reports for 2-4 weeks (use the <a href="/dmarc-report-analyzer/">report analyzer</a>).</li><li class="leading-relaxed">Step up to p=quarantine, then p=reject after confirming all legitimate mail passes.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does Google Workspace authentication take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF verifies immediately after DNS propagation. DKIM takes effect after you click Start authentication and DNS propagates (minutes to hours).</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to add SPF for each user?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: SPF is published once at the domain level and covers all users on the Google Workspace account.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I also use another email service?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Add that service’s include to the same SPF record, and set up DKIM separately in that service. Watch the 10-lookup limit as services stack.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my Gmail still show sent via or sent on behalf of?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">This indicates alignment issues: the From address and the authenticated domain must match. Ensure you’re sending from your own domain, not gmail.com.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use a subdomain for Google Workspace?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, but it’s unusual. Most organizations use the primary domain for email and subdomains for other services.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the default DKIM key length in Google Workspace?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">2048-bit RSA, which is the current standard. Older accounts may have 1024-bit keys: regenerate to upgrade.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/email-authentication/" class="text-accent hover:text-accent-soft">Email authentication hub →</a></li><li><a href="/spf-flattener/" class="text-accent hover:text-accent-soft">SPF flattener →</a></li><li><a href="/dmarc/" class="text-accent hover:text-accent-soft">DMARC guide →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

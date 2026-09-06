@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Why do I need TWO DKIM CNAME records?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Microsoft uses selector1 and selector2 for zero-downtime key rotation. Both must be published even though only one is active at a time."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "The Enable DKIM button fails. What now?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The CNAME records haven’t propagated yet. Wait 10-15 minutes and retry. Also verify the CNAME values are exactly as Microsoft displayed."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I use a subdomain for Microsoft 365 email?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, but you’ll need to configure the accepted domain and MX records for that subdomain separately."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need to add SPF for SharePoint or Teams notifications?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "SharePoint and Teams notifications come from Microsoft’s shared infrastructure and don’t need additional SPF. The standard include covers all M365 mail."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What if I have a hybrid Exchange setup?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "You need authentication records for both on-premises and M365 sending paths. This is more complex and requires careful planning."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I verify DKIM is actually signing?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Send a test email and check the DKIM-Signature header and Authentication-Results for dkim=pass. The DKIM checker confirms the DNS side."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Set Up SPF, DKIM & DMARC for Microsoft 365 | PromptDNS"
+  description="Microsoft 365 SPF DKIM DMARC setup"
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Set Up SPF, DKIM & DMARC for Microsoft 365</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Set Up SPF, DKIM & DMARC for Microsoft 365</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Complete Microsoft 365 email authentication: add the SPF include, enable DKIM with selector1/selector2, and publish DMARC, step by step.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 1: Add the SPF include</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">In your DNS panel, create or edit your SPF TXT record at the root domain.</li><li class="leading-relaxed">Add <code>include:spf.protection.outlook.com</code> to the existing record.</li><li class="leading-relaxed">Verify with the <a href="/spf-record-checker/">SPF checker</a>.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 2: Enable DKIM</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Microsoft 365 Defender, Email & collaboration, Policies, DKIM: select your domain.</li><li class="leading-relaxed">Microsoft displays two CNAME records: selector1._domainkey and selector2._domainkey.</li><li class="leading-relaxed">Add both CNAME records in your DNS panel (they point to Microsoft’s infrastructure).</li><li class="leading-relaxed">Back in Defender, click Enable DKIM signing. If it fails, wait 10 minutes for DNS propagation and retry.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Step 3: Publish DMARC</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Create a TXT record at _dmarc.yourdomain.com.</li><li class="leading-relaxed">Start with: <code>v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com</code>.</li><li class="leading-relaxed">Monitor with the <a href="/dmarc-report-analyzer/">report analyzer</a>, then step to quarantine and reject.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do I need TWO DKIM CNAME records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Microsoft uses selector1 and selector2 for zero-downtime key rotation. Both must be published even though only one is active at a time.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">The Enable DKIM button fails. What now?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The CNAME records haven’t propagated yet. Wait 10-15 minutes and retry. Also verify the CNAME values are exactly as Microsoft displayed.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use a subdomain for Microsoft 365 email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, but you’ll need to configure the accepted domain and MX records for that subdomain separately.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to add SPF for SharePoint or Teams notifications?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SharePoint and Teams notifications come from Microsoft’s shared infrastructure and don’t need additional SPF. The standard include covers all M365 mail.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I have a hybrid Exchange setup?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You need authentication records for both on-premises and M365 sending paths. This is more complex and requires careful planning.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I verify DKIM is actually signing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send a test email and check the DKIM-Signature header and Authentication-Results for dkim=pass. The DKIM checker confirms the DNS side.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/email-authentication/" class="text-accent hover:text-accent-soft">Email authentication hub →</a></li><li><a href="/spf-flattener/" class="text-accent hover:text-accent-soft">SPF flattener →</a></li><li><a href="/dmarc/" class="text-accent hover:text-accent-soft">DMARC guide →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

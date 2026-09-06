@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "How do I tell if it's DNS or the server?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "If the record lookup returns the correct IP, DNS is fine: the problem is the server. If the lookup fails or returns wrong values, it’s DNS."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does the site work on my phone but not my laptop?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Different DNS caches: your laptop has the old answer cached. Flush your local DNS cache."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can expired SSL certificates look like DNS errors?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: certificate errors show a different warning. DNS errors prevent the page from loading at all."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What if only one page on my site is broken?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "That’s not DNS: DNS resolves at the domain level, not per-page. The issue is server-side routing or the page itself."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I flush my DNS cache?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "See our flush DNS guide for commands on Windows, macOS, Linux, and Chrome."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "When should I contact my DNS provider?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "When the authoritative answers are wrong (record lookup shows incorrect values you didn’t set) or nameservers don’t answer."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="Website Not Resolving? DNS Causes and Fixes | PromptDNS"
+  description="website not resolving DNS"
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Website Not Resolving? DNS Causes and Fixes</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Website Not Resolving? DNS Causes and Fixes</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">When a website won’t load and the browser shows a DNS error, the problem is almost always in one of five places. This diagnostic finds it fast.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The five causes, in diagnostic order</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">1. The domain doesn’t exist (NXDOMAIN).</strong> Typo in the URL, expired domain, or deleted record. Check: run the record lookup; NXDOMAIN means the name isn’t in DNS.</li><li class="leading-relaxed"><strong class="text-ink">2. No A/AAAA record.</strong> The domain exists but has no address. Check: record lookup for A and AAAA; empty result means records are missing.</li><li class="leading-relaxed"><strong class="text-ink">3. Nameservers don’t answer.</strong> Delegation is broken (lame delegation, expired domain, DNSSEC mismatch). Check: NS lookup shows the wrong set or SERVFAIL.</li><li class="leading-relaxed"><strong class="text-ink">4. Local cache has a stale answer.</strong> You see an old IP that no longer works. Check: propagation checker shows resolvers disagreeing; flush your local cache.</li><li class="leading-relaxed"><strong class="text-ink">5. The server is down (not DNS).</strong> DNS resolves correctly but the server doesn’t respond. Check: record lookup shows the right IP; the site still doesn’t load = server problem.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Quick reference: error to cause</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NXDOMAIN</td><td class="text-sm text-ink-dim">Domain doesn’t exist (cause 1)</td></tr><tr><td class="text-sm text-ink-dim">ERR_NAME_NOT_RESOLVED</td><td class="text-sm text-ink-dim">No A record or broken delegation (causes 2-3)</td></tr><tr><td class="text-sm text-ink-dim">ERR_CONNECTION_REFUSED</td><td class="text-sm text-ink-dim">Server down (cause 5)</td></tr><tr><td class="text-sm text-ink-dim">ERR_CONNECTION_TIMED_OUT</td><td class="text-sm text-ink-dim">Server unreachable: firewall or wrong IP (causes 2 or 5)</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I tell if it's DNS or the server?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">If the record lookup returns the correct IP, DNS is fine: the problem is the server. If the lookup fails or returns wrong values, it’s DNS.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does the site work on my phone but not my laptop?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different DNS caches: your laptop has the old answer cached. Flush your local DNS cache.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can expired SSL certificates look like DNS errors?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: certificate errors show a different warning. DNS errors prevent the page from loading at all.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if only one page on my site is broken?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">That’s not DNS: DNS resolves at the domain level, not per-page. The issue is server-side routing or the page itself.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I flush my DNS cache?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">See our flush DNS guide for commands on Windows, macOS, Linux, and Chrome.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">When should I contact my DNS provider?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">When the authoritative answers are wrong (record lookup shows incorrect values you didn’t set) or nameservers don’t answer.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/dns-error-messages/" class="text-accent hover:text-accent-soft">DNS error messages →</a></li><li><a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">Flush DNS cache →</a></li><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">Propagation checker →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

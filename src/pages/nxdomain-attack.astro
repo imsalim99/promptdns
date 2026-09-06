@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is my domain being attacked if I see random subdomain queries?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Possibly: check your DNS provider’s query logs for volume spikes on non-existent names. The NXDOMAIN attack pattern is distinctive."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does this affect my website visitors?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It can: if the flood exhausts your nameservers, legitimate queries also fail, making your entire domain unreachable."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How is this different from a DDoS attack?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "NXDOMAIN attacks ARE a type of DDoS: they target the DNS layer specifically, using the protocol’s own response mechanism as the weapon."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is negative caching?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Resolvers caching NXDOMAIN answers so repeated queries for the same non-existent name don’t hit your server again. It’s a natural defense, controlled by the SOA minimum TTL."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I block specific query patterns?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes: response policy zones (RPZ) or your DNS provider’s filtering rules can block queries matching known attack patterns."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does DNSSEC help with NXDOMAIN attacks?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Not directly: DNSSEC signs existing records. The attack queries names that don’t exist, so there’s nothing to verify. Negative caching and rate limiting are the defenses."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="NXDOMAIN Attacks and Random Subdomain Attacks | PromptDNS"
+  description="NXDOMAIN attack"
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">NXDOMAIN Attacks and Random Subdomain Attacks</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">NXDOMAIN Attacks and Random Subdomain Attacks</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">NXDOMAIN attacks flood resolvers with queries for non-existent subdomains, exhaust resources, and can take an entire domain's DNS offline. Here's how they work and how to defend.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it works</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>The attacker generates thousands of random subdomains: a1b2c3.yourdomain.com, x9y8z7.yourdomain.com...</li><li>Queries flood your authoritative nameservers and upstream resolvers.</li><li>Each query results in NXDOMAIN (the subdomain doesn’t exist).</li><li>The flood exhausts nameserver resources and resolver negative caches.</li><li>In a targeted variant, random subdomains are chained to amplify DDoS traffic against the authoritative server.</li></ol>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Defenses</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">Response rate limiting (RRL):</strong> throttles identical NXDOMAIN responses from your nameserver.</li><li class="leading-relaxed"><strong class="text-ink">Negative caching:</strong> the SOA minimum TTL controls how long NXDOMAIN answers are cached, reducing repeat queries.</li><li class="leading-relaxed"><strong class="text-ink">Anycast DNS:</strong> distributes query load across global nodes, absorbing the flood.</li><li class="leading-relaxed"><strong class="text-ink">Managed DNS:</strong> Cloudflare, Route 53, and other providers absorb these attacks as part of their service.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain being attacked if I see random subdomain queries?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Possibly: check your DNS provider’s query logs for volume spikes on non-existent names. The NXDOMAIN attack pattern is distinctive.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does this affect my website visitors?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It can: if the flood exhausts your nameservers, legitimate queries also fail, making your entire domain unreachable.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is this different from a DDoS attack?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">NXDOMAIN attacks ARE a type of DDoS: they target the DNS layer specifically, using the protocol’s own response mechanism as the weapon.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is negative caching?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Resolvers caching NXDOMAIN answers so repeated queries for the same non-existent name don’t hit your server again. It’s a natural defense, controlled by the SOA minimum TTL.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I block specific query patterns?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: response policy zones (RPZ) or your DNS provider’s filtering rules can block queries matching known attack patterns.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNSSEC help with NXDOMAIN attacks?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not directly: DNSSEC signs existing records. The attack queries names that don’t exist, so there’s nothing to verify. Negative caching and rate limiting are the defenses.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/dns-security/" class="text-accent hover:text-accent-soft">DNS security →</a></li><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/dns-providers/" class="text-accent hover:text-accent-soft">Managed DNS providers →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>
