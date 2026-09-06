@@ -1,60 +1,102 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is DNS part of networking?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Where should a beginner start?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "What is an IP address, then IPv4 vs IPv6, then NAT. Those three unlock most of the rest."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need this for basic website management?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs."
-   }
-  }
- ]
-}
+import FaqAccordion from '../components/FaqAccordion.astro';
+const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Is DNS part of networking?","acceptedAnswer":{"@type":"Answer","text":"DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic."}},
+  {"@type":"Question","name":"Where should a beginner start?","acceptedAnswer":{"@type":"Answer","text":"What is an IP address, then IPv4 vs IPv6, then NAT. Those three unlock most of the rest."}},
+  {"@type":"Question","name":"Do I need this for basic website management?","acceptedAnswer":{"@type":"Answer","text":"Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs."}},
+  {"@type":"Question","name":"What is the difference between NAT and a firewall?","acceptedAnswer":{"@type":"Answer","text":"NAT translates addresses to share one public IP among many devices. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy."}},
+  {"@type":"Question","name":"What is an ASN and why does it matter?","acceptedAnswer":{"@type":"Answer","text":"An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to: an ISP, cloud provider, or enterprise."}},
+  {"@type":"Question","name":"How many private IP ranges are there?","acceptedAnswer":{"@type":"Answer","text":"Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16. These are defined in RFC 1918 and never route on the public internet."}},
+]};
 ---
 <BaseLayout
-  title="IP & Networking Guides | PromptDNS | PromptDNS"
+  title="IP & Networking Guides"
   description="IP and networking guides: IP addresses, NAT, ASNs, ports, CDNs, and the concepts every webmaster eventually needs."
   schema={[faqSchema]}
 >
-  <div class="mx-auto max-w-3xl px-4 py-12">
+  <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">IP & Networking Hub</span>
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">IP &amp; Networking</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IP & Networking Guides</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">The concepts under every DNS decision: what addresses mean, who operates networks, how traffic flows, and where the web ends and the network begins.</p>
-    <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Start here</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/my-ip/">What is an IP address</a> — addresses from first principles</li><li class="leading-relaxed"><a href="/ipv4-vs-ipv6/">IPv4 vs IPv6</a> — the two protocol generations</li><li class="leading-relaxed"><a href="/public-vs-private-ip/">Public vs private IPs</a> — and the RFC 1918 ranges</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Digging deeper</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/asn-explained/">What is an ASN</a> — the networks behind addresses</li><li class="leading-relaxed"><a href="/nat-explained/">NAT explained</a> — how one public IP serves a whole network</li><li class="leading-relaxed"><a href="/static-vs-dynamic-ip/">Static vs dynamic IPs</a> — and when stability matters</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Tools</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/ip-lookup/">IP Lookup</a>, <a href="/reverse-ip-lookup/">Reverse IP</a>, <a href="/my-ip/">What Is My IP</a></li><li class="leading-relaxed"><a href="/cidr-calculator/">CIDR calculator</a> for subnet math</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNS part of networking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where should a beginner start?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">What is an IP address, then IPv4 vs IPv6, then NAT. Those three unlock most of the rest.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need this for basic website management?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/ip-lookup/" class="text-accent hover:text-accent-soft">IP lookup tool →</a></li><li><a href="/cidr-calculator/" class="text-accent hover:text-accent-soft">CIDR calculator →</a></li></ul>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IP &amp; Networking Guides</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      The concepts under every DNS decision: what addresses mean, who operates networks,
+      how traffic flows, and where the web ends and the network begins.
+    </p>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Start here</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/what-is-an-ip-address/', title: 'What Is an IP Address?', desc: 'Addresses from first principles: public, private, static, dynamic.' },
+          { href: '/ipv4-vs-ipv6/', title: 'IPv4 vs IPv6', desc: 'The two protocol generations compared: address space, notation, NAT.' },
+          { href: '/public-vs-private-ip/', title: 'Public vs Private IP', desc: 'The RFC 1918 ranges, NAT translation, and where the confusion bites.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Digging deeper</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/nat-explained/', title: 'NAT Explained', desc: 'How one public IP serves a whole network, and what it breaks.' },
+          { href: '/asn-explained/', title: 'What Is an ASN?', desc: 'The autonomous systems behind addresses, and BGP routing.' },
+          { href: '/static-vs-dynamic-ip/', title: 'Static vs Dynamic IP', desc: 'When address stability matters and the workarounds.' },
+          { href: '/reverse-proxy-explained/', title: 'Reverse Proxy', desc: 'Nginx, Cloudflare, and the servers that hide your infrastructure.' },
+          { href: '/dns-load-balancing/', title: 'DNS Load Balancing', desc: 'Round-robin, weighted, latency-based, and health-checked failover.' },
+          { href: '/common-network-ports/', title: 'Common Network Ports', desc: 'Web, mail, DNS, SSH: the reference list with safe defaults.' },
+          { href: '/reserved-ip-ranges/', title: 'Reserved IP Ranges', desc: 'Private, loopback, link-local, and documentation ranges.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Tools</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {[
+          { href: '/my-ip/', title: 'What Is My IP', desc: 'Your public IP with PTR, ASN, and location.' },
+          { href: '/ip-lookup/', title: 'IP Lookup', desc: 'Geo, ASN, owner, and reverse DNS for any address.' },
+          { href: '/cidr-calculator/', title: 'CIDR Calculator', desc: 'Subnet math: ranges, masks, broadcast, hosts.' },
+          { href: '/reverse-ip-lookup/', title: 'Reverse IP Lookup', desc: 'Forward-confirmed reverse DNS for any address.' },
+        ].map((t) => (
+          <a href={t.href} class="group rounded-xl border border-line bg-panel/60 p-4 transition hover:border-accent/40">
+            <h4 class="font-display font-semibold text-sm text-ink group-hover:text-accent">{t.title}</h4>
+            <p class="mt-1 text-xs text-ink-dim">{t.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <FaqAccordion faqs={[
+        ["Is DNS part of networking?","DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic."],
+        ["Where should a beginner start?","What is an IP address, then IPv4 vs IPv6, then NAT. Those three unlock most of the rest."],
+        ["Do I need this for basic website management?","Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs."],
+        ["What is the difference between NAT and a firewall?","NAT translates addresses to share one public IP. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy."],
+        ["What is an ASN and why does it matter?","An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to."],
+        ["How many private IP ranges are there?","Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, defined in RFC 1918, never routing on the public internet."],
+      ]} heading="Frequently asked questions" />
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        <strong class="text-ink">Verify your network:</strong> run the
+        <a href="/my-ip/" class="font-medium text-accent hover:text-accent-soft">What Is My IP tool</a> or the
+        <a href="/ip-lookup/" class="font-medium text-accent hover:text-accent-soft">IP lookup</a>
+        to see your public address, reverse DNS, and network owner.
+      </p>
     </div>
   </div>
 </BaseLayout>

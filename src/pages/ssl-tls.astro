@@ -1,52 +1,98 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Does this site use TLS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "SSL vs TLS in one line?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol."
-   }
-  }
- ]
-}
+import FaqAccordion from '../components/FaqAccordion.astro';
+const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Does this site use TLS?","acceptedAnswer":{"@type":"Answer","text":"Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be."}},
+  {"@type":"Question","name":"SSL vs TLS in one line?","acceptedAnswer":{"@type":"Answer","text":"Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol."}},
+  {"@type":"Question","name":"Do I still need DNSSEC if I have HTTPS?","acceptedAnswer":{"@type":"Answer","text":"Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap."}},
+  {"@type":"Question","name":"How long are certificates valid?","acceptedAnswer":{"@type":"Answer","text":"Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal."}},
+  {"@type":"Question","name":"Does a certificate mean the site is safe?","acceptedAnswer":{"@type":"Answer","text":"No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty."}},
+  {"@type":"Question","name":"What is a certificate chain?","acceptedAnswer":{"@type":"Answer","text":"Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors."}},
+]};
 ---
 <BaseLayout
-  title="SSL/TLS and Web Security Basics | PromptDNS"
-  description="SSL/TLS hub: certificates, HTTPS, encryption basics, and the guides that secure your connection from browser to server."
+  title="SSL/TLS Guides"
+  description="SSL/TLS hub: certificates, HTTPS, encryption basics, HSTS, TLS versions, and the guides that secure your connection from browser to server."
   schema={[faqSchema]}
 >
-  <div class="mx-auto max-w-3xl px-4 py-12">
+  <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">SSL/TLS Guides Hub</span>
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SSL/TLS Guides</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL/TLS and Web Security Basics</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">TLS is the encryption and authentication layer that turns HTTP into HTTPS. This hub collects everything a webmaster needs: what certificates are, how encryption works, and the configurations that keep connections trusted.</p>
-    <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Core guides</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/what-is-ssl-tls/">What is SSL/TLS?</a> — the protocol and the handshake</li><li class="leading-relaxed"><a href="/certificate-authorities-explained/">Certificate authorities</a> — who vouches for certificates</li><li class="leading-relaxed"><a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a> — encryption vs DNS authentication</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Practical setup</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/free-ssl-lets-encrypt/">Free certificates with Let’s Encrypt</a> — automated via ACME</li><li class="leading-relaxed"><a href="/tls-versions-explained/">TLS versions explained</a> — 1.0 through 1.3</li><li class="leading-relaxed"><a href="/ssl-certificate-errors/">Certificate errors fixed</a> — every common cause</li><li class="leading-relaxed"><a href="/mixed-content-fix/">Mixed content fixes</a> — when HTTPS pages load HTTP resources</li><li class="leading-relaxed"><a href="/hsts-explained/">HSTS explained</a> — forcing HTTPS permanently</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Verify</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><a href="/dns-record-lookup/">CAA record lookup</a> — restrict who may issue your certificates</li><li class="leading-relaxed"><a href="/ai-readiness-checker/">Security scanner</a> — TLS alongside DNS and auth checks</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does this site use TLS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">SSL vs TLS in one line?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNSSEC guide →</a></li><li><a href="/email-authentication/" class="text-accent hover:text-accent-soft">Email authentication hub →</a></li></ul>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL/TLS Guides</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      TLS is the encryption and authentication layer that turns HTTP into HTTPS. This hub
+      collects everything a webmaster needs: what certificates are, how encryption works,
+      and the configurations that keep connections trusted.
+    </p>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Core guides</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/what-is-ssl-tls/', title: 'What Is SSL/TLS?', desc: 'The protocol, the handshake, and what TLS actually protects.' },
+          { href: '/certificate-authorities-explained/', title: 'Certificate Authorities', desc: 'Who vouches for certificates, validation levels, and the web of trust.' },
+          { href: '/https-vs-dnssec/', title: 'HTTPS vs DNSSEC', desc: 'Encryption vs DNS authentication: different layers, both needed.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Practical setup</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/free-ssl-lets-encrypt/', title: "Let's Encrypt", desc: 'Free certificates via ACME: issuance, renewal, and the 90-day model.' },
+          { href: '/tls-versions-explained/', title: 'TLS Versions', desc: '1.0 through 1.3: what changed, which to disable, how to test.' },
+          { href: '/hsts-explained/', title: 'HSTS', desc: 'Forcing HTTPS permanently: the header, the preload list, the risks.' },
+          { href: '/mixed-content-fix/', title: 'Mixed Content', desc: 'Why HTTPS pages loading HTTP resources break, and the fix.' },
+          { href: '/ssl-certificate-errors/', title: 'Certificate Errors', desc: 'Every error decoded: expired, name mismatch, untrusted chain.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Tools</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {[
+          { href: '/dns-record-lookup/', title: 'CAA Record Lookup', desc: 'Check which CAs may issue certificates for any domain.' },
+          { href: '/', title: 'Security Scanner', desc: 'TLS alongside DNS, DNSSEC, and auth checks in one pass.' },
+        ].map((t) => (
+          <a href={t.href} class="group rounded-xl border border-line bg-panel/60 p-4 transition hover:border-accent/40">
+            <h4 class="font-display font-semibold text-sm text-ink group-hover:text-accent">{t.title}</h4>
+            <p class="mt-1 text-xs text-ink-dim">{t.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <FaqAccordion faqs={[
+        ["Does this site use TLS?","Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be."],
+        ["SSL vs TLS in one line?","Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol."],
+        ["Do I still need DNSSEC if I have HTTPS?","Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap."],
+        ["How long are certificates valid?","Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal."],
+        ["Does a certificate mean the site is safe?","No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty."],
+        ["What is a certificate chain?","Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors."],
+      ]} heading="Frequently asked questions" />
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        <strong class="text-ink">Verify your setup:</strong> run the
+        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> to check TLS,
+        DNSSEC, and authentication in one pass.
+      </p>
     </div>
   </div>
 </BaseLayout>

@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"What is AI web infrastructure?","acceptedAnswer":{"@type":"Answer","text":"The DNS, crawler-policy, and content-map layer that determines whether AI systems can reach, understand, and cite your site. It includes robots.txt rules for AI bots, llms.txt content maps, structured data, and domain-level trust signals."}},
+  {"@type":"Question","name":"Should I allow or block AI crawlers?","acceptedAnswer":{"@type":"Answer","text":"There is no universally correct answer. Allowing puts your content into AI training and answers (visibility, but uncompensated reuse). Blocking protects content but removes you from AI answers as they become a discovery channel. The failure mode to fix is the accidental one: stale wildcard rules that quietly exclude everything."}},
+  {"@type":"Question","name":"What is llms.txt?","acceptedAnswer":{"@type":"Answer","text":"A proposed standard: a markdown file at your site root that gives language models a curated map of your content. Unlike robots.txt which restricts, llms.txt explains. Publishing one is forward-compatible and carries no downside."}},
+  {"@type":"Question","name":"How do I know which AI crawlers visit my site?","acceptedAnswer":{"@type":"Answer","text":"Upload your server access logs to the AI Log Analyzer: it scans for all 12 documented AI crawler user-agents and shows request counts and fetched paths."}},
+  {"@type":"Question","name":"Does blocking AI crawlers affect Google Search?","acceptedAnswer":{"@type":"Answer","text":"Only if you block Googlebot itself. Blocking Google-Extended stops Gemini training without affecting Search rankings. Each AI bot has a separate user-agent, so you can allow search and block training independently."}},
+  {"@type":"Question","name":"What is the fastest way to improve AI readiness?","acceptedAnswer":{"@type":"Answer","text":"Run the AI Readiness Checker: it scores DNS health, DNSSEC, email authentication, AI crawler access, and llms.txt in one pass, with per-check guidance on what to fix."}},
+]};
+---
+<BaseLayout
+  title="AI Web Infrastructure"
+  description="AI web infrastructure guides: AI crawler management, llms.txt, generative engine optimization, and making your domain machine-readable for answer engines."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">AI Web Infrastructure</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Web Infrastructure</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      AI answer engines and agents evaluate domains on signals machines can verify:
+      crawler access, content maps, structured data, and domain-level trust. This cluster
+      covers every piece and the tools to audit yours.
+    </p>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Crawler access</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/ai-crawler-checker/', title: 'AI Crawler Checker', desc: 'Audit your robots.txt against 12 AI crawlers: GPTBot, ClaudeBot, PerplexityBot and more.' },
+          { href: '/robots-txt-checker/', title: 'robots.txt Checker', desc: 'Validate syntax line by line: errors, unknown directives, AI-bot verdicts.' },
+          { href: '/ai-crawlers-list/', title: 'The Complete AI Crawler List', desc: 'Every AI bot that matters: vendor, purpose, and robots.txt gotchas.' },
+          { href: '/how-to-block-ai-crawlers/', title: 'Block AI Crawlers', desc: 'The exact robots.txt rules, WAF rules, and legal walls for each layer.' },
+          { href: '/how-to-allow-ai-crawlers/', title: 'Allow AI Crawlers', desc: 'Clean rules that keep AI bots welcome while protecting private areas.' },
+          { href: '/ai-log-analyzer/', title: 'AI Log Analyzer', desc: 'Upload access logs: see which AI bots visit, how often, and what they fetch.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Content maps &amp; structured data</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/what-is-llms-txt/', title: 'What Is llms.txt?', desc: 'The markdown standard that tells language models what your site is and where the important pages live.' },
+          { href: '/llms-txt-generator/', title: 'llms.txt Generator', desc: 'Build a valid llms.txt with auto-fetch, live preview, and download.' },
+          { href: '/llms-txt-syntax/', title: 'llms.txt Syntax', desc: 'The required shape: H1, blockquote summary, sections, and absolute links.' },
+          { href: '/schema-validator/', title: 'Schema Validator', desc: 'Fetch any page, extract JSON-LD blocks, and validate the data machines parse.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Audit &amp; monitor</h2>
+      <div class="grid gap-4">
+        {[
+          { href: '/ai-readiness-checker/', title: 'AI Readiness Checker', desc: 'One score for machine-readability: DNS, DNSSEC, auth, crawler access, llms.txt.' },
+          { href: '/ai-readiness-guide/', title: 'AI Readiness Guide', desc: 'The seven machine-verifiable signals answer engines check, and how to fix each.' },
+        ].map((s) => (
+          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
+            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <FaqAccordion faqs={[
+        ["Should I allow or block AI crawlers?","There is no universally correct answer. Allowing puts your content into AI training and answers (visibility, but uncompensated reuse). Blocking protects content but removes you from AI answers as they become a discovery channel. The failure mode to fix is the accidental one: stale wildcard rules that quietly exclude everything."],
+        ["What is llms.txt?","A proposed standard: a markdown file at your site root that gives language models a curated map of your content. Unlike robots.txt which restricts, llms.txt explains. Publishing one is forward-compatible and carries no downside."],
+        ["How do I know which AI crawlers visit my site?","Upload your server access logs to the AI Log Analyzer: it scans for all 12 documented AI crawler user-agents and shows request counts and fetched paths."],
+        ["Does blocking AI crawlers affect Google Search?","Only if you block Googlebot itself. Blocking Google-Extended stops Gemini training without affecting Search rankings. Each AI bot has a separate user-agent, so you can allow search and block training independently."],
+        ["What is the fastest way to improve AI readiness?","Run the AI Readiness Checker: it scores DNS health, DNSSEC, email authentication, AI crawler access, and llms.txt in one pass, with per-check guidance on what to fix."],
+        ["What is generative engine optimization (GEO)?","Optimizing content to be cited by AI answer engines (ChatGPT, Perplexity, Gemini) rather than ranked by traditional search. The signals overlap with SEO (authority, structure) but add machine-readability and llms.txt."],
+      ]} heading="Frequently asked questions" />
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        <strong class="text-ink">Start with the audit:</strong> run the
+        <a href="/ai-readiness-checker/" class="font-medium text-accent hover:text-accent-soft">AI Readiness Checker</a>
+        to score your domain, then fix what it flags with the tools and guides above.
+      </p>
+    </div>
+  </div>
+</BaseLayout>
