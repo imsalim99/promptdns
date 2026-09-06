@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Am I responsible if my resolver is used in an attack?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Potentially, yes: operators of open resolvers used in DDoS attacks can face legal pressure and blocklisting. Close the recursion or face the consequences."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the amplification factor?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The ratio of response size to query size. DNSSEC-signed zones with large keys can amplify 50x or more, making them preferred weapons."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does DNSSEC make amplification worse?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, larger signed responses amplify more. But the answer is rate limiting and response filtering, not abandoning DNSSEC."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can Cloudflare or Route 53 be used for amplification?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: they restrict recursion to customers and implement response rate limiting at global scale."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I test if my resolver is open?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Use an open resolver scanner (like the Shadowserver Foundation’s) or try querying it from an external network."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does this affect my website?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if you self-host DNS. If you use a managed provider, this is their problem, not yours."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="DNS Amplification Attacks Explained | PromptDNS"
+  description="DNS amplification attacks explained: how open resolvers are weaponized for DDoS, why the amplification factor matters, and how to prevent your server from being used."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Amplification Attacks Explained</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Amplification Attacks Explained</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">A DNS amplification attack turns small queries into massive floods: the attacker sends a 60-byte query to an open DNS resolver, which responds with a 4000-byte answer directed at the victim. The amplification factor can exceed 50x.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it works</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>The attacker spoofs the victim’s IP as the source of a DNS query.</li><li>The query asks for a large response (ANY type, or a DNSSEC-signed zone with big records).</li><li>The open resolver sends the large response to the victim’s (spoofed) IP.</li><li>Thousands of resolvers respond simultaneously: the victim’s bandwidth is overwhelmed.</li></ol>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">What makes a resolver 'open'</h2>
+      <p>A resolver that answers queries from any source IP (not just its own customers) is open. Malicious actors scan the internet for open resolvers and compile lists for attacks. If you run your own DNS server, recursion must be restricted to your own network.</p>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Preventing your server from being weaponized</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li>Disable recursion for non-local clients (BIND: <code>allow-recursion {'{'} localhost; {'}'};</code>).</li><li>Do not respond to ANY queries (drop or return NOTIMP).</li><li>Use response rate limiting (RRL) to throttle identical responses.</li><li>If you use managed DNS (Cloudflare, Route 53), this is handled for you.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Am I responsible if my resolver is used in an attack?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Potentially, yes: operators of open resolvers used in DDoS attacks can face legal pressure and blocklisting. Close the recursion or face the consequences.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the amplification factor?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The ratio of response size to query size. DNSSEC-signed zones with large keys can amplify 50x or more, making them preferred weapons.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNSSEC make amplification worse?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, larger signed responses amplify more. But the answer is rate limiting and response filtering, not abandoning DNSSEC.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can Cloudflare or Route 53 be used for amplification?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: they restrict recursion to customers and implement response rate limiting at global scale.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I test if my resolver is open?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use an open resolver scanner (like the Shadowserver Foundation’s) or try querying it from an external network.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does this affect my website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if you self-host DNS. If you use a managed provider, this is their problem, not yours.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNS security hub →</a></li><li><a href="/ns-record/" class="text-accent hover:text-accent-soft">NS records →</a></li><li><a href="/how-dns-works/" class="text-accent hover:text-accent-soft">How DNS works →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

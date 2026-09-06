@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "How do I know if my DNS has been hijacked?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don’t recognize, investigate immediately. Check your registrar’s audit log for unauthorized changes."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can DNS hijacking be reversed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does my DNS provider protect against hijacking?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is the difference between DNS hijacking and DNS spoofing?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Should I use a DNS provider with registry lock?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does my hosting provider protect DNS too?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider’s security is irrelevant to DNS attacks."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="DNS Hijacking: How Attacks Work and How to Stop Them | PromptDNS"
+  description="DNS hijacking explained: the attack types (registrar hijack, MITM, cache poisoning), real examples, and the layered defense that stops each one."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Hijacking: How Attacks Work and How to Stop Them</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Hijacking: How Attacks Work and How to Stop Them</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS hijacking redirects your domain's traffic by manipulating DNS answers. The victim never sees your server. This is one of the most damaging attacks because it is invisible to users and can persist for hours or days.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The three attack vectors</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">Registrar hijack:</strong> the attacker gains access to your registrar account (via phishing, credential stuffing, or a registrar breach) and changes your nameservers or A records to point at their infrastructure. This is the most damaging form because it is authoritative.</li><li class="leading-relaxed"><strong class="text-ink">On-path (MITM):</strong> the attacker intercepts unencrypted DNS queries between the user and the resolver and forges answers. Defeated by DNSSEC (authentication) and DoH/DoT (encryption).</li><li class="leading-relaxed"><strong class="text-ink">Cache poisoning:</strong> the attacker injects forged records into a resolver’s cache. Defeated by DNSSEC and randomizing source ports/query IDs.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Real attack scenarios</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">A crypto exchange’s DNS is hijacked; users visit a pixel-perfect clone, enter credentials, and lose funds.</li><li class="leading-relaxed">A government registrar is compromised; hundreds of domains redirect to a censorship page simultaneously.</li><li class="leading-relaxed">A router’s DNS settings are changed via a vulnerability; every device on the network resolves to an attacker-controlled resolver.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The layered defense</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">DNSSEC:</strong> makes forged answers cryptographically detectable. Enable it at your <a href="/what-is-dnssec/">DNS host and registrar</a>.</li><li class="leading-relaxed"><strong class="text-ink">Registrar security:</strong> two-factor authentication, registry lock, transfer authorization codes stored securely.</li><li class="leading-relaxed"><strong class="text-ink">Monitoring:</strong> alert on any record change, especially nameservers and A records. Our <a href="/dns-propagation-checker/">propagation checker</a> detects mismatches.</li><li class="leading-relaxed"><strong class="text-ink">CAA records:</strong> prevent attackers from issuing certificates for your domain even if they control DNS.</li><li class="leading-relaxed"><strong class="text-ink">DoH/DoT:</strong> encrypt DNS queries so on-path attackers cannot read or forge them.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I know if my DNS has been hijacked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don’t recognize, investigate immediately. Check your registrar’s audit log for unauthorized changes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can DNS hijacking be reversed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my DNS provider protect against hijacking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between DNS hijacking and DNS spoofing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use a DNS provider with registry lock?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my hosting provider protect DNS too?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider’s security is irrelevant to DNS attacks.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">DNS propagation checker →</a></li><li><a href="/" class="text-accent hover:text-accent-soft">Homepage security scanner →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>

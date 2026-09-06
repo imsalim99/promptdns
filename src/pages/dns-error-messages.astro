@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What does SERVFAIL actually mean?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does NXDOMAIN persist after I added a record?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I fix DNS errors on the user's side?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What's the difference between a DNS error and a connection error?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does clearing browser data fix DNS errors?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are DNS errors ever caused by malware?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="DNS Error Messages: The Complete Reference | PromptDNS"
+  description="Every DNS error message explained: SERVFAIL, NXDOMAIN, REFUSED, timeouts, and browser errors like DNS_PROBE_FINISHED_NXDOMAIN, with causes and fixes."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Error Messages: The Complete Reference</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Error Messages: The Complete Reference</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS errors are cryptic by design: they tell you what layer failed without telling you why. This reference decodes every common DNS error, from resolver status codes to browser-specific messages.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Resolver status codes</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">NOERROR (0)</td><td class="text-sm text-ink-dim">The query succeeded</td><td class="text-sm text-ink-dim">May still have zero answers for the requested type</td></tr><tr><td class="text-sm text-ink-dim">FORMERR (1)</td><td class="text-sm text-ink-dim">Malformed query</td><td class="text-sm text-ink-dim">A client or proxy bug, not a DNS issue</td></tr><tr><td class="text-sm text-ink-dim">SERVFAIL (2)</td><td class="text-sm text-ink-dim">The server failed to process</td><td class="text-sm text-ink-dim">DNSSEC failure, upstream timeout, or configuration error</td></tr><tr><td class="text-sm text-ink-dim">NXDOMAIN (3)</td><td class="text-sm text-ink-dim">Name does not exist</td><td class="text-sm text-ink-dim">Typo, deleted record, or negative-cached</td></tr><tr><td class="text-sm text-ink-dim">NOTIMP (4)</td><td class="text-sm text-ink-dim">Not implemented</td><td class="text-sm text-ink-dim">The server does not support the requested operation</td></tr><tr><td class="text-sm text-ink-dim">REFUSED (5)</td><td class="text-sm text-ink-dim">The server refuses to answer</td><td class="text-sm text-ink-dim">ACL blocking, AXFR denied, or policy</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Browser-specific messages</h2>
+      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NXDOMAIN</td><td class="text-sm text-ink-dim">Name doesn’t exist</td><td class="text-sm text-ink-dim">Check spelling, verify the domain exists, flush local cache</td></tr><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NO_INTERNET</td><td class="text-sm text-ink-dim">Network unreachable</td><td class="text-sm text-ink-dim">Check connection, then DNS server settings</td></tr><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_BAD_CONFIG</td><td class="text-sm text-ink-dim">Invalid DNS configuration</td><td class="text-sm text-ink-dim">Reset DNS settings to automatic or use 1.1.1.1/8.8.8.8</td></tr><tr><td class="text-sm text-ink-dim">This site can’t be reached</td><td class="text-sm text-ink-dim">Generic: could be DNS, server, or network</td><td class="text-sm text-ink-dim">Run the propagation checker to narrow down</td></tr></tbody></table></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The diagnostic flow</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Run the domain through the <a href="/dns-record-lookup/">record lookup</a>: if it returns answers, DNS is fine and the problem is the server or network.</li><li class="leading-relaxed">If the lookup fails with SERVFAIL, check DNSSEC (stale DS) and nameserver health.</li><li class="leading-relaxed">If NXDOMAIN, check spelling and whether the record was accidentally deleted.</li><li class="leading-relaxed">If one resolver works but another doesn’t, it’s a propagation or caching issue: use the <a href="/dns-propagation-checker/">propagation checker</a>.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does SERVFAIL actually mean?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does NXDOMAIN persist after I added a record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I fix DNS errors on the user's side?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What's the difference between a DNS error and a connection error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does clearing browser data fix DNS errors?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Are DNS errors ever caused by malware?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects.</p></details></div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/website-not-resolving/" class="text-accent hover:text-accent-soft">Website not resolving →</a></li><li><a href="/site-down-after-dns-change/" class="text-accent hover:text-accent-soft">Site down after DNS change →</a></li><li><a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">Flush DNS cache →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>
