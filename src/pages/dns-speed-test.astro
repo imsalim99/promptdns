@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 ---
 <BaseLayout
@@ -29,16 +30,7 @@ import ToolPanel from '../components/ToolPanel.astro';
       <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
     </ToolPanel>
 
-    <article class="rich-text mt-14 max-w-none">
-      <h2>How to read it</h2>
-      <p>Lower is better, measured in milliseconds from <em>your</em> network, results differ by country and ISP. Averages include the first (cold) query; the “best” column shows warm-cache performance, which is what matters day-to-day. Differences under ~10 ms are imperceptible; pick on privacy and reliability instead.</p>
-      <h2>Related tools</h2>
-      <ul>
-        <li><a href="/dns-record-lookup/">DNS Record Lookup</a></li>
-        <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a></li>
-        <li><a href="/doh-vs-dot/">DoH vs DoT explained</a> (guide)</li>
-      </ul>
-    </article>
+    <ToolArticle slug="dns-speed-test" />
   </div>
 </BaseLayout>
 

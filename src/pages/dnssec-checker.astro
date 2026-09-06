@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 ---
 <BaseLayout title="DNSSEC Checker and Validator" description="Free DNSSEC checker: verify a domain has DS and DNSKEY records, check algorithms, and confirm the chain of trust is publishable.">
@@ -24,6 +25,7 @@ import ToolPanel from '../components/ToolPanel.astro';
       <li><a href="/ds-record/">DS</a> / <a href="/dnskey-record/">DNSKEY</a> records</li>
     </ul></article>
   </div>
+  <ToolArticle slug="dnssec-checker" />
 </BaseLayout>
 <script>
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';

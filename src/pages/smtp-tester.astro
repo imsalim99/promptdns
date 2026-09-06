@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 ---
 <BaseLayout title="SMTP Test — Mail Server Preflight" description="SMTP preflight check: MX routing, PTR, SPF/DKIM/DMARC, and blacklist status for any sending domain, plus the commands for deep testing.">
@@ -27,6 +28,7 @@ swaks --to test@example.com --server mail.example.com</pre>
       <h2>Related</h2><ul><li><a href="/mx-record-not-working/">MX troubleshooting</a> · <a href="/blacklist-checker/">Blacklist checker</a></li></ul>
     </article>
   </div>
+  <ToolArticle slug="smtp-tester" />
 </BaseLayout>
 <script>
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';

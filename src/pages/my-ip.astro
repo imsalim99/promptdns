@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 ---
 <BaseLayout
@@ -24,16 +25,7 @@ import ToolPanel from '../components/ToolPanel.astro';
       <div id="myip-cards" class="grid gap-3 sm:grid-cols-3"></div>
     </ToolPanel>
 
-    <article class="rich-text mt-14 max-w-none">
-      <h2>What you’re seeing</h2>
-      <p>Your public IP is the address the internet sees (your router’s, shared by your whole network). The <strong>reverse DNS (PTR)</strong> record is resolved through our own DNS-over-HTTPS engine, it often reveals your ISP or hosting provider’s naming. ASN and location come from public IP intelligence databases and can be off by city blocks; the IP itself is exact.</p>
-      <h2>Related tools</h2>
-      <ul>
-        <li><a href="/ip-lookup/">IP Lookup</a>, check any IP, not just yours</li>
-        <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a></li>
-        <li><a href="/ptr-record/">PTR records explained</a> (guide)</li>
-      </ul>
-    </article>
+    <ToolArticle slug="my-ip" />
   </div>
 </BaseLayout>
 
