@@ -284,8 +284,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function renderOverviewCards(domain) {
       const container = document.getElementById('overview-cards');
       container.innerHTML = '';
-      const { lookup, RESOLVERS } = await import('/_lib/doh.ts').catch(() => ({}));
-
+      
       // Since we can't import from the module in inline script, use fetch directly
       const checks = [];
       const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
