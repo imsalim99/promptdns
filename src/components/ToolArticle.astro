@@ -9,8 +9,9 @@ const { slug } = Astro.props;
 const c = TOOL_CONTENT[slug];
 ---
 {c && (
-  <article class="rich-text mt-14 max-w-none">
-    <h2>How this tool works</h2>
+  <div class="mx-auto max-w-3xl px-4">
+    <article class="rich-text mt-14">
+      <h2>How this tool works</h2>
     {c.process.map((p) => <p class="mt-3">{p}</p>)}
 
     <h2>How to read the results</h2>
@@ -36,5 +37,6 @@ const c = TOOL_CONTENT[slug];
     <p>{c.who}</p>
 
     <FaqAccordion faqs={c.faqs} heading="Frequently asked questions" />
-  </article>
+    </article>
+  </div>
 )}
