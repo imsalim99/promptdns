@@ -83,7 +83,8 @@
           </div>
         </div>
 
-        <!-- Add domain -->
+        <div id="section-overview">
+<!-- Add domain -->
         <div class="rounded-xl border border-dashed border-line p-5 mb-8">
           <div class="flex gap-3 items-center">
             <input id="add-input" type="text" placeholder="Add a domain to monitor…" autocomplete="off" spellcheck="false"
@@ -106,6 +107,13 @@
             <tbody id="domain-list"></tbody>
           </table>
         </div>
+      </div><!-- /section-overview -->
+
+      <div id="section-alerts" class="hidden">
+        <div class="rounded-xl border border-line bg-panel/60 p-8 text-center">
+          <p class="text-sm text-ink-faint">No alerts yet. Alerts appear when monitored domains change.</p>
+        </div>
+      </div>
       </main>
     </div>
 
@@ -137,6 +145,22 @@
               body: JSON.stringify({ name: btn.dataset.remove }),
             });
             init();
+
+      // Tab switching
+      document.querySelectorAll('.dash-nav').forEach(function(el) {
+        el.addEventListener('click', function() {
+          document.querySelectorAll('.dash-nav').forEach(function(x) {
+            x.classList.remove('text-accent', 'bg-accent/10');
+            x.classList.add('text-ink-dim');
+          });
+          el.classList.add('text-accent', 'bg-accent/10');
+          el.classList.remove('text-ink-dim');
+          var target = el.dataset.show;
+          document.getElementById('section-overview').classList.toggle('hidden', target !== 'overview');
+          var alerts = document.getElementById('section-alerts');
+          if (alerts) alerts.classList.toggle('hidden', target !== 'alerts');
+        });
+      });
           });
         });
       }
@@ -152,6 +176,22 @@
         });
         input.value = '';
         init();
+
+      // Tab switching
+      document.querySelectorAll('.dash-nav').forEach(function(el) {
+        el.addEventListener('click', function() {
+          document.querySelectorAll('.dash-nav').forEach(function(x) {
+            x.classList.remove('text-accent', 'bg-accent/10');
+            x.classList.add('text-ink-dim');
+          });
+          el.classList.add('text-accent', 'bg-accent/10');
+          el.classList.remove('text-ink-dim');
+          var target = el.dataset.show;
+          document.getElementById('section-overview').classList.toggle('hidden', target !== 'overview');
+          var alerts = document.getElementById('section-alerts');
+          if (alerts) alerts.classList.toggle('hidden', target !== 'alerts');
+        });
+      });
       });
 
       document.getElementById('signout').addEventListener('click', async function() {
@@ -160,6 +200,22 @@
       });
 
       init();
+
+      // Tab switching
+      document.querySelectorAll('.dash-nav').forEach(function(el) {
+        el.addEventListener('click', function() {
+          document.querySelectorAll('.dash-nav').forEach(function(x) {
+            x.classList.remove('text-accent', 'bg-accent/10');
+            x.classList.add('text-ink-dim');
+          });
+          el.classList.add('text-accent', 'bg-accent/10');
+          el.classList.remove('text-ink-dim');
+          var target = el.dataset.show;
+          document.getElementById('section-overview').classList.toggle('hidden', target !== 'overview');
+          var alerts = document.getElementById('section-alerts');
+          if (alerts) alerts.classList.toggle('hidden', target !== 'alerts');
+        });
+      });
     </script>
   </body>
 </html>
