@@ -1,0 +1,54 @@
+---
+/** Dashboard layout — completely separate from public site chrome.
+ *  No BaseLayout, no navbar, no footer. This is the authenticated app shell. */
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title>{title} | PromptDNS</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin/>
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600&f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+    <style>
+      @import "tailwindcss";
+      @theme {
+        --color-canvas: #050810;
+        --color-panel: #0b1222;
+        --color-panel-2: #101a30;
+        --color-line: #1c2a47;
+        --color-ink: #f1f5f9;
+        --color-ink-dim: #9dabc4;
+        --color-ink-faint: #74829c;
+        --color-accent: #22d3ee;
+        --color-accent-soft: #67e8f9;
+        --color-violet: #8b5cf6;
+        --color-violet-soft: #a78bfa;
+        --color-pass: #4ade80;
+        --color-fail: #f87171;
+        --color-warn: #fbbf24;
+        --font-display: "Clash Display", ui-sans-serif, sans-serif;
+        --font-sans: "Satoshi", ui-sans-serif, sans-serif;
+        --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+      }
+      body { @apply bg-canvas text-ink font-sans antialiased; font-size: 15px; }
+      .font-display { font-family: var(--font-display); font-weight: 500; }
+      ::selection { background: #22d3ee55; color: #fff; }
+      .pdns-table { width: 100%; font-size: 13px; }
+      .pdns-table th { padding: 8px 12px; text-align: left; font-weight: 600; color: #9dabc4; border-bottom: 1px solid #1c2a47; }
+      .pdns-table td { padding: 8px 12px; border-bottom: 1px solid #1c2a4733; }
+      .btn-cta { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;
+        background: linear-gradient(100deg, #22d3ee, #8b5cf6); color: #050810; font-weight: 600;
+        font-family: var(--font-display); transition: transform .15s, box-shadow .15s;
+        box-shadow: 0 4px 20px -6px #22d3ee66; }
+      .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 30px -6px #22d3ee88; }
+    </style>
+  </head>
+  <body>
+    <slot/>
+  </body>
+</html>
