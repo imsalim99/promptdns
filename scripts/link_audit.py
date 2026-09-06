@@ -20,7 +20,8 @@ for root, _, files in os.walk(dist):
         for m in re.finditer(r'href="(/[^"#]*)"', html):
             href = m.group(1)
             if '${' in href: continue
-            if href not in routes:
+            norm = href if href.endswith('/') else href + '/'
+            if norm in routes or href in routes:
                 broken.setdefault(rel, []).append(href)
 if not broken:
     print('ALL INTERNAL LINKS RESOLVE OK')
