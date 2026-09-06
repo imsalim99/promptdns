@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Can I track ChatGPT Search traffic?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Indirectly: check referrer data for chat.openai.com or chatgpt.com in your analytics. Direct tracking is limited."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does blocking GPTBot affect ChatGPT Search?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: OAI-SearchBot is the search crawler. GPTBot is for training data. They’re independent."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How does ChatGPT choose which sources to cite?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It combines retrieval (based on relevance and freshness) with ranking signals. Clear, authoritative, well-structured content is more likely to be cited."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I pay for better ChatGPT placement?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: ChatGPT Search citations are organic. There is no paid placement mechanism."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does my site need to be popular to be cited?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No: ChatGPT cites sources based on relevance and quality, not traffic volume. Smaller sites with authoritative content get cited."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How often does ChatGPT Search update?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "OAI-SearchBot crawls continuously, but the index update frequency isn’t public. Fresh content tends to get picked up faster."
+   }
+  }
+ ]
+}
+---
+<BaseLayout
+  title="How ChatGPT Search Works and How to Optimize for It | PromptDNS"
+  description="chatgpt search operators"
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">How ChatGPT Search Works (and How to Optimize for It)</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How ChatGPT Search Works (and How to Optimize for It)</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">ChatGPT Search uses OAI-SearchBot to index the web for real-time answers. Understanding how it selects and cites sources helps you stay visible in AI-powered search.</p>
+    <div class="rich-text mt-8">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it differs from Google Search</h2>
+      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">No keyword rankings: ChatGPT synthesizes answers from multiple sources and cites them inline.</li><li class="leading-relaxed">No page authority: relevance and freshness matter more than backlink profiles.</li><li class="leading-relaxed">OAI-SearchBot (not GPTBot) handles search indexing: blocking GPTBot doesn’t affect ChatGPT Search visibility.</li><li class="leading-relaxed">Results are conversational: your content may be quoted alongside competitors in the same answer.</li></ul>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How to optimize</h2>
+      <ol class="list-decimal space-y-1.5 pl-5"><li>Allow OAI-SearchBot in robots.txt (separate from GPTBot).</li><li>Publish clear, factual content with structured data.</li><li>Keep content fresh: ChatGPT Search favors recent information for time-sensitive queries.</li><li>Publish an <a href="/llms-txt-generator/">llms.txt</a> to guide the model’s understanding of your site.</li><li>Maintain domain-level trust signals (DNSSEC, email authentication).</li></ol>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I track ChatGPT Search traffic?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Indirectly: check referrer data for chat.openai.com or chatgpt.com in your analytics. Direct tracking is limited.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking GPTBot affect ChatGPT Search?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: OAI-SearchBot is the search crawler. GPTBot is for training data. They’re independent.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How does ChatGPT choose which sources to cite?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It combines retrieval (based on relevance and freshness) with ranking signals. Clear, authoritative, well-structured content is more likely to be cited.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I pay for better ChatGPT placement?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: ChatGPT Search citations are organic. There is no paid placement mechanism.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my site need to be popular to be cited?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: ChatGPT cites sources based on relevance and quality, not traffic volume. Smaller sites with authoritative content get cited.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often does ChatGPT Search update?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">OAI-SearchBot crawls continuously, but the index update frequency isn’t public. Fresh content tends to get picked up faster.</p></details></div>
+      <div class="mt-10 flex items-center gap-3 rounded-xl border border-line bg-panel/40 px-5 py-3">
+        <span class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent to-violet font-display text-xs font-bold text-canvas">PD</span>
+        <div><p class="text-sm font-medium text-ink">PromptDNS Team</p>
+        <p class="text-xs text-ink-faint">Last updated: September 2026</p></div>
+      </div>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <ul class="mt-3 grid gap-2"><li><a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">AI crawlers list →</a></li><li><a href="/how-to-allow-ai-crawlers/" class="text-accent hover:text-accent-soft">Allow AI crawlers →</a></li><li><a href="/ai-readiness-checker/" class="text-accent hover:text-accent-soft">AI readiness checker →</a></li></ul>
+    </div>
+  </div>
+</BaseLayout>
