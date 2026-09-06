@@ -1,481 +1,165 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+/** Standalone dashboard — own layout, no BaseLayout (no public navbar/footer). */
 ---
-<BaseLayout title="Dashboard — PromptDNS" description="PromptDNS monitoring dashboard.">
-<style>
-  /* Dashboard-specific styles that extend global.css (imported via BaseLayout) */
-  .dash-sidebar { width: 220px; position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
-    background: var(--color-panel); border-right: 1px solid var(--color-line); display: flex; flex-direction: column; }
-  .dash-sidebar a, .dash-sidebar button { display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--color-ink-dim); transition: all .15s; width: 100%; text-align: left; border: none; background: none; cursor: pointer; }
-  .dash-sidebar a:hover, .dash-sidebar button:hover { color: var(--color-ink); background: var(--color-panel-2); }
-  .dash-sidebar a.active, .dash-sidebar button.active { color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 10%, transparent); }
-  .dash-sidebar svg { width: 16px; height: 16px; flex-shrink: 0; }
-  .dash-main { margin-left: 220px; min-height: 100vh; }
-  .dash-header { position: sticky; top: 0; z-index: 30; background: color-mix(in oklab, var(--color-canvas) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--color-line); }
-  .stat-card { border-radius: 12px; border: 1px solid var(--color-line); background: var(--color-panel); padding: 20px; }
-  .stat-card .stat-label { font-size: 11px; color: var(--color-ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
-  .stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin-top: 4px; }
-  .sec-card { border-radius: 12px; border: 1px solid var(--color-line); background: var(--color-panel); padding: 16px;
-    display: flex; align-items: flex-start; gap: 12px; transition: border-color .2s; }
-  .sec-card:hover { border-color: color-mix(in oklab, var(--color-accent) 30%, transparent); }
-  .sec-card .sec-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .sec-card .sec-pass .sec-icon { background: color-mix(in oklab, var(--color-pass) 15%, transparent); color: var(--color-pass); }
-  .sec-card .sec-fail .sec-icon { background: color-mix(in oklab, var(--color-fail) 15%, transparent); color: var(--color-fail); }
-  .sec-card .sec-warn .sec-icon { background: color-mix(in oklab, var(--color-warn) 15%, transparent); color: var(--color-warn); }
-  .domain-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px;
-    font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; border: 1px solid var(--color-line); color: var(--color-ink-dim); }
-  .domain-pill.active { border-color: color-mix(in oklab, var(--color-accent) 40%, transparent); color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 8%, transparent); }
-  .domain-pill:hover { border-color: color-mix(in oklab, var(--color-accent) 30%, transparent); }
-  .dash-tab { display: none; }
-  .dash-tab.active { display: block; }
-</style>
-
-  <div class="flex min-h-screen">
-    <!-- ===== SIDEBAR ===== -->
-    <aside class="dash-sidebar">
-      <div class="px-3.5 py-4 border-b border-line">
-        <a href="/" class="flex items-center gap-2 font-display text-sm font-bold">
-          <span class="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-mono text-[9px] font-bold text-canvas">DNS</span>
-          <span>Prompt<span class="gradient-text">DNS</span></span>
-        </a>
-      </div>
-      <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        <button class="nav-btn active" data-tab="overview">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Overview
-        </button>
-        <button class="nav-btn" data-tab="domains">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Domains
-        </button>
-        <button class="nav-btn" data-tab="security">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Security
-        </button>
-        <button class="nav-btn" data-tab="dns-records">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          DNS Records
-        </button>
-        <button class="nav-btn" data-tab="email-auth">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Email Auth
-        </button>
-        <button class="nav-btn" data-tab="alerts">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          Alerts
-        </button>
-      </nav>
-      <div class="px-2 py-3 border-t border-line space-y-0.5">
-        <button class="nav-btn" data-tab="settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Settings
-        </button>
-        <form action="/api/auth/logout" method="post">
-          <button type="submit" class="w-full flex items-center gap-2.5 rounded-lg px-3.5 py-2 text-xs text-ink-faint hover:text-fail transition">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title>Dashboard — PromptDNS</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin/>
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600&f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+    <style>
+      @import "tailwindcss";
+      @theme {
+        --color-canvas: #050810; --color-panel: #0b1222; --color-panel-2: #101a30;
+        --color-line: #1c2a47; --color-ink: #f1f5f9; --color-ink-dim: #9dabc4; --color-ink-faint: #74829c;
+        --color-accent: #22d3ee; --color-violet: #8b5cf6;
+        --color-pass: #4ade80; --color-fail: #f87171; --color-warn: #fbbf24;
+        --font-display: "Clash Display", ui-sans-serif, sans-serif;
+        --font-sans: "Satoshi", ui-sans-serif, sans-serif;
+      }
+      body { font-family: var(--font-sans); background: var(--color-canvas); color: var(--color-ink); font-size: 15px; -webkit-font-smoothing: antialiased; }
+    </style>
+  </head>
+  <body>
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="w-56 shrink-0 border-r border-line bg-panel/60 flex flex-col fixed inset-y-0 left-0 z-40">
+        <div class="px-3.5 py-4 border-b border-line">
+          <a href="/" class="flex items-center gap-2 font-display text-sm font-bold text-ink">
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-mono text-[9px] font-bold text-canvas">DNS</span>
+            PromptDNS
+          </a>
+        </div>
+        <nav class="flex-1 px-2 py-3 space-y-0.5">
+          <div class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-accent bg-accent/10">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Overview
+          </div>
+          <div class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-dim">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+            Domains
+          </div>
+          <div class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-dim">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+            Alerts
+          </div>
+        </nav>
+        <div class="mt-auto px-2 py-3 border-t border-line">
+          <button id="signout" class="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-ink-dim hover:text-fail transition">
             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign out
           </button>
-        </form>
-      </div>
-    </aside>
-
-    <!-- ===== MAIN AREA ===== -->
-    <div style="margin-left: 220px; flex: 1; min-height: 100vh;">
-
-      <!-- Header bar -->
-      <header class="dash-header px-6 py-3 flex items-center justify-between">
-        <h1 id="tab-title" class="font-display text-base font-bold text-ink">Overview</h1>
-        <div class="flex items-center gap-3">
-          <span class="rounded-full border border-accent/30 bg-accent/10 px-3 py-0.5 text-xs font-medium text-accent">Free plan</span>
-          <span id="user-email" class="text-xs text-ink-faint"></span>
         </div>
-      </header>
+      </aside>
 
-      <div class="p-6">
+      <!-- Main -->
+      <main class="flex-1 ml-56 p-6 lg:p-8">
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="font-display text-xl font-bold text-ink">Dashboard</h1>
+          <span class="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">Free plan</span>
+        </div>
 
-        <!-- ===== TAB: OVERVIEW ===== -->
-        <div id="tab-overview" class="dash-tab active">
-          <!-- Domain selector -->
-          <div class="flex items-center gap-2 mb-6 flex-wrap" id="domain-pills">
-            <span class="text-xs text-ink-faint mr-1">Domain:</span>
-            <!-- pills injected by JS -->
+        <!-- Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <p class="text-xs text-ink-faint">Domains monitored</p>
+            <p id="stat-domains" class="mt-1 font-display text-3xl font-bold text-accent">–</p>
           </div>
-
-          <!-- Security posture grid -->
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8" id="overview-cards">
-            <!-- injected by JS -->
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <p class="text-xs text-ink-faint">Active alerts</p>
+            <p class="mt-1 font-display text-3xl font-bold text-warn">0</p>
           </div>
-
-          <!-- Add domain -->
-          <div class="rounded-xl border border-dashed border-line p-5 mb-8">
-            <form id="add-form" class="flex gap-3 items-center">
-              <input id="add-input" type="text" placeholder="Add a domain to monitor…" autocomplete="off" spellcheck="false"
-                class="flex-1 max-w-xs rounded-lg border border-line bg-transparent px-4 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"/>
-              <button type="submit" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Add domain</button>
-            </form>
-            <p id="add-msg" class="mt-2 text-xs hidden"></p>
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <p class="text-xs text-ink-faint">DMARC reports</p>
+            <p class="mt-1 font-display text-3xl font-bold text-accent">0</p>
           </div>
-
-          <!-- Upgrade banner -->
-          <div class="rounded-xl border border-accent/25 bg-gradient-to-br from-accent/8 to-violet/8 p-6 flex items-center justify-between gap-6">
-            <div>
-              <h3 class="font-display font-bold text-ink">Unlock continuous monitoring</h3>
-              <p class="mt-1 text-sm text-ink-dim">Get alerted when DNS records change, new senders appear, or blocklists flag your domain. Starting at $19/mo.</p>
-            </div>
-            <a href="/pricing/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm shrink-0">Upgrade</a>
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <p class="text-xs text-ink-faint">Plan</p>
+            <p class="mt-1 font-display text-3xl font-bold text-ink">Free</p>
           </div>
         </div>
 
-        <!-- ===== TAB: DOMAINS ===== -->
-        <div id="tab-domains" class="dash-tab">
-          <h2 class="font-display text-lg font-bold text-ink mb-4">Monitored domains</h2>
-          <div id="domains-table" class="rounded-xl border border-line bg-panel/60 overflow-hidden">
-            <table class="pdns-table">
-              <thead><tr><th>Domain</th><th>Added</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="domains-tbody"></tbody>
-            </table>
+        <!-- Add domain -->
+        <div class="rounded-xl border border-dashed border-line p-5 mb-8">
+          <div class="flex gap-3 items-center">
+            <input id="add-input" type="text" placeholder="Add a domain to monitor…" autocomplete="off" spellcheck="false"
+              class="flex-1 max-w-xs rounded-lg border border-line bg-transparent px-4 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"/>
+            <button id="add-btn" class="rounded-lg bg-gradient-to-r from-accent to-violet px-5 py-2.5 text-sm font-semibold text-canvas">Add domain</button>
           </div>
+          <p id="add-msg" class="mt-2 text-xs hidden"></p>
         </div>
 
-        <!-- ===== TAB: SECURITY ===== -->
-        <div id="tab-security" class="dash-tab">
-          <div class="flex items-center gap-3 mb-6">
-            <select id="scan-domain-select" class="rounded-lg border border-line bg-panel px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
-              <option value="">Select a domain…</option>
-            </select>
-            <button id="run-scan" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Run scan</button>
-          </div>
-          <div id="scan-empty" class="text-center text-sm text-ink-faint py-12">
-            Select a domain and run a scan to see security posture.
-          </div>
-          <div id="scan-output" class="hidden">
-            <div class="flex items-center gap-8 mb-8">
-              <div class="relative shrink-0">
-                <svg viewBox="0 0 120 120" class="h-36 w-36">
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="#1c2a47" stroke-width="10"/>
-                  <circle id="scan-arc" cx="60" cy="60" r="52" fill="none" stroke="url(#scan-grad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 1s"/>
-                  <defs><linearGradient id="scan-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span id="scan-score" class="font-display text-3xl font-bold text-ink">0</span>
-                  <span class="text-[10px] text-ink-faint">/ 100</span>
-                </div>
-              </div>
-              <div id="scan-checks" class="flex-1 grid gap-2"></div>
-            </div>
-          </div>
+        <!-- Domain list -->
+        <h2 class="font-display text-lg font-bold text-ink mb-4">Your domains</h2>
+        <div class="rounded-xl border border-line bg-panel/60 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b border-line">
+              <th class="px-4 py-3 text-left font-semibold text-ink-dim text-xs uppercase tracking-wide">Domain</th>
+              <th class="px-4 py-3 text-left font-semibold text-ink-dim text-xs uppercase tracking-wide">Added</th>
+              <th class="px-4 py-3 text-left font-semibold text-ink-dim text-xs uppercase tracking-wide">Status</th>
+              <th class="px-4 py-3"></th>
+            </tr></thead>
+            <tbody id="domain-list"></tbody>
+          </table>
         </div>
-
-        <!-- ===== TAB: DNS RECORDS ===== -->
-        <div id="tab-dns-records" class="dash-tab">
-          <div class="flex items-center gap-3 mb-6">
-            <input id="dns-domain-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false"
-              class="rounded-lg border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"/>
-            <button id="dns-load-btn" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Load records</button>
-          </div>
-          <div id="dns-records-output" class="hidden">
-            <div id="dns-records-table" class="rounded-xl border border-line bg-panel/60 overflow-x-auto"></div>
-          </div>
-        </div>
-
-        <!-- ===== TAB: EMAIL AUTH ===== -->
-        <div id="tab-email-auth" class="dash-tab">
-          <div class="flex items-center gap-3 mb-6">
-            <input id="auth-domain-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false"
-              class="rounded-lg border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"/>
-            <button id="auth-check-btn" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Check auth</button>
-          </div>
-          <div id="auth-results" class="hidden grid gap-3"></div>
-        </div>
-
-        <!-- ===== TAB: ALERTS ===== -->
-        <div id="tab-alerts" class="dash-tab">
-          <div class="rounded-xl border border-line bg-panel/60 p-8 text-center">
-            <svg class="h-12 w-12 mx-auto text-ink-faint mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <h3 class="font-display font-bold text-ink">No alerts yet</h3>
-            <p class="mt-2 text-sm text-ink-dim max-w-md mx-auto">
-              Alerts fire when DNS records change, new senders appear, or your domain gets blocklisted.
-              Add domains above to start monitoring — alerts appear here in real time.
-            </p>
-            <a href="/pricing/" class="mt-4 inline-block text-xs text-accent hover:text-accent-soft">Upgrade for automated alerting →</a>
-          </div>
-        </div>
-
-        <!-- ===== TAB: SETTINGS ===== -->
-        <div id="tab-settings" class="dash-tab">
-          <div class="max-w-lg grid gap-6">
-            <div class="rounded-xl border border-line bg-panel/60 p-5">
-              <h3 class="font-display text-sm font-bold text-ink mb-3">Account</h3>
-              <p class="text-sm text-ink-dim">Email: <span id="settings-email" class="font-mono text-accent">…</span></p>
-              <p class="text-sm text-ink-dim mt-1">Plan: <span class="text-accent">Free</span></p>
-            </div>
-            <div class="rounded-xl border border-line bg-panel/60 p-5">
-              <h3 class="font-display text-sm font-bold text-ink mb-3">Notification preferences</h3>
-              <p class="text-sm text-ink-dim">Email alerts for DNS changes, new senders, and blocklist hits are available on paid plans.</p>
-              <a href="/pricing/" class="mt-2 inline-block text-xs text-accent hover:text-accent-soft">Upgrade to enable →</a>
-            </div>
-            <div class="rounded-xl border border-fail/20 bg-fail/5 p-5">
-              <h3 class="font-display text-sm font-bold text-fail mb-2">Danger zone</h3>
-              <p class="text-sm text-ink-dim mb-3">Removing your account deletes all monitored domains and alert history.</p>
-              <button class="rounded-lg border border-fail/30 bg-fail/10 px-4 py-2 text-xs font-medium text-fail hover:bg-fail/20 transition">Delete account</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      </main>
     </div>
-  </div>
 
-  <script>
-    // ===== Tab system =====
-    const navBtns = document.querySelectorAll('.nav-btn');
-    const tabIds = ['overview', 'domains', 'security', 'dns-records', 'email-auth', 'alerts', 'settings'];
-    const tabTitles = ['Overview', 'Domains', 'Security Scan', 'DNS Records', 'Email Auth', 'Alerts', 'Settings'];
-
-    function switchTab(tab) {
-      tabIds.forEach((id) => {
-        const el = document.getElementById('tab-' + id);
-        if (el) el.classList.toggle('active', id === tab);
-      });
-      navBtns.forEach((b) => {
-        const active = b.dataset.tab === tab;
-        b.classList.toggle('active', active);
-        b.classList.toggle('text-ink-dim', !active);
-      });
-      document.getElementById('tab-title').textContent = tabTitles[tabIds.indexOf(tab)] || tab;
-    }
-    navBtns.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-
-    // ===== Auth check =====
-    let domains = [];
-    async function init() {
-      const res = await fetch('/api/domains');
-      if (res.status === 401) { window.location.href = '/login'; return; }
-      const j = await res.json();
-      domains = j.domains || [];
-      renderDomainPills();
-      renderDomainCards();
-      renderDomainTable();
-      populateScanSelect();
-      if (domains.length) {
-        const input = document.getElementById('dns-domain-input');
-        const authInput = document.getElementById('auth-domain-input');
-        if (input) input.value = domains[0].name;
-        if (authInput) authInput.value = domains[0].name;
-      }
-    }
-
-    function renderDomainPills() {
-      const container = document.getElementById('domain-pills');
-      container.innerHTML = domains.map((d, i) =>
-        `<button class="domain-pill ${i === 0 ? 'active' : ''}" data-domain="${d.name}">${d.name}</button>`
-      ).join('');
-      container.querySelectorAll('.domain-pill').forEach((p) => {
-        p.addEventListener('click', () => {
-          container.querySelectorAll('.domain-pill').forEach((x) => x.classList.remove('active'));
-          p.classList.add('active');
-          renderOverviewCards(p.dataset.domain);
-        });
-      });
-      if (domains.length) renderOverviewCards(domains[0].name);
-    }
-
-    async function renderOverviewCards(domain) {
-      const container = document.getElementById('overview-cards');
-      container.innerHTML = '';
-      
-      // Since we can't import from the module in inline script, use fetch directly
-      const checks = [];
-      const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      checks.push({ label: 'Website resolves', status: r?.Answer?.length ? 'pass' : 'fail', detail: r?.Answer?.[0]?.data || 'No A record' });
-
-      const ds = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=DS`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      const dnssec = ds?.Answer?.length > 0;
-      checks.push({ label: 'DNSSEC', status: dnssec ? 'pass' : 'warn', detail: dnssec ? 'Signed' : 'Not signed' });
-
-      const txt = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      const spf = txt?.Answer?.some(a => (a.data || '').includes('v=spf1'));
-      checks.push({ label: 'SPF', status: spf ? 'pass' : 'fail', detail: spf ? 'Published' : 'Missing' });
-
-      const dmarc = await fetch(`https://cloudflare-dns.com/dns-query?name=_dmarc.${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      const dm = (dmarc?.Answer?.map(a => a.data).join('') || '').match(/p=(none|quarantine|reject)/i)?.[1];
-      checks.push({ label: 'DMARC', status: !dm ? 'fail' : dm === 'reject' || dm === 'quarantine' ? 'pass' : 'warn', detail: dm ? 'p=' + dm : 'Missing' });
-
-      container.innerHTML = checks.map((c) => `
-        <div class="stat-card">
-          <div class="flex items-center justify-between">
-            <p class="stat-label">${c.label}</p>
-            <span class="${c.status === 'pass' ? 'text-pass' : c.status === 'warn' ? 'text-warn' : 'text-fail'} text-lg">${c.status === 'pass' ? '✔' : c.status === 'warn' ? '▲' : '✕'}</span>
-          </div>
-          <p class="stat-value">${c.detail}</p>
-        </div>
-      `).join('');
-    }
-
-    function renderDomainCards() {
-      const container = document.getElementById('domain-cards');
-      container.innerHTML = domains.length ? domains.map((d) => `
-        <div class="rounded-xl border border-line bg-panel/60 p-5">
-          <div class="flex items-center justify-between">
-            <p class="font-mono text-sm font-semibold text-ink">${d.name}</p>
-            <span class="rounded-full bg-pass/15 px-2 py-0.5 text-xs font-medium text-pass">active</span>
-          </div>
-          <p class="mt-1 text-xs text-ink-faint">Added ${d.added_at}</p>
-          <div class="mt-3 flex gap-3">
-            <a href="/dns-propagation-checker/?domain=${d.name}" class="text-xs text-accent hover:text-accent-soft">Check propagation</a>
-            <a href="/ai-readiness-checker/" class="text-xs text-ink-faint hover:text-accent ml-auto">Security scan</a>
-          </div>
-        </div>
-      `).join('') : '<p class="col-span-full text-center text-sm text-ink-faint py-8">No domains added yet.</p>';
-    }
-
-    function renderDomainTable() {
-      const tbody = document.getElementById('domains-tbody');
-      if (!domains.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-sm text-ink-faint py-6">No domains added yet.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = domains.map((d) => `
-        <tr>
-          <td class="font-mono text-sm text-ink">${d.name}</td>
-          <td class="text-xs text-ink-faint">${d.added_at}</td>
-          <td><span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-medium text-pass">active</span></td>
-          <td class="text-right"><button data-remove="${d.name}" class="text-xs text-ink-faint hover:text-fail transition">remove</button></td>
-        </tr>
-      `).join('');
-      tbody.querySelectorAll('[data-remove]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          await fetch('/api/domains', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: btn.dataset.remove }),
+    <script>
+      async function init() {
+        const res = await fetch('/api/domains');
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        const j = await res.json();
+        const domains = j.domains || [];
+        document.getElementById('stat-domains').textContent = domains.length;
+        const tbody = document.getElementById('domain-list');
+        if (!domains.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-ink-faint py-6">No domains added yet. Add one above.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = domains.map(function(d) {
+          return '<tr>'
+            + '<td class="px-4 py-3 font-mono text-sm text-ink">' + d.name + '</td>'
+            + '<td class="px-4 py-3 text-xs text-ink-faint">' + d.added_at + '</td>'
+            + '<td class="px-4 py-3"><span style="background:#4ade8022;padding:2px 8px;border-radius:999px;font-size:11px;color:#4ade80;">active</span></td>'
+            + '<td class="px-4 py-3 text-right"><button data-remove="' + d.name + '" style="font-size:11px;color:#74829c;background:none;border:none;cursor:pointer;">remove</button></td>'
+            + '</tr>';
+        }).join('');
+        tbody.querySelectorAll('[data-remove]').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            await fetch('/api/domains', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: btn.dataset.remove }),
+            });
+            init();
           });
-          await init();
         });
-      });
-    }
-
-    function populateScanSelect() {
-      const select = document.getElementById('scan-domain-select');
-      if (!select) return;
-      select.innerHTML = '<option value="">Select a domain…</option>' +
-        domains.map((d) => `<option value="${d.name}">${d.name}</option>`).join('');
-    }
-
-    // ===== Add domain =====
-    const addForm = document.getElementById('add-form');
-    const addInput = document.getElementById('add-input');
-    const addMsg = document.getElementById('add-msg');
-
-    addForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = addInput.value.trim().toLowerCase();
-      if (!name.includes('.')) { showMsg('Enter a valid domain.', 'text-fail'); return; }
-      const res = await fetch('/api/domains', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
-      });
-      const j = await res.json();
-      if (!res.ok) { showMsg(j.error || 'Error', 'text-fail'); return; }
-      showMsg(name + ' added.', 'text-pass');
-      addInput.value = '';
-      await init();
-    });
-
-    function showMsg(text, cls) {
-      addMsg.textContent = text;
-      addMsg.className = 'mt-2 text-xs ' + cls;
-      addMsg.classList.remove('hidden');
-    }
-
-    // ===== Security scan =====
-    const runBtn = document.getElementById('run-scan');
-    const scanSelect = document.getElementById('scan-domain-select');
-    const scanOutput = document.getElementById('scan-output');
-    const scanEmpty = document.getElementById('scan-empty');
-
-    runBtn.addEventListener('click', async () => {
-      const domain = scanSelect.value;
-      if (!domain) return;
-      scanEmpty.classList.add('hidden');
-      scanOutput.classList.remove('hidden');
-      const checks = [];
-      const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      checks.push({ label: 'Website resolves', pass: !!r?.Answer?.length, detail: r?.Answer?.[0]?.data || 'No A record' });
-      const ds = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=DS`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      checks.push({ label: 'DNSSEC', pass: !!ds?.Answer?.length, detail: ds?.Answer?.length ? 'Signed' : 'Not signed' });
-      const txt = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      const spf = (txt?.Answer?.map(a => a.data).join(' ') || '').includes('v=spf1');
-      checks.push({ label: 'SPF', pass: !!spf, detail: spf ? 'Published' : 'Missing' });
-      const dm = await fetch(`https://cloudflare-dns.com/dns-query?name=_dmarc.${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null);
-      const dmarcP = (dm?.Answer?.map(a => a.data).join(' ') || '').match(/p=(\w+)/)?.[1];
-      checks.push({ label: 'DMARC', pass: dmarcP === 'reject' || dmarcP === 'quarantine', detail: dmarcP ? 'p=' + dmarcP : 'Missing' });
-      const score = Math.round((checks.filter(c => c.pass).length / checks.length) * 100);
-      document.getElementById('scan-arc').style.strokeDashoffset = String(326.7 * (1 - score / 100));
-      document.getElementById('scan-score').textContent = String(score);
-      document.getElementById('scan-checks').innerHTML = checks.map((c) =>
-        `<div class="flex items-center gap-2 rounded-lg border border-line bg-panel/60 px-3 py-2">
-          <span class="${c.pass ? 'text-pass' : 'text-fail'}">${c.pass ? '✔' : '✕'}</span>
-          <span class="text-sm text-ink">${c.label}</span>
-          <span class="ml-auto text-xs text-ink-faint">${c.detail}</span>
-        </div>`
-      ).join('');
-    });
-
-    // ===== DNS records viewer =====
-    const dnsBtn = document.getElementById('dns-load-btn');
-    const dnsInput = document.getElementById('dns-domain-input');
-    const dnsOutput = document.getElementById('dns-records-output');
-    const dnsTable = document.getElementById('dns-records-table');
-
-    dnsBtn.addEventListener('click', async () => {
-      const domain = dnsInput.value.trim();
-      if (!domain.includes('.')) return;
-      dnsOutput.classList.remove('hidden');
-      dnsTable.innerHTML = '<p class="p-4 text-sm text-ink-faint">Loading records…</p>';
-      const types = ['A', 'AAAA', 'MX', 'TXT', 'NS', 'SOA', 'CAA'];
-      let rows = '';
-      for (const type of types) {
-        try {
-          const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=${type}`, { headers: { Accept: 'application/dns-json' } });
-          const j = await res.json();
-          for (const a of j.Answer || []) {
-            rows += `<tr><td class="font-mono text-xs text-accent">${type}</td><td class="font-mono text-xs">${a.TTL}s</td><td><code class="text-xs text-ink">${(a.data || '').replace(/</g, '&lt;').slice(0, 80)}</code></td></tr>`;
-          }
-        } catch { /* skip */ }
       }
-      dnsTable.innerHTML = rows ? '<table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody>' + rows + '</tbody></table>' : '<p class="p-4 text-sm text-ink-faint">No records found.</p>';
-    });
 
-    // ===== Email auth check =====
-    const authBtn = document.getElementById('auth-check-btn');
-    const authInput = document.getElementById('auth-domain-input');
-    const authResults = document.getElementById('auth-results');
+      document.getElementById('add-btn').addEventListener('click', async function() {
+        const input = document.getElementById('add-input');
+        const name = input.value.trim().toLowerCase();
+        if (!name.includes('.')) { return; }
+        await fetch('/api/domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+        input.value = '';
+        init();
+      });
 
-    authBtn.addEventListener('click', async () => {
-      const domain = authInput.value.trim();
-      if (!domain.includes('.')) return;
-      authResults.classList.remove('hidden');
-      authResults.innerHTML = '<p class="text-sm text-ink-faint">Checking…</p>';
-      const [txt, dm] = await Promise.all([
-        fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null),
-        fetch(`https://cloudflare-dns.com/dns-query?name=_dmarc.${domain}&type=TXT`, { headers: { Accept: 'application/dns-json' } }).then(r => r.json()).catch(() => null),
-      ]);
-      const spfRec = (txt?.Answer || []).map(a => a.data).find(d => d.includes('v=spf1'));
-      const dmarcRec = (dm?.Answer || []).map(a => a.data).find(d => d.includes('v=dmarc1'));
-      const policy = dmarcRec?.match(/p=(none|quarantine|reject)/i)?.[1];
-      authResults.innerHTML = `
-        <div class="sec-card ${spfRec ? 'sec-pass' : 'sec-fail'}">
-          <div class="sec-icon">${spfRec ? '✔' : '✕'}</div>
-          <div><p class="text-sm font-semibold text-ink">SPF</p><p class="font-mono text-xs text-ink-dim break-all">${spfRec || 'Not found'}</p></div>
-        </div>
-        <div class="sec-card ${dmarcRec ? 'sec-pass' : 'sec-fail'}">
-          <div class="sec-icon">${dmarcRec ? '✔' : '✕'}</div>
-          <div><p class="text-sm font-semibold text-ink">DMARC</p><p class="font-mono text-xs text-ink-dim break-all">${dmarcRec || 'Not found'}${policy ? ' — p=' + policy : ''}</p></div>
-        </div>`;
-    });
+      document.getElementById('signout').addEventListener('click', async function() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      });
 
-    // ===== Init =====
-    init();
-  </script>
-</BaseLayout>
+      init();
+    </script>
+  </body>
+</html>
