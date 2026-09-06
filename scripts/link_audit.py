@@ -9,6 +9,8 @@ for root, _, files in os.walk(dist):
             routes.add('/' if rel == 'index.html' else '/' + rel.replace('/index.html', '/').replace('.html', ''))
         else:
             routes.add('/' + rel)
+def norm(p):
+    return p if p.endswith('/') else p + '/'
 broken = {}
 for root, _, files in os.walk(dist):
     if '.wrangler' in root: continue
@@ -20,9 +22,8 @@ for root, _, files in os.walk(dist):
         for m in re.finditer(r'href="(/[^"#]*)"', html):
             href = m.group(1)
             if '${' in href: continue
-            norm = href if href.endswith('/') else href + '/'
-            if norm in routes or href in routes:
-                broken.setdefault(rel, []).append(href)
+            if norm(href) in {norm(r) for r in routes}: continue
+            broken.setdefault(rel, []).append(href)
 if not broken:
     print('ALL INTERNAL LINKS RESOLVE OK')
 else:
