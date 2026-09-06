@@ -62,11 +62,8 @@ const faqSchema = {
 >
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Export DNS Records</span>
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">How to Export and Back Up DNS Records</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Export and Back Up DNS Records</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">Export your DNS records before any migration or provider switch: methods for every major provider and a manual fallback.</p>
@@ -81,14 +78,6 @@ const faqSchema = {
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I export DNS records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Before any planned change, after any provider switch, and quarterly as a routine backup for business-critical domains.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I import an exported zone file?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: BIND-format zone files import into most providers (Cloudflare, Route 53). Format-specific exports may need conversion.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I lose my DKIM keys?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Regenerate them from your email provider (they create new key pairs), then update the DNS record. Old mail signed with the old key will fail until the new one propagates.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is there a tool to capture all records at once?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: our all-in-one record lookup queries every type in one pass. Screenshot or copy the output as your backup.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I back up nameservers too?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: note which nameservers your registrar points at. This delegation is separate from the zone records.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I restore records after a mistake?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use your export as a reference and re-create the records in your DNS panel. Verification with the record lookup confirms restoration.</p></details></div>
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/dns-migration-checklist/" class="text-accent hover:text-accent-soft">DNS migration checklist →</a></li><li><a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">Record lookup →</a></li><li><a href="/what-is-ttl-in-dns/" class="text-accent hover:text-accent-soft">TTL explained →</a></li></ul>
-
-    <div class="mt-10 flex items-center gap-3 rounded-xl border border-line bg-panel/40 px-5 py-3">
-      <span class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent to-violet font-display text-xs font-bold text-canvas">PD</span>
-      <div>
-        <p class="text-sm font-medium text-ink">PromptDNS Team</p>
-        <p class="text-xs text-ink-faint">Last updated: August 2026</p>
-      </div>
-    </div>
     </div>
   </div>
 </BaseLayout>

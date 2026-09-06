@@ -62,10 +62,7 @@ const faqSchema = {
 >
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
       <span class="text-ink-dim">How to Read Email Headers</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Read Email Headers</h1>
@@ -79,14 +76,6 @@ const faqSchema = {
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I view email headers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail: three-dot menu, Show original. Outlook: File, Properties, Internet headers. Apple Mail: View, Message, All Headers.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Are email headers always honest?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The bottom Received headers (closest to origin) are hardest to fake. Top headers can be injected by the sender. Authentication-Results are added by the receiving server, making them trustworthy.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between From and Return-Path?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">From is what the recipient sees. Return-Path is the technical bounce address. DMARC requires alignment between them (via SPF or DKIM).</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I trace where an email actually came from?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: read the Received headers bottom-up. The first Received hop (bottom) is closest to the sender’s server, with its IP address.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does X-Mailer tell me?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The software the sender used (e.g., Outlook, PHP mail, a specific ESP). Useful for identifying automated or spoofed mail.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I worry about headers in emails I receive?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">For suspicious emails, yes: header analysis reveals whether the claimed sender is genuine. Use our header analyzer to automate the check.</p></details></div>
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">Email header analyzer →</a></li><li><a href="/dmarc/" class="text-accent hover:text-accent-soft">DMARC guide →</a></li><li><a href="/spf-record/" class="text-accent hover:text-accent-soft">SPF records →</a></li></ul>
-
-    <div class="mt-10 flex items-center gap-3 rounded-xl border border-line bg-panel/40 px-5 py-3">
-      <span class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent to-violet font-display text-xs font-bold text-canvas">PD</span>
-      <div>
-        <p class="text-sm font-medium text-ink">PromptDNS Team</p>
-        <p class="text-xs text-ink-faint">Last updated: August 2026</p>
-      </div>
-    </div>
     </div>
   </div>
 </BaseLayout>
