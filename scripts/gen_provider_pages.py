@@ -289,6 +289,15 @@ def page(kind, slug, data, extra_related=None):
     open(f'src/pages/{slug}.astro', 'w', encoding='utf-8').write(page)
 
 n = 0
+def provider_faqs(name):
+    return [
+      (f"How long do DNS changes take in {name}?", "The provider serves new values quickly, but resolvers keep old answers until each record's TTL expires. Verify live values with the record lookup, then watch the propagation checker until resolvers agree."),
+      (f"Where do I find {name}'s nameservers?", "This playbook's nameservers guide covers the exact location. They are the delegation pair your registrar must point at for {name} to be authoritative."),
+      (f"Should I lower TTL before changing records in {name}?", "Yes, for anything planned: set TTL to 300 seconds at least one old-TTL cycle ahead, make the change, confirm propagation, then restore the TTL."),
+      (f"Can I keep email with one provider and DNS in {name}?", "Yes: DNS host and mail provider are independent. Publish the mail provider's MX, SPF, DKIM, and DMARC records in {name}, and keep those records unproxied."),
+      (f"Which records should every domain have?", "A (and ideally AAAA) for the website, MX plus SPF/DKIM/DMARC for mail, and CAA to restrict certificate issuance. Everything else is per-service."),
+    ]
+
 for slug, d in MAJORS.items():
     name = d["name"]
     page('manage', f'manage-dns-in-{slug}', {
@@ -296,7 +305,7 @@ for slug, d in MAJORS.items():
       "title": f"How to Add and Manage DNS Records in {name}",
       "description": f"Add, edit, and delete DNS records in {name} step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
       "intro": f"Managing DNS in {name} is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
-      "panel": d["panel"], "steps": d["addSteps"], "quirk": d["quirk"], "faqs": d["faqs"],
+      "panel": d["panel"], "steps": d["addSteps"], "quirk": d["quirk"], "faqs": d["faqs"] + provider_faqs(name),
       "related": [[f"{name} DNS troubleshooting", f"/{slug}-dns-troubleshooting/"], [f"Change nameservers in {name}", f"/{slug}-change-nameservers/"]],
     }); n+=1
     page('nameservers', f'{slug}-change-nameservers', {
@@ -304,7 +313,7 @@ for slug, d in MAJORS.items():
       "title": f"How to Change Nameservers in {name}",
       "description": f"Change nameservers in {name} step by step: where the setting lives, what values to enter, and the propagation window to expect.",
       "intro": f"Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where {name} keeps that setting and what to expect.",
-      "panel": d["nsPanel"], "steps": d["nsSteps"], "quirk": d["quirk"], "faqs": d["faqs"],
+      "panel": d["nsPanel"], "steps": d["nsSteps"], "quirk": d["quirk"], "faqs": d["faqs"] + provider_faqs(name),
       "related": [["NS records explained","/ns-record/"], [f"Manage DNS records in {name}", f"/manage-dns-in-{slug}/"]],
     }); n+=1
     page('troubleshooting', f'{slug}-dns-troubleshooting', {
@@ -312,7 +321,7 @@ for slug, d in MAJORS.items():
       "title": f"{name} DNS Problems: Common Issues and Fixes",
       "description": f"The most common {name} DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
       "intro": f"Most {name} DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
-      "issues": d["issues"], "quirk": d["quirk"], "faqs": d["faqs"],
+      "issues": d["issues"], "quirk": d["quirk"], "faqs": d["faqs"] + provider_faqs(name),
       "related": [["Website not resolving?","/website-not-resolving/"], ["DNS error messages","/dns-error-messages/"]],
     }); n+=1
 
@@ -323,7 +332,7 @@ for slug, d in MINORS.items():
       "title": f"How to Add DNS Records in {name}",
       "description": f"Add and manage DNS records for {name} domains and connected domains, step by step with verification.",
       "intro": f"{name} manages DNS a little differently from classic hosts: this is the flow, plus the records each integration actually needs.",
-      "steps": d["connect"][:2], "quirk": d["quirk"], "faqs": d["faqs"],
+      "steps": d["connect"][:2], "quirk": d["quirk"], "faqs": d["faqs"] + provider_faqs(name)[:3],
       "related": [[f"Connect a domain to {name}", f"/{slug}-connect-domain/"]],
     }); n+=1
     page('connect', f'{slug}-connect-domain', {
@@ -331,7 +340,7 @@ for slug, d in MINORS.items():
       "title": f"How to Connect a Domain to {name}",
       "description": f"Point your custom domain to {name}: exact records, method choice, and verification.",
       "intro": f"Connecting an existing domain to {name} takes two DNS changes done carefully. Here is the exact method and the verification step.",
-      "steps": d["connect"], "quirk": d["quirk"], "faqs": d["faqs"],
+      "steps": d["connect"], "quirk": d["quirk"], "faqs": d["faqs"] + provider_faqs(name)[:4],
       "related": [[f"Manage DNS records in {name}", f"/manage-dns-in-{slug}/"]],
     }); n+=1
 
@@ -343,7 +352,7 @@ for slug, d in COMPARISONS.items():
       "description": f"{a} vs {b} compared: pricing, network, features, and the honest verdict for websites, teams, and AWS shops.",
       "intro": f"Both are excellent anycast DNS networks. The right choice depends on what you want DNS to do besides answering queries.",
       "rows": d["rows"], "colA": a, "colB": b,
-      "steps": [("The short version", d["verdict"])],
+      "steps": [("The short version", d["verdict"])], "faqs": provider_faqs(a)[:4] + [("Which is faster to resolve?","Both run global anycast networks; real-world differences are milliseconds and vary by region. Decide on features, integration, and cost.")],
       "faqs": [("Can I switch later?","Yes, DNS hosts are swappable: create the zone at the new host, delegate, wait out the 48-hour window before cancelling.")],
       "related": [["DNS providers hub","/dns-providers/"], ["What is DNS?","/what-is-dns/"]],
     }); n+=1

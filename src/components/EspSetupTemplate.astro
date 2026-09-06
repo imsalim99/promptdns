@@ -4,6 +4,8 @@
  * (the ESP matrix — Koray document-template method, deep per-service data).
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from './FaqAccordion.astro';
+import Diagram from './Diagram.astro';
 
 export interface EspData {
   name: string;
@@ -46,6 +48,8 @@ const faq = {
     <div class="mt-8 rounded-xl border border-warn/30 bg-warn/10 p-5">
       <p class="text-sm leading-relaxed text-ink-dim"><strong class="text-warn">{d.name} gotcha:</strong> {d.quirk}</p>
     </div>
+
+    <Diagram name="authtrio" caption={`How SPF, DKIM, and DMARC work together on every message ${d.name} sends`} />
 
     <div class="rich-text mt-10">
       <h2>Step 1: Verify your domain in {d.name}</h2>
@@ -111,15 +115,7 @@ const faq = {
         at once with the <a href="/" class="text-accent hover:text-accent-soft">homepage security scanner</a>.
       </p>
 
-      <h2>Frequently asked questions</h2>
-      <div class="grid gap-3">
-        {d.faqs.map(([q, a]) => (
-          <div class="rounded-xl border border-line bg-panel/60 p-4">
-            <p class="font-semibold text-ink">{q}</p>
-            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{a}</p>
-          </div>
-        ))}
-      </div>
+      <FaqAccordion faqs={d.faqs} heading="Frequently asked questions" />
 
       <h2>Verify your setup</h2>
       <div class="grid gap-2">

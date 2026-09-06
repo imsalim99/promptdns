@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 const faq = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -22,6 +23,8 @@ const faq = {
       "Propagation" is the gap between <em>you</em> seeing a DNS change and <em>the whole internet</em>
       seeing it. It exists because DNS is aggressively cached, and the cache lifetimes are set by you.
     </p>
+
+    <Diagram name="propagation" caption="Propagation is the TTL window: caches worldwide serve old answers until each expires" />
 
     <div class="rich-text mt-8">
       <h2>Why it isn't instant</h2>

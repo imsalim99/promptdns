@@ -261,12 +261,15 @@ S = [
 ]
 
 def faqs_for(name):
-    base = [
+    return [
       (f"Does {name} need its own DMARC record?", "No. DMARC is published once for your domain and covers every legitimate sender, including this service. The service just needs SPF and DKIM set up so DMARC sees aligned passes."),
       (f"Where do I find the exact DNS values for {name}?", "In the service's own domain-authentication settings page. Providers rotate infrastructure, so the in-app values always beat tutorials. This guide gives the process and the known values."),
-    ]
-    return base + [
       ("Can I use this domain with multiple sending services?", "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."),
+      (f"How long until {name} DNS changes take effect?", "The DNS records verify within minutes to an hour, but receiver-side caches obey the old record's TTL. Check worldwide agreement with the propagation checker before your first campaign."),
+      (f"Why do my {name} emails still go to spam after authentication?", "Authentication is necessary but not sufficient: sender reputation, list quality, warm-up, and content also score your mail. Verify SPF, DKIM, and DMARC all pass first, then address engagement factors."),
+      (f"Do I need a separate SPF record for {name}?", "Never. A domain has exactly one SPF record; adding a second one breaks both. Instead, add the service's include mechanism to your existing record."),
+      (f"Should I send {name} mail from a subdomain instead?", "Often yes: a dedicated subdomain (mail.yourdomain.com) isolates campaign reputation from your corporate mail and only needs its own records. Both approaches support full authentication."),
+      (f"How do I confirm {name}'s DKIM is actually working?", "Send a test message and read the Authentication-Results header for dkim=pass, or run the selector through the DKIM checker to confirm the key is live in DNS."),
     ]
 
 os.makedirs('src/pages', exist_ok=True)

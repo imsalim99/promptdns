@@ -69,6 +69,14 @@ const data = {
   [
    "Can I use ALIAS for www too?",
    "You can, but www has no SOA/NS conflict, so a plain CNAME is the standard choice there."
+  ],
+  [
+   "How do I check ALIAS/ANAME records after changing them?",
+   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
+  ],
+  [
+   "What TTL should ALIAS/ANAME records use?",
+   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
   ]
  ],
  "related": [

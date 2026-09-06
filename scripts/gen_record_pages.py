@@ -511,6 +511,11 @@ R["dnskey"] = {
 
 import os
 for slug, d in R.items():
+    t = d["type"]
+    d["faqs"] = d["faqs"] + [
+      (f"How do I check {t} records after changing them?", "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."),
+      (f"What TTL should {t} records use?", "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."),
+    ]
     page = "---\nimport RecordTypeTemplate from '../components/RecordTypeTemplate.astro';\nconst data = " + json.dumps(d, ensure_ascii=False, indent=1) + ";\n---\n<RecordTypeTemplate data={data} />\n"
     open(f'src/pages/{slug}-record.astro', 'w', encoding='utf-8').write(page)
     print('wrote', f'src/pages/{slug}-record.astro')

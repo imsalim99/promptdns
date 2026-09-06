@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 const steps = [
   ['You type a domain', 'Your browser needs an IP address, so it asks the operating system\u2019s stub resolver.'],
   ['Local cache check', 'The OS checks its own cache. A recent answer is returned instantly, no network trip.'],
@@ -22,6 +23,8 @@ const steps = [
       Typing a URL and getting a page feels instant. Behind it, a question travels through up to four
       layers of the internet and comes back, usually in under 50 ms. Here is the whole journey.
     </p>
+
+    <Diagram name="resolution" caption="The DNS resolution path: your question travels through resolver, root/TLD, and authoritative servers, with caching at every hop" />
 
     <div class="mt-10 grid gap-3">
       {steps.map(([title, desc], i) => (

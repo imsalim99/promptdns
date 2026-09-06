@@ -5,6 +5,7 @@
  * Target depth: 1,400-1,900 words per page.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from './FaqAccordion.astro';
 
 export interface RecordTypeData {
   type: string;
@@ -90,15 +91,7 @@ const faq = {
         {data.mistakes.map((m) => <li class="leading-relaxed">{m}</li>)}
       </ul>
 
-      <h2>Frequently asked questions</h2>
-      <div class="grid gap-3">
-        {data.faqs.map(([q, a]) => (
-          <div class="rounded-xl border border-line bg-panel/60 p-4">
-            <p class="font-semibold text-ink">{q}</p>
-            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{a}</p>
-          </div>
-        ))}
-      </div>
+      <FaqAccordion faqs={data.faqs} heading="Frequently asked questions" />
 
       <h2>Related</h2>
       <ul class="grid gap-2">

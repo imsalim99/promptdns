@@ -32,6 +32,26 @@ const data = {
   [
    "Can I use this domain with multiple sending services?",
    "Yes: each service adds its own include (or CNAMEs) and DKIM selector. Watch the SPF 10-lookup limit as senders stack, and flatten if you approach it."
+  ],
+  [
+   "How long until Zendesk DNS changes take effect?",
+   "The DNS records verify within minutes to an hour, but receiver-side caches obey the old record's TTL. Check worldwide agreement with the propagation checker before your first campaign."
+  ],
+  [
+   "Why do my Zendesk emails still go to spam after authentication?",
+   "Authentication is necessary but not sufficient: sender reputation, list quality, warm-up, and content also score your mail. Verify SPF, DKIM, and DMARC all pass first, then address engagement factors."
+  ],
+  [
+   "Do I need a separate SPF record for Zendesk?",
+   "Never. A domain has exactly one SPF record; adding a second one breaks both. Instead, add the service's include mechanism to your existing record."
+  ],
+  [
+   "Should I send Zendesk mail from a subdomain instead?",
+   "Often yes: a dedicated subdomain (mail.yourdomain.com) isolates campaign reputation from your corporate mail and only needs its own records. Both approaches support full authentication."
+  ],
+  [
+   "How do I confirm Zendesk's DKIM is actually working?",
+   "Send a test message and read the Authentication-Results header for dkim=pass, or run the selector through the DKIM checker to confirm the key is live in DNS."
   ]
  ]
 };

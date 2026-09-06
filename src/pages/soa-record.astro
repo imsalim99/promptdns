@@ -82,6 +82,14 @@ const data = {
   [
    "Can a zone have two SOA records?",
    "No. Exactly one SOA at the apex is mandatory and standard."
+  ],
+  [
+   "How do I check SOA records after changing them?",
+   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
+  ],
+  [
+   "What TTL should SOA records use?",
+   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
   ]
  ],
  "related": [

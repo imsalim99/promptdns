@@ -21,6 +21,18 @@ const data = {
   [
    "Apex on Netlify without ALIAS?",
    "The load-balancer A record makes the apex work with plain A records; no flattening tricks needed."
+  ],
+  [
+   "How long do DNS changes take in Netlify?",
+   "The provider serves new values quickly, but resolvers keep old answers until each record's TTL expires. Verify live values with the record lookup, then watch the propagation checker until resolvers agree."
+  ],
+  [
+   "Where do I find Netlify's nameservers?",
+   "This playbook's nameservers guide covers the exact location. They are the delegation pair your registrar must point at for {name} to be authoritative."
+  ],
+  [
+   "Should I lower TTL before changing records in Netlify?",
+   "Yes, for anything planned: set TTL to 300 seconds at least one old-TTL cycle ahead, make the change, confirm propagation, then restore the TTL."
   ]
  ],
  "related": [

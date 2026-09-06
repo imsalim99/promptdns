@@ -1,0 +1,63 @@
+---
+/** On-brand SVG diagrams (dark theme, no external assets). Pick via `name`. */
+interface Props { name: string; caption: string }
+const { name, caption } = Astro.props;
+const A = '#22d3ee', V = '#8b5cf6', LINE = '#1c2a47', DIM = '#9dabc4';
+---
+<figure class="my-8 not-prose">
+  <div class="overflow-x-auto rounded-xl border border-line bg-panel/60 p-4">
+    <svg viewBox="0 0 720 200" class="min-w-[560px]" role="img" aria-label={caption}>
+      {name === 'resolution' && (
+        <g font-family="ui-monospace, monospace" font-size="12" fill={DIM}>
+          {[['You',20,90],['Resolver',170,90],['Root TLD',320,90],['Nameserver',470,90],['Website',620,90]].map(([t,x,y]) => (
+            <rect x={x - 5} y={y - 28} width="110" height="44" rx="10" fill="#0b1222" stroke={LINE} />
+            <text x={x + 50} y={y} text-anchor="middle" fill="#f1f5f9">{t}</text>
+          ))}
+          {[80, 230, 380, 530].map((x, i) => (
+            <g>
+              <line x1={x} y1="82" x2={x + 60} y2="82" stroke={A} stroke-width="1.5" marker-end="url(#arr)" />
+              <line x1={x + 60} y1="104" x2={x} y2="104" stroke={V} stroke-width="1.5" stroke-dasharray="4 3" />
+              <text x={x + 30} y="72" text-anchor="middle" font-size="9" fill={DIM}>{['ask','referral','answer','connect'][i]}</text>
+            </g>
+          ))}
+          <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke={A} /></marker></defs>
+          <text x="360" y="160" text-anchor="middle" font-size="11" fill={DIM}>solid = query · dashed = response (cached at every hop until TTL)</text>
+        </g>
+      )}
+      {name === 'authtrio' && (
+        <g font-family="ui-monospace, monospace" font-size="12" fill={DIM}>
+          {[['SPF',30,40,'which servers may send'],['DKIM',30,105,'proves the mail is intact'],['DMARC',30,170,'policy + reports']].map(([t,x,y,d]) => (
+            <g>
+              <rect x={x} y={y - 24} width="140" height="40" rx="10" fill="#0b1222" stroke={A} />
+              <text x={x + 70} y={y - 6} text-anchor="middle" fill="#f1f5f9" font-size="14">{t}</text>
+              <text x={x + 70} y={y + 10} text-anchor="middle" font-size="9" fill={DIM}>{d}</text>
+              <line x1="180" y1={y - 4} x2="300" y2="100" stroke={LINE} />
+            </g>
+          ))}
+          <rect x="300" y="78" width="170" height="44" rx="10" fill="#0b1222" stroke={V} />
+          <text x="385" y="104" text-anchor="middle" fill="#f1f5f9">Receiver decision</text>
+          <rect x="540" y="78" width="150" height="44" rx="10" fill="#0b1222" stroke={V} />
+          <text x="615" y="96" text-anchor="middle" fill="#f1f5f9" font-size="13">pass → inbox</text>
+          <text x="615" y="112" text-anchor="middle" fill="#f87171" font-size="13">fail → policy</text>
+          <line x1="470" y1="100" x2="535" y2="100" stroke={A} marker-end="url(#arr2)" />
+          <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke={A} /></marker></defs>
+        </g>
+      )}
+      {name === 'propagation' && (
+        <g font-family="ui-monospace, monospace" font-size="11" fill={DIM}>
+          <line x1="30" y1="100" x2="690" y2="100" stroke={LINE} stroke-width="2" />
+          {[['T=0 change published',40],['TTL window',250],['caches refresh',450],['propagated',610]].map(([t,x],i) => (
+            <g>
+              <circle cx={x + (i===0?0:60)} cy="100" r="6" fill={i === 3 ? '#4ade80' : A} />
+              <text x={x + (i===0?0:60)} y="82" text-anchor="middle">{t}</text>
+            </g>
+          ))}
+          <rect x="240" y="112" width="240" height="26" rx="6" fill="#101a30" stroke={LINE} />
+          <text x="360" y="129" text-anchor="middle" font-size="10">old answers still served from caches</text>
+          <text x="360" y="170" text-anchor="middle" font-size="11" fill={DIM}>lower TTL to 300s a day before planned changes</text>
+        </g>
+      )}
+    </svg>
+  </div>
+  <figcaption class="mt-2 text-center text-xs text-ink-faint">{caption}</figcaption>
+</figure>
