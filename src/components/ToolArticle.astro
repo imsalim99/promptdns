@@ -7,6 +7,36 @@ import { TOOL_CONTENT } from '../data/tool-content';
 interface Props { slug: string }
 const { slug } = Astro.props;
 const c = TOOL_CONTENT[slug];
+
+const DEFAULT_RELATED: [string, string][] = [
+  ['All tools', '/tools/'],
+  ['DNS: the complete guide', '/dns/'],
+  ['Email authentication guides', '/email-authentication/'],
+];
+const PER_TOOL: Record<string, [string, string][]> = {
+  'ttl-checker': [['TTL explained', '/what-is-ttl-in-dns/'], ['DNS propagation', '/dns-propagation/']],
+  'dns-speed-test': [['DoH vs DoT', '/doh-vs-dot/'], ['Resolver tester', '/dns-resolver-tester/']],
+  'dns-resolver-tester': [['DNS speed test', '/dns-speed-test/'], ['DoH vs DoT', '/doh-vs-dot/']],
+  'dns-response-time-test': [['DNS speed test', '/dns-speed-test/'], ['Record lookup', '/dns-record-lookup/']],
+  'delegation-checker': [['NS records', '/ns-record/'], ['Glue record checker', '/glue-record-checker/']],
+  'glue-record-checker': [['Glue records explained', '/ns-record/'], ['Delegation checker', '/delegation-checker/']],
+  'wildcard-dns-tester': [['Record types hub', '/dns-records/'], ['Record lookup', '/dns-record-lookup/']],
+  'axfr-checker': [['DNS security hub', '/dns-security/'], ['DNSSEC checker', '/dnssec-checker/']],
+  'dnssec-checker': [['What is DNSSEC', '/what-is-dnssec/'], ['DS records', '/ds-record/']],
+  'smtp-tester': [['MX records', '/mx-record/'], ['Blacklist checker', '/blacklist-checker/']],
+  'ip-reputation-checker': [['Blacklist checker', '/blacklist-checker/'], ['Why emails go to spam', '/why-emails-go-to-spam/']],
+  'autodiscover-checker': [['MX records', '/mx-record/'], ['Microsoft 365 auth setup', '/spf-dkim-dmarc-microsoft-365/']],
+  'schema-validator': [['AI readiness checker', '/ai-readiness-checker/'], ['AI readiness guide', '/ai-readiness-guide/']],
+  'ai-log-analyzer': [['AI crawlers list', '/ai-crawlers-list/'], ['AI crawler checker', '/ai-crawler-checker/']],
+  'agents-txt-checker': [['What is llms.txt', '/what-is-llms-txt/'], ['llms.txt generator', '/llms-txt-generator/']],
+  'reverse-ip-lookup': [['PTR records', '/ptr-record/'], ['IP lookup', '/ip-lookup/']],
+  'nameserver-lookup': [['NS records', '/ns-record/'], ['Delegation checker', '/delegation-checker/']],
+  'domain-age-checker': [['WHOIS lookup', '/whois-lookup/'], ['Provider guides', '/dns-providers/']],
+  'whois-lookup': [['What is RDAP', '/domain-age-checker/'], ['Domain age checker', '/domain-age-checker/']],
+  'my-ip': [['IP lookup', '/ip-lookup/'], ['PTR records', '/ptr-record/']],
+  'ip-lookup': [['What Is My IP', '/my-ip/'], ['PTR records', '/ptr-record/']],
+};
+const related = PER_TOOL[slug] ?? DEFAULT_RELATED;
 ---
 {c && (
   <div class="mx-auto max-w-3xl px-4">
@@ -37,6 +67,11 @@ const c = TOOL_CONTENT[slug];
     <p>{c.who}</p>
 
     <FaqAccordion faqs={c.faqs} heading="Frequently asked questions" />
+
+    <h2>Related</h2>
+    <ul class="grid gap-2">
+      {related.map(([label, href]) => <li><a href={href} class="text-accent hover:text-accent-soft">{label} →</a></li>)}
+    </ul>
     </article>
   </div>
 )}
