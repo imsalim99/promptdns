@@ -1,0 +1,42 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "troubleshooting",
+ "name": "Plesk (hosting)",
+ "title": "Plesk (hosting) DNS Problems: Common Issues and Fixes",
+ "description": "The most common Plesk (hosting) DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
+ "intro": "Most Plesk (hosting) DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
+ "issues": [
+  [
+   "Records exist but don't answer",
+   "Plesk DNS is disabled for that domain, or nameservers point elsewhere. One source of truth only."
+  ],
+  [
+   "Mail breaks after enabling external DNS",
+   "Mail records live in Plesk's zone; recreate MX/SPF/DKIM at the external DNS host when you move."
+  ],
+  [
+   "DNS template changes did nothing",
+   "Templates only affect newly created domains; edit the existing zone's records."
+  ]
+ ],
+ "quirk": "Plesk can disable its DNS per domain (Tools, DNS Settings, Disable). When disabled, the panel still shows the template records, which do nothing: the classic Plesk trap.",
+ "faqs": [
+  [
+   "Should Plesk or Cloudflare hold DNS?",
+   "External anycast DNS (Cloudflare etc.) is more resilient than a single hosting server; keep Plesk DNS only for simplicity's sake."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

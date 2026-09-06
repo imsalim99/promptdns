@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "Google Cloud DNS",
+ "title": "How to Change Nameservers in Google Cloud DNS",
+ "description": "Change nameservers in Google Cloud DNS step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where Google Cloud DNS keeps that setting and what to expect.",
+ "panel": "The zone detail page shows the assigned nameservers (ns-cloud-XX.googledomains.com plus partners). Delegate at the registrar to these.",
+ "steps": [
+  [
+   "Copy the NS set",
+   "Zone details: Registrar setup section shows the exact nameservers."
+  ],
+  [
+   "Delegate",
+   "Set them at the registrar as custom nameservers."
+  ],
+  [
+   "Confirm",
+   "NS lookup shows the ns-cloud set; Google marks the zone as visible when delegation lands."
+  ]
+ ],
+ "quirk": "Zones live inside a GCP project: people edit the wrong project's zone constantly. Also the registrar-setup block is the authoritative NS list, not guesswork.",
+ "faqs": [
+  [
+   "Pricing?",
+   "Per managed zone and per million queries; free tier covers modest traffic. Billing lives in the GCP project."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

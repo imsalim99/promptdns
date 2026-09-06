@@ -1,0 +1,47 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Namecheap",
+ "title": "How to Add and Manage DNS Records in Namecheap",
+ "description": "Add, edit, and delete DNS records in Namecheap step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in Namecheap is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "Namecheap account, Domain List, Manage next to the domain, then the Advanced DNS tab. Host Records is the table where A, CNAME, MX, TXT and friends live.",
+ "steps": [
+  [
+   "Open Advanced DNS",
+   "Domain List, Manage, Advanced DNS tab."
+  ],
+  [
+   "Add the host record",
+   "Add New Record: choose type, set Host (@ for root, www for the alias, or a subdomain), Value, and TTL (60 minimum, 5min default is fine)."
+  ],
+  [
+   "Mind the toggle",
+   "At the top, Nameservers must be Namecheap BasicDNS / PremiumDNS / Custom DNS. If it says Web Hosting DNS, records on this tab are not what the domain uses."
+  ],
+  [
+   "Verify",
+   "Confirm live values with the record lookup before declaring victory."
+  ]
+ ],
+ "quirk": "The Web Hosting DNS vs BasicDNS/Custom DNS dropdown silently changes which record set is live. Records edited under the wrong mode do nothing.",
+ "faqs": [
+  [
+   "Minimum TTL on Namecheap?",
+   "60 seconds, handy for migrations. Raise it back to 5 minutes or more afterwards."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

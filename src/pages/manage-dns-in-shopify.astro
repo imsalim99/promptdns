@@ -1,0 +1,38 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Shopify",
+ "title": "How to Add DNS Records in Shopify",
+ "description": "Add and manage DNS records for Shopify domains and connected domains, step by step with verification.",
+ "intro": "Shopify manages DNS a little differently from classic hosts: this is the flow, plus the records each integration actually needs.",
+ "steps": [
+  [
+   "Add the custom domain",
+   "Shopify admin, Settings, Domains: Connect existing domain."
+  ],
+  [
+   "Point the records",
+   "A record at @ to 23.227.38.65, and CNAME www to shops.myshopify.com (the exact address Shopify displays)."
+  ]
+ ],
+ "quirk": "Shopify's A record IP (23.227.38.65) is stable and documented; if an old tutorial shows a different IP, use Shopify's admin value.",
+ "faqs": [
+  [
+   "Keep my email working?",
+   "Yes: only add/replace the A and www records Shopify needs; leave MX/SPF/DKIM untouched."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

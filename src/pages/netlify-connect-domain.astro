@@ -1,0 +1,42 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "connect",
+ "name": "Netlify",
+ "title": "How to Connect a Domain to Netlify",
+ "description": "Point your custom domain to Netlify: exact records, method choice, and verification.",
+ "intro": "Connecting an existing domain to Netlify takes two DNS changes done carefully. Here is the exact method and the verification step.",
+ "steps": [
+  [
+   "Add the custom domain",
+   "Netlify, Site configuration, Domain management: Add custom domain."
+  ],
+  [
+   "Point DNS",
+   "Either Netlify DNS (nameservers) or external DNS: A record at @ to Netlify's load-balancer IP (75.2.60.5) and CNAME www to your netlify.app subdomain, as displayed."
+  ],
+  [
+   "HTTPS",
+   "Netlify provisions Let's Encrypt certificates automatically once DNS verifies."
+  ]
+ ],
+ "quirk": "Netlify's recommended external setup uses the load-balancer A record (single stable IP) rather than many rotating IPs; follow the values in your site's domain panel.",
+ "faqs": [
+  [
+   "Apex on Netlify without ALIAS?",
+   "The load-balancer A record makes the apex work with plain A records; no flattening tricks needed."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

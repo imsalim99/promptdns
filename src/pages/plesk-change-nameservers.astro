@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "Plesk (hosting)",
+ "title": "How to Change Nameservers in Plesk (hosting)",
+ "description": "Change nameservers in Plesk (hosting) step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where Plesk (hosting) keeps that setting and what to expect.",
+ "panel": "Plesk is hosting-side DNS: point the registrar at the host's nameservers (server-level NS values, provided by your provider). If you use external DNS, disable Plesk DNS for the domain to avoid split-brain zones.",
+ "steps": [
+  [
+   "Get the host NS",
+   "Provider docs or Plesk server info."
+  ],
+  [
+   "Delegate at the registrar",
+   "Custom nameservers to the host's NS pair."
+  ],
+  [
+   "Confirm one source of truth",
+   "If DNS is disabled in Plesk for the domain, records shown there are cosmetic only."
+  ]
+ ],
+ "quirk": "Plesk can disable its DNS per domain (Tools, DNS Settings, Disable). When disabled, the panel still shows the template records, which do nothing: the classic Plesk trap.",
+ "faqs": [
+  [
+   "Should Plesk or Cloudflare hold DNS?",
+   "External anycast DNS (Cloudflare etc.) is more resilient than a single hosting server; keep Plesk DNS only for simplicity's sake."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

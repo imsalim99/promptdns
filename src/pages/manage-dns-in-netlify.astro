@@ -1,0 +1,38 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Netlify",
+ "title": "How to Add DNS Records in Netlify",
+ "description": "Add and manage DNS records for Netlify domains and connected domains, step by step with verification.",
+ "intro": "Netlify manages DNS a little differently from classic hosts: this is the flow, plus the records each integration actually needs.",
+ "steps": [
+  [
+   "Add the custom domain",
+   "Netlify, Site configuration, Domain management: Add custom domain."
+  ],
+  [
+   "Point DNS",
+   "Either Netlify DNS (nameservers) or external DNS: A record at @ to Netlify's load-balancer IP (75.2.60.5) and CNAME www to your netlify.app subdomain, as displayed."
+  ]
+ ],
+ "quirk": "Netlify's recommended external setup uses the load-balancer A record (single stable IP) rather than many rotating IPs; follow the values in your site's domain panel.",
+ "faqs": [
+  [
+   "Apex on Netlify without ALIAS?",
+   "The load-balancer A record makes the apex work with plain A records; no flattening tricks needed."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

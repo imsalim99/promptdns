@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "Namecheap",
+ "title": "How to Change Nameservers in Namecheap",
+ "description": "Change nameservers in Namecheap step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where Namecheap keeps that setting and what to expect.",
+ "panel": "Domain tab, Nameservers section: two dropdown states, Namecheap Web Hosting DNS (for Namecheap hosting customers), Namecheap BasicDNS (default), and Custom DNS for external hosts like Cloudflare.",
+ "steps": [
+  [
+   "Open Nameservers",
+   "Domain List, Manage, Domain tab, Nameservers dropdown."
+  ],
+  [
+   "Choose Custom DNS",
+   "Select Custom DNS and paste the two nameservers from your new DNS host (Cloudflare, Route 53...)."
+  ],
+  [
+   "Save and wait",
+   "Click the green check. Registry delegation updates within the hour; caches up to 48 hours."
+  ]
+ ],
+ "quirk": "The Web Hosting DNS vs BasicDNS/Custom DNS dropdown silently changes which record set is live. Records edited under the wrong mode do nothing.",
+ "faqs": [
+  [
+   "Minimum TTL on Namecheap?",
+   "60 seconds, handy for migrations. Raise it back to 5 minutes or more afterwards."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

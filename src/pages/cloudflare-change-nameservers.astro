@@ -1,0 +1,47 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "Cloudflare",
+ "title": "How to Change Nameservers in Cloudflare",
+ "description": "Change nameservers in Cloudflare step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where Cloudflare keeps that setting and what to expect.",
+ "panel": "Cloudflare assigns your personal nameserver pair when the domain is added (shown on the Cloudflare DNS overview page). You don't change nameservers IN Cloudflare; you point your registrar at Cloudflare's pair.",
+ "steps": [
+  [
+   "Get your assigned pair",
+   "Cloudflare dashboard, your domain, Overview: note the two nameservers (like ada.ns.cloudflare.com)."
+  ],
+  [
+   "Change them at the registrar",
+   "Wherever the domain is registered (Namecheap, GoDaddy...), set Custom nameservers to Cloudflare's pair."
+  ],
+  [
+   "Wait for activation",
+   "Cloudflare marks the domain Active when the registry delegation updates, usually 15-30 minutes, up to 24 hours."
+  ]
+ ],
+ "quirk": "Cloudflare proxies (orange-clouds) most records by default. That's great for websites and terrible for mail: an MX or SPF-related record that must stay DNS-only will break email if proxied.",
+ "faqs": [
+  [
+   "Does Cloudflare charge for DNS?",
+   "No: the DNS plan is free for standard record counts, generous for any normal site."
+  ],
+  [
+   "Can I proxy MX records?",
+   "No, mail-related records must stay DNS only. Proxied mail is the most common Cloudflare misconfiguration."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

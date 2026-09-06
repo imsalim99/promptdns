@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "AWS Route 53",
+ "title": "How to Change Nameservers in AWS Route 53",
+ "description": "Change nameservers in AWS Route 53 step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where AWS Route 53 keeps that setting and what to expect.",
+ "panel": "Route 53 gives the zone's four NS nameservers on the hosted zone page. To USE Route 53, your registrar's nameservers must be set to that NS set. To LEAVE Route 53, update the NS record inside the zone if your new host also manages it, and repoint the registrar.",
+ "steps": [
+  [
+   "Copy the NS set",
+   "Hosted zone details: copy all four nameservers."
+  ],
+  [
+   "Update the registrar",
+   "Set those four as custom nameservers wherever the domain is registered."
+  ],
+  [
+   "Wait and verify",
+   "Delegation updates within the hour typically; confirm with an NS lookup, then watch propagation."
+  ]
+ ],
+ "quirk": "Route 53 hosted zones cost about $0.50/month each (plus query charges) — the only DNS host in our playbook that bills for hosting. Also: NS and SOA records are managed records; don't delete them.",
+ "faqs": [
+  [
+   "Why is Route 53 paid when others are free?",
+   "It's an AWS infrastructure service with SLAs and global anycast; pricing is per zone and per query, integrated into your AWS bill."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

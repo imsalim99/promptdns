@@ -1,0 +1,46 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "troubleshooting",
+ "name": "GoDaddy",
+ "title": "GoDaddy DNS Problems: Common Issues and Fixes",
+ "description": "The most common GoDaddy DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
+ "intro": "Most GoDaddy DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
+ "issues": [
+  [
+   "Records edited in GoDaddy don't take effect",
+   "Your nameservers point elsewhere (Cloudflare, Route 53): GoDaddy's DNS page is no longer authoritative. Edit records at the current DNS host."
+  ],
+  [
+   "Site shows a GoDaddy parking page",
+   "Default parked-nameservers state. Set the correct A/CNAME records or switch nameservers to your DNS host."
+  ],
+  [
+   "Propagation seems stuck at 48 hours",
+   "GoDaddy sometimes leaves old NS TTLs long. Confirm the registry delegation updated with an NS lookup; then wait out caches."
+  ],
+  [
+   "Cannot add a CNAME at the root",
+   "Correct: the apex forbids CNAME. Use GoDaddy's Forwarding feature or an ALIAS-style host."
+  ]
+ ],
+ "quirk": "GoDaddy aggressively offers DNS add-ons and parking during the flow; also, after a nameserver change to an external host, GoDaddy's own DNS Records page stops being authoritative even though it still shows your records.",
+ "faqs": [
+  [
+   "Is GoDaddy DNS free?",
+   "Yes, DNS hosting for domains registered there is included; the paid items are add-ons (premium DNS, SSL), not basic records."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

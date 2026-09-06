@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "AWS Route 53",
+ "title": "How to Add and Manage DNS Records in AWS Route 53",
+ "description": "Add, edit, and delete DNS records in AWS Route 53 step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in AWS Route 53 is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "AWS console, Route 53, Hosted zones. Each hosted zone holds the records; AWS assigns four nameservers per zone.",
+ "steps": [
+  [
+   "Open the hosted zone",
+   "AWS console, Route 53, Hosted zones, click the zone."
+  ],
+  [
+   "Create record",
+   "Create record: choose Simple routing, define the record (name, type, value). Alias records can point at AWS resources (load balancers, CloudFront) directly."
+  ],
+  [
+   "TTL and verify",
+   "Set TTL (300 for volatile records, 3600 otherwise). Verify with the record lookup."
+  ]
+ ],
+ "quirk": "Route 53 hosted zones cost about $0.50/month each (plus query charges) — the only DNS host in our playbook that bills for hosting. Also: NS and SOA records are managed records; don't delete them.",
+ "faqs": [
+  [
+   "Why is Route 53 paid when others are free?",
+   "It's an AWS infrastructure service with SLAs and global anycast; pricing is per zone and per query, integrated into your AWS bill."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

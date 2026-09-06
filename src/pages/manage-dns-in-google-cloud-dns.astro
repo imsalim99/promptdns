@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Google Cloud DNS",
+ "title": "How to Add and Manage DNS Records in Google Cloud DNS",
+ "description": "Add, edit, and delete DNS records in Google Cloud DNS step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in Google Cloud DNS is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "Google Cloud console, Network Services, Cloud DNS: zones list, open a zone to manage its record sets.",
+ "steps": [
+  [
+   "Open the zone",
+   "Console, Cloud DNS, click the public zone."
+  ],
+  [
+   "Add record set",
+   "Add record set: DNS name, resource record type, TTL, and data. Google groups values per name+type like Azure."
+  ],
+  [
+   "Verify",
+   "Record lookup confirms the values; changes serve from Google's anycast network rapidly."
+  ]
+ ],
+ "quirk": "Zones live inside a GCP project: people edit the wrong project's zone constantly. Also the registrar-setup block is the authoritative NS list, not guesswork.",
+ "faqs": [
+  [
+   "Pricing?",
+   "Per managed zone and per million queries; free tier covers modest traffic. Billing lives in the GCP project."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

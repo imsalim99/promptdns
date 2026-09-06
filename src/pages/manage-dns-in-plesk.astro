@@ -1,0 +1,47 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Plesk (hosting)",
+ "title": "How to Add and Manage DNS Records in Plesk (hosting)",
+ "description": "Add, edit, and delete DNS records in Plesk (hosting) step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in Plesk (hosting) is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "Plesk panel, Websites & Domains, the domain, DNS Settings (or the DNS section per subscription). Plesk runs the zone when DNS is enabled for the subscription.",
+ "steps": [
+  [
+   "Open DNS Settings",
+   "Websites & Domains, the domain, DNS Settings."
+  ],
+  [
+   "Add the record",
+   "Add Record: type, domain name, value. OK, then Update to apply."
+  ],
+  [
+   "Template awareness",
+   "Changes apply to the domain's zone; the DNS template only affects NEW domains."
+  ],
+  [
+   "Verify",
+   "Record lookup after saving; confirm the record with its TTL."
+  ]
+ ],
+ "quirk": "Plesk can disable its DNS per domain (Tools, DNS Settings, Disable). When disabled, the panel still shows the template records, which do nothing: the classic Plesk trap.",
+ "faqs": [
+  [
+   "Should Plesk or Cloudflare hold DNS?",
+   "External anycast DNS (Cloudflare etc.) is more resilient than a single hosting server; keep Plesk DNS only for simplicity's sake."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

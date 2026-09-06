@@ -1,0 +1,51 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Cloudflare",
+ "title": "How to Add and Manage DNS Records in Cloudflare",
+ "description": "Add, edit, and delete DNS records in Cloudflare step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in Cloudflare is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "The Cloudflare dashboard, dash.cloudflare.com: select your domain, then DNS, Records. Cloudflare is authoritative DNS for every domain on its nameservers, so all record management happens here, not at your registrar.",
+ "steps": [
+  [
+   "Open the DNS panel",
+   "dash.cloudflare.com, click the domain, then DNS, Records in the left menu."
+  ],
+  [
+   "Add the record",
+   "Click Add record. Pick the type (A, CNAME, MX...), enter the name (the @ symbol means the root domain) and the value. TTL is auto-managed by Cloudflare."
+  ],
+  [
+   "Decide the proxy status",
+   "The orange cloud (Proxied) routes traffic through Cloudflare's CDN and hides your origin IP; the grey cloud (DNS only) serves the raw record. Mail records (MX, SPF) must stay grey."
+  ],
+  [
+   "Save and verify",
+   "Changes are live on Cloudflare's edge in seconds. Verify with the DNS record lookup, then check worldwide agreement with the propagation checker."
+  ]
+ ],
+ "quirk": "Cloudflare proxies (orange-clouds) most records by default. That's great for websites and terrible for mail: an MX or SPF-related record that must stay DNS-only will break email if proxied.",
+ "faqs": [
+  [
+   "Does Cloudflare charge for DNS?",
+   "No: the DNS plan is free for standard record counts, generous for any normal site."
+  ],
+  [
+   "Can I proxy MX records?",
+   "No, mail-related records must stay DNS only. Proxied mail is the most common Cloudflare misconfiguration."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

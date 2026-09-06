@@ -1,0 +1,38 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Wix",
+ "title": "How to Add DNS Records in Wix",
+ "description": "Add and manage DNS records for Wix domains and connected domains, step by step with verification.",
+ "intro": "Wix manages DNS a little differently from classic hosts: this is the flow, plus the records each integration actually needs.",
+ "steps": [
+  [
+   "Get Wix's values",
+   "Wix, Domains: either point nameservers to NS1.wixdns.net / NS2.wixdns.net (recommended) or use the Pointing method with Wix's displayed A/AAAA values."
+  ],
+  [
+   "Publish at the registrar",
+   "Set the nameservers or the A records per the chosen method."
+  ]
+ ],
+ "quirk": "Wix's Pointing method only covers the homepage well; the nameserver method is Wix's recommended path because it lets them manage records for you.",
+ "faqs": [
+  [
+   "How long until my Wix site loads on my domain?",
+   "Up to 48 hours after nameserver changes, usually much less. Check propagation with the checker."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

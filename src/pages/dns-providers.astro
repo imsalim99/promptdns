@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const majors = [
+  ['Cloudflare', 'cloudflare'], ['GoDaddy', 'godaddy'], ['Namecheap', 'namecheap'],
+  ['AWS Route 53', 'route53'], ['Azure DNS', 'azure-dns'], ['Google Cloud DNS', 'google-cloud-dns'],
+  ['cPanel (hosting)', 'cpanel'], ['Plesk (hosting)', 'plesk'],
+];
+const minors = [
+  ['Wix', 'wix'], ['Squarespace', 'squarespace'], ['Shopify', 'shopify'], ['Netlify', 'netlify'],
+];
+const comparisons = [
+  ['Cloudflare DNS vs Google Cloud DNS', '/cloudflare-dns-vs-google-dns/'],
+  ['Cloudflare vs AWS Route 53', '/cloudflare-vs-route53/'],
+];
+---
+<BaseLayout
+  title="DNS Provider Guides — Playbooks for Every Platform"
+  description="DNS playbooks for every provider: manage records and change nameservers in Cloudflare, GoDaddy, Namecheap, Route 53, Azure, cPanel, Wix, Shopify and more, plus troubleshooting guides."
+>
+  <div class="mx-auto max-w-5xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Provider Guides</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Provider Playbooks</h1>
+    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+      Every DNS host works differently: different panels, different defaults, different ways to
+      break things. These playbooks cover each platform's exact flow, its quirks, and its most
+      common failures.
+    </p>
+
+    <div class="mt-12">
+      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Major providers</h2>
+      <div class="mt-6 grid gap-4">
+        {majors.map(([name, slug]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <h3 class="font-display font-bold text-ink">{name}</h3>
+            <div class="mt-3 grid gap-2 sm:grid-cols-3">
+              <a href={`/manage-dns-in-${slug}/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Manage DNS records</a>
+              <a href={`/${slug}-change-nameservers/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Change nameservers</a>
+              <a href={`/${slug}-dns-troubleshooting/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Troubleshooting</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Website builders & platforms</h2>
+      <div class="mt-6 grid gap-4">
+        {minors.map(([name, slug]) => (
+          <div class="rounded-xl border border-line bg-panel/60 p-5">
+            <h3 class="font-display font-bold text-ink">{name}</h3>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <a href={`/manage-dns-in-${slug}/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Manage DNS records</a>
+              <a href={`/${slug}-connect-domain/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Connect a domain</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Choosing a provider</h2>
+      <div class="mt-6 grid gap-3">
+        {comparisons.map(([label, href]) => (
+          <a href={href} class="rounded-xl border border-line bg-panel/60 p-5 font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:text-accent">{label} →</a>
+        ))}
+      </div>
+    </div>
+
+    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+      <p class="text-sm leading-relaxed text-ink-dim">
+        After any provider change: verify records with the
+        <a href="/dns-record-lookup/" class="font-medium text-accent hover:text-accent-soft">DNS record lookup</a>
+        and confirm worldwide agreement with the
+        <a href="/dns-propagation-checker/" class="font-medium text-accent hover:text-accent-soft">propagation checker</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

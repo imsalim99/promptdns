@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "cPanel (hosting)",
+ "title": "How to Change Nameservers in cPanel (hosting)",
+ "description": "Change nameservers in cPanel (hosting) step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where cPanel (hosting) keeps that setting and what to expect.",
+ "panel": "cPanel is the DNS host, not the registrar: to point a domain AT this hosting's nameservers, get the two NS values from your host (often ns1.hostdomain.com) and set them at the registrar.",
+ "steps": [
+  [
+   "Get the host's nameservers",
+   "Hosting welcome email or cPanel home, General Information: the shared/reseller nameservers."
+  ],
+  [
+   "Set at the registrar",
+   "Custom nameservers at the registrar to those NS values."
+  ],
+  [
+   "Wait",
+   "Host NS changes are standard delegation: minutes to 48 hours."
+  ]
+ ],
+ "quirk": "Hosting providers often run cPanel AND the registrar role; changing nameservers at the host-registrar to their own defaults is usually a one-click preset.",
+ "faqs": [
+  [
+   "Is cPanel DNS separate from my registrar?",
+   "Yes: cPanel is hosting software. If your domain is registered elsewhere and pointed at the host's nameservers, cPanel's Zone Editor manages it."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

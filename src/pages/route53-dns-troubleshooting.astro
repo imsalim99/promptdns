@@ -1,0 +1,46 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "troubleshooting",
+ "name": "AWS Route 53",
+ "title": "AWS Route 53 DNS Problems: Common Issues and Fixes",
+ "description": "The most common AWS Route 53 DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
+ "intro": "Most AWS Route 53 DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
+ "issues": [
+  [
+   "Whole domain SERVFAIL after DNSSEC",
+   "The DS record at the registrar references old keys. Remove or update the DS, or complete the key-signing setup in Route 53."
+  ],
+  [
+   "Zone not answering",
+   "Hosted zone exists but the registrar still points at old nameservers: delegation must change at the registrar."
+  ],
+  [
+   "Unexpected monthly bill",
+   "Each hosted zone bills monthly; delete unused zones (and mind query charges on high-traffic domains)."
+  ],
+  [
+   "Alias vs CNAME confusion",
+   "Use Alias records for AWS resources: free queries, faster, apex-legal, unlike CNAME."
+  ]
+ ],
+ "quirk": "Route 53 hosted zones cost about $0.50/month each (plus query charges) — the only DNS host in our playbook that bills for hosting. Also: NS and SOA records are managed records; don't delete them.",
+ "faqs": [
+  [
+   "Why is Route 53 paid when others are free?",
+   "It's an AWS infrastructure service with SLAs and global anycast; pricing is per zone and per query, integrated into your AWS bill."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

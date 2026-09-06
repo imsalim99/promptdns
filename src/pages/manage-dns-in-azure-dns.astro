@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "manage",
+ "name": "Azure DNS",
+ "title": "How to Add and Manage DNS Records in Azure DNS",
+ "description": "Add, edit, and delete DNS records in Azure DNS step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in Azure DNS is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "panel": "Azure portal, search DNS zones, open the zone for your domain. Record sets are listed and created there.",
+ "steps": [
+  [
+   "Open the DNS zone",
+   "Portal, DNS zones, click the zone (create one first if missing, in a resource group)."
+  ],
+  [
+   "Add a record set",
+   "+ Record set: name, type, TTL, then value(s). Azure groups multiple values of one type into a single record set."
+  ],
+  [
+   "Verify",
+   "Record lookup on the name and type; Azure's anycast answers within its region network quickly."
+  ]
+ ],
+ "quirk": "Azure DNS zones bill per zone and per million queries, and the portal's record-set model (one set per name+type) confuses people expecting GoDaddy-style rows.",
+ "faqs": [
+  [
+   "Azure DNS vs Azure Private DNS?",
+   "Public zones answer for internet domains (this guide). Private zones resolve names inside virtual networks only."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />

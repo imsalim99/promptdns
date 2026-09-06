@@ -1,0 +1,43 @@
+---
+import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
+const data = {
+ "kind": "nameservers",
+ "name": "Azure DNS",
+ "title": "How to Change Nameservers in Azure DNS",
+ "description": "Change nameservers in Azure DNS step by step: where the setting lives, what values to enter, and the propagation window to expect.",
+ "intro": "Nameserver changes are delegation changes: you're telling the internet which servers hold your domain's records. Here is exactly where Azure DNS keeps that setting and what to expect.",
+ "panel": "Each Azure DNS zone gets four nameservers (like ns1-03.azure-dns.com). Use them at your registrar to delegate the domain into Azure.",
+ "steps": [
+  [
+   "Copy the name servers",
+   "Zone overview page lists the four Azure nameservers."
+  ],
+  [
+   "Delegate at the registrar",
+   "Set them as custom nameservers where the domain is registered."
+  ],
+  [
+   "Verify delegation",
+   "NS lookup shows the azure-dns set; zone status in portal shows the domain registered."
+  ]
+ ],
+ "quirk": "Azure DNS zones bill per zone and per million queries, and the portal's record-set model (one set per name+type) confuses people expecting GoDaddy-style rows.",
+ "faqs": [
+  [
+   "Azure DNS vs Azure Private DNS?",
+   "Public zones answer for internet domains (this guide). Private zones resolve names inside virtual networks only."
+  ]
+ ],
+ "related": [
+  [
+   "DNS record types reference",
+   "/dns-records/"
+  ],
+  [
+   "TTL explained",
+   "/what-is-ttl-in-dns/"
+  ]
+ ]
+};
+---
+<ProviderPlaybookTemplate data={data} />
