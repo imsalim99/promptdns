@@ -89,6 +89,15 @@ var onRequestPost3 = /* @__PURE__ */ __name2(async ({ request, env }) => {
   }
   return Response.json({ ok: true, name: domain });
 }, "onRequestPost");
+var onRequestDelete = /* @__PURE__ */ __name2(async ({ request, env }) => {
+  const uid = await userId(request, env);
+  if (!uid) return Response.json({ error: "Not signed in" }, { status: 401 });
+  const { name } = await request.json();
+  const domain = (name ?? "").trim().toLowerCase();
+  if (!domain.includes(".")) return Response.json({ error: "Enter a valid domain." }, { status: 400 });
+  await env.DB.prepare("DELETE FROM domains WHERE user_id = ? AND name = ?").bind(uid, domain).run();
+  return Response.json({ ok: true });
+}, "onRequestDelete");
 var routes = [
   {
     routePath: "/api/auth/logout",
@@ -110,6 +119,13 @@ var routes = [
     method: "GET",
     middlewares: [],
     modules: [onRequestGet]
+  },
+  {
+    routePath: "/api/domains",
+    mountPath: "/api",
+    method: "DELETE",
+    middlewares: [],
+    modules: [onRequestDelete]
   },
   {
     routePath: "/api/domains",

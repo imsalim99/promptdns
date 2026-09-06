@@ -92,6 +92,15 @@ var onRequestPost3 = /* @__PURE__ */ __name(async ({ request, env }) => {
   }
   return Response.json({ ok: true, name: domain });
 }, "onRequestPost");
+var onRequestDelete = /* @__PURE__ */ __name(async ({ request, env }) => {
+  const uid = await userId(request, env);
+  if (!uid) return Response.json({ error: "Not signed in" }, { status: 401 });
+  const { name } = await request.json();
+  const domain = (name ?? "").trim().toLowerCase();
+  if (!domain.includes(".")) return Response.json({ error: "Enter a valid domain." }, { status: 400 });
+  await env.DB.prepare("DELETE FROM domains WHERE user_id = ? AND name = ?").bind(uid, domain).run();
+  return Response.json({ ok: true });
+}, "onRequestDelete");
 
 // ../.wrangler/tmp/pages-kMzb1w/functionsRoutes-0.22988763240503096.mjs
 var routes = [
@@ -115,6 +124,13 @@ var routes = [
     method: "GET",
     middlewares: [],
     modules: [onRequestGet]
+  },
+  {
+    routePath: "/api/domains",
+    mountPath: "/api",
+    method: "DELETE",
+    middlewares: [],
+    modules: [onRequestDelete]
   },
   {
     routePath: "/api/domains",
@@ -625,7 +641,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-gU4jH0/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-9sjvmK/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -657,7 +673,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-gU4jH0/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-9sjvmK/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

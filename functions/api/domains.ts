@@ -34,3 +34,15 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
   return Response.json({ ok: true, name: domain });
 };
+
+export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
+  const uid = await userId(request, env);
+  if (!uid) return Response.json({ error: 'Not signed in' }, { status: 401 });
+  const { name } = (await request.json()) as { name?: string };
+  const domain = (name ?? '').trim().toLowerCase();
+  if (!domain.includes('.')) return Response.json({ error: 'Enter a valid domain.' }, { status: 400 });
+  await env.DB.prepare('DELETE FROM domains WHERE user_id = ? AND name = ?')
+    .bind(uid, domain)
+    .run();
+  return Response.json({ ok: true });
+};

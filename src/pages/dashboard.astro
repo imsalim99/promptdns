@@ -1,91 +1,182 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolPanel from '../components/ToolPanel.astro';
 ---
-<BaseLayout title="Dashboard — PromptDNS" description="Your PromptDNS dashboard: monitored domains, alerts, and reports.">
-  <div class="mx-auto max-w-4xl px-4 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Dashboard</p>
-        <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink">Monitored domains</h1>
-        <p id="db-email" class="mt-1 text-sm text-ink-faint"></p>
+<BaseLayout title="Dashboard — PromptDNS" description="Manage your monitored domains, alerts, and reports.">
+  <div class="flex min-h-screen bg-canvas">
+    <!-- Sidebar -->
+    <aside class="w-56 shrink-0 border-r border-line bg-panel/40 flex flex-col">
+      <div class="p-4 border-b border-line">
+        <a href="/" class="flex items-center gap-2 font-display text-sm font-bold">
+          <span class="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-accent to-violet font-mono text-[9px] font-bold text-canvas">DNS</span>
+          Prompt<span class="gradient-text">DNS</span>
+        </a>
       </div>
-      <form action="/api/auth/logout" method="post">
-        <button class="rounded-lg border border-line bg-panel/60 px-4 py-2 text-sm text-ink-dim transition hover:border-fail/40 hover:text-fail" type="submit">Sign out</button>
-      </form>
-    </div>
-
-    <div class="mt-8">
-<ToolPanel>
-      <form id="db-form" class="flex flex-col gap-3 sm:flex-row">
-        <input id="db-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Add a domain to monitor, e.g. example.com"
-          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Monitor domain</button>
-      </form>
-      <div id="db-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-      <div id="db-list" class="mt-6 grid gap-3"></div>
-      <div id="db-empty" class="mt-6 hidden rounded-xl border border-dashed border-line p-8 text-center">
-        <p class="font-display text-lg font-semibold text-ink">No domains yet</p>
-        <p class="mt-1 text-sm text-ink-dim">Add your first domain above — monitoring includes DMARC reports, DNS change alerts, and expiry checks as they activate on your plan.</p>
+      <nav class="flex-1 p-2" id="dash-nav">
+        <button data-tab="overview" class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-accent bg-accent/10 transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Overview
+        </button>
+        <button data-tab="domains" class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-dim hover:text-ink transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Domains
+        </button>
+        <button data-tab="alerts" class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-dim hover:text-ink transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Alerts
+        </button>
+        <button data-tab="settings" class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-dim hover:text-ink transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+      </nav>
+      <div class="p-3 border-t border-line">
+        <form action="/api/auth/logout" method="post">
+          <button type="submit" class="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-dim hover:text-fail transition">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+        </form>
       </div>
-</ToolPanel>
-    </div>
+    </aside>
 
-    <div class="mt-10 grid gap-4 sm:grid-cols-3">
-      {[
-        ['Coming next', 'DMARC report ingestion', 'Automatic collection via dmarc@promptdns.com once email routing is enabled.'],
-        ['Coming next', 'DNS change alerts', 'Record-change and nameserver-drift detection on a daily schedule.'],
-        ['Coming next', 'AI readiness reports', 'Weekly machine-readability scoring for every monitored domain.'],
-      ].map(([tag, title, desc]) => (
-        <div class="rounded-xl border border-dashed border-line bg-panel/40 p-5">
-          <span class="rounded-full border border-violet/40 bg-violet/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-violet-soft">{tag}</span>
-          <h3 class="font-display mt-3 font-semibold text-ink">{title}</h3>
-          <p class="mt-1 text-sm leading-relaxed text-ink-dim">{desc}</p>
+    <!-- Main content -->
+    <main class="flex-1 p-6 lg:p-8 overflow-y-auto">
+      <div class="mb-8">
+        <h1 class="font-display text-2xl font-bold tracking-tight text-ink">Overview</h1>
+        <p class="mt-1 text-sm text-ink-dim">Monitor your domains, alerts, and plan status.</p>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <p class="text-xs text-ink-faint">Domains monitored</p>
+          <p id="stat-domains" class="mt-1 font-display text-3xl font-bold text-accent">0</p>
         </div>
-      ))}
-    </div>
-  </div>
-</BaseLayout>
-<script>
-  const form = document.getElementById('db-form') as HTMLFormElement;
-  const input = document.getElementById('db-domain') as HTMLInputElement;
-  const statusEl = document.getElementById('db-status')!;
-  const listEl = document.getElementById('db-list')!;
-  const emptyEl = document.getElementById('db-empty')!;
-  const emailEl = document.getElementById('db-email')!;
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <p class="text-xs text-ink-faint">Active alerts</p>
+          <p id="stat-alerts" class="mt-1 font-display text-3xl font-bold text-warn">0</p>
+        </div>
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <p class="text-xs text-ink-faint">DMARC reports</p>
+          <p id="stat-reports" class="mt-1 font-display text-3xl font-bold text-accent">0</p>
+        </div>
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <p class="text-xs text-ink-faint">Plan</p>
+          <p id="stat-plan" class="mt-1 font-display text-3xl font-bold text-ink">Free</p>
+        </div>
+      </div>
 
-  async function load() {
-    const res = await fetch('/api/domains');
-    if (res.status === 401) { location.href = '/login/'; return; }
-    const j = await res.json();
-    render(j.domains ?? []);
-  }
-  function render(domains: { name: string; added_at: string }[]) {
-    emptyEl.classList.toggle('hidden', domains.length > 0);
-    listEl.innerHTML = '';
-    for (const d of domains) {
-      listEl.insertAdjacentHTML('beforeend', `
-        <div class="flex items-center justify-between gap-4 rounded-lg border border-line bg-panel/60 px-4 py-3">
+      <!-- Add domain -->
+      <div class="mt-8">
+        <h2 class="font-display text-lg font-bold text-ink mb-4">Add a domain</h2>
+        <form id="add-domain-form" class="flex gap-3">
+          <input id="add-domain-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false"
+            class="flex-1 max-w-xs rounded-lg border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"/>
+          <button type="submit" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Add domain</button>
+        </form>
+        <p id="add-status" class="mt-2 text-xs hidden"></p>
+      </div>
+
+      <!-- Domain table -->
+      <div class="mt-8">
+        <h2 class="font-display text-lg font-bold text-ink mb-4">Your domains</h2>
+        <div id="domains-list" class="rounded-xl border border-line bg-panel/60 overflow-hidden">
+          <table class="pdns-table">
+            <thead><tr><th>Domain</th><th>Added</th><th>Status</th><th></th></tr></thead>
+            <tbody id="domains-tbody">
+              <tr><td colspan="4" class="text-center text-sm text-ink-faint py-6">No domains added yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Upgrade CTA -->
+      <div class="mt-8 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <div class="flex items-center justify-between gap-4">
           <div>
-            <span class="font-mono text-sm text-accent">${d.name}</span>
-            <span class="ml-2 text-xs text-ink-faint">added ${d.added_at.slice(0, 10)}</span>
+            <h2 class="font-display font-bold text-ink">Need more domains?</h2>
+            <p class="mt-1 text-sm text-ink-dim">Upgrade to Starter for 3 domains, Pro for 10 with SPF Manager and AI Readiness.</p>
           </div>
-          <a href="/?domain=${encodeURIComponent(d.name)}" class="font-mono text-xs text-ink-dim hover:text-accent">scan now →</a>
-        </div>`);
+          <a href="/pricing/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm shrink-0">Upgrade</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Check auth: redirect to /login if no session
+    const res = await fetch('/api/domains');
+    if (res.status === 401) {
+      window.location.href = '/login';
     }
-  }
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/domains', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: input.value }),
+
+    const tbody = document.getElementById('domains-tbody')!;
+    const statDomains = document.getElementById('stat-domains')!;
+    const addForm = document.getElementById('add-domain-form') as HTMLFormElement;
+    const addInput = document.getElementById('add-domain-input') as HTMLInputElement;
+    const addStatus = document.getElementById('add-status')!;
+
+    async function loadDomains() {
+      const res = await fetch('/api/domains');
+      if (!res.ok) return;
+      const j = await res.json();
+      statDomains.textContent = String(j.domains?.length ?? 0);
+      if (!j.domains?.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-sm text-ink-faint py-6">No domains added yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      for (const d of j.domains) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="font-mono text-sm text-ink">${d.name}</td>
+          <td class="text-xs text-ink-faint">${d.added_at}</td>
+          <td><span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-medium text-pass">active</span></td>
+          <td class="text-right"><button data-remove="${d.name}" class="text-xs text-ink-faint hover:text-fail transition">remove</button></td>
+        `;
+        tbody.appendChild(row);
+      }
+      // bind remove buttons
+      tbody.querySelectorAll('[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const name = (btn as HTMLElement).dataset.remove;
+          await fetch('/api/domains', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name }),
+          });
+          loadDomains();
+        });
+      });
+    }
+
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = addInput.value.trim().toLowerCase();
+      if (!name.includes('.')) {
+        addStatus.textContent = 'Enter a valid domain.';
+        addStatus.className = 'mt-2 text-xs text-fail';
+        addStatus.classList.remove('hidden');
+        return;
+      }
+      const res = await fetch('/api/domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        addStatus.textContent = j.error || 'Could not add domain.';
+        addStatus.className = 'mt-2 text-xs text-fail';
+      } else {
+        addStatus.textContent = `${name} added.`;
+        addStatus.className = 'mt-2 text-xs text-pass';
+        addInput.value = '';
+      }
+      addStatus.classList.remove('hidden');
+      loadDomains();
     });
-    const j = await res.json();
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${res.ok ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-fail/10 text-fail border border-fail/30'}`;
-    statusEl.textContent = res.ok ? `${j.name} is now monitored.` : j.error ?? 'Something went wrong.';
-    statusEl.classList.remove('hidden');
-    if (res.ok) { input.value = ''; load(); }
-  });
-  load();
-</script>
+
+    loadDomains();
+  </script>
+</BaseLayout>
