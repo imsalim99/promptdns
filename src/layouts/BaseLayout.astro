@@ -12,6 +12,15 @@ interface Props {
 
 const { title, description, schema = [] } = Astro.props;
 const fullTitle = `${title} | PromptDNS`;
+
+// Self-referencing canonical: every page declares its one true URL so variant
+// hosts (www, pages.dev) and slash forms can never be treated as duplicates.
+const SITE = 'https://promptdns.com';
+let path = Astro.url.pathname || '/';
+if (!path.endsWith('/')) path += '/';
+if (path === '/index.html') path = '/';
+const canonicalUrl = SITE + path;
+
 const siteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -28,6 +37,8 @@ const allSchema = [siteSchema, ...schema];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
     <link
