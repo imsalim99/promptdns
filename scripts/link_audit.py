@@ -1,33 +1,27 @@
 import os, re
-
 dist = 'dist'
 routes = set()
 for root, _, files in os.walk(dist):
+    if '.wrangler' in root: continue
     for f in files:
         rel = os.path.relpath(os.path.join(root, f), dist).replace(os.sep, '/')
         if f.endswith('.html'):
-            if rel == 'index.html':
-                routes.add('/')
-            else:
-                routes.add('/' + rel.replace('/index.html', '/').replace('.html', ''))
+            routes.add('/' if rel == 'index.html' else '/' + rel.replace('/index.html', '/').replace('.html', ''))
         else:
-            # static assets (favicon, _astro bundles, etc.) are linkable too
             routes.add('/' + rel)
-
 broken = {}
 for root, _, files in os.walk(dist):
+    if '.wrangler' in root: continue
     for f in files:
-        if not f.endswith('.html'):
-            continue
+        if not f.endswith('.html'): continue
         path = os.path.join(root, f)
         rel = os.path.relpath(path, dist).replace(os.sep, '/')
         html = open(path, encoding='utf-8', errors='ignore').read()
         for m in re.finditer(r'href="(/[^"#]*)"', html):
             href = m.group(1)
-            if href in routes:
-                continue
-            broken.setdefault(rel, []).append(href)
-
+            if '${' in href: continue
+            if href not in routes:
+                broken.setdefault(rel, []).append(href)
 if not broken:
     print('ALL INTERNAL LINKS RESOLVE OK')
 else:
