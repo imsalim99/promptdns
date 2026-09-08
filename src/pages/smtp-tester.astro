@@ -6,6 +6,13 @@ import ToolPanel from '../components/ToolPanel.astro';
 <BaseLayout title="SMTP Test — Mail Server Preflight" description="SMTP preflight check: MX routing, PTR, SPF/DKIM/DMARC, and blacklist status for any sending domain, plus the commands for deep testing.">
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint"><a href="/" class="hover:text-accent">Home</a> / <span class="text-ink-dim">SMTP Test</span></nav>
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/tools/" class="hover:text-accent">Tools</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SMTP Preflight Test</span>
+    </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Preflight Test</h1>
     <p class="mt-4 text-lg text-ink-dim">Browsers cannot open raw SMTP sockets, so this preflight checks everything around them: MX routing, reverse DNS, authentication records, and blocklists. Deep socket tests below.</p>
     <div class="mt-8">
