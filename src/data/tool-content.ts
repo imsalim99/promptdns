@@ -86,7 +86,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     who: "Developers debugging DNS behavior, admins comparing provider answers, and anyone validating a custom DoH deployment.",
     faqs: [
-      ["What is a DoH endpoint?","An HTTPS URL that accepts DNS queries and returns answers as JSON (or wire format). Cloudflare, Google, Quad9, and NextDNS all publish one."],
+      ["What is a DoH endpoint?","An HTTPS URL that accepts DNS queries and returns answers as JSON (or wire format). Cloudflare, Google, AliDNS, and NextDNS all publish one."],
       ["Can I test my own resolver?","Yes, if it exposes a DoH JSON endpoint with CORS enabled. Enter its URL in the custom field."],
       ["Why do different resolvers give different answers?","Caches at different ages, geo-routing (CDNs answer differently per region), and filtering policies all play a role."],
       ["Is this the same as nslookup?","Functionally yes for queries; the transport is HTTPS instead of port 53, which also means encrypted transit."],

@@ -10,7 +10,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     tools: [
       { name: 'DNS Propagation Checker', href: '/dns-propagation-checker/', desc: 'Query your record across independent public resolvers to see whether a change has fully spread or where old values are still cached.' },
       { name: 'DNS Record Lookup', href: '/dns-record-lookup/', desc: 'Fetch any record type, A through DNSKEY, with full values and TTLs, live over DNS-over-HTTPS.' },
-      { name: 'DNS Speed Test', href: '/dns-speed-test/', desc: 'Benchmark Cloudflare, Google, and Quad9 from your own network with repeated lookups and a ranked winner.' },
+      { name: 'DNS Speed Test', href: '/dns-speed-test/', desc: 'Benchmark Cloudflare, Google, and AliDNS from your own network with repeated lookups and a ranked winner.' },
       { name: 'TTL Checker', href: '/ttl-checker/', desc: "See every record's cache time at once: anything above 300 seconds is migration wait you can avoid." },
       { name: 'DNSSEC Checker', href: '/dnssec-checker/', desc: 'Verify the DS record at the parent and the zone\u2019s DNSKEYs, with algorithm strength.' },
       { name: 'Delegation Checker', href: '/delegation-checker/', desc: 'Check every nameserver: does it resolve, does it answer, is the zone consistent across the set.' },

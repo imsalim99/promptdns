@@ -6,7 +6,7 @@
  * for normal use because queries run from each visitor's browser):
  *  - Cloudflare  https://cloudflare-dns.com/dns-query  (Accept: application/dns-json)
  *  - Google      https://dns.google/resolve
- *  - Quad9       https://dns.quad9.net:5053/dns-query
+ *  - AliDNS      https://dns.alidns.com/resolve
  */
 
 export type RecordType =
@@ -30,7 +30,7 @@ export interface Resolver {
   id: string;
   name: string;
   url: (name: string, type: RecordType) => string;
-  /** Cloudflare & Quad9 require the JSON Accept header; Google /resolve is plain JSON */
+  /** Cloudflare requires the JSON Accept header; Google and AliDNS /resolve are plain JSON */
   acceptHeader?: string;
 }
 
@@ -47,10 +47,9 @@ export const RESOLVERS: Resolver[] = [
     url: (n, t) => `https://dns.google/resolve?name=${encodeURIComponent(n)}&type=${t}`,
   },
   {
-    id: 'quad9',
-    name: 'Quad9 9.9.9.9',
-    url: (n, t) => `https://dns.quad9.net:5053/dns-query?name=${encodeURIComponent(n)}&type=${t}`,
-    acceptHeader: 'application/dns-json',
+    id: 'alidns',
+    name: 'AliDNS 223.5.5.5',
+    url: (n, t) => `https://dns.alidns.com/resolve?name=${encodeURIComponent(n)}&type=${t}`,
   },
 ];
 
