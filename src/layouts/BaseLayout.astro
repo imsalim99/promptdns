@@ -9,9 +9,11 @@ interface Props {
   description: string;
   /** Optional JSON-LD objects appended to <head> */
   schema?: object[];
+  /** Exclude from indexing (app/account pages). */
+  noindex?: boolean;
 }
 
-const { title, description, schema = [] } = Astro.props;
+const { title, description, schema = [], noindex = false } = Astro.props;
 const fullTitle = `${title} | PromptDNS`;
 
 // Self-referencing canonical: every page declares its one true URL so variant
@@ -75,6 +77,7 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     {allSchema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body class="flex min-h-screen flex-col">

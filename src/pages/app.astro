@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Your Account"
+  description="Your PromptDNS account. Domain monitoring appears here as it ships."
+  noindex
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p id="app-state" class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Checking sign-in…</p>
+
+    <div id="app-signed-out" class="mt-6 hidden">
+      <h1 class="font-display text-3xl font-bold tracking-tight text-ink">You are not signed in</h1>
+      <p class="mt-3 text-sm text-ink-dim">Sign in with an email link to continue.</p>
+      <a href="/login/" class="btn-cta btn-shimmer mt-6 inline-flex px-5 py-2.5 text-sm">Go to sign in</a>
+    </div>
+
+    <div id="app-signed-in" class="mt-6 hidden">
+      <h1 class="font-display text-3xl font-bold tracking-tight text-ink">Your account</h1>
+      <p class="mt-2 text-sm text-ink-dim">Signed in as <span id="app-email" class="font-mono text-accent"></span></p>
+
+      <div class="mt-8 rounded-xl border border-line bg-panel/60 p-6">
+        <h2 class="font-display text-lg font-bold text-ink">Monitored domains</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-dim">
+          Nothing here yet, and that is the honest state: domain monitoring is the next thing being
+          built on this account. When it ships, this page shows each domain you add, its current
+          DNS and email-authentication state, and alerts when something changes.
+        </p>
+        <p class="mt-3 text-xs text-ink-faint">
+          In the meantime the <a href="/tools/" class="text-accent hover:text-accent-soft">tools</a>
+          and <a href="/early-access/" class="text-accent hover:text-accent-soft">early access list</a>
+          keep working without an account.
+        </p>
+      </div>
+
+      <button id="app-logout" class="mt-8 rounded-lg border border-line bg-panel-2 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-fail/40 hover:text-fail">Sign out</button>
+    </div>
+  </div>
+
+  <script>
+    const state = document.getElementById('app-state')!;
+    const signedOut = document.getElementById('app-signed-out')!;
+    const signedIn = document.getElementById('app-signed-in')!;
+
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d: { authenticated: boolean; email: string | null }) => {
+        state.classList.add('hidden');
+        if (d.authenticated) {
+          (document.getElementById('app-email') as HTMLElement).textContent = d.email ?? '';
+          signedIn.classList.remove('hidden');
+        } else {
+          signedOut.classList.remove('hidden');
+        }
+      })
+      .catch(() => {
+        state.textContent = 'Could not reach the server.';
+        signedOut.classList.remove('hidden');
+      });
+
+    document.getElementById('app-logout')?.addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login/';
+    });
+  </script>
+</BaseLayout>
