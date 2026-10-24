@@ -2,10 +2,10 @@
 import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
 const data = {
  "kind": "troubleshooting",
- "name": "Plesk (hosting)",
- "title": "Plesk (hosting) DNS Problems: Common Issues and Fixes",
- "description": "The most common Plesk (hosting) DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
- "intro": "Most Plesk (hosting) DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
+ "name": "Plesk",
+ "title": "Plesk DNS Problems: Common Issues and Fixes",
+ "description": "The most common Plesk DNS problems, from broken mail to SERVFAIL, with the diagnosis and fix for each.",
+ "intro": "Most Plesk DNS complaints collapse into the same handful of causes. Match your symptom below; every fix includes the free tool that confirms it.",
  "issues": [
   [
    "Records exist but don't answer",
@@ -27,19 +27,19 @@ const data = {
    "External anycast DNS (Cloudflare etc.) is more resilient than a single hosting server; keep Plesk DNS only for simplicity's sake."
   ],
   [
-   "How long do DNS changes take in Plesk (hosting)?",
+   "How long do DNS changes take in Plesk?",
    "The provider serves new values quickly, but resolvers keep old answers until each record's TTL expires. Verify live values with the record lookup, then watch the propagation checker until resolvers agree."
   ],
   [
-   "Where do I find Plesk (hosting)'s nameservers?",
+   "Where do I find Plesk's nameservers?",
    "This playbook's nameservers guide covers the exact location. They are the delegation pair your registrar must point at for {name} to be authoritative."
   ],
   [
-   "Should I lower TTL before changing records in Plesk (hosting)?",
+   "Should I lower TTL before changing records in Plesk?",
    "Yes, for anything planned: set TTL to 300 seconds at least one old-TTL cycle ahead, make the change, confirm propagation, then restore the TTL."
   ],
   [
-   "Can I keep email with one provider and DNS in Plesk (hosting)?",
+   "Can I keep email with one provider and DNS in Plesk?",
    "Yes: DNS host and mail provider are independent. Publish the mail provider's MX, SPF, DKIM, and DMARC records in {name}, and keep those records unproxied."
   ],
   [

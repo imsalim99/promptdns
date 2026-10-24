@@ -2,10 +2,10 @@
 import ProviderPlaybookTemplate from '../components/ProviderPlaybookTemplate.astro';
 const data = {
  "kind": "manage",
- "name": "cPanel (hosting)",
- "title": "How to Add and Manage DNS Records in cPanel (hosting)",
- "description": "Add, edit, and delete DNS records in cPanel (hosting) step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
- "intro": "Managing DNS in cPanel (hosting) is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
+ "name": "cPanel",
+ "title": "How to Add and Manage DNS Records in cPanel",
+ "description": "Add, edit, and delete DNS records in cPanel step by step, with the gotchas that break sites and mail, and free tools to verify every change.",
+ "intro": "Managing DNS in cPanel is a short walk once you know where the records live and which defaults to watch. This is the complete flow, with the verification step most guides skip.",
  "panel": "Your hosting account's cPanel, Domains section, Zone Editor. It manages the DNS zone for each domain on the hosting account, when your host runs the nameservers.",
  "steps": [
   [
@@ -32,19 +32,19 @@ const data = {
    "Yes: cPanel is hosting software. If your domain is registered elsewhere and pointed at the host's nameservers, cPanel's Zone Editor manages it."
   ],
   [
-   "How long do DNS changes take in cPanel (hosting)?",
+   "How long do DNS changes take in cPanel?",
    "The provider serves new values quickly, but resolvers keep old answers until each record's TTL expires. Verify live values with the record lookup, then watch the propagation checker until resolvers agree."
   ],
   [
-   "Where do I find cPanel (hosting)'s nameservers?",
+   "Where do I find cPanel's nameservers?",
    "This playbook's nameservers guide covers the exact location. They are the delegation pair your registrar must point at for {name} to be authoritative."
   ],
   [
-   "Should I lower TTL before changing records in cPanel (hosting)?",
+   "Should I lower TTL before changing records in cPanel?",
    "Yes, for anything planned: set TTL to 300 seconds at least one old-TTL cycle ahead, make the change, confirm propagation, then restore the TTL."
   ],
   [
-   "Can I keep email with one provider and DNS in cPanel (hosting)?",
+   "Can I keep email with one provider and DNS in cPanel?",
    "Yes: DNS host and mail provider are independent. Publish the mail provider's MX, SPF, DKIM, and DMARC records in {name}, and keep those records unproxied."
   ],
   [

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { TOTAL_TOOLS } from '../data/tools';
+
+const building = [
+  {
+    title: 'Continuous domain monitoring',
+    desc: 'Your DNS records, SPF, DKIM, DMARC, and DNSSEC checked on a schedule. Get an alert the moment something changes or breaks — no need to re-run tools.',
+  },
+  {
+    title: 'DMARC report monitoring',
+    desc: 'See every service sending email as your domain, from the aggregate reports Gmail, Microsoft, and Yahoo already send. Spot spoofing and misconfigurations early.',
+  },
+  {
+    title: 'AI access monitoring',
+    desc: 'Know if AI crawlers like GPTBot and ClaudeBot can still reach your site, and get alerted when robots.txt or your CDN starts blocking them.',
+  },
+];
+---
+
+<BaseLayout
+  title="Early Access"
+  description="PromptDNS domain and email security monitoring is in development. Join the early access list and be first to get a free account."
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Early access</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">
+      Monitoring is coming to PromptDNS.
+    </h1>
+    <p class="mt-4 text-lg text-ink-dim">
+      All {TOTAL_TOOLS} tools are free today, no account needed. What's next is the part tools
+      can't do: watching your domain continuously and telling you when something breaks.
+    </p>
+
+    <div class="mt-10 grid gap-4">
+      {building.map((b) => (
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <h2 class="font-display font-semibold text-ink">{b.title}</h2>
+          <p class="mt-1 text-sm leading-relaxed text-ink-dim">{b.desc}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-10 rounded-xl border border-accent/30 bg-accent/5 p-6 sm:p-7">
+      <h2 class="font-display text-lg font-bold text-ink">Join the early access list</h2>
+      <p class="mt-2 text-sm leading-relaxed text-ink-dim">
+        Email us at
+        <a href="mailto:earlyaccess@promptdns.com" class="font-mono text-accent hover:text-accent-soft">earlyaccess@promptdns.com</a>
+        and we'll add you. Early-access members get the first accounts, the launch free tier,
+        and a direct line to request features. No spam — you'll hear from us when it's ready.
+      </p>
+      <a href="mailto:earlyaccess@promptdns.com?subject=Early%20access%20—%20PromptDNS%20monitoring" class="btn-cta btn-shimmer mt-5 inline-flex px-5 py-2.5 text-sm">Request early access</a>
+    </div>
+
+    <p class="mt-8 text-sm text-ink-faint">
+      Meanwhile, every tool keeps working without an account:
+      <a href="/tools/" class="text-accent hover:text-accent-soft">browse all {TOTAL_TOOLS} tools</a>.
+    </p>
+  </div>
+</BaseLayout>
