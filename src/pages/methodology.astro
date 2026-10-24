@@ -13,8 +13,8 @@ const updated = '2026-10-24';
     <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">How our tools get their answers.</h1>
     <p class="mt-4 text-lg text-ink-dim">
       Every check on PromptDNS runs in your browser, queries public DNS resolvers, and follows
-      the published standards. This page documents exactly what that means — including what the
-      tools cannot see — so you can judge the results yourself.
+      the published standards. This page documents exactly what that means - including what the
+      tools cannot see - so you can judge the results yourself.
     </p>
     <p class="mt-3 text-xs text-ink-faint">Last updated {updated}</p>
 
@@ -24,20 +24,20 @@ const updated = '2026-10-24';
         PromptDNS tools query DNS-over-HTTPS (DoH) endpoints operated by public resolvers:
         Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), and Quad9 (9.9.9.9). The queries are
         sent directly from your browser to the resolver. PromptDNS servers never see the domains
-        you look up — there is no backend in the lookup path.
+        you look up - there is no backend in the lookup path.
       </p>
       <p>
         Two consequences worth knowing. First, results show what those public resolvers currently
         serve, which can differ from what your local ISP resolver serves, because of caching and
-        TTLs — the propagation checker exists precisely to surface those differences. Second,
+        TTLs - the propagation checker exists precisely to surface those differences. Second,
         resolvers apply their own caching, so a very recent DNS change may not be visible yet.
       </p>
 
       <h2>What the parsers follow</h2>
       <ul>
-        <li><strong>SPF</strong> is parsed per <a href="https://www.rfc-editor.org/rfc/rfc7208" rel="noopener" target="_blank">RFC 7208</a>. The checker counts the DNS-querying mechanisms in your published record (<code>include:</code>, <code>a</code>, <code>mx</code>, <code>ptr</code>, <code>exists</code>, and <code>redirect=</code>) against the limit of 10 in §4.6.4. It inspects the record as published; it does not recursively expand nested includes, and it does not evaluate a sent message — that is receiver-side behaviour we cannot observe from a record.</li>
+        <li><strong>SPF</strong> is parsed per <a href="https://www.rfc-editor.org/rfc/rfc7208" rel="noopener" target="_blank">RFC 7208</a>. The checker counts the DNS-querying mechanisms in your published record (<code>include:</code>, <code>a</code>, <code>mx</code>, <code>ptr</code>, <code>exists</code>, and <code>redirect=</code>) against the limit of 10 in §4.6.4. It inspects the record as published; it does not recursively expand nested includes, and it does not evaluate a sent message - that is receiver-side behaviour we cannot observe from a record.</li>
         <li><strong>DMARC</strong> is parsed per <a href="https://www.rfc-editor.org/rfc/rfc7489" rel="noopener" target="_blank">RFC 7489</a>: policy (<code>p=</code>), subdomain policy, aggregate/forensic reporting addresses, alignment mode, and <code>pct</code>.</li>
-        <li><strong>DKIM</strong> record structure follows <a href="https://www.rfc-editor.org/rfc/rfc6376" rel="noopener" target="_blank">RFC 6376</a>. Because selectors are chosen by each sender, DKIM checks query the common selectors your provider documents and report what is found — a missing selector we didn't try is not proof DKIM is absent.</li>
+        <li><strong>DKIM</strong> record structure follows <a href="https://www.rfc-editor.org/rfc/rfc6376" rel="noopener" target="_blank">RFC 6376</a>. Because selectors are chosen by each sender, DKIM checks query the common selectors your provider documents and report what is found - a missing selector we didn't try is not proof DKIM is absent.</li>
         <li><strong>MTA-STS and TLS-RPT</strong> checks follow <a href="https://www.rfc-editor.org/rfc/rfc8461" rel="noopener" target="_blank">RFC 8461</a> and <a href="https://www.rfc-editor.org/rfc/rfc8460" rel="noopener" target="_blank">RFC 8460</a>.</li>
         <li><strong>Blacklist checks</strong> query public DNSBL zones directly from your browser for the IP or domain you enter. Being listed on a zone we don't query is invisible to us; we list which zones each check covers.</li>
       </ul>
@@ -63,8 +63,8 @@ const updated = '2026-10-24';
       </div>
       <p class="mt-4">
         The score is the earned weight divided by total weight (100). Grades: A ≥ 90,
-        B ≥ 75, C ≥ 60, D ≥ 40, F below 40. The score is deterministic — the same DNS state
-        always produces the same score — and says nothing about mail <em>reputation</em>, only
+        B ≥ 75, C ≥ 60, D ≥ 40, F below 40. The score is deterministic - the same DNS state
+        always produces the same score - and says nothing about mail <em>reputation</em>, only
         about the DNS state the checks can observe.
       </p>
 

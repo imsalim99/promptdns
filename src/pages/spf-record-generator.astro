@@ -57,7 +57,7 @@ const faqSchema = {
  ]
 }
 ---
-<BaseLayout title="SPF Record Generator — Build Your SPF Free" description="Free SPF record generator: add your senders (Google, Microsoft, ESPs, custom IPs) and get a valid v=spf1 record with lookup counting."  schema={[faqSchema]}
+<BaseLayout title="SPF Record Generator - Build Your SPF Free" description="Free SPF record generator: add your senders (Google, Microsoft, ESPs, custom IPs) and get a valid v=spf1 record with lookup counting."  schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
         <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -132,7 +132,7 @@ const faqSchema = {
     const inc = incIn.value.trim().replace(/^include:/, '');
     if (inc) { parts.push(`include:${inc}`); lookups++; }
     out.textContent = `v=spf1 ${parts.join(' ')}${parts.length ? ' ' : ''}${allSel.value}`;
-    count.textContent = lookups > 0 ? `${lookups} DNS lookups used (limit 10)${lookups > 8 ? ' — consider flattening' : ''}` : 'No DNS lookups: literal IPs only.';
+    count.textContent = lookups > 0 ? `${lookups} DNS lookups used (limit 10)${lookups > 8 ? ' - consider flattening' : ''}` : 'No DNS lookups: literal IPs only.';
     count.className = `mt-2 text-xs ${lookups > 8 ? 'text-warn' : 'text-ink-faint'}`;
   }
   [ipIn, incIn, allSel, ...boxes].forEach(el => el.addEventListener('input', render));

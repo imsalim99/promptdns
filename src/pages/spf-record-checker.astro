@@ -186,7 +186,7 @@ const faqSchema = {
       fetchResult = await fetchSpf(domain);
     } catch {
       setStatus('bg-warn/10 text-warn border border-warn/30',
-        `Could not reach the DNS resolver for ${domain}. This is an inconclusive result — not a pass or fail. Check your connection and retry.`);
+        `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
       setNextSteps([
         'Retry the check (transient network issues are common).',
         'Verify the domain exists: try the DNS Record Lookup tool with type A.',
@@ -234,12 +234,12 @@ const faqSchema = {
     if (hasErrors || overLimit) {
       setStatus('bg-fail/10 text-fail border border-fail/30',
         overLimit
-          ? `SPF record has ${parse.lookupCount} top-level DNS lookup terms (evaluation limit is 10). This exceeds the limit before counting nested includes — receivers will stop evaluating the policy at the 10th lookup term.`
-          : 'SPF record found — with errors that must be fixed.');
+          ? `SPF record has ${parse.lookupCount} top-level DNS lookup terms (evaluation limit is 10). This exceeds the limit before counting nested includes - receivers will stop evaluating the policy at the 10th lookup term.`
+          : 'SPF record found - with errors that must be fixed.');
     } else if (parse.warnings.length > 0) {
       setStatus('bg-warn/10 text-warn border border-warn/30',
         nearLimit
-          ? `SPF record is syntactically valid but uses ${parse.lookupCount}/10 top-level lookup terms — close to the limit.`
+          ? `SPF record is syntactically valid but uses ${parse.lookupCount}/10 top-level lookup terms - close to the limit.`
           : 'SPF record is syntactically valid, with warnings.');
     } else {
       setStatus('bg-pass/10 text-pass border border-pass/30',
@@ -294,15 +294,15 @@ const faqSchema = {
     // State-aware next steps
     if (overLimit) {
       setNextSteps([
-        'Review each include: mechanism — is every listed sender still needed?',
+        'Review each include: mechanism - is every listed sender still needed?',
         'Remove any include: entries for services you no longer use.',
         'Check your email provider\u2019s current SPF guidance (they may have changed their records).',
         'Retest after removing obsolete entries.',
-        'Do not flatten automatically — flattening replaces includes with IPs that can become stale if the provider changes their infrastructure.',
+        'Do not flatten automatically - flattening replaces includes with IPs that can become stale if the provider changes their infrastructure.',
       ]);
     } else if (nearLimit) {
       setNextSteps([
-        'Review each include: mechanism — remove any you no longer need.',
+        'Review each include: mechanism - remove any you no longer need.',
         'Monitor this record for changes that could push it over the limit.',
         'Retest after any DNS change.',
       ]);
@@ -313,7 +313,7 @@ const faqSchema = {
       ]);
     } else if (parse.warnings.length > 0) {
       setNextSteps([
-        'Review the warnings above — they indicate potential issues but not broken SPF.',
+        'Review the warnings above - they indicate potential issues but not broken SPF.',
         'Retest after any changes.',
       ]);
     } else {

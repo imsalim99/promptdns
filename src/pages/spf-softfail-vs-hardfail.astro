@@ -13,7 +13,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Softfail vs Fail: <code class="font-mono">~all</code> vs <code class="font-mono">-all</code></h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      The difference between <code class="font-mono text-accent-soft">~all</code> and <code class="font-mono text-accent-soft">-all</code> is what your published record tells the evaluator about unauthorized senders. This page explains what each qualifier actually does — and what it does not.
+      The difference between <code class="font-mono text-accent-soft">~all</code> and <code class="font-mono text-accent-soft">-all</code> is what your published record tells the evaluator about unauthorized senders. This page explains what each qualifier actually does - and what it does not.
     </p>
 
     <div class="rich-text mt-8">
@@ -52,20 +52,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><code class="font-mono">-all</code> does <strong class="text-ink">not</strong> guarantee rejection. A receiver may reject, quarantine, accept, or ignore the SPF fail result entirely, depending on their filtering policy.</li>
         <li><code class="font-mono">~all</code> does <strong class="text-ink">not</strong> guarantee delivery. A receiver may still spam-folder the mail based on other signals, or treat softfail as a significant negative.</li>
         <li>Neither qualifier provides <strong class="text-ink">guaranteed spoofing protection</strong>. A spoofer's mail may still be delivered depending on the receiver's filtering decisions.</li>
-        <li>An SPF policy checker — including ours — <strong class="text-ink">cannot</strong> establish inbox placement or predict what any specific receiver will do. It reports what your published policy says.</li>
+        <li>An SPF policy checker - including ours - <strong class="text-ink">cannot</strong> establish inbox placement or predict what any specific receiver will do. It reports what your published policy says.</li>
       </ul>
 
       <h2>Forwarding and DKIM interaction</h2>
       <p>
-        Forwarding commonly causes SPF problems: when a message passes through a forwarder, the forwarder's IP is typically not authorized by the original sender's SPF record, producing an SPF fail result at the final recipient — regardless of whether the original sender used <code class="font-mono">~all</code> or <code class="font-mono">-all</code>.
+        Forwarding commonly causes SPF problems: when a message passes through a forwarder, the forwarder's IP is typically not authorized by the original sender's SPF record, producing an SPF fail result at the final recipient - regardless of whether the original sender used <code class="font-mono">~all</code> or <code class="font-mono">-all</code>.
       </p>
       <p>
-        In forwarding scenarios, an <strong class="text-ink">aligned DKIM pass</strong> can allow DMARC to pass (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>), provided the DKIM signature survives any modifications made during forwarding. However, DKIM passing does <strong class="text-ink">not</strong> change the SPF result — an SPF fail remains an SPF fail. The two mechanisms are independent.
+        In forwarding scenarios, an <strong class="text-ink">aligned DKIM pass</strong> can allow DMARC to pass (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>), provided the DKIM signature survives any modifications made during forwarding. However, DKIM passing does <strong class="text-ink">not</strong> change the SPF result - an SPF fail remains an SPF fail. The two mechanisms are independent.
       </p>
 
       <h2>Is <code class="font-mono">-all</code> required for DMARC?</h2>
       <p>
-        <strong class="text-ink">No.</strong> DMARC does not require <code class="font-mono">-all</code>. DMARC evaluates whether an <em>aligned</em> SPF pass or DKIM pass exists (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>). A message can pass DMARC with <code class="font-mono">~all</code> as long as the sender is listed and the domain aligns. Conversely, a message from an unlisted sender with <code class="font-mono">-all</code> will fail SPF — but if DKIM is aligned and passes, DMARC can still pass.
+        <strong class="text-ink">No.</strong> DMARC does not require <code class="font-mono">-all</code>. DMARC evaluates whether an <em>aligned</em> SPF pass or DKIM pass exists (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>). A message can pass DMARC with <code class="font-mono">~all</code> as long as the sender is listed and the domain aligns. Conversely, a message from an unlisted sender with <code class="font-mono">-all</code> will fail SPF - but if DKIM is aligned and passes, DMARC can still pass.
       </p>
       <p>
         Switching to <code class="font-mono">-all</code> does not improve DMARC alignment and is not a prerequisite for DMARC enforcement.

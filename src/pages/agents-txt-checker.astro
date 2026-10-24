@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 ---
-<BaseLayout title="agents.txt Checker — Verify Your Agent Instructions" description="Free agents.txt checker: fetch and validate the emerging agents.txt file that instructs AI agents accessing your site.">
+<BaseLayout title="agents.txt Checker - Verify Your Agent Instructions" description="Free agents.txt checker: fetch and validate the emerging agents.txt file that instructs AI agents accessing your site.">
   <div class="mx-auto max-w-4xl px-4 py-12">
         <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -44,7 +44,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     statusEl.textContent = `Fetching https://${host}/agents.txt…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
     rawEl.classList.add('hidden');
     const res = await fetchText(`https://${host}/agents.txt`);
-    if (!res.ok || looksLikeHtml(res.text)) { statusEl.textContent = res.status === 0 ? `Could not reach ${host} — fetch blocked or proxies rate-limited; try again shortly.` : `No agents.txt published at ${host} (this is still common, the spec is young).`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    if (!res.ok || looksLikeHtml(res.text)) { statusEl.textContent = res.status === 0 ? `Could not reach ${host} - fetch blocked or proxies rate-limited; try again shortly.` : `No agents.txt published at ${host} (this is still common, the spec is young).`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
     contentEl.textContent = res.text.slice(0, 20000);
     rawEl.classList.remove('hidden');
     statusEl.textContent = `agents.txt found (${(res.text.length / 1024).toFixed(1)} KB, ${res.via}).`;

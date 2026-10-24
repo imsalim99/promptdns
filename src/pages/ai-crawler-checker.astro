@@ -135,7 +135,7 @@ const faqSchema = {
 
     const res = await fetchText(`https://${host}/robots.txt`);
     if (!res.ok || looksLikeHtml(res.text)) {
-      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} — the site blocks automated fetches or public proxies are rate-limited; try again shortly.` : `No readable robots.txt at ${host}, with no rules, every AI crawler is allowed by default.`);
+      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} - the site blocks automated fetches or public proxies are rate-limited; try again shortly.` : `No readable robots.txt at ${host}, with no rules, every AI crawler is allowed by default.`);
       return;
     }
 

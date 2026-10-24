@@ -112,7 +112,7 @@ const faqSchema = {
       rows.push(['Policy mode', mode === 'enforce' ? 'enforce (TLS required)' : mode === 'testing' ? 'testing (report only)' : mode]);
       rows.push(['MX hosts', mxs.map(l => l.replace('mx:', '').trim()).join(', ') || 'none listed']);
     } else {
-      rows.push(['Policy file', 'Could not fetch over HTTPS — MTA-STS requires the policy at https://mta-sts.' + domain + '/.well-known/mta-sts.txt']);
+      rows.push(['Policy file', 'Could not fetch over HTTPS - MTA-STS requires the policy at https://mta-sts.' + domain + '/.well-known/mta-sts.txt']);
     }
     tbody.innerHTML = '';
     for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs">${v.replace(/</g, '&lt;')}</td></tr>`);

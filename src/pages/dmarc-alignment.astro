@@ -13,7 +13,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Alignment: Relaxed vs Strict Explained</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      DMARC alignment is the rule that connects authentication results to the domain the recipient actually sees. A message can pass SPF and pass DKIM and still fail DMARC — because the authenticated domains do not match the visible From domain. This page explains why that happens and what to change.
+      DMARC alignment is the rule that connects authentication results to the domain the recipient actually sees. A message can pass SPF and pass DKIM and still fail DMARC - because the authenticated domains do not match the visible From domain. This page explains why that happens and what to change.
     </p>
 
     <div class="rich-text mt-8">
@@ -32,7 +32,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <h2>How DMARC uses these domains</h2>
       <p>
-        DMARC checks whether the SPF-authenticated domain or the DKIM-authenticated domain <strong class="text-ink">aligns</strong> with the From domain. Only one needs to align — DMARC passes if <em>either</em> aligned SPF pass <em>or</em> aligned DKIM pass exists. It does not require both. This is defined in RFC 7489 <a href="https://www.rfc-editor.org/rfc/rfc7489#section-3.1" class="text-accent hover:text-accent-soft" rel="noopener">§3.1</a>.
+        DMARC checks whether the SPF-authenticated domain or the DKIM-authenticated domain <strong class="text-ink">aligns</strong> with the From domain. Only one needs to align - DMARC passes if <em>either</em> aligned SPF pass <em>or</em> aligned DKIM pass exists. It does not require both. This is defined in RFC 7489 <a href="https://www.rfc-editor.org/rfc/rfc7489#section-3.1" class="text-accent hover:text-accent-soft" rel="noopener">§3.1</a>.
       </p>
 
       <h2>Relaxed vs strict alignment</h2>
@@ -78,7 +78,7 @@ DKIM-Signature: d=example.com         ← DKIM signed by example.com
 SPF result:  fail  (IP not authorized by other.example.net's SPF)
 DKIM result: pass  (signature verifies; d=example.com aligns with From: example.com)
 DMARC result: pass  (one aligned DKIM pass is sufficient)</pre>
-      <p class="mt-2 text-xs text-ink-faint">Synthetic example. DMARC passes because one aligned authentication (DKIM) succeeded. SPF failure alone does not cause DMARC failure when DKIM is aligned — DMARC requires only one passing, aligned mechanism.</p>
+      <p class="mt-2 text-xs text-ink-faint">Synthetic example. DMARC passes because one aligned authentication (DKIM) succeeded. SPF failure alone does not cause DMARC failure when DKIM is aligned - DMARC requires only one passing, aligned mechanism.</p>
 
       <h3>Example 3: Forwarded mail with rewritten envelope</h3>
       <p class="text-sm text-ink-dim">
@@ -106,11 +106,11 @@ DMARC check:
     which does not align with example.com → No aligned SPF pass.
   Aligned DKIM? d=example.com aligns with From: example.com → Yes.
   → DMARC pass (one aligned DKIM pass is sufficient)</pre>
-      <p class="mt-2 text-xs text-ink-faint">Synthetic example. The forwarder rewrote the envelope, so SPF is evaluated against the forwarder's domain — not the original sender's. DKIM may survive if the forwarder does not modify the signed content; modifications (adding footers, re-encoding) can invalidate the signature.</p>
+      <p class="mt-2 text-xs text-ink-faint">Synthetic example. The forwarder rewrote the envelope, so SPF is evaluated against the forwarder's domain - not the original sender's. DKIM may survive if the forwarder does not modify the signed content; modifications (adding footers, re-encoding) can invalidate the signature.</p>
 
       <h3>Example 4: Forwarded mail with preserved envelope</h3>
       <p class="text-sm text-ink-dim">
-        Some forwarders preserve the original envelope. In this case, SPF is evaluated against the original sender's domain — but the connecting IP belongs to the forwarder, which is typically not authorized by the original sender's SPF record.
+        Some forwarders preserve the original envelope. In this case, SPF is evaluated against the original sender's domain - but the connecting IP belongs to the forwarder, which is typically not authorized by the original sender's SPF record.
       </p>
       <pre class="mt-2 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">From: user@example.com
 Return-Path: user@example.com          ← Original envelope preserved
@@ -131,7 +131,7 @@ DMARC check:
   Aligned SPF? example.com's SPF failed (forwarder IP not authorized) → No
   Aligned DKIM? d=example.com aligns with From: example.com → Yes
   → DMARC pass</pre>
-      <p class="mt-2 text-xs text-ink-faint">Synthetic example. In both forwarding scenarios (rewritten or preserved envelope), SPF typically fails at the final recipient. DKIM can provide the aligned pass — but only if the signature survives any modifications made during forwarding.</p>
+      <p class="mt-2 text-xs text-ink-faint">Synthetic example. In both forwarding scenarios (rewritten or preserved envelope), SPF typically fails at the final recipient. DKIM can provide the aligned pass - but only if the signature survives any modifications made during forwarding.</p>
 
       <h2>Fixing alignment failures</h2>
       <p>
@@ -139,14 +139,14 @@ DMARC check:
       </p>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li><strong class="text-ink">Identify which sender is failing.</strong> Check your DMARC aggregate reports (or send test messages and read the <code class="font-mono">Authentication-Results</code> header) to see which service's mail is failing alignment.</li>
-        <li><strong class="text-ink">Configure the ESP to use your domain.</strong> Many ESPs support custom Return-Path (bounce domain) and custom DKIM signing. Availability varies by provider and plan — check your provider's documentation to confirm what they offer and how to enable it. If supported, configure both so alignment passes. See our <a href="/email-authentication/" class="text-accent hover:text-accent-soft">ESP setup directory</a> for provider-specific guides.</li>
-        <li><strong class="text-ink">Verify with a test message.</strong> Send a test from the ESP and inspect the <code class="font-mono">Authentication-Results</code> header. At least one of <code class="font-mono">spf=pass</code> or <code class="font-mono">dkim=pass</code> should appear with your domain — either aligned mechanism is sufficient for DMARC pass.</li>
+        <li><strong class="text-ink">Configure the ESP to use your domain.</strong> Many ESPs support custom Return-Path (bounce domain) and custom DKIM signing. Availability varies by provider and plan - check your provider's documentation to confirm what they offer and how to enable it. If supported, configure both so alignment passes. See our <a href="/email-authentication/" class="text-accent hover:text-accent-soft">ESP setup directory</a> for provider-specific guides.</li>
+        <li><strong class="text-ink">Verify with a test message.</strong> Send a test from the ESP and inspect the <code class="font-mono">Authentication-Results</code> header. At least one of <code class="font-mono">spf=pass</code> or <code class="font-mono">dkim=pass</code> should appear with your domain - either aligned mechanism is sufficient for DMARC pass.</li>
         <li><strong class="text-ink">Check alignment mode.</strong> If you use subdomains for sending, relaxed alignment (the default) is usually sufficient. Strict alignment requires exact domain matching and may not be necessary for your use case.</li>
       </ol>
 
       <h2>What our DNS-based tools can and cannot determine</h2>
       <p>
-        The <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC Record Checker</a> inspects your published DMARC record (policy, reporting, alignment mode tags). It cannot evaluate a specific message's alignment — that requires reading the <code class="font-mono">Authentication-Results</code> header on a received message. DNS-based tools verify that the policy is correctly published; message-level inspection verifies that the policy is being satisfied by your senders.
+        The <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC Record Checker</a> inspects your published DMARC record (policy, reporting, alignment mode tags). It cannot evaluate a specific message's alignment - that requires reading the <code class="font-mono">Authentication-Results</code> header on a received message. DNS-based tools verify that the policy is correctly published; message-level inspection verifies that the policy is being satisfied by your senders.
       </p>
 
       <h2>Related</h2>
@@ -159,7 +159,7 @@ DMARC check:
       </ul>
 
       <p class="mt-6 text-xs text-ink-faint">
-        Primary reference: <a href="https://www.rfc-editor.org/rfc/rfc7489" class="text-accent hover:text-accent-soft" rel="noopener">RFC 7489 — Domain-based Message Authentication, Reporting &amp; Conformance</a>. Synthetic examples use reserved documentation domains and are for illustration only.
+        Primary reference: <a href="https://www.rfc-editor.org/rfc/rfc7489" class="text-accent hover:text-accent-soft" rel="noopener">RFC 7489 - Domain-based Message Authentication, Reporting &amp; Conformance</a>. Synthetic examples use reserved documentation domains and are for illustration only.
       </p>
     </div>
   </div>

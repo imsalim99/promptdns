@@ -57,7 +57,7 @@ const faqSchema = {
  ]
 }
 ---
-<BaseLayout title="CIDR / Subnet Calculator" description="Free subnet calculator: CIDR notation to IP range, mask, wildcard, broadcast, and host count — with a full reference table."  schema={[faqSchema]}
+<BaseLayout title="CIDR / Subnet Calculator" description="Free subnet calculator: CIDR notation to IP range, mask, wildcard, broadcast, and host count - with a full reference table."  schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
         <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -122,7 +122,7 @@ const faqSchema = {
       ['Netmask', toIp(mask)],
       ['Wildcard', toIp(~mask >>> 0)],
       ['Broadcast', toIp(broadcast)],
-      ['Host range', prefix >= 31 ? toIp(network) : `${toIp(network + 1)} – ${toIp(broadcast - 1)}`],
+      ['Host range', prefix >= 31 ? toIp(network) : `${toIp(network + 1)} - ${toIp(broadcast - 1)}`],
       ['Usable hosts', hosts.toLocaleString()],
       ['Total addresses', (2 ** (32 - prefix)).toLocaleString()],
     ];

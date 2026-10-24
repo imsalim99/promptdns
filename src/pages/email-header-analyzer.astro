@@ -57,7 +57,7 @@ const faqSchema = {
  ]
 }
 ---
-<BaseLayout title="Email Header Analyzer — Parse Received Chains" description="Free email header analyzer: paste headers to decode the Received chain, SPF/DKIM/DMARC results, and sending path."  schema={[faqSchema]}
+<BaseLayout title="Email Header Analyzer - Parse Received Chains" description="Free email header analyzer: paste headers to decode the Received chain, SPF/DKIM/DMARC results, and sending path."  schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
         <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -141,7 +141,7 @@ const faqSchema = {
     const rev = [...hops].reverse(); // oldest first
     let prev: Date | undefined;
     rev.forEach((h, i) => {
-      let delay = '—';
+      let delay = '-';
       if (h.t && prev) delay = `+${Math.max(0, Math.round((h.t.getTime() - prev.getTime()) / 1000))}s`;
       if (h.t) prev = h.t;
       tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs">${i + 1}</td><td class="font-mono text-xs text-ink-dim">${h.from}</td><td class="font-mono text-xs text-accent">${h.by}</td><td class="font-mono text-xs">${delay}</td></tr>`);

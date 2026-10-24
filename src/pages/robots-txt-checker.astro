@@ -145,7 +145,7 @@ const faqSchema = {
 
     const res = await fetchText(`https://${host}/robots.txt`);
     if (!res.ok || looksLikeHtml(res.text)) {
-      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} — fetch blocked or proxies rate-limited; try again shortly.` : `No robots.txt found at ${host}, all crawlers are allowed by default.`);
+      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} - fetch blocked or proxies rate-limited; try again shortly.` : `No robots.txt found at ${host}, all crawlers are allowed by default.`);
       return;
     }
     const txt = res.text;
