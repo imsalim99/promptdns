@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 ---
 <BaseLayout title="DNSSEC Checker and Validator" description="Free DNSSEC checker: verify a domain has DS and DNSKEY records, check algorithms, and confirm the chain of trust is publishable.">
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -24,6 +25,7 @@ import ToolPanel from '../components/ToolPanel.astro';
   <div id="ds-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
     <table class="pdns-table"><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody id="ds-tbody"></tbody></table>
   </div>
+  <ResultCard tool="dnssec-checker" />
 </ToolPanel>
 
     <ToolArticle slug="dnssec-checker" />
@@ -32,17 +34,38 @@ import ToolPanel from '../components/ToolPanel.astro';
 </BaseLayout>
 <script>
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
   const form = document.getElementById('ds-form') as HTMLFormElement;
   const input = document.getElementById('ds-domain') as HTMLInputElement;
   const statusEl = document.getElementById('ds-status')!;
   const resultsEl = document.getElementById('ds-results')!;
   const tbody = document.getElementById('ds-tbody')!;
+  const TOOL = 'dnssec-checker';
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      related: [
+        { label: 'Enable DNSSEC in Cloudflare', href: '/enable-dnssec-cloudflare/' },
+        { label: 'What is DNSSEC', href: '/what-is-dnssec/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
     statusEl.textContent = `Checking DNSSEC for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
-    const [ds, dk] = await Promise.all([lookup(domain, 'DS', RESOLVERS[0]), lookup(domain, 'DNSKEY', RESOLVERS[0])]);
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+    let ds, dk;
+    try {
+      [ds, dk] = await Promise.all([lookup(domain, 'DS', RESOLVERS[0]), lookup(domain, 'DNSKEY', RESOLVERS[0])]);
+    } catch {
+      statusEl.textContent = `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s DNSSEC.', [{ code: 'DNS_QUERY_FAILED' }], domain);
+      return;
+    }
     const dsOk = ds.ok && ds.answers.length > 0;
     const keys = dk.answers.filter(a => a.type === 48);
     const ksk = keys.find(k => k.data.includes(' 257 '));
@@ -58,5 +81,16 @@ import ToolPanel from '../components/ToolPanel.astro';
     statusEl.textContent = dsOk ? `${domain} is signed: DS present at the parent.` : keys.length ? 'Zone has keys but no DS at the parent: DNSSEC is not active end-to-end.' : `${domain} is not signed.`;
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${dsOk ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-warn/10 text-warn border border-warn/30'}`;
     resultsEl.classList.remove('hidden');
+
+    if (dsOk) {
+      emit('pass', `${domain} is signed: DS present at the parent.`,
+        [{ code: 'DNSSEC_SIGNED', detail: `DS present, algorithm ${algo} (${ALGOS[algo] ?? 'other'})` }], domain);
+    } else if (keys.length) {
+      emit('warn', `${domain} has DNSKEY records but no DS at the parent: DNSSEC is not active end-to-end.`,
+        [{ code: 'DNSSEC_KEYS_NO_DS', detail: `${keys.length} key(s) in the zone, but no DS record at the parent` }], domain);
+    } else {
+      emit('warn', `${domain} is not signed.`,
+        [{ code: 'DNSSEC_UNSIGNED', detail: 'No DS record and no DNSKEY records found' }], domain);
+    }
   });
 </script>

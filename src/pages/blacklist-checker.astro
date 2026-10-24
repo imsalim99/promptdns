@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -103,6 +104,8 @@ const faqSchema = {
         Honesty note: some lists (Spamhaus, URIBL) refuse queries from public DNS resolvers. Those show as
         “not checkable via public resolver” rather than false results, verify them on the list’s own website.
       </p>
+
+      <ResultCard tool="blacklist-checker" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
@@ -123,6 +126,7 @@ const faqSchema = {
 <script>
   import { checkDomainBlacklists, checkIpBlacklists } from '../lib/dnsbl';
   import { normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.getElementById('bl-form') as HTMLFormElement;
   const domInput = document.getElementById('bl-domain') as HTMLInputElement;
@@ -131,6 +135,19 @@ const faqSchema = {
   const summaryEl = document.getElementById('bl-summary')!;
   const resultsEl = document.getElementById('bl-results')!;
   const tbody = document.getElementById('bl-tbody')!;
+
+  const TOOL = 'blacklist-checker';
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Get daily blocklist alerts',
+      related: [
+        { label: 'SPF Record Checker', href: '/spf-record-checker/' },
+        { label: 'Why emails go to spam', href: '/why-emails-go-to-spam/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
 
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
@@ -142,6 +159,7 @@ const faqSchema = {
     const domain = normalizeDomain(domInput.value);
     const ip = ipInput.value.trim();
     if (!domain.includes('.') && !ip) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a domain or an IP.'); return; }
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
     tbody.innerHTML = '';
     [summaryEl, resultsEl].forEach((el) => el.classList.add('hidden'));
@@ -167,6 +185,17 @@ const faqSchema = {
     setStatus(listed ? 'bg-fail/10 text-fail border border-fail/30' : 'bg-pass/10 text-pass border border-pass/30',
       listed ? `${listed} blocklist${listed > 1 ? 's have you listed' : ' has you listed'}, fix before your next campaign.`
              : `Clean, no listings found (${clear} checked${blocked ? `, ${blocked} not checkable via public resolvers` : ''}).`);
+
+    // ResultCard
+    const subject = domain.includes('.') ? domain : ip;
+    if (listed) {
+      const names = rows.filter((r) => r.status === 'listed').map((r) => r.list).join(', ');
+      emit('fail', `Listed on ${listed} blocklist${listed > 1 ? 's' : ''}: ${names}.`,
+        [{ code: 'BLACKLIST_LISTED', detail: `Listed on: ${names}` }], subject);
+    } else {
+      emit('pass', `Clean across ${clear} list${clear === 1 ? '' : 's'} checked${blocked ? `, ${blocked} not checkable via public resolvers` : ''}.`,
+        [{ code: 'BLACKLIST_CLEAN', detail: `${clear} lists checked clean${blocked ? `, ${blocked} not checkable via public resolvers` : ''}` }], subject);
+    }
 
     summaryEl.innerHTML = '';
     for (const [l, v, cls] of [['Listed', String(listed), 'text-fail'], ['Clean', String(clear), 'text-pass'], ['Not checkable', String(blocked), 'text-warn']] as [string, string, string][]) {

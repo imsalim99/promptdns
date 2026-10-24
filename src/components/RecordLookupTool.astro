@@ -4,6 +4,7 @@
  * Used by the 12 record-lookup pages in the topical map.
  */
 import ToolPanel from './ToolPanel.astro';
+import ResultCard from './ResultCard.astro';
 interface Props { type: string; label: string; hint: string }
 const { type, label, hint } = Astro.props;
 ---
@@ -22,10 +23,12 @@ const { type, label, hint } = Astro.props;
     </table>
   </div>
   <p class="mt-4 text-xs text-ink-faint">{hint}</p>
+  <ResultCard tool={`lookup-${type.toLowerCase()}`} />
 </ToolPanel>
 
 <script>
   import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.querySelector('[data-record-form]') as HTMLFormElement;
   const section = form.closest('section') as HTMLElement;
@@ -34,34 +37,59 @@ const { type, label, hint } = Astro.props;
   const resultsEl = section.querySelector('[data-results]') as HTMLElement;
   const tbody = section.querySelector('[data-tbody]') as HTMLElement;
   const TYPE = form.dataset.type ?? 'A';
+  const TOOL = `lookup-${TYPE.toLowerCase()}`;
+
+  const setStatus = (cls: string, text: string) => {
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+    statusEl.textContent = text;
+    statusEl.classList.remove('hidden');
+  };
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Alert me when this record changes',
+      related: [
+        { label: 'DNS monitoring', href: '/dns-monitoring/' },
+        { label: 'Propagation checker', href: '/dns-propagation-checker/' },
+        { label: 'TTL checker', href: '/ttl-checker/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) {
-      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
-      statusEl.textContent = 'Enter a valid domain, e.g. example.com';
-      statusEl.classList.remove('hidden');
+      setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com');
       return;
     }
-    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line';
-    statusEl.textContent = `Querying ${TYPE} records for ${domain}…`;
-    statusEl.classList.remove('hidden');
+    setStatus('bg-panel-2 text-accent border border-line', `Querying ${TYPE} records for ${domain}…`);
     resultsEl.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    const res = await lookup(domain, TYPE as RecordType, RESOLVERS[0]);
+    let res;
+    try {
+      res = await lookup(domain, TYPE as RecordType, RESOLVERS[0]);
+    } catch {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
+      emit('info', 'DNS query did not complete. Nothing is known about this record.', [{ code: 'DNS_QUERY_FAILED' }], domain);
+      return;
+    }
     if (res.status === 3) {
-      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30';
-      statusEl.textContent = `NXDOMAIN: ${domain} does not exist.`;
+      setStatus('bg-fail/10 text-fail border border-fail/30', `NXDOMAIN: ${domain} does not exist.`);
+      emit('fail', `NXDOMAIN: ${domain} does not exist in DNS.`, [{ code: 'LOOKUP_NXDOMAIN' }], domain);
       return;
     }
     if (!res.answers.length) {
-      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
-      statusEl.textContent = `No ${TYPE} records returned for ${domain}.`;
+      setStatus('bg-warn/10 text-warn border border-warn/30', `No ${TYPE} records returned for ${domain}.`);
+      emit('warn', `No ${TYPE} records published for ${domain}. This is normal for some setups.`, [{ code: 'LOOKUP_NONE', detail: `No ${TYPE} records at ${domain}` }], domain);
       return;
     }
-    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
-    statusEl.textContent = `${res.answers.length} ${TYPE} record${res.answers.length > 1 ? 's' : ''} found via ${res.resolver} (${res.ms} ms).`;
+    setStatus('bg-pass/10 text-pass border border-pass/30', `${res.answers.length} ${TYPE} record${res.answers.length > 1 ? 's' : ''} found via ${res.resolver} (${res.ms} ms).`);
+    emit('pass', `${res.answers.length} ${TYPE} record${res.answers.length > 1 ? 's' : ''} found.`, [{ code: 'LOOKUP_FOUND', detail: `${TYPE}: ${res.answers.length} record(s) via ${res.resolver}` }], domain);
     tbody.innerHTML = '';
     for (const a of res.answers) {
       tbody.insertAdjacentHTML('beforeend', `<tr>

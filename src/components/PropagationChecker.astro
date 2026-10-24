@@ -5,6 +5,7 @@
  * then renders per-resolver results + agreement summary. Dark theme.
  */
 import { RECORD_TYPES } from '../lib/doh';
+import ResultCard from './ResultCard.astro';
 const types = RECORD_TYPES;
 ---
 <section id="propagation-checker" class="not-prose">
@@ -60,6 +61,8 @@ const types = RECORD_TYPES;
       Lookups run in your browser against public DNS-over-HTTPS resolvers (Cloudflare, Google,
       Quad9). Nothing is sent to our servers.
     </p>
+
+    <ResultCard tool="dns-propagation-checker" />
   </div>
 </section>
 
@@ -70,6 +73,7 @@ const types = RECORD_TYPES;
     normalizeDomain,
     type RecordType,
   } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.getElementById('pdns-form') as HTMLFormElement;
   const input = document.getElementById('pdns-domain') as HTMLInputElement;
@@ -79,6 +83,21 @@ const types = RECORD_TYPES;
   const resultsEl = document.getElementById('pdns-results')!;
   const tbody = document.getElementById('pdns-tbody')!;
   const btn = form.querySelector('button[type=submit]') as HTMLButtonElement;
+
+  const TOOL = 'dns-propagation-checker';
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Know when this record changes',
+      related: [
+        { label: 'DNS monitoring', href: '/dns-monitoring/' },
+        { label: 'TTL checker', href: '/ttl-checker/' },
+        { label: 'Record lookup', href: '/dns-record-lookup/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
 
   const q = new URLSearchParams(location.search).get('domain');
   if (q) input.value = q;
@@ -96,6 +115,7 @@ const types = RECORD_TYPES;
     btn.textContent = 'Checking…';
     statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line';
     statusEl.textContent = `Querying ${domain} (${typeSel.value}) across public resolvers…`;
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
     const { results, agreeRatio, propagated } = await propagationCheck(
       domain,
@@ -111,6 +131,18 @@ const types = RECORD_TYPES;
     statusEl.textContent = propagated
       ? `Propagated, ${okCount}/${results.length} resolvers return the same ${typeSel.value} records.`
       : `Propagating, resolvers agree ${agreePct}% (${okCount}/${results.length} resolved). Mismatched answers mean old records are still cached somewhere.`;
+
+    // ResultCard
+    if (okCount === 0) {
+      emit('warn', `No resolver returned ${typeSel.value} records for ${domain}.`,
+        [{ code: 'PROP_NO_ANSWERS', detail: `0 of ${results.length} resolvers returned an answer` }], domain);
+    } else if (propagated) {
+      emit('pass', `Propagated: ${okCount}/${results.length} resolvers agree on ${typeSel.value}.`,
+        [{ code: 'PROP_PROPAGATED', detail: `${agreePct}% agreement across ${results.length} resolvers` }], domain);
+    } else {
+      emit('warn', `Propagating: resolvers agree ${agreePct}%.`,
+        [{ code: 'PROP_PROPAGATING', detail: `${agreePct}% agreement; resolvers still serve different answers` }], domain);
+    }
 
     summaryEl.innerHTML = '';
     summaryEl.classList.remove('hidden');

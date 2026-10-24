@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 ---
 <BaseLayout title="TTL Checker - See Every Record's Cache Time" description="Free DNS TTL checker: see the time-to-live of every record on a domain to plan migrations and catch bloated caches.">
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -24,6 +25,7 @@ import ToolPanel from '../components/ToolPanel.astro';
   <div id="ttl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
     <table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody id="ttl-tbody"></tbody></table>
   </div>
+  <ResultCard tool="ttl-checker" />
 </ToolPanel>
 
     <ToolArticle slug="ttl-checker" />
@@ -32,26 +34,59 @@ import ToolPanel from '../components/ToolPanel.astro';
 </BaseLayout>
 <script>
   import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
   const form = document.getElementById('ttl-form') as HTMLFormElement;
   const input = document.getElementById('ttl-domain') as HTMLInputElement;
   const statusEl = document.getElementById('ttl-status')!;
   const resultsEl = document.getElementById('ttl-results')!;
   const tbody = document.getElementById('ttl-tbody')!;
+  const TOOL = 'ttl-checker';
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Know when records change',
+      related: [
+        { label: 'Propagation checker', href: '/dns-propagation-checker/' },
+        { label: 'DNS monitoring', href: '/dns-monitoring/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
     statusEl.textContent = `Checking TTLs for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     const types: RecordType[] = ['A','AAAA','MX','NS','TXT','SOA','CAA'];
     const rows: { t: string; ttl: number; v: string }[] = [];
-    await Promise.all(types.map(async (t) => {
-      const r = await lookup(domain, t, RESOLVERS[0]);
-      for (const a of r.answers.slice(0, 4)) rows.push({ t, ttl: a.TTL, v: a.data });
-    }));
-    if (!rows.length) { statusEl.textContent = 'No records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
+    try {
+      await Promise.all(types.map(async (t) => {
+        const r = await lookup(domain, t, RESOLVERS[0]);
+        for (const a of r.answers.slice(0, 4)) rows.push({ t, ttl: a.TTL, v: a.data });
+      }));
+    } catch {
+      statusEl.textContent = `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail.`;
+      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s TTLs.', [{ code: 'DNS_QUERY_FAILED' }], domain);
+      return;
+    }
+    if (!rows.length) {
+      statusEl.textContent = 'No records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+      emit('warn', `No common records found for ${domain}.`, [{ code: 'TTL_NO_RECORDS' }], domain);
+      return;
+    }
     const min = Math.min(...rows.map(r => r.ttl));
+    const slow = min > 3600;
     statusEl.textContent = `${rows.length} records. Lowest TTL: ${min}s${min > 300 ? ' (lower to 300 a day before migrations)' : ' (migration-ready)'}.`;
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${min > 3600 ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
+    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${slow ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
+    if (slow) {
+      emit('warn', `${rows.length} records found. Lowest TTL is ${min}s: changes will be slow to spread.`,
+        [{ code: 'TTL_SLOW', detail: `Lowest TTL: ${min}s` }], domain);
+    } else {
+      emit('pass', `${rows.length} records found. Lowest TTL: ${min}s.`,
+        [{ code: 'TTL_FAST', detail: `Lowest TTL: ${min}s` }], domain);
+    }
     tbody.innerHTML = '';
     for (const r of rows.sort((a, b) => a.ttl - b.ttl)) {
       tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${r.t}</td><td class="font-mono text-xs ${r.ttl > 3600 ? 'text-warn' : 'text-ink'}">${r.ttl}s</td><td><code>${r.v.replace(/</g, '&lt;').slice(0, 60)}</code></td></tr>`);

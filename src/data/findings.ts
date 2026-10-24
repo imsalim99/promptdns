@@ -295,4 +295,174 @@ export const FINDINGS: Record<string, FindingDef> = {
       'If it keeps failing, check your connection or try from another network.',
     ],
   },
+
+  /* ---------------- Shared: generic DNS failure ---------------- */
+
+  DNS_QUERY_FAILED: {
+    severity: 'info',
+    title: 'DNS query did not complete',
+    why: 'The DNS query could not be completed, so nothing is known about this domain. This is an inconclusive result, not a pass or fail.',
+    fix: [
+      'Retry the check; transient network issues are common.',
+      'If it keeps failing, check your connection or try from another network.',
+    ],
+  },
+
+  /* ---------------- DNS Propagation Checker ---------------- */
+
+  PROP_PROPAGATED: {
+    severity: 'pass',
+    title: 'All resolvers agree',
+    why: 'Every public resolver queried returns the same records for this type, so a recent change has spread to these resolvers.',
+    fix: [
+      'Local ISP and corporate resolvers can still hold older answers until the record\'s TTL expires; the TTL column shows each remaining cache time.',
+      'Re-run this check after the longest TTL shown if you need every cache to be fresh.',
+    ],
+  },
+
+  PROP_PROPAGATING: {
+    severity: 'warn',
+    title: 'Resolvers disagree',
+    why: 'Some resolvers still serve cached old records while others serve the new ones. The wait is governed by the record\'s TTL as each resolver sees it, not by a fixed propagation time.',
+    fix: [
+      'Compare the Answer column in the table: resolvers showing old values will refresh when their cached TTL expires.',
+      'Wait out the longest TTL shown, then re-run this check.',
+      'For future changes, lower the TTL to 300 seconds a day before the change, then raise it back after.',
+    ],
+  },
+
+  PROP_NO_ANSWERS: {
+    severity: 'warn',
+    title: 'No resolver returned records',
+    why: 'This can mean the record genuinely does not exist at this name, or that the queries did not complete. It is not proof of either on its own.',
+    fix: [
+      'Confirm the record exists: run the DNS Record Lookup tool for the same name and type.',
+      'Check the record name spelling, including any subdomain or underscore prefix.',
+      'Retry this check; transient resolver failures are common.',
+    ],
+  },
+
+  /* ---------------- Blacklist Checker ---------------- */
+
+  BLACKLIST_LISTED: {
+    severity: 'fail',
+    title: 'Listed on one or more blocklists',
+    why: 'Blocklist listings cause mail from the domain or IP to be spam-foldered or rejected by receiving systems that consult those lists.',
+    fix: [
+      'Open each listing list\'s own site and read the return code: it states the reason for the listing.',
+      'Fix the root cause before requesting delisting; common causes are a compromised account, an open redirect, or a misconfigured server.',
+      'Request delisting on each list\'s process, then re-run this check.',
+    ],
+    guide: { label: 'Spamhaus removal guide', href: '/remove-from-spamhaus-blocklist/' },
+  },
+
+  BLACKLIST_CLEAN: {
+    severity: 'pass',
+    title: 'No listings found',
+    why: 'Every list this tool could query returned clean for the domain and IP entered.',
+    fix: [
+      'Lists marked "not checkable" refuse queries from public resolvers; verify those on the list\'s own website.',
+      'Re-run this check periodically, and always after deliverability suddenly drops.',
+    ],
+  },
+
+  /* ---------------- DNSSEC Checker ---------------- */
+
+  DNSSEC_SIGNED: {
+    severity: 'pass',
+    title: 'Domain is signed (DS present)',
+    why: 'A DS record at the parent zone completes the chain of trust, so validating resolvers can detect forged DNS answers for this domain.',
+    fix: [
+      'The risky moment is key rollover: DS and DNSKEY must stay in sync at the registrar and the zone.',
+      'Re-run this check after any registrar or DNS provider change.',
+    ],
+  },
+
+  DNSSEC_KEYS_NO_DS: {
+    severity: 'warn',
+    title: 'Zone is signed but no DS at the parent',
+    why: 'The zone publishes DNSKEY records, but without a DS record at the parent zone, validating resolvers have no chain of trust and will not treat the zone as signed.',
+    fix: [
+      'Publish the DS record at your registrar (it is generated from the zone\'s KSK).',
+      'Confirm at the registrar that DNSSEC is enabled for the domain, not just at the DNS provider.',
+      'Re-run this check until the DS check passes.',
+    ],
+    guide: { label: 'What is DNSSEC', href: '/what-is-dnssec/' },
+  },
+
+  DNSSEC_UNSIGNED: {
+    severity: 'warn',
+    title: 'Domain is not signed',
+    why: 'Without DNSSEC, a forged DNS answer (for example a fake MX or A record) cannot be detected by validating resolvers.',
+    fix: [
+      'Enable DNSSEC at your DNS provider first (Cloudflare makes this one click).',
+      'Then add the DS record it gives you at your registrar.',
+      'Re-run this check to confirm the chain of trust is complete.',
+    ],
+    guide: { label: 'What is DNSSEC', href: '/what-is-dnssec/' },
+  },
+
+  /* ---------------- TTL Checker ---------------- */
+
+  TTL_FAST: {
+    severity: 'pass',
+    title: 'TTLs are migration-friendly',
+    why: 'At least one record changes quickly and no record waits more than an hour, so DNS changes here spread without long stale-cache windows.',
+    fix: [
+      'For planned migrations, 300 seconds on the records you will change is the comfortable target.',
+      'Raise TTLs back after the change to reduce resolver load.',
+    ],
+  },
+
+  TTL_SLOW: {
+    severity: 'warn',
+    title: 'Long TTLs will slow changes',
+    why: 'The lowest TTL on this domain is above an hour, so any change will keep serving old values from resolver caches for hours.',
+    fix: [
+      'A day before a planned change, lower the TTL of the records you will edit to 300 seconds.',
+      'Make the change, verify propagation, then raise TTLs back.',
+    ],
+  },
+
+  TTL_NO_RECORDS: {
+    severity: 'warn',
+    title: 'No records found',
+    why: 'The resolver returned none of the common record types for this domain. The domain may not exist, or the queries may not have completed.',
+    fix: [
+      'Verify the domain resolves at all: run the DNS Record Lookup with type A.',
+      'Retry this check; transient resolver failures are common.',
+    ],
+  },
+
+  /* ---------------- Record Lookup (12 type pages) ---------------- */
+
+  LOOKUP_FOUND: {
+    severity: 'pass',
+    title: 'Records found',
+    why: 'The resolver returned the records shown in the table. Values are what this public resolver currently serves; the TTL column is each record\'s remaining cache lifetime.',
+    fix: [
+      'A lower-than-expected TTL means you are seeing a cached answer close to expiry, not the authoritative value.',
+      'Re-run after changes and use the propagation checker to compare resolvers.',
+    ],
+  },
+
+  LOOKUP_NONE: {
+    severity: 'warn',
+    title: 'No records of this type',
+    why: 'The domain resolved, but has no records of this type published. For many record types (AAAA, CAA, TXT variants) that is a legitimate configuration, not an error.',
+    fix: [
+      'Confirm whether this record type is expected for this domain\'s setup.',
+      'If it should exist, publish it at your DNS provider and re-check.',
+    ],
+  },
+
+  LOOKUP_NXDOMAIN: {
+    severity: 'fail',
+    title: 'Domain does not exist',
+    why: 'The resolver returned NXDOMAIN: no such domain exists in DNS at all.',
+    fix: [
+      'Check the spelling of the domain.',
+      'If the domain should exist, verify its nameservers and registration.',
+    ],
+  },
 };
