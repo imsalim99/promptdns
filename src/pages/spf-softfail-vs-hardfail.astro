@@ -2,24 +2,36 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="SPF Softfail vs Hardfail: ~all vs -all Explained"
-  description="SPF softfail (~all) vs hardfail (-all): what each qualifier means, how receivers treat them, and how to choose based on your verified sender inventory and forwarding risk."
+  title="SPF Softfail vs Fail: ~all vs -all Explained"
+  description="SPF softfail (~all) vs fail (-all): what each qualifier means, how receivers decide what to do, and how to choose based on your verified sender inventory and forwarding risk."
 >
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">SPF Softfail vs Hardfail</span>
+      <span class="text-ink-dim">SPF Softfail vs Fail</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Softfail vs Hardfail: <code class="font-mono">~all</code> vs <code class="font-mono">-all</code></h1>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Softfail vs Fail: <code class="font-mono">~all</code> vs <code class="font-mono">-all</code></h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      The difference between <code class="font-mono text-accent-soft">~all</code> and <code class="font-mono text-accent-soft">-all</code> is the instruction you give receiving servers about unauthorized senders. This page explains what each qualifier actually means — and what it does not.
+      The difference between <code class="font-mono text-accent-soft">~all</code> and <code class="font-mono text-accent-soft">-all</code> is what your published record tells the evaluator about unauthorized senders. This page explains what each qualifier actually does — and what it does not.
     </p>
 
     <div class="rich-text mt-8">
       <h2>Terminology note</h2>
       <p>
-        The SPF result for <code class="font-mono">-all</code> is called <strong class="text-ink">fail</strong> (not "hardfail" — that term is common but is not the RFC-defined result name). The result for <code class="font-mono">~all</code> is <strong class="text-ink">softfail</strong>. This page uses both the common terms and the RFC 7208 <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">§2.6</a> result names.
+        The SPF result for <code class="font-mono">-all</code> is <strong class="text-ink">fail</strong> (the term "hardfail" is commonly used but is not the RFC-defined result name). The result for <code class="font-mono">~all</code> is <strong class="text-ink">softfail</strong>. This page uses both common terms and the RFC 7208 <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">§2.6</a> result names.
+      </p>
+
+      <h2>What the qualifiers do</h2>
+      <p>
+        <code class="font-mono">~all</code> and <code class="font-mono">-all</code> determine the SPF <em>result</em> when evaluation reaches the <code class="font-mono">all</code> mechanism and no earlier mechanism has matched the connecting IP. The result is an assertion in your published policy:
+      </p>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li><code class="font-mono">~all</code> → result is <strong class="text-warn">softfail</strong>: "a weak statement that the host is probably not authorized" (RFC 7208 §2.6.5)</li>
+        <li><code class="font-mono">-all</code> → result is <strong class="text-fail">fail</strong>: "an explicit statement that the client is not authorized" (RFC 7208 §2.6.4)</li>
+      </ul>
+      <p>
+        What the receiver <em>does</em> with that result is a separate decision. Receiving systems apply their own disposition policy, which may consider SPF along with DKIM, DMARC, content, reputation, engagement, and other signals.
       </p>
 
       <h2>Side-by-side comparison</h2>
@@ -28,62 +40,67 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <thead><tr><th></th><th><code class="font-mono">~all</code> (softfail)</th><th><code class="font-mono">-all</code> (fail)</th></tr></thead>
           <tbody>
             <tr><td class="text-sm font-medium text-ink">SPF result</td><td class="text-sm text-warn">softfail</td><td class="text-sm text-fail">fail</td></tr>
-            <tr><td class="text-sm font-medium text-ink">What it tells the receiver</td><td class="text-sm text-ink-dim">"This sender is probably not authorized, but I'm not certain"</td><td class="text-sm text-ink-dim">"This sender is not authorized"</td></tr>
-            <tr><td class="text-sm font-medium text-ink">Receiver action</td><td class="text-sm text-ink-dim">Receiver decides — typically accept but may penalize in spam filtering</td><td class="text-sm text-ink-dim">Receiver decides — typically reject, but not guaranteed</td></tr>
-            <tr><td class="text-sm font-medium text-ink">Risk of legitimate mail blocked</td><td class="text-sm text-ink-dim">Lower — unlisted senders still get through</td><td class="text-sm text-ink-dim">Higher — any unlisted sender will fail SPF</td></tr>
-            <tr><td class="text-sm font-medium text-ink">Protection against spoofing</td><td class="text-sm text-ink-dim">Weak — spoofers may still reach the inbox (penalized but not blocked)</td><td class="text-sm text-ink-dim">Stronger — spoofed mail gets an SPF fail result that receivers can act on</td></tr>
+            <tr><td class="text-sm font-medium text-ink">What your policy asserts</td><td class="text-sm text-ink-dim">The host is probably not authorized (weak statement)</td><td class="text-sm text-ink-dim">The host is not authorized (explicit statement)</td></tr>
+            <tr><td class="text-sm font-medium text-ink">What the receiver does</td><td class="text-sm text-ink-dim">Receiver's own disposition policy</td><td class="text-sm text-ink-dim">Receiver's own disposition policy</td></tr>
           </tbody>
         </table>
       </div>
+      <p class="mt-3 text-xs text-ink-faint">Neither result specifies or guarantees what the receiver will do. Source: RFC 7208 <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">§2.6</a>.</p>
 
       <h2>What neither qualifier guarantees</h2>
-      <p>
-        Receiving systems apply their own disposition policy. Neither qualifier <em>guarantees</em> a specific outcome:
-      </p>
       <ul class="list-disc space-y-1.5 pl-5">
-        <li><code class="font-mono">-all</code> does <strong class="text-ink">not</strong> guarantee rejection. A receiver may still accept the mail, quarantine it, or ignore the SPF result entirely depending on their filtering stack.</li>
-        <li><code class="font-mono">~all</code> does <strong class="text-ink">not</strong> guarantee delivery. A receiver may still spam-folder the mail, especially if other signals (content, reputation, engagement) are negative.</li>
-        <li>An SPF policy checker — including ours — <strong class="text-ink">cannot</strong> establish inbox placement. It can only report what your published policy says. Whether a specific message reaches the inbox depends on the receiving server's filtering decisions.</li>
+        <li><code class="font-mono">-all</code> does <strong class="text-ink">not</strong> guarantee rejection. A receiver may reject, quarantine, accept, or ignore the SPF fail result entirely, depending on their filtering policy.</li>
+        <li><code class="font-mono">~all</code> does <strong class="text-ink">not</strong> guarantee delivery. A receiver may still spam-folder the mail based on other signals, or treat softfail as a significant negative.</li>
+        <li>Neither qualifier provides <strong class="text-ink">guaranteed spoofing protection</strong>. A spoofer's mail may still be delivered depending on the receiver's filtering decisions.</li>
+        <li>An SPF policy checker — including ours — <strong class="text-ink">cannot</strong> establish inbox placement or predict what any specific receiver will do. It reports what your published policy says.</li>
       </ul>
+
+      <h2>Forwarding and DKIM interaction</h2>
+      <p>
+        Forwarding commonly causes SPF problems: when a message passes through a forwarder, the forwarder's IP is typically not authorized by the original sender's SPF record, producing an SPF fail result at the final recipient — regardless of whether the original sender used <code class="font-mono">~all</code> or <code class="font-mono">-all</code>.
+      </p>
+      <p>
+        In forwarding scenarios, an <strong class="text-ink">aligned DKIM pass</strong> can allow DMARC to pass (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>), provided the DKIM signature survives any modifications made during forwarding. However, DKIM passing does <strong class="text-ink">not</strong> change the SPF result — an SPF fail remains an SPF fail. The two mechanisms are independent.
+      </p>
 
       <h2>Is <code class="font-mono">-all</code> required for DMARC?</h2>
       <p>
-        <strong class="text-ink">No.</strong> DMARC does not require <code class="font-mono">-all</code>. DMARC evaluates whether an <em>aligned</em> SPF pass or DKIM pass exists (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>). A message can pass DMARC with <code class="font-mono">~all</code> as long as the sender is listed and the domain aligns. Conversely, a message with <code class="font-mono">-all</code> that is not sent from a listed server will fail SPF — but if DKIM is aligned and passes, DMARC can still pass.
+        <strong class="text-ink">No.</strong> DMARC does not require <code class="font-mono">-all</code>. DMARC evaluates whether an <em>aligned</em> SPF pass or DKIM pass exists (see <a href="/dmarc-alignment/" class="text-accent hover:text-accent-soft">DMARC alignment explained</a>). A message can pass DMARC with <code class="font-mono">~all</code> as long as the sender is listed and the domain aligns. Conversely, a message from an unlisted sender with <code class="font-mono">-all</code> will fail SPF — but if DKIM is aligned and passes, DMARC can still pass.
       </p>
       <p>
-        This is a common misconception. Switching to <code class="font-mono">-all</code> does not improve DMARC alignment and is not a prerequisite for DMARC enforcement.
+        Switching to <code class="font-mono">-all</code> does not improve DMARC alignment and is not a prerequisite for DMARC enforcement.
       </p>
 
       <h2>How to choose</h2>
       <p>
-        The choice should be based on your <strong class="text-ink">verified sender inventory</strong> and <strong class="text-ink">operational risk</strong>, not on a mandatory progression from softfail to hardfail.
+        The choice should be based on your <strong class="text-ink">verified sender inventory</strong> and <strong class="text-ink">operational risk</strong>, not on a mandatory progression from softfail to fail.
       </p>
 
-      <h3>Use <code class="font-mono">~all</code> when:</h3>
+      <h3>Consider <code class="font-mono">~all</code> when:</h3>
       <ul class="list-disc space-y-1.5 pl-5">
         <li>You are not confident every legitimate sender is listed (new services, departments adding tools, third-party integrations).</li>
-        <li>Your mail is frequently forwarded (forwarders break SPF; <code class="font-mono">~all</code> gives them a chance to deliver).</li>
+        <li>Your mail is frequently forwarded (forwarders typically cause SPF fail regardless of qualifier).</li>
         <li>You are still building your sender inventory and need a safety margin.</li>
       </ul>
 
-      <h3>Use <code class="font-mono">-all</code> when:</h3>
+      <h3>Consider <code class="font-mono">-all</code> when:</h3>
       <ul class="list-disc space-y-1.5 pl-5">
-        <li>You have verified every legitimate sender through DMARC reports over several weeks or months.</li>
-        <li>All senders — including ESPs, CRMs, and billing systems — are listed and their DKIM signatures are aligned.</li>
-        <li>You understand that any future unlisted sender will fail SPF and plan to add it before it starts sending.</li>
+        <li>You have verified every legitimate sender through DMARC reports and/or test messages over time.</li>
+        <li>All senders are listed in your SPF or have aligned DKIM signatures.</li>
+        <li>You understand that any future unlisted sender will produce an SPF fail result.</li>
       </ul>
 
-      <h3>What "verified sender inventory" means</h3>
+      <h3>Coverage limitations of sender verification</h3>
       <p>
-        Before switching to <code class="font-mono">-all</code>, review your DMARC aggregate reports (or <code class="font-mono">Authentication-Results</code> headers from test messages) to identify every IP and domain that legitimately sends as your domain. Each should either be listed in your SPF or have an aligned DKIM signature. The <a href="/dmarc-report-analyzer/" class="text-accent hover:text-accent-soft">DMARC Report Analyzer</a> can help parse these reports.
+        DMARC aggregate reports show senders that mailbox providers observed over the reporting period. Test messages show what you explicitly tested. Neither method guarantees discovery of <em>every</em> legitimate sender: a sender that has not sent recently may not appear in reports, and a sender you have not tested will not appear in test results. Before switching to <code class="font-mono">-all</code>, consider whether there are senders you may have missed (legacy systems, backup procedures, new tools being evaluated by other teams).
       </p>
 
       <h2>Common mistakes</h2>
       <ul class="list-disc space-y-1.5 pl-5">
-        <li><strong class="text-ink">Switching to <code class="font-mono">-all</code> before verifying senders:</strong> legitimate mail starts failing, potentially including password resets and order confirmations.</li>
+        <li><strong class="text-ink">Switching to <code class="font-mono">-all</code> before verifying senders:</strong> legitimate mail may start producing SPF fail results, potentially including password resets and order confirmations.</li>
         <li><strong class="text-ink">Treating <code class="font-mono">-all</code> as a DMARC requirement:</strong> it is not. DMARC can pass with <code class="font-mono">~all</code>.</li>
-        <li><strong class="text-ink">Assuming <code class="font-mono">-all</code> blocks all spoofing:</strong> receivers decide what to do with an SPF fail result. Some may still deliver the mail.</li>
-        <li><strong class="text-ink">Forgetting forwarding:</strong> forwarded mail breaks SPF. If forwarders are part of your workflow, ensure DKIM is aligned so DMARC can pass independently of SPF.</li>
+        <li><strong class="text-ink">Assuming <code class="font-mono">-all</code> blocks all spoofing:</strong> receivers decide what to do with an SPF fail result.</li>
+        <li><strong class="text-ink">Forgetting forwarding:</strong> forwarded mail typically fails SPF regardless of qualifier. Ensure DKIM is aligned so DMARC can pass independently.</li>
       </ul>
 
       <h2>Related</h2>
@@ -95,7 +112,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </ul>
 
       <p class="mt-6 text-xs text-ink-faint">
-        Primary reference: <a href="https://www.rfc-editor.org/rfc/rfc7208#section-4.6.2" class="text-accent hover:text-accent-soft" rel="noopener">RFC 7208 §4.6.2 (Qualifiers)</a> and <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">§2.6 (Result Definitions)</a>.
+        Primary reference: <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">RFC 7208 §2.6 (Result Definitions)</a> and <a href="https://www.rfc-editor.org/rfc/rfc7208#section-4.6.2" class="text-accent hover:text-accent-soft" rel="noopener">§4.6.2 (Qualifiers)</a>.
       </p>
     </div>
   </div>
