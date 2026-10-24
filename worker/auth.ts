@@ -39,9 +39,9 @@ function randomToken(): string {
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function ipHashOf(request: Request): Promise<string> {
+async function ipHashOf(request: Request): Promise<string> {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-  return await_digest(`ip:${ip}`);
+  return hashHex(`ip:${ip}`);
 }
 
 /** Same-origin enforcement for state-changing requests (CSRF). */
