@@ -113,14 +113,16 @@ const { tool } = Astro.props;
     card.classList.remove('hidden');
   };
 
-  document.addEventListener('pdns:result', (e) => {
+  // Tools dispatch on window; listen on window (events fired on window never
+  // reach document-level listeners, and vice versa).
+  window.addEventListener('pdns:result', (e) => {
     const r = (e as CustomEvent<PdnsResult>).detail;
     if (!r?.tool) return;
     const card = document.querySelector<HTMLElement>(`#result-card-${CSS.escape(r.tool)}`);
     if (card) render(card, r);
   });
 
-  document.addEventListener('pdns:clear', (e) => {
+  window.addEventListener('pdns:clear', (e) => {
     const tool = (e as CustomEvent<{ tool: string }>).detail?.tool;
     if (!tool) return;
     const card = document.querySelector<HTMLElement>(`#result-card-${CSS.escape(tool)}`);
@@ -128,5 +130,4 @@ const { tool } = Astro.props;
       card.classList.add('hidden');
       card.innerHTML = '';
     }
-  });
-</script>
+  });</script>
