@@ -465,4 +465,40 @@ export const FINDINGS: Record<string, FindingDef> = {
       'If the domain should exist, verify its nameservers and registration.',
     ],
   },
+
+  /* ---------------- DMARC Report Analyzer ---------------- */
+
+  REPORT_PARSE_FAILED: {
+    severity: 'fail',
+    title: 'Could not parse that file',
+    why: 'The file is not a readable DMARC aggregate report. Common causes: it is a forensic (failure) report instead of an aggregate one, the zip contains no XML, or the file was truncated.',
+    fix: [
+      'Use the aggregate report (the file sent to your rua= address), not the forensic/failure report.',
+      'If the mailbox delivered it inside a zip, upload the zip as-is; this tool unpacks it in your browser.',
+      'If you unzipped and re-zipped it yourself, try uploading the original file instead.',
+    ],
+    guide: { label: 'How to read DMARC reports', href: '/how-to-read-dmarc-reports/' },
+  },
+
+  REPORT_FAILING_SENDERS: {
+    severity: 'warn',
+    title: 'Some senders are failing DMARC',
+    why: 'Failing sources are one of two things: legitimate senders with broken SPF or DKIM (fixable, and the reason pass rates matter), or unknown senders spoofing your domain (which your policy is catching). The records table shows which is which.',
+    fix: [
+      'For each failing source you recognize: fix its SPF include or DKIM selector, then watch the next day\'s report.',
+      'For sources you do not recognize: your policy is handling them; if volume is high, note the IP for abuse reports.',
+      'Once legitimate senders pass consistently, step your policy from none toward quarantine and reject.',
+    ],
+    guide: { label: 'How to read DMARC reports', href: '/how-to-read-dmarc-reports/' },
+  },
+
+  REPORT_CLEAN: {
+    severity: 'pass',
+    title: 'Reports look clean',
+    why: 'Nearly all analyzed mail passed SPF or DKIM alignment, so your legitimate senders are properly authenticated.',
+    fix: [
+      'This is the signal to move your policy forward: none to quarantine (with pct ramping), then reject.',
+      'Reports are daily snapshots; keep reading them, or let monitoring read them for you.',
+    ],
+  },
 };

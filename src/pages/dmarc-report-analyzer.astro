@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -98,6 +99,8 @@ const faqSchema = {
           <tbody id="draf-tbody"></tbody>
         </table>
     </div>
+
+      <ResultCard tool="dmarc-report-analyzer" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
@@ -120,6 +123,7 @@ const faqSchema = {
 
 <script>
   import { unzipSync, gunzipSync } from 'fflate';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const fileInput = document.getElementById('draf-file') as HTMLInputElement;
   const nameEl = document.getElementById('draf-name')!;
@@ -128,6 +132,20 @@ const faqSchema = {
   const policyEl = document.getElementById('draf-policy')!;
   const resultsEl = document.getElementById('draf-results')!;
   const tbody = document.getElementById('draf-tbody')!;
+
+  const TOOL = 'dmarc-report-analyzer';
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Get these reports automatically',
+      related: [
+        { label: 'How to read DMARC reports', href: '/how-to-read-dmarc-reports/' },
+        { label: 'DMARC Record Checker', href: '/dmarc-record-checker/' },
+        { label: 'DMARC Record Generator', href: '/dmarc-record-generator/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
 
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
@@ -138,7 +156,7 @@ const faqSchema = {
     ip: string; count: number; from: string; spf: string; dkim: string; dmarc: string; disposition: string;
   }
 
-  function parseXmlDoc(xml: string): { org: string; begin: string; end: string; policy: string; rows: Row[] } {
+  function parseXmlDoc(xml: string): { org: string; begin: string; end: string; policy: string; domain: string; rows: Row[] } {
     const doc = new DOMParser().parseFromString(xml, 'text/xml');
     if (doc.querySelector('parsererror')) throw new Error('Invalid XML');
     const meta = doc.getElementsByTagName('report_metadata')[0];
@@ -146,7 +164,8 @@ const faqSchema = {
     const range = meta?.getElementsByTagName('date_range')[0];
     const fmt = (epoch?: string | null) => (epoch ? new Date(parseInt(epoch, 10) * 1000).toISOString().slice(0, 10) : '?');
     const pub = doc.getElementsByTagName('policy_published')[0];
-    const pol = pub ? `${pub.getElementsByTagName('domain')[0]?.textContent ?? ''}: p=${pub.getElementsByTagName('p')[0]?.textContent ?? '?'}` : '';
+    const domain = pub?.getElementsByTagName('domain')[0]?.textContent ?? '';
+    const pol = pub ? `${domain}: p=${pub.getElementsByTagName('p')[0]?.textContent ?? '?'}` : '';
     const rows: Row[] = [];
     for (const rec of doc.getElementsByTagName('record')) {
       const ip = rec.getElementsByTagName('source_ip')[0]?.textContent ?? '?';
@@ -160,7 +179,7 @@ const faqSchema = {
       const dkimRes = auth?.getElementsByTagName('dkim')[0]?.getElementsByTagName('result')[0]?.textContent ?? 'none';
       rows.push({ ip, count, from, spf: spfRes, dkim: dkimRes, dmarc, disposition });
     }
-    return { org, begin: fmt(range?.getElementsByTagName('begin')[0]?.textContent), end: fmt(range?.getElementsByTagName('end')[0]?.textContent), policy: pol, rows };
+    return { org, begin: fmt(range?.getElementsByTagName('begin')[0]?.textContent), end: fmt(range?.getElementsByTagName('end')[0]?.textContent), policy: pol, domain, rows };
   }
 
   async function extractXmls(file: File): Promise<string[]> {
@@ -180,6 +199,7 @@ const faqSchema = {
   async function handleFile(file: File) {
     nameEl.textContent = file.name;
     setStatus('bg-panel-2 text-accent border border-line', 'Parsing…');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     try {
       const xmls = await extractXmls(file);
       const reports = xmls.map(parseXmlDoc);
@@ -190,6 +210,7 @@ const faqSchema = {
       const passed = rows.filter((r) => r.dkim.includes('pass') || r.dmarc.startsWith('pass')).reduce((s, r) => s + r.count, 0);
       const rejected = rows.filter((r) => r.disposition === 'reject').reduce((s, r) => s + r.count, 0);
       const r0 = reports[0];
+      const passPct = total ? Math.round((passed / total) * 100) : 0;
 
       setStatus('bg-pass/10 text-pass border border-pass/30', `Parsed ${xmls.length} report${xmls.length > 1 ? 's' : ''} from ${r0.org} (${r0.begin} → ${r0.end}).`);
 
@@ -224,8 +245,20 @@ const faqSchema = {
         </tr>`);
       }
       resultsEl.classList.remove('hidden');
+
+      // ResultCard
+      const failSources = rows.filter((r) => !(r.dkim.includes('pass') || r.dmarc.startsWith('pass')));
+      const failVolume = failSources.reduce((s, r) => s + r.count, 0);
+      if (passPct < 90) {
+        emit('warn', `${passPct}% of ${total.toLocaleString()} messages passed authentication; ${failVolume.toLocaleString()} messages failed.`,
+          [{ code: 'REPORT_FAILING_SENDERS', detail: `${failSources.length} failing source(s), ${failVolume.toLocaleString()} messages` }], r0.domain);
+      } else {
+        emit('pass', `${passPct}% of ${total.toLocaleString()} messages passed authentication.`,
+          [{ code: 'REPORT_CLEAN', detail: `${passPct}% pass rate across ${new Set(rows.map((r) => r.ip)).size} sources` }], r0.domain);
+      }
     } catch (err) {
       setStatus('bg-fail/10 text-fail border border-fail/30', `Could not parse that file: ${err instanceof Error ? err.message : 'unknown error'}`);
+      emit('fail', 'That file could not be parsed as a DMARC aggregate report.', [{ code: 'REPORT_PARSE_FAILED', detail: err instanceof Error ? err.message : 'unknown error' }], '');
     }
   }
 

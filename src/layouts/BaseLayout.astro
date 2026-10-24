@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { TOOL_CATEGORIES } from '../data/tools';
 import '../styles/global.css';
 
 interface Props {
@@ -44,7 +45,25 @@ const orgSchema = {
   }],
 };
 
-const allSchema = [siteSchema, orgSchema, ...schema];
+// WebApplication schema on every registered tool page, straight from the
+// tools registry (single source of truth), with no per-page wiring needed.
+const toolEntry = TOOL_CATEGORIES.flatMap((c) => c.tools).find((t) => t.href === path);
+const webAppSchema = toolEntry
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: toolEntry.name,
+      url: SITE + toolEntry.href,
+      description: toolEntry.desc,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Any (runs in a web browser)',
+      browserRequirements: 'Requires JavaScript',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    }
+  : null;
+
+const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...schema];
 ---
 <!doctype html>
 <html lang="en">
