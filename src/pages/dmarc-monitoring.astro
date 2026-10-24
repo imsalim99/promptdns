@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="DMARC Monitoring — See Who Sends Email as Your Domain"
+  description="DMARC monitoring, in development: aggregate reports from Gmail, Microsoft and Yahoo parsed into a table of every service sending as your domain, with a path to p=reject. Join early access."
+>
+  <div class="mx-auto max-w-4xl px-4 py-16">
+    <div class="flex flex-wrap items-center gap-3">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Product</p>
+      <span class="rounded-full border border-warn/40 bg-warn/10 px-3 py-0.5 font-mono text-[10px] uppercase tracking-wider text-warn">In development — join early access</span>
+    </div>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      Know every service that sends email as your domain.
+    </h1>
+    <p class="mt-4 max-w-2xl text-lg text-ink-dim">
+      Gmail, Microsoft, and Yahoo already email you daily DMARC reports listing every server that
+      used your domain — useful data nobody reads because it arrives as zipped XML. DMARC
+      monitoring reads it for you.
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-4">
+      <a href="/early-access/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Join early access</a>
+      <a href="/dmarc-report-analyzer/" class="border border-line bg-panel-2 px-5 py-2.5 text-sm font-semibold text-ink hover:border-accent/40">Try the free report analyzer today</a>
+    </div>
+
+    <div class="mt-14 grid gap-5 md:grid-cols-3">
+      {[
+        {
+          step: '1',
+          title: 'Add one DNS record',
+          desc: 'Add our reporting address to your DMARC record (rua=). Nothing else changes — your mail flow is untouched, and your own DNS stays where it is.',
+        },
+        {
+          step: '2',
+          title: 'Reports flow in daily',
+          desc: 'Mailbox providers send aggregate reports to that address automatically. We unzip and parse each one: source IPs, volumes, SPF/DKIM results, alignment.',
+        },
+        {
+          step: '3',
+          title: 'See who is sending as you',
+          desc: 'A plain table: every sending service identified by name — Google Workspace, SendGrid, your newsletter tool — with pass/fail and "this is me / not me" for each.',
+        },
+      ].map((s) => (
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <p class="font-mono text-xs text-accent">STEP {s.step}</p>
+          <h2 class="font-display mt-2 font-semibold text-ink">{s.title}</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink-dim">{s.desc}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="rich-text mt-14">
+      <h2>What it answers</h2>
+      <ul>
+        <li>Which services send mail as your domain today — including ones you forgot or an attacker added.</li>
+        <li>Why legitimate mail fails SPF or DKIM (misaligned return-path, missing include, wrong selector).</li>
+        <li>When it is safe to move your policy from <code>p=none</code> to <code>p=quarantine</code> to <code>p=reject</code> — with a checklist instead of a guess.</li>
+      </ul>
+
+      <h2>Free today, before launch</h2>
+      <ul>
+        <li><a href="/dmarc-record-checker/" class="text-accent">DMARC Record Checker</a> — validate your current record and policy.</li>
+        <li><a href="/dmarc-report-analyzer/" class="text-accent">DMARC Report Analyzer</a> — upload a report file you already received and see it parsed.</li>
+        <li><a href="/dmarc-record-generator/" class="text-accent">DMARC Record Generator</a> — build the record, including the reporting address.</li>
+        <li><a href="/dmarc/" class="text-accent">The DMARC guide</a> — how policies, alignment, and reports actually work.</li>
+      </ul>
+
+      <h2>Early access</h2>
+      <p>
+        Monitoring is being built now. Early-access members get the first accounts, the launch
+        free tier, and a direct line on features — <a href="/early-access/" class="text-accent">request access</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

@@ -28,7 +28,23 @@ const siteSchema = {
   url: 'https://promptdns.com',
   description: 'Free DNS, email authentication, and domain health tools, check propagation, SPF, DKIM, DMARC, and AI readiness.',
 };
-const allSchema = [siteSchema, ...schema];
+
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'PromptDNS',
+  url: 'https://promptdns.com',
+  logo: 'https://promptdns.com/favicon.svg',
+  description: 'Free browser-based DNS, email authentication, and AI accessibility tools with setup guides for every provider. Domain and email security monitoring in development.',
+  contactPoint: [{
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: 'support@promptdns.com',
+    url: 'https://promptdns.com/support/',
+  }],
+};
+
+const allSchema = [siteSchema, orgSchema, ...schema];
 ---
 <!doctype html>
 <html lang="en">

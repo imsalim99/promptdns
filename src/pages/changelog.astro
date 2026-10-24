@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const entries = [
+  {
+    date: '2026-10-24',
+    title: 'Accuracy patch and site hygiene',
+    items: [
+      'SPF Record Checker rewritten around result states: truthful permerror wording, a disclosed evaluation scope, explicit inconclusive states when DNS fails, and multiple-SPF-record detection.',
+      'Three email-authentication guides corrected against RFC 7208/7489: SPF permerror, DMARC alignment (separate forwarding scenarios), and SPF softfail vs hardfail.',
+      'Fixed 44 page titles that rendered a doubled brand suffix; cleaned "Azure DNS DNS" and "(hosting)" wording.',
+      'Self-hosted the Clash Display and Satoshi font files — the render-blocking Fontshare stylesheet is gone.',
+      'New /early-access/ page; header buttons no longer link to nothing; dead social links removed.',
+      'robots.txt now explicitly allows the major AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and 12 others).',
+    ],
+  },
+  {
+    date: '2026-10-23',
+    title: 'Navigation and consistency fixes',
+    items: [
+      'Aligned breadcrumbs site-wide: Home / Hub / Page for guides, Home / Tools / Tool for tools.',
+      'Removed duplicated FAQ blocks and mixed CTA/FAQ headings across content pages.',
+    ],
+  },
+  {
+    date: '2026-09-06',
+    title: 'The full guide network',
+    items: [
+      '42 per-service ESP setup guides (SPF/DKIM/DMARC for SendGrid, Mailchimp, Google Workspace, Microsoft 365, and more).',
+      '34 provider DNS playbooks across 12 providers (Cloudflare, Route 53, GoDaddy, Namecheap, cPanel, Plesk, and more).',
+      'Deep editorial layer added to tool pages: process explanations, result interpretation, CLI equivalents, error references.',
+      'Resilience: 4-way proxy fallback so robots.txt and header checks survive CORS-relay outages.',
+    ],
+  },
+  {
+    date: '2026-08-23',
+    title: 'PromptDNS v1',
+    items: [
+      'Launched with 56 free browser-side DNS, email-authentication, and AI-readiness tools.',
+      'Static delivery on Cloudflare Pages; every lookup runs client-side against public DoH resolvers.',
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Changelog"
+  description="What changed on PromptDNS and when: tool corrections, new guides, accuracy patches, and site improvements."
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Changelog</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">What changed, and when.</h1>
+    <p class="mt-4 text-lg text-ink-dim">
+      Corrections and improvements to the tools and guides, newest first. When we get something
+      wrong, you'll find it here.
+    </p>
+
+    <div class="mt-10 space-y-8">
+      {entries.map((e) => (
+        <section class="rounded-xl border border-line bg-panel/60 p-6">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 class="font-display text-lg font-bold text-ink">{e.title}</h2>
+            <time class="font-mono text-xs text-ink-faint">{e.date}</time>
+          </div>
+          <ul class="mt-4 space-y-2 text-sm leading-relaxed text-ink-dim">
+            {e.items.map((i) => (
+              <li class="flex gap-2"><span class="text-accent">•</span>{i}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

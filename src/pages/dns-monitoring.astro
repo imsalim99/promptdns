@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="DNS Monitoring — Know the Moment Your Records Change"
+  description="DNS monitoring, in development: scheduled checks of your records, change alerts with diffs, nameserver drift, and expiry warnings. Join early access."
+>
+  <div class="mx-auto max-w-4xl px-4 py-16">
+    <div class="flex flex-wrap items-center gap-3">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Product</p>
+      <span class="rounded-full border border-warn/40 bg-warn/10 px-3 py-0.5 font-mono text-[10px] uppercase tracking-wider text-warn">In development — join early access</span>
+    </div>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      Know the moment your DNS changes.
+    </h1>
+    <p class="mt-4 max-w-2xl text-lg text-ink-dim">
+      Wrong MX after a migration. A CNAME deleted by a teammate. SPF quietly broken by a vendor
+      change. DNS breaks silently and you find out from users. Monitoring watches your records on
+      a schedule and tells you what changed, when, and what it affects.
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-4">
+      <a href="/early-access/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Join early access</a>
+      <a href="/dns-propagation-checker/" class="border border-line bg-panel-2 px-5 py-2.5 text-sm font-semibold text-ink hover:border-accent/40">Check propagation free, now</a>
+    </div>
+
+    <div class="mt-14 grid gap-5 md:grid-cols-2">
+      {[
+        {
+          title: 'Record change alerts',
+          desc: 'A, AAAA, MX, TXT, SPF, DKIM selectors, DMARC, CAA, NS — checked on a schedule. When a value changes, you get the diff, not just "something changed".',
+        },
+        {
+          title: 'Email authentication drift',
+          desc: 'The vendor you included in SPF changed their records and pushed you over the 10-lookup limit. Catch it before receivers do.',
+        },
+        {
+          title: 'Nameserver and delegation drift',
+          desc: 'Alerts if your domain\'s nameservers change, a dangling record appears, or DNSSEC validation breaks.',
+        },
+        {
+          title: 'Expiry warnings',
+          desc: 'SSL certificate and domain expiry checks with alerts at 30/14/7 days — so renewal never surprises you.',
+        },
+      ].map((f) => (
+        <div class="rounded-xl border border-line bg-panel/60 p-5">
+          <h2 class="font-display font-semibold text-ink">{f.title}</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink-dim">{f.desc}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="rich-text mt-14">
+      <h2>Free today, before launch</h2>
+      <ul>
+        <li><a href="/dns-propagation-checker/" class="text-accent">DNS Propagation Checker</a> — see what resolvers worldwide serve right now.</li>
+        <li><a href="/dns-record-lookup/" class="text-accent">DNS Record Lookup</a> — any record type, public resolvers.</li>
+        <li><a href="/spf-record-checker/" class="text-accent">SPF Record Checker</a> — lookup count and validity, term by term.</li>
+        <li><a href="/dnssec-checker/" class="text-accent">DNSSEC Checker</a> — validation chain status.</li>
+      </ul>
+
+      <h2>Early access</h2>
+      <p>
+        Monitoring is being built now, alongside
+        <a href="/dmarc-monitoring/" class="text-accent">DMARC report monitoring</a>.
+        Early-access members get the first accounts — <a href="/early-access/" class="text-accent">request access</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

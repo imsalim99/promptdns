@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const updated = '2026-10-24';
+---
+
+<BaseLayout
+  title="Editorial Policy"
+  description="How PromptDNS content is produced and verified: primary-source checking against RFCs and vendor docs, labeled synthetic examples, and public corrections."
+>
+  <div class="mx-auto max-w-3xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Editorial policy</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">Editorial policy</h1>
+    <p class="mt-2 text-xs text-ink-faint">Last updated {updated}</p>
+
+    <div class="rich-text mt-8">
+      <h2>How content is produced</h2>
+      <p>
+        PromptDNS is produced with AI assistance and verified against primary sources before
+        publication: RFCs for protocol behaviour (7208 for SPF, 7489 for DMARC, 6376 for DKIM,
+        8460/8461 for TLS reporting and MTA-STS) and the vendor's own documentation for
+        provider-specific steps and record values.
+      </p>
+
+      <h2>Standards we hold pages to</h2>
+      <ul>
+        <li><strong>Primary sources over paraphrase.</strong> Where a rule matters (lookup limits, alignment modes, policy semantics), the RFC is cited and linked.</li>
+        <li><strong>Labeled examples.</strong> Worked examples use reserved example domains and are marked as illustrative; we do not present synthetic data as observed data.</li>
+        <li><strong>No guaranteed verdicts about receivers.</strong> Mail reception is every receiver's decision; our pages say what a record <em>permits receivers to conclude</em>, not what they will definitely do.</li>
+        <li><strong>Honest tool scope.</strong> Each tool states what it inspects and what it cannot see.</li>
+        <li><strong>No invented facts.</strong> If a provider's exact include string or limit isn't verified, the page says how to find it rather than guessing.</li>
+      </ul>
+
+      <h2>Updates and corrections</h2>
+      <p>
+        Pages are revisited when the underlying specification or provider guidance changes, and
+        when readers report problems. Significant corrections are published on the
+        <a href="/changelog/" class="text-accent">changelog</a> rather than quietly edited.
+        To report an error: <a href="mailto:bugs@promptdns.com" class="text-accent">bugs@promptdns.com</a>.
+      </p>
+
+      <h2>Independence</h2>
+      <p>
+        Comparison and recommendation pages, as they are published, state their criteria and the
+        date prices were checked, and name where competitors beat us. We do not accept payment
+        for coverage.
+      </p>
+    </div>
+  </div>
+</BaseLayout>
