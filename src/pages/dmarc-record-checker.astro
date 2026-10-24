@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -98,7 +99,7 @@ const faqSchema = {
         </table>
     </div>
 
-      <div id="dmarc-issues" class="mt-4 hidden grid gap-2"></div>
+      <ResultCard tool="dmarc-record-checker" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
@@ -121,6 +122,7 @@ const faqSchema = {
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
   import { parseDmarc } from '../lib/dmarc';
   import { txtRecords } from '../lib/spf';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.getElementById('dmarc-form') as HTMLFormElement;
   const input = document.getElementById('dmarc-domain') as HTMLInputElement;
@@ -131,7 +133,6 @@ const faqSchema = {
   const gradeDesc = document.getElementById('dmarc-grade-desc')!;
   const resultsEl = document.getElementById('dmarc-results')!;
   const tbody = document.getElementById('dmarc-tbody')!;
-  const issuesEl = document.getElementById('dmarc-issues')!;
 
   const gradeMeta: Record<string, [string, string]> = {
     A: ['Full enforcement with reporting', 'Spoofed mail is rejected and you can monitor everything.'],
@@ -141,22 +142,50 @@ const faqSchema = {
     F: ['Not protectable', 'No usable DMARC configuration found.'],
   };
 
+  const TOOL = 'dmarc-record-checker';
+  const RELATED_OK = [
+    { label: 'Check SPF', href: '/spf-record-checker/' },
+    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+    { label: 'DMARC explained', href: '/dmarc/' },
+  ];
+  const RELATED_FAIL = [
+    { label: 'Build a DMARC record', href: '/dmarc-record-generator/' },
+    { label: 'Check SPF', href: '/spf-record-checker/' },
+    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+  ];
+
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
     statusEl.textContent = text;
+  };
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string, related = RELATED_OK) => {
+    const detail: PdnsResult = { tool: TOOL, domain, verdict, verdictLine, findings, related, ctaLabel: 'See who sends email as your domain' };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
   };
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
-    [gradeBox, resultsEl, issuesEl].forEach((el) => el.classList.add('hidden'));
+    [gradeBox, resultsEl].forEach((el) => el.classList.add('hidden'));
     setStatus('bg-panel-2 text-accent border border-line', `Looking up _dmarc.${domain}…`);
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    const res = await lookup(`_dmarc.${domain}`, 'TXT', RESOLVERS[0]);
+    let res;
+    try {
+      res = await lookup(`_dmarc.${domain}`, 'TXT', RESOLVERS[0]);
+    } catch {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
+      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s DMARC.', [{ code: 'DMARC_DNS_UNREACHABLE' }], domain);
+      return;
+    }
+
     const record = txtRecords(res.answers).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
     if (!record) {
       setStatus('bg-fail/10 text-fail border border-fail/30', `No DMARC record on ${domain}. Anyone can spoof this domain.`);
+      emit('fail', `No DMARC record on ${domain}. Receivers have no policy from you.`, [{ code: 'DMARC_NOT_PUBLISHED' }], domain, RELATED_FAIL);
       return;
     }
     const parse = parseDmarc(record);
@@ -181,9 +210,31 @@ const faqSchema = {
     }
     resultsEl.classList.remove('hidden');
 
-    issuesEl.innerHTML = '';
-    for (const err of parse.errors) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail">✕ ${err}</div>`);
-    for (const w of parse.warnings) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn">▲ ${w}</div>`);
-    if (parse.errors.length || parse.warnings.length) issuesEl.classList.remove('hidden');
+    // Findings for the ResultCard
+    const findings: PdnsFinding[] = [];
+    if (parse.errors.length) findings.push({ code: 'DMARC_SYNTAX_ERROR', detail: parse.errors.join('; ') });
+    for (const w of parse.warnings) {
+      if (w.startsWith('p=none')) findings.push({ code: 'DMARC_P_NONE' });
+      else if (w.startsWith('No rua=')) findings.push({ code: 'DMARC_NO_RUA', detail: 'No rua= tag: aggregate reports are not being sent anywhere' });
+      else if (w.startsWith('Enforcement without reporting')) findings.push({ code: 'DMARC_NO_RUA', detail: 'Enforcement (p=' + parse.policy + ') without rua= cannot be tuned' });
+      else if (w.startsWith('pct=100')) findings.push({ code: 'DMARC_FULL_ENFORCEMENT' });
+      else if (w.startsWith('Unknown tag')) findings.push({ code: 'DMARC_UNKNOWN_TAG', detail: w });
+    }
+    const verdict: Severity = findings.some((f) => f.code === 'DMARC_SYNTAX_ERROR')
+      ? 'fail'
+      : findings.some((f) => f.code === 'DMARC_NO_RUA' || f.code === 'DMARC_P_NONE' || f.code === 'DMARC_UNKNOWN_TAG')
+        ? 'warn'
+        : 'pass';
+    if (!findings.some((f) => f.code === 'DMARC_FULL_ENFORCEMENT')) {
+      if (verdict === 'pass') findings.push({ code: 'DMARC_HEALTHY', detail: `Grade ${parse.grade}: ${t}` });
+    }
+
+    const verdictLine = verdict === 'fail'
+      ? 'DMARC record found, but it has errors that can break the policy.'
+      : verdict === 'warn'
+        ? `Grade ${parse.grade} (${t}).`
+        : `Grade ${parse.grade}: ${t}.`;
+
+    emit(verdict, verdictLine, findings, domain, verdict === 'fail' ? RELATED_FAIL : RELATED_OK);
   });
 </script>

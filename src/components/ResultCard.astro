@@ -91,7 +91,7 @@ const { tool } = Astro.props;
     if (r.domain) {
       const cta = el('a',
         'btn-cta btn-shimmer px-4 py-2 text-xs',
-        r.verdict === 'pass' ? 'Monitor this domain' : 'Never let this break silently');
+        r.ctaLabel ?? (r.verdict === 'pass' ? 'Monitor this domain' : 'Never let this break silently'));
       cta.href = `/early-access/?domain=${encodeURIComponent(r.domain)}&src=tool:${r.tool}`;
       ctaRow.appendChild(cta);
       ctaRow.appendChild(el('span', 'text-xs text-ink-faint', 'Monitoring is in development. Early access is free.'));

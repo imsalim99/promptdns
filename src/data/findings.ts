@@ -36,6 +36,8 @@ export interface PdnsResult {
   verdictLine: string;
   findings: PdnsFinding[];
   related?: { label: string; href: string }[];
+  /** Optional CTA label override (per audit CTA map, e.g. DMARC: "See who sends email as your domain"). */
+  ctaLabel?: string;
 }
 
 export const FINDINGS: Record<string, FindingDef> = {
@@ -155,6 +157,142 @@ export const FINDINGS: Record<string, FindingDef> = {
     fix: [
       'Syntax validity is not sender verification: to confirm a real sender passes, send a test message and read its Authentication-Results header.',
       'Re-run this check after any DNS or email vendor change.',
+    ],
+  },
+
+  /* ---------------- DMARC Record Checker ---------------- */
+
+  DMARC_NOT_PUBLISHED: {
+    severity: 'fail',
+    title: 'No DMARC record',
+    why: 'Without a DMARC record, receiving servers have no policy from you, so spoofed mail using your domain is treated like any other mail. DMARC is also how you would find out who sends as your domain.',
+    fix: [
+      'Publish a DMARC record at your DNS provider: v=DMARC1; p=none; rua=mailto:you@yourdomain.com to start in monitoring mode.',
+      'Stay in monitoring mode until aggregate reports show every legitimate sender passing SPF or DKIM alignment.',
+      'Then step the policy to quarantine and finally reject.',
+    ],
+    guide: { label: 'DMARC explained', href: '/dmarc/' },
+  },
+
+  DMARC_SYNTAX_ERROR: {
+    severity: 'fail',
+    title: 'Errors in the DMARC record',
+    why: 'A malformed or incomplete DMARC record can make receivers ignore the policy entirely, which leaves the domain unprotected.',
+    fix: [
+      'Fix each error listed above; most are typos or a missing required tag.',
+      'The record must start with v=DMARC1 and must include a p= tag.',
+      'Re-run this check after publishing the corrected record.',
+    ],
+    guide: { label: 'DMARC explained', href: '/dmarc/' },
+  },
+
+  DMARC_P_NONE: {
+    severity: 'warn',
+    title: 'Policy is monitoring only (p=none)',
+    why: 'With p=none receivers take no action on failing mail: spoofed mail is still delivered. Monitoring mode is the correct start, but it is not protection.',
+    fix: [
+      'Read the aggregate reports (rua) until every legitimate sender passes SPF or DKIM alignment.',
+      'Move to p=quarantine, optionally ramping with pct= (25, then 50, then 100).',
+      'Finish with p=reject once the reports are clean.',
+    ],
+    guide: { label: 'DMARC explained', href: '/dmarc/' },
+  },
+
+  DMARC_NO_RUA: {
+    severity: 'warn',
+    title: 'No aggregate reporting address (rua)',
+    why: 'Without rua= you receive no aggregate reports, so you cannot see who is sending as your domain or whether your legitimate mail passes. A policy without reports cannot be tuned safely.',
+    fix: [
+      'Add rua=mailto:you@yourdomain.com to the record.',
+      'Confirm the destination mailbox (or report processor) accepts mail from mailbox providers.',
+      'Re-run this check to confirm the tag parses.',
+    ],
+    guide: { label: 'DMARC explained', href: '/dmarc/' },
+  },
+
+  DMARC_UNKNOWN_TAG: {
+    severity: 'warn',
+    title: 'Unknown tags in the record',
+    why: 'Tags receivers do not recognize are ignored, and an unknown tag is often a typo in a tag you meant to set.',
+    fix: [
+      'Check the spelling of each unknown tag against the DMARC tag list.',
+      'Remove tags that are not valid DMARC syntax.',
+    ],
+  },
+
+  DMARC_FULL_ENFORCEMENT: {
+    severity: 'info',
+    title: 'Full enforcement (p=reject with pct=100)',
+    why: 'Every failing message is subject to rejection. That is the goal, but any legitimate sender not yet passing SPF or DKIM alignment will be lost with it.',
+    fix: [
+      'Watch aggregate reports for legitimate mail failing alignment.',
+      'If legitimate mail is rejected, lower pct= temporarily instead of reverting the policy.',
+    ],
+  },
+
+  DMARC_HEALTHY: {
+    severity: 'pass',
+    title: 'DMARC is configured with a policy and reporting',
+    why: 'The record has a policy and a reporting address, so receivers act on failing mail and you can monitor what passes and fails.',
+    fix: [
+      'Keep reading the aggregate reports: enforcement is ongoing maintenance, not a one-time setting.',
+      'Re-run this check after any email vendor change.',
+    ],
+  },
+
+  DMARC_DNS_UNREACHABLE: {
+    severity: 'info',
+    title: 'DNS query did not complete',
+    why: 'The DNS query could not be completed, so nothing is known about the domain\'s DMARC. This is an inconclusive result, not a pass or fail.',
+    fix: [
+      'Retry the check; transient network issues are common.',
+      'If it keeps failing, check your connection or try from another network.',
+    ],
+  },
+
+  /* ---------------- DKIM Record Checker ---------------- */
+
+  DKIM_NOT_FOUND: {
+    severity: 'warn',
+    title: 'No DKIM key at this selector',
+    why: 'This check looked up exactly one selector. DKIM keys live at selector._domainkey.yourdomain.com and every provider chooses its own selector names, so a missing key here does not prove the domain has no DKIM.',
+    fix: [
+      'Find the real selector: open a recent message sent by the domain and read the s= value in its DKIM-Signature header.',
+      'Or check the provider\'s DKIM page: google (Workspace), selector1/selector2 (Microsoft 365), k1 (Mailchimp), s1/s2 (Zoho).',
+      'If DKIM is genuinely not set up, enable it in the provider and publish the TXT record it gives you.',
+    ],
+    guide: { label: 'DKIM explained', href: '/dkim/' },
+  },
+
+  DKIM_WEAK_KEY: {
+    severity: 'warn',
+    title: 'Weak DKIM key (under 2048-bit)',
+    why: 'RSA keys under 2048 bits are considered weak, and some receivers reject or distrust mail signed with 1024-bit keys. The size shown is estimated from the published key material.',
+    fix: [
+      'Generate a 2048-bit key in your email provider\'s DKIM settings.',
+      'Publish the new record, and remove the old key only after the new one verifies.',
+      'Re-run this check with the same selector.',
+    ],
+    guide: { label: 'DKIM explained', href: '/dkim/' },
+  },
+
+  DKIM_VALID: {
+    severity: 'pass',
+    title: 'DKIM key found and parsed',
+    why: 'A public key was found at this selector and its properties parsed. The key size is estimated from the published key material.',
+    fix: [
+      'To confirm signing works end to end, send a message and check the DKIM verdict in its Authentication-Results header.',
+      'Re-check after any key rotation.',
+    ],
+  },
+
+  DKIM_DNS_UNREACHABLE: {
+    severity: 'info',
+    title: 'DNS query did not complete',
+    why: 'The DNS query could not be completed, so nothing is known about this selector. This is an inconclusive result, not a pass or fail.',
+    fix: [
+      'Retry the check; transient network issues are common.',
+      'If it keeps failing, check your connection or try from another network.',
     ],
   },
 };
