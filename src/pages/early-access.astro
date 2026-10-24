@@ -45,12 +45,22 @@ const building = [
       <h2 class="font-display text-lg font-bold text-ink">Join the early access list</h2>
       <p id="ea-domain-note" class="mt-2 hidden font-mono text-xs text-accent"></p>
       <p class="mt-2 text-sm leading-relaxed text-ink-dim">
-        Email us at
-        <a href="mailto:earlyaccess@promptdns.com" class="font-mono text-accent hover:text-accent-soft">earlyaccess@promptdns.com</a>
-        and we'll add you. Early-access members get the first accounts, the launch free tier,
-        and a direct line to request features. No spam - you'll hear from us when it's ready.
+        Early-access members get the first accounts, the launch free tier, and a direct line to
+        request features. One email when it's ready - no spam.
       </p>
-      <a href="mailto:earlyaccess@promptdns.com?subject=Early%20access%20-%20PromptDNS%20monitoring" class="btn-cta btn-shimmer mt-5 inline-flex px-5 py-2.5 text-sm">Request early access</a>
+
+      <form id="ea-form" class="mt-5 flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="ea-email">Email address</label>
+        <input id="ea-email" type="email" required autocomplete="email" placeholder="you@yourdomain.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+        <button type="submit" id="ea-submit" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Join early access</button>
+      </form>
+
+      <div id="ea-result" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+      <p id="ea-fallback" class="mt-3 hidden text-xs text-ink-faint">
+        Prefer email? Write to
+        <a id="ea-mailto" href="mailto:earlyaccess@promptdns.com" class="font-mono text-accent hover:text-accent-soft">earlyaccess@promptdns.com</a>.
+      </p>
     </div>
 
     <p class="mt-8 text-sm text-ink-faint">
@@ -70,11 +80,51 @@ const building = [
         note.textContent = `Requested for: ${domain}${src ? ` (from ${src.replace('tool:', '')})` : ''}`;
         note.classList.remove('hidden');
       }
-      const subject = `Early access - PromptDNS monitoring for ${domain}`;
-      const body = `Domain: ${domain}${src ? `\nSource: ${src}` : ''}`;
-      document.querySelectorAll<HTMLAnchorElement>('a[href^="mailto:earlyaccess@"]').forEach((a) => {
-        a.href = `mailto:earlyaccess@promptdns.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      });
     }
+
+    const form = document.getElementById('ea-form') as HTMLFormElement;
+    const email = document.getElementById('ea-email') as HTMLInputElement;
+    const btn = document.getElementById('ea-submit') as HTMLButtonElement;
+    const result = document.getElementById('ea-result')!;
+    const fallback = document.getElementById('ea-fallback')!;
+    const mailto = document.getElementById('ea-mailto') as HTMLAnchorElement;
+
+    const show = (cls: string, text: string, showFallback: boolean) => {
+      result.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+      result.textContent = text;
+      result.classList.remove('hidden');
+      fallback.classList.toggle('hidden', !showFallback);
+    };
+
+    if (domain && mailto) {
+      const subject = `Early access - PromptDNS monitoring for ${domain}`;
+      const body = `Email: (your email)\nDomain: ${domain}${src ? `\nSource: ${src}` : ''}`;
+      mailto.href = `mailto:earlyaccess@promptdns.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.textContent = 'Joining…';
+      try {
+        const res = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.value, domain, source: src }),
+        });
+        const data = (await res.json()) as { ok: boolean; already?: boolean; error?: string };
+        if (res.ok && data.ok) {
+          show('bg-pass/10 text-pass border border-pass/30',
+            data.already ? 'This email is already on the list. You will hear from us at launch.' : 'You are on the list. You will hear from us when monitoring is ready.',
+            false);
+        } else {
+          show('bg-warn/10 text-warn border border-warn/30', data.error ?? 'Something went wrong. Please try again.', true);
+        }
+      } catch {
+        show('bg-warn/10 text-warn border border-warn/30', 'Could not reach the server. Use the email option below.', true);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Join early access';
+    });
   </script>
 </BaseLayout>
