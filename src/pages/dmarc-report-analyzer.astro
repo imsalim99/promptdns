@@ -9,50 +9,50 @@ const faqSchema = {
  "mainEntity": [
   {
    "@type": "Question",
-   "name": "Is the DMARC Report Analyzer really free?",
+   "name": "Where do I get a DMARC report file to upload?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The DMARC report analysis runs entirely in your browser."
+    "text": "Mailbox providers email daily aggregate reports to the address in your rua= tag, usually as a .zip or .gz attachment. That attachment is exactly what you upload here; the file never leaves your browser."
    }
   },
   {
    "@type": "Question",
-   "name": "How accurate are the results?",
+   "name": "Why won't my forensic report parse?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The DMARC report analysis queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives."
+    "text": "This tool parses aggregate (rua) reports, the daily XML summaries. Forensic (ruf) failure reports have a different format and are not supported."
    }
   },
   {
    "@type": "Question",
-   "name": "Do you store the domains I look up?",
+   "name": "What does a failing source in the report mean?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details."
+    "text": "One of two things: a legitimate sender with broken SPF or DKIM that you should fix, or an unknown sender spoofing your domain, which your policy is catching. You tell them apart by whether you recognize the IP and its volume pattern."
    }
   },
   {
    "@type": "Question",
-   "name": "Can I use this tool for client work?",
+   "name": "What pass rate do I need before moving to p=reject?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports."
+    "text": "Every legitimate source should pass SPF or DKIM alignment with unknown sources expected to fail. Reject stops only what fails, so legitimate volume passing is the green light."
    }
   },
   {
    "@type": "Question",
-   "name": "How often should I run this check?",
+   "name": "Why are Google and Microsoft the only reporters?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this."
+    "text": "A provider sends reports only for mail claiming your domain that passed through it. As your senders and volume vary across providers, so does who reports."
    }
   },
   {
    "@type": "Question",
-   "name": "What if the results look wrong?",
+   "name": "Is my report file uploaded anywhere?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree."
+    "text": "No. Parsing happens entirely in your browser with JavaScript; the file is never sent to any server."
    }
   }
  ]
@@ -110,7 +110,7 @@ const faqSchema = {
       <p>When reports get daily, automation wins: <a href="/pricing/">PromptDNS monitoring</a> collects them automatically and alerts you when a new sender appears or pass rates drop.</p>
       
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the DMARC Report Analyzer really free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The DMARC report analysis runs entirely in your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate are the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DMARC report analysis queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do you store the domains I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use this tool for client work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I run this check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if the results look wrong?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree.</p></details></div>
+<div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I get a DMARC report file to upload?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Mailbox providers email daily aggregate reports to the address in your rua= tag, usually as a .zip or .gz attachment. That attachment is exactly what you upload here; the file never leaves your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why won't my forensic report parse?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">This tool parses aggregate (rua) reports, the daily XML summaries. Forensic (ruf) failure reports have a different format and are not supported.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does a failing source in the report mean?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">One of two things: a legitimate sender with broken SPF or DKIM that you should fix, or an unknown sender spoofing your domain, which your policy is catching. You tell them apart by whether you recognize the IP and its volume pattern.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What pass rate do I need before moving to p=reject?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Every legitimate source should pass SPF or DKIM alignment with unknown sources expected to fail. Reject stops only what fails, so legitimate volume passing is the green light.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why are Google and Microsoft the only reporters?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A provider sends reports only for mail claiming your domain that passed through it. As your senders and volume vary across providers, so does who reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my report file uploaded anywhere?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Parsing happens entirely in your browser with JavaScript; the file is never sent to any server.</p></details></div>
 <h2>Related</h2>
       <ul>
         <li><a href="/how-to-read-dmarc-reports/">How to read DMARC reports</a> (guide)</li>

@@ -9,50 +9,50 @@ const faqSchema = {
  "mainEntity": [
   {
    "@type": "Question",
-   "name": "Is the Blacklist Checker really free?",
+   "name": "Which blocklists does this checker query?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The blocklist scan runs entirely in your browser."
+    "text": "The major publicly queryable lists, including SURBL, URIBL, SpamCop, SORBS, and Barracuda. Some lists (notably Spamhaus) refuse queries from public resolvers; those show as not checkable rather than clean, and should be verified on the list's own site."
    }
   },
   {
    "@type": "Question",
-   "name": "How accurate are the results?",
+   "name": "My domain is listed. What now?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The blocklist scan queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives."
+    "text": "Open the list's own site and read the return code, which states the reason. Fix the root cause (compromised account, open redirect, misconfigured server) before requesting delisting, or the listing returns. Our removal guides cover the big lists."
    }
   },
   {
    "@type": "Question",
-   "name": "Do you store the domains I look up?",
+   "name": "Why is a shared sending IP listed?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details."
+    "text": "Other customers of your email provider share that IP and caused the listing. Ask the provider to resolve it, send from your dedicated IP, or request delisting as their process allows."
    }
   },
   {
    "@type": "Question",
-   "name": "Can I use this tool for client work?",
+   "name": "I'm listed but my mail still delivers. Does it matter?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports."
+    "text": "Not every receiver consults every list, so delivery can continue while some providers silently spam-folder you. Treat any listing as deliverability risk to fix promptly."
    }
   },
   {
    "@type": "Question",
-   "name": "How often should I run this check?",
+   "name": "How often should I check blocklists?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this."
+    "text": "Whenever deliverability drops, and routinely afterward. The listing reason tells you what to prevent next time."
    }
   },
   {
    "@type": "Question",
-   "name": "What if the results look wrong?",
+   "name": "Is my domain sent to a server when I use this checker?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree."
+    "text": "No. The queries run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing."
    }
   }
  ]
@@ -113,7 +113,7 @@ const faqSchema = {
       <p>Find the listing’s reason first (each list shows return codes), fix the cause, usually a compromised account, an open redirect, or a misconfigured server, then request delisting. Our guides walk through the big ones: <a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a>, <a href="/get-off-barracuda-blocklist/">Barracuda removal</a>, <a href="/sorbs-delisting-guide/">SORBS delisting</a>.</p>
       
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the Blacklist Checker really free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The blocklist scan runs entirely in your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate are the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The blocklist scan queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do you store the domains I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use this tool for client work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I run this check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if the results look wrong?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree.</p></details></div>
+<div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which blocklists does this checker query?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The major publicly queryable lists, including SURBL, URIBL, SpamCop, SORBS, and Barracuda. Some lists (notably Spamhaus) refuse queries from public resolvers; those show as not checkable rather than clean, and should be verified on the list's own site.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">My domain is listed. What now?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Open the list's own site and read the return code, which states the reason. Fix the root cause (compromised account, open redirect, misconfigured server) before requesting delisting, or the listing returns. Our <a href="/remove-from-spamhaus-blocklist/" class="text-accent">removal guides</a> cover the big lists.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is a shared sending IP listed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Other customers of your email provider share that IP and caused the listing. Ask the provider to resolve it, send from your dedicated IP, or request delisting as their process allows.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">I'm listed but my mail still delivers. Does it matter?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not every receiver consults every list, so delivery can continue while some providers silently spam-folder you. Treat any listing as deliverability risk to fix promptly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I check blocklists?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Whenever deliverability drops, and routinely afterward. The listing reason tells you what to prevent next time.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The queries run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
 <h2>Related tools</h2>
       <ul>
         <li><a href="/spf-record-checker/">SPF Record Checker</a>, authentication issues often cause listings</li>
