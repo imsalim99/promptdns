@@ -199,7 +199,7 @@ export async function handleLogout(request: Request, env: AuthEnv): Promise<Resp
     const tokenHash = await hashHex(match[1]);
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?1').bind(tokenHash).run();
   }
-  return json({ ok: true }, { headers: { 'Set-Cookie': `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0` } });
+  return json({ ok: true }, 200, { headers: { 'Set-Cookie': `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0` } });
 }
 
 export { getUserBySession };
