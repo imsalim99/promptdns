@@ -84,7 +84,8 @@ import { RECORD_TYPES } from '../lib/doh';
     <!-- Check cards -->
     <div id="scan-cards" class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
 
-    <div class="mt-6 flex flex-wrap gap-3">
+    <div class="mt-6 flex flex-wrap items-center gap-4">
+      <a id="scan-monitor-cta" href="/early-access/" class="btn-cta btn-shimmer hidden px-5 py-2.5 text-sm">Monitor this score</a>
       <a href="/dns-propagation-checker/" class="text-sm font-medium text-accent hover:text-accent-soft">Run the propagation checker →</a>
       <a href="/email-authentication/" class="text-sm font-medium text-accent hover:text-accent-soft">Fix email authentication →</a>
     </div>
@@ -140,6 +141,9 @@ import { RECORD_TYPES } from '../lib/doh';
 
     // Fill outputs
     (document.getElementById('scan-domain-out') as HTMLElement).textContent = report.domain;
+    const monitorCta = document.getElementById('scan-monitor-cta') as HTMLAnchorElement;
+    monitorCta.href = `/early-access/?domain=${encodeURIComponent(report.domain)}&src=tool:domain-scanner`;
+    monitorCta.classList.remove('hidden');
     gradeEl.textContent = `Grade ${report.grade}`;
     const fails = report.checks.filter((c) => c.status === 'fail').length;
     const warns = report.checks.filter((c) => c.status === 'warn').length;
