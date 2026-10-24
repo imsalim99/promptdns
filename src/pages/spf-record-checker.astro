@@ -85,13 +85,13 @@ const faqSchema = {
 
       <div id="spf-lookup" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
         <div class="flex items-baseline justify-between">
-          <span class="text-sm text-ink-dim">DNS lookups used</span>
+          <span class="text-sm text-ink-dim">Top-level DNS lookup terms</span>
           <span id="spf-lookup-val" class="font-display text-3xl font-bold text-accent"></span>
         </div>
         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
           <div id="spf-lookup-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700"></div>
         </div>
-        <p class="mt-2 text-xs text-ink-faint">SPF allows a maximum of 10 DNS lookups, exceeding it is a permerror and your SPF stops working.</p>
+        <p class="mt-2 text-xs text-ink-faint">SPF allows a maximum of 10 DNS lookup terms in evaluation. This count reflects the terms in this record only; nested <code>include:</code> domains may consume additional lookups during actual mail evaluation.</p>
       </div>
 
       <div id="spf-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
@@ -102,6 +102,17 @@ const faqSchema = {
     </div>
 
       <div id="spf-issues" class="mt-4 hidden grid gap-2"></div>
+
+      <div id="spf-scope" class="mt-4 hidden rounded-lg border border-line bg-panel/40 px-4 py-3">
+        <p class="text-xs leading-relaxed text-ink-faint">
+          <strong class="text-ink-dim">Scope:</strong> This checker inspects the published SPF record's syntax and counts its top-level DNS lookup terms. It does not send mail, evaluate a specific sender IP, or recursively follow include chains. A "valid" result means the record's syntax is well-formed and within the top-level term count, not that every sender will pass. For sender-level verification, send a test message and inspect the <code>Authentication-Results</code> header.
+        </p>
+      </div>
+
+      <div id="spf-next-steps" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
+        <p class="text-sm font-semibold text-ink mb-2">Next steps</p>
+        <div id="spf-next-steps-content" class="grid gap-1.5 text-sm"></div>
+      </div>
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
@@ -140,10 +151,24 @@ const faqSchema = {
   const resultsEl = document.getElementById('spf-results')!;
   const tbody = document.getElementById('spf-tbody')!;
   const issuesEl = document.getElementById('spf-issues')!;
+  const scopeEl = document.getElementById('spf-scope')!;
+  const nextStepsEl = document.getElementById('spf-next-steps')!;
+  const nextStepsContent = document.getElementById('spf-next-steps-content')!;
 
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
     statusEl.textContent = text;
+  };
+
+  const setNextSteps = (steps: string[]) => {
+    nextStepsContent.innerHTML = '';
+    for (const s of steps) {
+      const li = document.createElement('div');
+      li.textContent = s;
+      li.className = 'text-sm text-ink-dim';
+      nextStepsContent.appendChild(li);
+    }
+    nextStepsEl.classList.remove('hidden');
   };
 
   form.addEventListener('submit', async (e) => {
@@ -151,41 +176,149 @@ const faqSchema = {
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     setStatus('bg-panel-2 text-accent border border-line', `Fetching TXT records for ${domain}…`);
-    [lookupBox, resultsEl, issuesEl].forEach((el) => el.classList.add('hidden'));
+    [lookupBox, resultsEl, issuesEl, scopeEl, nextStepsEl].forEach((el) => el.classList.add('hidden'));
+    tbody.innerHTML = '';
 
-    const { found, record } = await fetchSpf(domain);
-    if (!found) {
-      setStatus('bg-fail/10 text-fail border border-fail/30', `No SPF record found on ${domain}. Receivers cannot verify senders, Gmail and Yahoo require SPF.`);
+    let fetchResult: { found: boolean; record: string; txtCount: number };
+    try {
+      fetchResult = await fetchSpf(domain);
+    } catch {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        `Could not reach the DNS resolver for ${domain}. This is an inconclusive result — not a pass or fail. Check your connection and retry.`);
+      setNextSteps([
+        'Retry the check (transient network issues are common).',
+        'Verify the domain exists: try the DNS Record Lookup tool with type A.',
+      ]);
       return;
     }
-    const parse = parseSpf(record);
-    setStatus(
-      parse.errors.length ? 'bg-fail/10 text-fail border border-fail/30'
-        : parse.warnings.length ? 'bg-warn/10 text-warn border border-warn/30'
-        : 'bg-pass/10 text-pass border border-pass/30',
-      parse.errors.length ? 'SPF record found, with errors that must be fixed.'
-        : parse.warnings.length ? 'SPF record found, valid, with warnings.'
-        : 'SPF record found and valid.'
-    );
 
+    const { found, record, txtCount } = fetchResult;
+
+    if (!found) {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        txtCount === 0
+          ? `No TXT records returned for ${domain}. This is inconclusive: the domain may not publish SPF, or the DNS query may not have completed.`
+          : `No SPF record found on ${domain} (TXT records exist, but none start with v=spf1).`);
+      if (txtCount === 0) {
+        setNextSteps([
+          'Verify the domain has any DNS records: use the DNS Record Lookup tool.',
+          'If the domain sends email, publish a v=spf1 TXT record.',
+        ]);
+      } else {
+        setNextSteps([
+          'If this domain sends email, publish a v=spf1 TXT record.',
+          'If it does not send email, no SPF is needed.',
+        ]);
+      }
+      return;
+    }
+
+    // RFC 7208: multiple v=spf1 records is an error, but this tool only parses the first one
+    if (txtCount > 1) {
+      const multi = document.createElement('div');
+      multi.className = 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn';
+      multi.textContent = `▲ ${txtCount} v=spf1 records found. RFC 7208 requires exactly one; multiple records cause evaluation to fail. This tool parsed the first record only.`;
+      issuesEl.appendChild(multi);
+      issuesEl.classList.remove('hidden');
+    }
+
+    const parse = parseSpf(record);
+
+    // State-aware status
+    const overLimit = parse.lookupCount > 10;
+    const nearLimit = parse.lookupCount > 8 && parse.lookupCount <= 10;
+    const hasErrors = parse.errors.length > 0;
+
+    if (hasErrors || overLimit) {
+      setStatus('bg-fail/10 text-fail border border-fail/30',
+        overLimit
+          ? `SPF record has ${parse.lookupCount} top-level DNS lookup terms (evaluation limit is 10). This exceeds the limit before counting nested includes — receivers will stop evaluating the policy at the 10th lookup term.`
+          : 'SPF record found — with errors that must be fixed.');
+    } else if (parse.warnings.length > 0) {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        nearLimit
+          ? `SPF record is syntactically valid but uses ${parse.lookupCount}/10 top-level lookup terms — close to the limit.`
+          : 'SPF record is syntactically valid, with warnings.');
+    } else {
+      setStatus('bg-pass/10 text-pass border border-pass/30',
+        'SPF record found and syntactically valid.');
+    }
+
+    // Lookup meter
     lookupBox.classList.remove('hidden');
     lookupVal.textContent = `${parse.lookupCount}/10`;
     lookupBar.style.width = `${Math.min(100, parse.lookupCount * 10)}%`;
-    lookupBar.className = `h-full rounded-full transition-all duration-700 ${parse.lookupCount > 10 ? 'bg-fail' : parse.lookupCount > 8 ? 'bg-warn' : 'bg-gradient-to-r from-accent to-violet'}`;
+    lookupBar.className = `h-full rounded-full transition-all duration-700 ${overLimit ? 'bg-fail' : nearLimit ? 'bg-warn' : 'bg-gradient-to-r from-accent to-violet'}`;
 
+    // Term table (escaped)
     tbody.innerHTML = `<tr><td colspan="3"><code>${record.replace(/</g, '&lt;')}</code></td></tr>`;
     for (const t of parse.terms) {
-      tbody.insertAdjacentHTML('beforeend', `<tr>
-        <td class="font-mono text-xs ${t.countsLookup ? 'text-warn' : 'text-accent'}">${t.term}</td>
-        <td class="text-ink-dim">${t.kind}</td>
-        <td class="text-ink-dim">${t.note}</td>
-      </tr>`);
+      const td = document.createElement('td');
+      td.className = 'font-mono text-xs ' + (t.countsLookup ? 'text-warn' : 'text-accent');
+      td.textContent = t.term;
+      const tr = document.createElement('tr');
+      tr.appendChild(td);
+      const td2 = document.createElement('td');
+      td2.className = 'text-ink-dim';
+      td2.textContent = t.kind;
+      tr.appendChild(td2);
+      const td3 = document.createElement('td');
+      td3.className = 'text-ink-dim';
+      td3.textContent = t.note;
+      tr.appendChild(td3);
+      tbody.appendChild(tr);
     }
     resultsEl.classList.remove('hidden');
 
+    // Issues
     issuesEl.innerHTML = '';
-    for (const err of parse.errors) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail">✕ ${err}</div>`);
-    for (const w of parse.warnings) issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn">▲ ${w}</div>`);
+    for (const err of parse.errors) {
+      const d = document.createElement('div');
+      d.className = 'rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail';
+      d.textContent = '✕ ' + err;
+      issuesEl.appendChild(d);
+    }
+    for (const w of parse.warnings) {
+      const d = document.createElement('div');
+      d.className = 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn';
+      d.textContent = '▲ ' + w;
+      issuesEl.appendChild(d);
+    }
     if (parse.errors.length || parse.warnings.length) issuesEl.classList.remove('hidden');
+
+    // Scope note
+    scopeEl.classList.remove('hidden');
+
+    // State-aware next steps
+    if (overLimit) {
+      setNextSteps([
+        'Review each include: mechanism — is every listed sender still needed?',
+        'Remove any include: entries for services you no longer use.',
+        'Check your email provider\u2019s current SPF guidance (they may have changed their records).',
+        'Retest after removing obsolete entries.',
+        'Do not flatten automatically — flattening replaces includes with IPs that can become stale if the provider changes their infrastructure.',
+      ]);
+    } else if (nearLimit) {
+      setNextSteps([
+        'Review each include: mechanism — remove any you no longer need.',
+        'Monitor this record for changes that could push it over the limit.',
+        'Retest after any DNS change.',
+      ]);
+    } else if (hasErrors) {
+      setNextSteps([
+        'Fix the unrecognized terms listed above (check for typos in mechanism names).',
+        'Retest after publishing the corrected record.',
+      ]);
+    } else if (parse.warnings.length > 0) {
+      setNextSteps([
+        'Review the warnings above — they indicate potential issues but not broken SPF.',
+        'Retest after any changes.',
+      ]);
+    } else {
+      setNextSteps([
+        'This record is syntactically valid. To verify actual sender authorization, send a test message and check the Authentication-Results header.',
+        'Retest after any DNS or email infrastructure change.',
+      ]);
+    }
   });
 </script>
