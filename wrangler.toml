@@ -1,11 +1,15 @@
 name = "promptdns"
-pages_build_output_dir = "dist"
+main = "worker/index.ts"
 compatibility_date = "2026-10-01"
 
-# D1 binding for Pages Functions. Production uses promptdns-prod;
-# preview deployments use promptdns-staging.
+# Static assets (Astro build output) are served by the asset layer;
+# non-asset paths (/api/*) invoke the Worker in worker/index.ts.
+[assets]
+directory = "dist"
+not_found_handling = "404-page"
+
+# D1: promptdns-prod for the live Worker.
 [[d1_databases]]
 binding = "DB"
 database_name = "promptdns-prod"
 database_id = "8820ce82-1e40-453c-9e90-4617c4a539e7"
-preview_database_id = "02fe4779-ff22-44a4-9656-8dcd31c0acc4"

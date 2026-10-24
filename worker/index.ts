@@ -1,16 +1,16 @@
 /**
- * POST /api/waitlist - early-access signups (D1, Phase 3).
+ * PromptDNS Worker - API routes for the static site (Workers static assets).
  *
- * Design notes:
- * - Validates and caps all inputs; no secrets in this endpoint.
- * - Flood limit: max 5 submissions per hashed IP per hour.
- * - Stores email + optional domain/source (tool attribution, src=tool:<slug>).
- * - Graceful 503 when the D1 binding is not configured yet, so the static
- *   site stays truthful before the database exists.
+ * Static asset requests never reach this script (the asset layer answers
+ * first); only non-asset paths like /api/* arrive here. Everything else
+ * falls through to the asset layer, which serves the Astro 404 page.
+ *
+ * Route: POST /api/waitlist - early-access signups (D1).
  */
 
 interface Env {
   DB?: D1Database;
+  ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
@@ -34,15 +34,15 @@ async function hashIp(ip: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const { request, env } = context;
+async function handleWaitlist(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') return bad('POST only.', 405);
   if (!env.DB) {
-    return bad('Waitlist storage is not configured yet. Email earlyaccess@promptdns.com to join.', 503);
+    return bad('Waitlist storage is not configured. Email earlyaccess@promptdns.com to join.', 503);
   }
 
   let body: { email?: unknown; domain?: unknown; source?: unknown };
   try {
-    body = await request.json();
+    body = (await request.json()) as typeof body;
   } catch {
     return bad('Invalid JSON body.');
   }
@@ -59,7 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // Flood limit: 5 signups per hashed IP per hour.
   const recent = await env.DB
-    .prepare('SELECT COUNT(*) AS n FROM waitlist WHERE ip_hash = ?1 AND created_at > datetime(\'now\', \'-1 hour\')')
+    .prepare("SELECT COUNT(*) AS n FROM waitlist WHERE ip_hash = ?1 AND created_at > datetime('now', '-1 hour')")
     .bind(ipHash)
     .first<{ n: number }>();
   if (recent && recent.n >= 5) {
@@ -72,6 +72,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     .run();
 
   return Response.json({ ok: true, already: res.meta.changes === 0 });
-};
+}
 
-export const onRequestGet: PagesFunction<Env> = async () => bad('POST only.', 405);
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/waitlist') {
+      return handleWaitlist(request, env);
+    }
+    return env.ASSETS.fetch(request);
+  },
+} satisfies ExportedHandler<Env>;
