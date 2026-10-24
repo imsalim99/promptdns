@@ -94,26 +94,26 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
   },
   "dns-response-time-test": {
-    title: "Reading resolver latency",
+    title: "Reading cold versus cached resolution",
     process: [
-      "Response time is measured the same way the speed test measures it: repeated DoH queries from your browser, timing each round trip. The distinction is emphasis: this view is about per-query latency behavior, including the cold-start penalty on the first connection.",
-      "Each resolver is queried multiple times so the average smooths out single-packet jitter, and the best (minimum) time shows the steady-state performance your browsing actually experiences.",
+      "For each public resolver, the test first queries your apex domain a couple of times (these answers are almost always cached somewhere along the chain) and then queries three never-before-seen hostnames under your domain, like cold-x7f2.yourdomain.com. A brand-new name cannot be in any cache, so the resolver is forced to walk the full chain: root servers, the TLD, then your authoritative nameservers.",
+      "The cached time tells you how fast everyday repeat traffic is served; the fresh (cold) time tells you how fast your domain's DNS actually answers when it matters: first visitors, TTL expiry, and new subdomains. Unless you publish a wildcard record, cold lookups return NXDOMAIN, which is a complete, valid answer for timing purposes.",
     ],
     interpret: [
-      "A high first query with fast repeats is normal: connection setup, not DNS slowness.",
-      "Consistent latency above 100 ms to every resolver points at your network, not the providers.",
-      "Comparing runs before and after changing your system resolver shows whether the switch actually mattered.",
+      "Cold slower than cached is normal: caches exist precisely to skip the walk. A 2-10x difference is unremarkable.",
+      "Cold times above roughly 300 ms on every resolver point at authoritative nameservers that are slow or geographically far from resolvers, not at your local network.",
+      "Single runs are noisy: packet loss or a busy moment can skew one measurement. Run the test a few times and look for consistency before concluding anything.",
     ],
-    cli: "for i in 1 2 3 4; do dig @8.8.8.8 example.com +stats | grep 'Query time'; done",
+    cli: "dig cold-$RANDOM.example.com @8.8.8.8 +stats | grep 'Query time'",
     errors: [
       ["One resolver skipped or timed out","Its DoH endpoint is unreachable from your network path; retry on another connection."],
-      ["Latency differs between the speed test and this one","Different moment, different network load. Treat anything under 30 ms as equivalent."],
+      ["Cold lookups return NXDOMAIN","That is expected for non-wildcard domains and does not affect the timing, which is the measurement."],
     ],
-    who: "Anyone tuning their network stack, comparing VPN providers' DNS, or validating that a resolver change helped.",
+    who: "Site owners diagnosing slow first-visit DNS, anyone evaluating a DNS provider change, and teams checking whether their authoritative DNS serves global resolvers well.",
     faqs: [
-      ["What is a good DNS response time?","Under 50 ms is typical for major providers; under 20 ms is excellent. Beyond 100 ms, investigate."],
+      ["What is a good fresh-lookup time?","Well-placed anycast authoritative DNS typically resolves a brand-new name in 50-200 ms. Consistently above 300 ms across resolvers is worth investigating."],
       ["Does this test encrypt my queries?","Yes: all queries travel over DNS-over-HTTPS, so your network operator sees HTTPS traffic, not DNS."],
-      ["Why measure from the browser?","Because that's where most real-world lookups happen: browsers route their own DoH, and this measures that exact path."],
+      ["How is this different from the DNS Speed Test?","The speed test compares resolvers against each other for your network. This test measures how fast your domain's own DNS chain answers from scratch, which is a property of your domain, not of the resolver."],
     ],
   },
   "delegation-checker": {

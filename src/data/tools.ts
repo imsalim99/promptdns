@@ -18,7 +18,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
       { name: 'Wildcard DNS Tester', href: '/wildcard-dns-tester/', desc: 'Probe random subdomains to detect wildcard records and see exactly what *.domain matches.' },
       { name: 'AXFR Leak Checker', href: '/axfr-checker/', desc: 'Audit zone-transfer exposure and get the one-command dig test for each authoritative server.' },
       { name: 'Resolver Tester', href: '/dns-resolver-tester/', desc: 'Query any DNS-over-HTTPS endpoint, preset or custom, with any record type and latency timing.' },
-      { name: 'Response Time Test', href: '/dns-response-time-test/', desc: 'Measure resolver latency with repeated lookups and averaged response times from your network.' },
+      { name: 'Response Time Test', href: '/dns-response-time-test/', desc: 'Measure how fast resolvers resolve your domain from scratch: fresh (cold) lookups versus cached ones, to diagnose slow authoritative DNS.' },
       { name: 'A Record Lookup', href: '/a-record-lookup/', desc: 'See the IPv4 addresses a domain points to, with TTLs, before and after migrations.' },
       { name: 'AAAA Record Lookup', href: '/aaaa-record-lookup/', desc: "Check any domain's IPv6 addresses to verify dual-stack setups and catch v6-only breakage." },
       { name: 'MX Record Lookup', href: '/mx-record-lookup/', desc: 'See which mail servers accept email for a domain, with priorities, before provider changes.' },

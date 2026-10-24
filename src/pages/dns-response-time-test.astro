@@ -2,10 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 ---
 <BaseLayout
-  title="DNS Response Time Test, Measure DNS Latency for Any Domain"
-  description="Free DNS response time test: measure how quickly your domain answers across Cloudflare, Google, and AliDNS, with averaged latency per resolver."
+  title="DNS Response Time Test, Cold vs Cached Resolution"
+  description="Free DNS response time test: measure how fast resolvers resolve your domain from scratch (cold lookup) versus from cache, to diagnose slow authoritative nameservers."
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,22 +17,32 @@ import ToolPanel from '../components/ToolPanel.astro';
       <span class="text-ink-dim">DNS Response Time Test</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Response Time Test</h1>
-    <p class="mt-4 text-lg text-ink-dim">Measure resolver response times from your own network, repeated lookups, averaged latency, winner ranked. Useful before picking 1.1.1.1 or 8.8.8.8 as your system resolver.</p>
+    <p class="mt-4 text-lg text-ink-dim">How fast can the internet resolve your domain <em>from scratch</em>? This test queries a random new hostname under your domain, forcing resolvers through the full root &rarr; TLD &rarr; your nameservers walk, and compares it with a cached lookup. Slow cold times point at slow authoritative DNS, not your network.</p>
 
     <ToolPanel>
       <form id="st-form" class="flex flex-col gap-3 sm:flex-row">
         <label class="sr-only" for="st-domain">Test domain</label>
-        <input id="st-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="example.com"
+        <input id="st-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="yourdomain.com"
           class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
-        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Response Time Test</button>
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Cold Lookup Test</button>
       </form>
 
       <div id="st-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
 
-      <div id="st-results" class="mt-6 hidden grid gap-4">
-</div>
+      <div id="st-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead><tr><th>Resolver</th><th>Cached lookup</th><th>Fresh lookup (cold)</th><th>Difference</th></tr></thead>
+          <tbody id="st-tbody"></tbody>
+        </table>
+      </div>
 
-      <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
+      <div id="st-scope" class="mt-4 hidden rounded-lg border border-line bg-panel/40 px-4 py-3">
+        <p class="text-xs leading-relaxed text-ink-faint">
+          <strong class="text-ink-dim">Scope:</strong> cold lookups query a never-seen hostname (a random prefix under your domain), so the resolver cannot answer from cache and must recurse. Unless your domain publishes a wildcard record, cold lookups return NXDOMAIN - that is expected and does not affect the timing, which is the measurement. Single runs are noisy; run the test a few times. To compare <em>resolvers</em> against each other for speed instead, use the <a href="/dns-speed-test/" class="text-accent">DNS Speed Test</a>.
+        </p>
+      </div>
+
+      <ResultCard tool="dns-response-time-test" />
     </ToolPanel>
 
     <ToolArticle slug="dns-response-time-test" />
@@ -39,58 +50,115 @@ import ToolPanel from '../components/ToolPanel.astro';
 </BaseLayout>
 
 <script>
-  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { lookup, RESOLVERS, normalizeDomain, type Resolver } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
-  const RUNS = 4;
+  const WARM_RUNS = 2;
+  const COLD_RUNS = 3;
+
+  const TOOL = 'dns-response-time-test';
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine, findings,
+      ctaLabel: 'Know when DNS gets slow',
+      related: [
+        { label: 'DNS Speed Test', href: '/dns-speed-test/' },
+        { label: 'Propagation checker', href: '/dns-propagation-checker/' },
+        { label: 'DNS providers hub', href: '/dns-providers/' },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  };
+
   const form = document.getElementById('st-form') as HTMLFormElement;
   const input = document.getElementById('st-domain') as HTMLInputElement;
   const statusEl = document.getElementById('st-status')!;
   const resultsEl = document.getElementById('st-results')!;
+  const tbody = document.getElementById('st-tbody')!;
+  const scopeEl = document.getElementById('st-scope')!;
 
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
     statusEl.textContent = text;
   };
 
+  const randLabel = () => `cold-${Math.random().toString(36).slice(2, 8)}`;
+
+  async function timedAvg(name: string, resolver: Resolver, runs: number): Promise<number> {
+    const times: number[] = [];
+    for (let i = 0; i < runs; i++) {
+      const res = await lookup(name, 'A', resolver);
+      times.push(res.ms);
+    }
+    return Math.round(times.reduce((s, t) => s + t, 0) / times.length);
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const domain = normalizeDomain(input.value) || 'example.com';
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) {
+      setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. yourdomain.com');
+      return;
+    }
     const btn = form.querySelector('button') as HTMLButtonElement;
     btn.disabled = true;
-    resultsEl.innerHTML = '';
-    resultsEl.classList.remove('hidden');
+    tbody.innerHTML = '';
+    [resultsEl, scopeEl].forEach((el) => el.classList.add('hidden'));
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    const avgs: { name: string; avg: number; best: number }[] = [];
-    for (const resolver of RESOLVERS) {
-      setStatus('bg-panel-2 text-accent border border-line', `Testing ${resolver.name} (${RUNS} queries)…`);
-      const times: number[] = [];
-      for (let i = 0; i < RUNS; i++) {
-        const res = await lookup(domain, 'A', resolver);
-        times.push(res.ms);
+    const rows: { name: string; warm: number; cold: number }[] = [];
+    try {
+      for (const resolver of RESOLVERS) {
+        setStatus('bg-panel-2 text-accent border border-line', `Testing ${resolver.name}: 2 cached + 3 fresh lookups…`);
+        const warm = await timedAvg(domain, resolver, WARM_RUNS);
+        const cold = await timedAvg(`${randLabel()}.${domain}`, resolver, COLD_RUNS);
+        rows.push({ name: resolver.name, warm, cold });
       }
-      const avg = Math.round(times.reduce((s, t) => s + t, 0) / times.length);
-      const best = Math.min(...times);
-      avgs.push({ name: resolver.name, avg, best });
+    } catch {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        `Could not reach a resolver while testing ${domain}. This is an inconclusive result - check your connection and retry.`);
+      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s resolution time.', [{ code: 'DNS_QUERY_FAILED' }], domain);
+      btn.disabled = false;
+      return;
     }
 
-    const slowest = Math.max(...avgs.map((a) => a.avg), 1);
-    const winner = [...avgs].sort((a, b) => a.avg - b.avg)[0];
+    const coldAvg = Math.round(rows.reduce((s, r) => s + r.cold, 0) / rows.length);
+    const warmAvg = Math.round(rows.reduce((s, r) => s + r.warm, 0) / rows.length);
 
-    resultsEl.innerHTML = '';
-    for (const r of [...avgs].sort((a, b) => a.avg - b.avg)) {
-      const pct = Math.round((r.avg / slowest) * 100);
-      resultsEl.insertAdjacentHTML('beforeend', `
-        <div>
-          <div class="mb-1 flex items-baseline justify-between">
-            <span class="text-sm font-medium text-ink">${r.name}</span>
-            <span class="font-mono text-xs text-ink-dim">avg ${r.avg} ms · best ${r.best} ms</span>
-          </div>
-          <div class="h-3 overflow-hidden rounded-full bg-panel-2">
-            <div class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700" style="width: ${pct}%"></div>
-          </div>
-        </div>`);
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.className = 'font-medium text-ink';
+      tdName.textContent = r.name;
+      tr.appendChild(tdName);
+      const tdWarm = document.createElement('td');
+      tdWarm.className = 'font-mono text-xs text-ink-dim';
+      tdWarm.textContent = `${r.warm} ms`;
+      tr.appendChild(tdWarm);
+      const tdCold = document.createElement('td');
+      tdCold.className = 'font-mono text-xs font-semibold ' + (r.cold > 300 ? 'text-warn' : 'text-accent');
+      tdCold.textContent = `${r.cold} ms`;
+      tr.appendChild(tdCold);
+      const tdDiff = document.createElement('td');
+      tdDiff.className = 'font-mono text-xs text-ink-dim';
+      tdDiff.textContent = `${Math.max(0, r.cold - r.warm)} ms slower cold`;
+      tr.appendChild(tdDiff);
+      tbody.appendChild(tr);
     }
-    setStatus('bg-pass/10 text-pass border border-pass/30', `Fastest from your network: ${winner.name} (avg ${winner.avg} ms).`);
+    resultsEl.classList.remove('hidden');
+    scopeEl.classList.remove('hidden');
+
+    if (coldAvg > 300) {
+      setStatus('bg-warn/10 text-warn border border-warn/30',
+        `Fresh lookups average ${coldAvg} ms (cached: ${warmAvg} ms). That is slower than the 50-200 ms typical for well-placed authoritative DNS.`);
+      emit('warn', `Cold resolution averages ${coldAvg} ms across resolvers; cached lookups average ${warmAvg} ms.`,
+        [{ code: 'COLD_SLOW', detail: `Cold avg ${coldAvg} ms, cached avg ${warmAvg} ms across ${rows.length} resolvers` }], domain);
+    } else {
+      setStatus('bg-pass/10 text-pass border border-pass/30',
+        `Fresh lookups average ${coldAvg} ms (cached: ${warmAvg} ms). Within the typical range for well-placed authoritative DNS.`);
+      emit('pass', `Cold resolution averages ${coldAvg} ms across resolvers; cached lookups average ${warmAvg} ms.`,
+        [{ code: 'COLD_FAST', detail: `Cold avg ${coldAvg} ms, cached avg ${warmAvg} ms across ${rows.length} resolvers` }], domain);
+    }
     btn.disabled = false;
   });
 </script>

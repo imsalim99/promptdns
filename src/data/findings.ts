@@ -466,6 +466,30 @@ export const FINDINGS: Record<string, FindingDef> = {
     ],
   },
 
+  /* ---------------- DNS Response Time Test (cold resolution) ---------------- */
+
+  COLD_FAST: {
+    severity: 'pass',
+    title: 'Fresh lookups resolve quickly',
+    why: 'Resolvers can walk the full DNS chain (root, TLD, your nameservers) for a brand-new name under your domain in a typical time for well-placed authoritative DNS.',
+    fix: [
+      'Numbers are single-run samples and vary with network conditions; re-run a few times before drawing conclusions.',
+      'Re-test after changing DNS providers or adding geographic DNS.',
+    ],
+  },
+
+  COLD_SLOW: {
+    severity: 'warn',
+    title: 'Fresh lookups are slow',
+    why: 'Resolvers take longer than the typical 50-200 ms to resolve a brand-new name under your domain from scratch. That points at authoritative nameservers that are slow or far from the resolvers, not at your local network. Cached lookups will still feel fast until they expire.',
+    fix: [
+      'Check where your DNS provider runs nameservers: an anycast provider (Cloudflare, Route 53, NS1 and similar) serves most regions within tens of milliseconds.',
+      'Compare with a domain on a different provider to confirm it is the DNS, not the resolvers.',
+      'Re-run this test a few times: single cold measurements are noisy.',
+    ],
+    guide: { label: 'DNS providers hub', href: '/dns-providers/' },
+  },
+
   /* ---------------- DMARC Report Analyzer ---------------- */
 
   REPORT_PARSE_FAILED: {
