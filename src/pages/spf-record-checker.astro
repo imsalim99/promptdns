@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
 const faqSchema = {
  "@context": "https://schema.org",
@@ -101,18 +102,13 @@ const faqSchema = {
         </table>
     </div>
 
-      <div id="spf-issues" class="mt-4 hidden grid gap-2"></div>
-
       <div id="spf-scope" class="mt-4 hidden rounded-lg border border-line bg-panel/40 px-4 py-3">
         <p class="text-xs leading-relaxed text-ink-faint">
           <strong class="text-ink-dim">Scope:</strong> This checker inspects the published SPF record's syntax and counts its top-level DNS lookup terms. It does not send mail, evaluate a specific sender IP, or recursively follow include chains. A "valid" result means the record's syntax is well-formed and within the top-level term count, not that every sender will pass. For sender-level verification, send a test message and inspect the <code>Authentication-Results</code> header.
         </p>
       </div>
 
-      <div id="spf-next-steps" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
-        <p class="text-sm font-semibold text-ink mb-2">Next steps</p>
-        <div id="spf-next-steps-content" class="grid gap-1.5 text-sm"></div>
-      </div>
+      <ResultCard tool="spf-record-checker" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
@@ -143,6 +139,7 @@ const faqSchema = {
 <script>
   import { fetchSpf, parseSpf } from '../lib/spf';
   import { normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.getElementById('spf-form') as HTMLFormElement;
   const input = document.getElementById('spf-domain') as HTMLInputElement;
@@ -152,25 +149,28 @@ const faqSchema = {
   const lookupBar = document.getElementById('spf-lookup-bar')!;
   const resultsEl = document.getElementById('spf-results')!;
   const tbody = document.getElementById('spf-tbody')!;
-  const issuesEl = document.getElementById('spf-issues')!;
   const scopeEl = document.getElementById('spf-scope')!;
-  const nextStepsEl = document.getElementById('spf-next-steps')!;
-  const nextStepsContent = document.getElementById('spf-next-steps-content')!;
 
   const setStatus = (cls: string, text: string) => {
     statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
     statusEl.textContent = text;
   };
 
-  const setNextSteps = (steps: string[]) => {
-    nextStepsContent.innerHTML = '';
-    for (const s of steps) {
-      const li = document.createElement('div');
-      li.textContent = s;
-      li.className = 'text-sm text-ink-dim';
-      nextStepsContent.appendChild(li);
-    }
-    nextStepsEl.classList.remove('hidden');
+  const TOOL = 'spf-record-checker';
+  const RELATED_OK = [
+    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
+    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+    { label: 'SPF records explained', href: '/spf-record/' },
+  ];
+  const RELATED_FAIL = [
+    { label: 'SPF permerror: causes and fixes', href: '/spf-permerror/' },
+    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
+    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+  ];
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string, related = RELATED_OK) => {
+    const detail: PdnsResult = { tool: TOOL, domain, verdict, verdictLine, findings, related };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
   };
 
   form.addEventListener('submit', async (e) => {
@@ -178,8 +178,9 @@ const faqSchema = {
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     setStatus('bg-panel-2 text-accent border border-line', `Fetching TXT records for ${domain}…`);
-    [lookupBox, resultsEl, issuesEl, scopeEl, nextStepsEl].forEach((el) => el.classList.add('hidden'));
+    [lookupBox, resultsEl, scopeEl].forEach((el) => el.classList.add('hidden'));
     tbody.innerHTML = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
     let fetchResult: { found: boolean; record: string; txtCount: number };
     try {
@@ -187,41 +188,23 @@ const faqSchema = {
     } catch {
       setStatus('bg-warn/10 text-warn border border-warn/30',
         `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
-      setNextSteps([
-        'Retry the check (transient network issues are common).',
-        'Verify the domain exists: try the DNS Record Lookup tool with type A.',
-      ]);
+      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s SPF.', [{ code: 'SPF_DNS_UNREACHABLE' }], domain);
       return;
     }
 
     const { found, record, txtCount } = fetchResult;
 
     if (!found) {
-      setStatus('bg-warn/10 text-warn border border-warn/30',
-        txtCount === 0
-          ? `No TXT records returned for ${domain}. This is inconclusive: the domain may not publish SPF, or the DNS query may not have completed.`
-          : `No SPF record found on ${domain} (TXT records exist, but none start with v=spf1).`);
       if (txtCount === 0) {
-        setNextSteps([
-          'Verify the domain has any DNS records: use the DNS Record Lookup tool.',
-          'If the domain sends email, publish a v=spf1 TXT record.',
-        ]);
+        setStatus('bg-warn/10 text-warn border border-warn/30',
+          `No TXT records returned for ${domain}. This is inconclusive: the domain may not publish SPF, or the DNS query may not have completed.`);
+        emit('info', `No TXT records returned for ${domain}. This is inconclusive, not a fail.`, [{ code: 'SPF_NO_TXT' }], domain);
       } else {
-        setNextSteps([
-          'If this domain sends email, publish a v=spf1 TXT record.',
-          'If it does not send email, no SPF is needed.',
-        ]);
+        setStatus('bg-warn/10 text-warn border border-warn/30',
+          `No SPF record found on ${domain} (TXT records exist, but none start with v=spf1).`);
+        emit('warn', `No SPF record found on ${domain}. TXT records exist, but none is an SPF policy.`, [{ code: 'SPF_NOT_PUBLISHED' }], domain);
       }
       return;
-    }
-
-    // RFC 7208: multiple v=spf1 records is an error, but this tool only parses the first one
-    if (txtCount > 1) {
-      const multi = document.createElement('div');
-      multi.className = 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn';
-      multi.textContent = `▲ ${txtCount} v=spf1 records found. RFC 7208 requires exactly one; multiple records cause evaluation to fail. This tool parsed the first record only.`;
-      issuesEl.appendChild(multi);
-      issuesEl.classList.remove('hidden');
     }
 
     const parse = parseSpf(record);
@@ -230,13 +213,16 @@ const faqSchema = {
     const overLimit = parse.lookupCount > 10;
     const nearLimit = parse.lookupCount > 8 && parse.lookupCount <= 10;
     const hasErrors = parse.errors.length > 0;
+    const plusAll = parse.allQualifier === '+';
+    const hasWarn = parse.warnings.some((w) => !w.includes('/10 DNS lookups used')) || nearLimit || plusAll;
+    const verdict: Severity = (hasErrors || overLimit || txtCount > 1 || plusAll) ? 'fail' : hasWarn ? 'warn' : 'pass';
 
-    if (hasErrors || overLimit) {
+    if (verdict === 'fail') {
       setStatus('bg-fail/10 text-fail border border-fail/30',
         overLimit
           ? `SPF record has ${parse.lookupCount} top-level DNS lookup terms (evaluation limit is 10). This exceeds the limit before counting nested includes - receivers will stop evaluating the policy at the 10th lookup term.`
           : 'SPF record found - with errors that must be fixed.');
-    } else if (parse.warnings.length > 0) {
+    } else if (verdict === 'warn') {
       setStatus('bg-warn/10 text-warn border border-warn/30',
         nearLimit
           ? `SPF record is syntactically valid but uses ${parse.lookupCount}/10 top-level lookup terms - close to the limit.`
@@ -272,55 +258,34 @@ const faqSchema = {
     }
     resultsEl.classList.remove('hidden');
 
-    // Issues
-    issuesEl.innerHTML = '';
-    for (const err of parse.errors) {
-      const d = document.createElement('div');
-      d.className = 'rounded-md border border-fail/30 bg-fail/10 px-4 py-2 text-sm text-fail';
-      d.textContent = '✕ ' + err;
-      issuesEl.appendChild(d);
-    }
-    for (const w of parse.warnings) {
-      const d = document.createElement('div');
-      d.className = 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn';
-      d.textContent = '▲ ' + w;
-      issuesEl.appendChild(d);
-    }
-    if (parse.errors.length || parse.warnings.length) issuesEl.classList.remove('hidden');
-
     // Scope note
     scopeEl.classList.remove('hidden');
 
-    // State-aware next steps
-    if (overLimit) {
-      setNextSteps([
-        'Review each include: mechanism - is every listed sender still needed?',
-        'Remove any include: entries for services you no longer use.',
-        'Check your email provider\u2019s current SPF guidance (they may have changed their records).',
-        'Retest after removing obsolete entries.',
-        'Do not flatten automatically - flattening replaces includes with IPs that can become stale if the provider changes their infrastructure.',
-      ]);
-    } else if (nearLimit) {
-      setNextSteps([
-        'Review each include: mechanism - remove any you no longer need.',
-        'Monitor this record for changes that could push it over the limit.',
-        'Retest after any DNS change.',
-      ]);
-    } else if (hasErrors) {
-      setNextSteps([
-        'Fix the unrecognized terms listed above (check for typos in mechanism names).',
-        'Retest after publishing the corrected record.',
-      ]);
-    } else if (parse.warnings.length > 0) {
-      setNextSteps([
-        'Review the warnings above - they indicate potential issues but not broken SPF.',
-        'Retest after any changes.',
-      ]);
-    } else {
-      setNextSteps([
-        'This record is syntactically valid. To verify actual sender authorization, send a test message and check the Authentication-Results header.',
-        'Retest after any DNS or email infrastructure change.',
-      ]);
+    // Findings for the ResultCard
+    const findings: PdnsFinding[] = [];
+    if (txtCount > 1) findings.push({ code: 'SPF_MULTIPLE_RECORDS', detail: `${txtCount} v=spf1 records found on this domain` });
+    if (parse.errors.length) findings.push({ code: 'SPF_SYNTAX_ERROR', detail: parse.errors.join('; ') });
+    if (overLimit) findings.push({ code: 'SPF_LOOKUP_OVER_LIMIT', detail: `${parse.lookupCount} top-level lookup terms; the evaluation limit is 10` });
+    else if (nearLimit) findings.push({ code: 'SPF_LOOKUP_NEAR_LIMIT', detail: `${parse.lookupCount} of 10 lookup terms used` });
+    if (plusAll) findings.push({ code: 'SPF_PLUS_ALL' });
+    for (const w of parse.warnings) {
+      if (w.startsWith('ptr')) findings.push({ code: 'SPF_PTR_DEPRECATED' });
+      else if (w.startsWith('No "all"')) findings.push({ code: 'SPF_NO_ALL' });
+      // the near-limit parser warning is already covered above
     }
+    if (!findings.length) findings.push({ code: 'SPF_VALID' });
+
+    const verdictLine =
+      verdict === 'fail' && overLimit
+        ? `SPF evaluation exceeds the lookup limit: ${parse.lookupCount} top-level terms, limit 10.`
+        : verdict === 'fail'
+          ? 'SPF record found, but it has errors that stop evaluation.'
+          : verdict === 'warn' && nearLimit
+            ? `Syntactically valid, but ${parse.lookupCount} of 10 lookup terms used.`
+            : verdict === 'warn'
+              ? 'Syntactically valid, with warnings.'
+              : 'SPF record found and syntactically valid.';
+
+    emit(verdict, verdictLine, findings, domain, verdict === 'fail' ? RELATED_FAIL : RELATED_OK);
   });
 </script>

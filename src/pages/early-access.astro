@@ -43,6 +43,7 @@ const building = [
 
     <div class="mt-10 rounded-xl border border-accent/30 bg-accent/5 p-6 sm:p-7">
       <h2 class="font-display text-lg font-bold text-ink">Join the early access list</h2>
+      <p id="ea-domain-note" class="mt-2 hidden font-mono text-xs text-accent"></p>
       <p class="mt-2 text-sm leading-relaxed text-ink-dim">
         Email us at
         <a href="mailto:earlyaccess@promptdns.com" class="font-mono text-accent hover:text-accent-soft">earlyaccess@promptdns.com</a>
@@ -57,4 +58,23 @@ const building = [
       <a href="/tools/" class="text-accent hover:text-accent-soft">browse all {TOTAL_TOOLS} tools</a>.
     </p>
   </div>
+
+  <script>
+    // Prefill from tool CTAs: /early-access/?domain=example.com&src=tool:spf-record-checker
+    const params = new URLSearchParams(window.location.search);
+    const domain = params.get('domain');
+    const src = params.get('src');
+    if (domain) {
+      const note = document.getElementById('ea-domain-note');
+      if (note) {
+        note.textContent = `Requested for: ${domain}${src ? ` (from ${src.replace('tool:', '')})` : ''}`;
+        note.classList.remove('hidden');
+      }
+      const subject = `Early access - PromptDNS monitoring for ${domain}`;
+      const body = `Domain: ${domain}${src ? `\nSource: ${src}` : ''}`;
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="mailto:earlyaccess@"]').forEach((a) => {
+        a.href = `mailto:earlyaccess@promptdns.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      });
+    }
+  </script>
 </BaseLayout>

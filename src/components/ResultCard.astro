@@ -1,0 +1,132 @@
+---
+/**
+ * Shared result renderer for the Result Contract.
+ *
+ * Tools emit a structured result object via
+ *   window.dispatchEvent(new CustomEvent('pdns:result', { detail }))
+ * and this component renders it: verdict badge, findings (what it means,
+ * why it matters, how to fix), a contextual CTA, and related checks.
+ *
+ * Rules (learned from the reverted CTA script):
+ * - No DOM injection into tool internals, no MutationObserver.
+ * - All dynamic text is set with textContent; nothing from DNS data is
+ *   ever interpolated as HTML.
+ * - The tool dispatches 'pdns:clear' with its slug when a new run starts,
+ *   and the card hides until the next result arrives.
+ */
+interface Props {
+  tool: string;
+}
+const { tool } = Astro.props;
+---
+
+<div id={`result-card-${tool}`} class="hidden mt-6 rounded-xl border border-line bg-panel/60 p-5" data-tool={tool}></div>
+
+<script>
+  import { FINDINGS, type PdnsResult, type Severity } from '../data/findings';
+
+  const VERDICT_LABEL: Record<Severity, string> = {
+    fail: 'Fail', warn: 'Warning', pass: 'Pass', info: 'Info',
+  };
+  const VERDICT_CLASS: Record<Severity, string> = {
+    fail: 'border-fail/40 bg-fail/10 text-fail',
+    warn: 'border-warn/40 bg-warn/10 text-warn',
+    pass: 'border-pass/40 bg-pass/10 text-pass',
+    info: 'border-line bg-panel-2 text-accent',
+  };
+
+  const el = (tag: string, cls: string, text?: string): HTMLElement => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  const render = (card: HTMLElement, r: PdnsResult) => {
+    card.innerHTML = '';
+
+    // Verdict row
+    const head = el('div', 'flex items-center gap-3 flex-wrap');
+    head.appendChild(el('span',
+      `rounded-full border px-3 py-0.5 font-mono text-[10px] uppercase tracking-wider ${VERDICT_CLASS[r.verdict]}`,
+      VERDICT_LABEL[r.verdict]));
+    const line = el('p', 'text-sm font-medium text-ink flex-1 min-w-[12rem]', r.verdictLine);
+    head.appendChild(line);
+    if (r.domain) head.appendChild(el('span', 'font-mono text-xs text-ink-faint', r.domain));
+    card.appendChild(head);
+
+    // Findings
+    if (r.findings.length) {
+      const list = el('div', 'mt-4 grid gap-3');
+      for (const f of r.findings) {
+        const def = FINDINGS[f.code];
+        if (!def) continue;
+        const box = el('div', `rounded-lg border p-4 ${VERDICT_CLASS[def.severity].includes('fail') ? 'border-fail/30 bg-fail/5' : def.severity === 'warn' ? 'border-warn/30 bg-warn/5' : def.severity === 'pass' ? 'border-pass/30 bg-pass/5' : 'border-line bg-panel/40'}`);
+
+        const titleRow = el('div', 'flex items-center gap-2 flex-wrap');
+        titleRow.appendChild(el('span',
+          `rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${VERDICT_CLASS[def.severity]}`,
+          VERDICT_LABEL[def.severity]));
+        titleRow.appendChild(el('span', 'font-semibold text-sm text-ink', f.detail ?? def.title));
+        box.appendChild(titleRow);
+
+        box.appendChild(el('p', 'mt-1.5 text-sm leading-relaxed text-ink-dim', def.why));
+
+        const steps = el('ol', 'mt-2.5 list-decimal space-y-1 pl-5 text-sm text-ink-dim');
+        for (const s of def.fix) steps.appendChild(el('li', '', s));
+        box.appendChild(steps);
+
+        if (def.guide) {
+          const a = el('a', 'mt-2.5 inline-block font-mono text-xs text-accent hover:text-accent-soft', `Read the guide: ${def.guide.label}`);
+          a.href = def.guide.href;
+          box.appendChild(a);
+        }
+        list.appendChild(box);
+      }
+      card.appendChild(list);
+    }
+
+    // CTA row
+    const ctaRow = el('div', 'mt-4 flex flex-wrap items-center gap-3');
+    if (r.domain) {
+      const cta = el('a',
+        'btn-cta btn-shimmer px-4 py-2 text-xs',
+        r.verdict === 'pass' ? 'Monitor this domain' : 'Never let this break silently');
+      cta.href = `/early-access/?domain=${encodeURIComponent(r.domain)}&src=tool:${r.tool}`;
+      ctaRow.appendChild(cta);
+      ctaRow.appendChild(el('span', 'text-xs text-ink-faint', 'Monitoring is in development. Early access is free.'));
+    }
+    card.appendChild(ctaRow);
+
+    // Related checks
+    if (r.related?.length) {
+      const rel = el('div', 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3');
+      rel.appendChild(el('span', 'font-mono text-[10px] uppercase tracking-wider text-ink-faint', 'Next checks'));
+      for (const t of r.related) {
+        const a = el('a', 'text-xs text-accent hover:text-accent-soft', t.label);
+        a.href = t.href;
+        rel.appendChild(a);
+      }
+      card.appendChild(rel);
+    }
+
+    card.classList.remove('hidden');
+  };
+
+  document.addEventListener('pdns:result', (e) => {
+    const r = (e as CustomEvent<PdnsResult>).detail;
+    if (!r?.tool) return;
+    const card = document.querySelector<HTMLElement>(`#result-card-${CSS.escape(r.tool)}`);
+    if (card) render(card, r);
+  });
+
+  document.addEventListener('pdns:clear', (e) => {
+    const tool = (e as CustomEvent<{ tool: string }>).detail?.tool;
+    if (!tool) return;
+    const card = document.querySelector<HTMLElement>(`#result-card-${CSS.escape(tool)}`);
+    if (card) {
+      card.classList.add('hidden');
+      card.innerHTML = '';
+    }
+  });
+</script>
