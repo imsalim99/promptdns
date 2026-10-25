@@ -70,3 +70,25 @@ CREATE TABLE IF NOT EXISTS snapshots (
   checks_json TEXT NOT NULL,
   checked_at TEXT DEFAULT (datetime('now'))
 );
+
+-- v4: monitoring engine. Snapshots are stored only when checks change
+-- (snapshot-on-change); alerts are created from scan diffs. fail_count
+-- guards against false "domain vanished" alerts during transient DoH
+-- outages: two consecutive unresolvable runs are required before alerting.
+
+CREATE TABLE IF NOT EXISTS alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  domain_id INTEGER NOT NULL REFERENCES domains(id),
+  severity TEXT NOT NULL,
+  title TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  read_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_domain ON snapshots(domain_id, id DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, id DESC);
+
+ALTER TABLE domains ADD COLUMN last_checked_at TEXT;
+ALTER TABLE domains ADD COLUMN fail_count INTEGER NOT NULL DEFAULT 0;

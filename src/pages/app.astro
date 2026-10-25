@@ -46,9 +46,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div id="dom-list" class="mt-4 grid gap-3"></div>
         <p class="mt-3 text-xs text-ink-faint">
           Scores use the same checks as the <a href="/" class="text-accent hover:text-accent-soft">homepage scanner</a>
-          (<a href="/methodology/" class="text-accent hover:text-accent-soft">methodology</a>). Scans run when you add a
-          domain today; automatic re-checks and alerts are the next piece being built.
+          (<a href="/methodology/" class="text-accent hover:text-accent-soft">methodology</a>). Every domain is
+          re-checked automatically every 6 hours; a new snapshot is stored and an alert is raised only when
+          something actually changes. Alert emails arrive once email delivery is configured.
         </p>
+      </div>
+
+      <div class="mt-10">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="font-display text-lg font-bold text-ink">Alerts</h2>
+          <button id="alerts-read" class="hidden rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-xs font-semibold text-ink-dim hover:border-accent/40 hover:text-ink">Mark all read</button>
+        </div>
+        <div id="alerts-list" class="mt-4 grid gap-2"></div>
       </div>
     </div>
   </div>
@@ -93,6 +102,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         badge.textContent = `${d.score}/100 - ${d.grade}`;
         right.appendChild(badge);
       }
+      const scanNow = document.createElement('button');
+      scanNow.className = 'text-xs font-medium text-accent hover:text-accent-soft';
+      scanNow.textContent = 'Scan now';
+      scanNow.addEventListener('click', async () => {
+        scanNow.disabled = true;
+        scanNow.textContent = 'Scanning…';
+        try {
+          const res = await fetch(`/api/domains/rescan?id=${d.id}`, { method: 'POST' });
+          const data = (await res.json()) as { ok: boolean; error?: string; changed?: boolean };
+          if (data.ok) {
+            showMsg('bg-pass/10 text-pass border border-pass/30', data.changed ? `${d.domain}: something changed - new snapshot stored. Check the alerts list.` : `${d.domain}: re-checked, no changes since the last snapshot.`);
+            await loadDomains();
+            await loadAlerts();
+          } else {
+            showMsg('bg-fail/10 text-fail border border-fail/30', data.error ?? 'Rescan failed.');
+          }
+        } catch {
+          showMsg('bg-warn/10 text-warn border border-warn/30', 'Could not reach the server.');
+        }
+        scanNow.disabled = false;
+        scanNow.textContent = 'Scan now';
+      });
+      right.appendChild(scanNow);
       const del = document.createElement('button');
       del.className = 'text-xs text-ink-faint hover:text-fail';
       del.textContent = 'Remove';
@@ -144,6 +176,58 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       for (const d of data.domains) list.appendChild(domainCard(d));
     }
 
+    async function loadAlerts() {
+      const list = document.getElementById('alerts-list')!;
+      const readBtn = document.getElementById('alerts-read')!;
+      list.textContent = '';
+      const res = await fetch('/api/alerts');
+      if (!res.ok) return;
+      const data = (await res.json()) as { alerts: { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string }[] };
+      const alerts = data.alerts;
+      if (!alerts.length) {
+        const empty = document.createElement('p');
+        empty.className = 'rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-ink-faint';
+        empty.textContent = 'No alerts. You will see one here the moment a monitored domain changes.';
+        list.appendChild(empty);
+        readBtn.classList.add('hidden');
+        return;
+      }
+      const hasUnread = alerts.some((a) => !a.read_at);
+      readBtn.classList.toggle('hidden', !hasUnread);
+      const SEV_CLASS: Record<string, string> = {
+        fail: 'border-fail/30 bg-fail/5',
+        warn: 'border-warn/30 bg-warn/5',
+        info: 'border-line bg-panel/40',
+      };
+      for (const a of alerts) {
+        const box = document.createElement('div');
+        box.className = `rounded-xl border p-4 ${SEV_CLASS[a.severity] ?? SEV_CLASS.info}`;
+        const head = document.createElement('div');
+        head.className = 'flex flex-wrap items-center justify-between gap-2';
+        const title = document.createElement('p');
+        title.className = a.read_at ? 'text-sm text-ink-dim' : 'text-sm font-semibold text-ink';
+        title.textContent = (a.read_at ? '' : '● ') + a.title;
+        head.appendChild(title);
+        const when = document.createElement('time');
+        when.className = 'font-mono text-[10px] text-ink-faint';
+        when.textContent = a.created_at.replace('T', ' ').slice(0, 16) + ' UTC';
+        head.appendChild(when);
+        box.appendChild(head);
+        for (const line of a.detail.split('\n')) {
+          const p = document.createElement('p');
+          p.className = 'mt-1 font-mono text-xs text-ink-dim';
+          p.textContent = line;
+          box.appendChild(p);
+        }
+        list.appendChild(box);
+      }
+    }
+
+    document.getElementById('alerts-read')?.addEventListener('click', async () => {
+      await fetch('/api/alerts/read', { method: 'POST' });
+      await loadAlerts();
+    });
+
     const form = document.getElementById('dom-form') as HTMLFormElement;
     const input = document.getElementById('dom-input') as HTMLInputElement;
     const btn = document.getElementById('dom-submit') as HTMLButtonElement;
@@ -185,6 +269,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           (document.getElementById('app-email') as HTMLElement).textContent = d.email ?? '';
           signedIn.classList.remove('hidden');
           void loadDomains();
+          void loadAlerts();
         } else {
           signedOut.classList.remove('hidden');
         }

@@ -9,6 +9,7 @@
 import { handleWaitlist } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete } from './domains';
+import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead } from './monitor';
 
 interface Env {
   DB?: D1Database;
@@ -31,7 +32,17 @@ export default {
     if (path === '/api/domains' && method === 'GET') return handleDomainsList(request, env);
     if (path === '/api/domains' && method === 'POST') return handleDomainsAdd(request, env);
     if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
+    if (path === '/api/domains/rescan') return handleRescan(request, env);
+    if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
+    if (path === '/api/alerts/read') return handleAlertsRead(request, env);
 
     return env.ASSETS.fetch(request);
+  },
+
+  // Monitoring engine: re-scan every monitored domain every 6 hours
+  // (crontab in wrangler.toml).
+  async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
+    if (!env.DB) return;
+    ctx.waitUntil(runScheduled(env.DB));
   },
 } satisfies ExportedHandler<Env & AuthEnv>;
