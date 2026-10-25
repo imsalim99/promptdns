@@ -147,6 +147,8 @@ export async function handleDomainsDelete(request: Request, env: SessionEnv): Pr
   if (!owned) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
 
   await env.DB.prepare('DELETE FROM snapshots WHERE domain_id = ?1').bind(id).run();
+  await env.DB.prepare('DELETE FROM scan_runs WHERE domain_id = ?1').bind(id).run();
+  await env.DB.prepare('DELETE FROM alerts WHERE domain_id = ?1').bind(id).run();
   await env.DB.prepare('DELETE FROM domains WHERE id = ?1').bind(id).run();
   return json({ ok: true });
 }
