@@ -54,7 +54,8 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
   const rows = await env.DB
     .prepare(
       `SELECT d.id, d.domain, d.created_at, d.paused,
-              s.score, s.grade, s.checks_json, s.checked_at
+              COALESCE(d.last_checked_at, s.checked_at) AS checked_at,
+              s.score, s.grade, s.checks_json
          FROM domains d
          LEFT JOIN snapshots s ON s.id = (
            SELECT id FROM snapshots WHERE domain_id = d.id ORDER BY id DESC LIMIT 1
