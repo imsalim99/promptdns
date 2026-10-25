@@ -677,16 +677,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     // ---------- domain detail ----------
-    async function openDomain(id: number) {
-      const d = state.domains.find((x) => x.id === id);
-      if (!d) return;
-      state.currentDomainId = id;
-      show('domain', d.domain);
-
-      renderDomainHead(d);
-      document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
-      document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
-
+    function renderAuthTab(d: DomainRow) {
       const auth = document.getElementById('tab-auth')!;
       const cards = (d.checks ?? []).map((c) => {
         let extra = '';
@@ -700,7 +691,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return '<div class="pd-panel"><div class="pd-panel-head"><h2>' + esc(c.label) + '</h2>' + chip(c.status) + '</div><p class="pd-mono" style="color:var(--pd-ink-dim)">' + esc(c.value) + '</p>' + extra + '</div>';
       }).join('');
       auth.innerHTML = '<div class="pd-grid-2">' + cards + '</div><p class="pd-panel-note">Checks and weights follow the methodology. Values are from the latest scan.</p>';
+    }
 
+    function renderRecordsTab(d: DomainRow) {
       const recBox = document.getElementById('tab-records')!;
       if (d.records && d.records.length) {
         recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records as seen in the last scan</h2><span class="pd-chip pd-chip-info">' + d.records.length + ' record(s)</span></div><div class="pd-table-wrap"><table class="pd-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th></tr></thead><tbody>' +
@@ -709,9 +702,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       } else {
         recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records</h2></div><div class="pd-empty">No record values captured yet. Run a scan and they will appear here.</div></div>';
       }
+    }
 
-      showDomainTab('auth');
-
+    async function renderActivityTab(d: DomainRow): Promise<void> {
       const act = document.getElementById('tab-activity')!;
       act.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Loading activity…</p></div>';
       try {
@@ -731,6 +724,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       } catch {
         act.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Could not load activity.</p></div>';
       }
+    }
+
+    async function openDomain(id: number) {
+      const d = state.domains.find((x) => x.id === id);
+      if (!d) return;
+      state.currentDomainId = id;
+      show('domain', d.domain);
+
+      renderDomainHead(d);
+      document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
+      document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
+
+      renderAuthTab(d);
+      renderRecordsTab(d);
+      showDomainTab('auth');
+      await renderActivityTab(d);
     }
 
     const SCAN_EXPLANATION = 'Every scan checks website DNS, nameservers, mail routing (MX), SPF, DMARC, DKIM, and DNSSEC - the same seven checks as the homepage scanner. "No changes" means none of those values moved since the previous snapshot; the run is still logged.';
@@ -780,6 +789,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const res = await fetch('/api/domains/rescan?id=' + id, { method: 'POST' });
         const data = await res.json() as { ok: boolean; error?: string; changed?: boolean };
         await Promise.all([loadDomains(), loadOverview()]);
+        // Refresh the detail tabs with the fresh scan data.
+        const fresh = state.domains.find((x) => x.id === id);
+        if (fresh && state.currentDomainId === id && state.screen === 'domain') {
+          renderAuthTab(fresh);
+          renderRecordsTab(fresh);
+          void renderActivityTab(fresh);
+        }
         // loadDomains rebuilds the list; re-resolve the container by id so we
         // are not writing into a detached node.
         if (container && container.id) {
