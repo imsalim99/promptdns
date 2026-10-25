@@ -222,9 +222,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-hero-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .pd-hero-heading { font-size: 15px; margin-top: 2px; }
     .pd-act-head { font-family: var(--pd-font-display); font-weight: 600; font-size: 14px; }
-    .pd-act-expl { font-size: 12px; color: var(--pd-ink-dim); margin-top: 5px; }
+    .pd-act-expl { font-size: 12px; color: var(--pd-ink-dim); margin: 6px 0 0; max-width: 60ch; }
+    .pd-act-table { margin-top: 14px; }
     .pd-act-close { position: absolute; top: 10px; right: 12px; font-size: 16px; line-height: 1; color: var(--pd-ink-faint); }
     .pd-act-close:hover { color: var(--pd-ink); }
+    @keyframes pd-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .pd-act-anim { animation: pd-fade-in .25s ease-out; }
+    @media (prefers-reduced-motion: reduce) { .pd-act-anim { animation: none; } }
     .pd-hero-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
     .pd-hero-actions .pd-link { font-size: 11px; }
     .pd-hero-card { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; }
@@ -715,7 +719,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       container.hidden = false;
       container.className = 'pd-panel';
       container.style.position = 'relative';
-      container.innerHTML = '<p class="pd-panel-note">Loading activity…</p>';
+      container.innerHTML = '<div class="pd-act-anim"><p class="pd-panel-note" style="margin:0">Loading activity…</p></div>';
       try {
         const res = await fetch('/api/domains/history?id=' + domainId);
         const data = await res.json() as { runs: { outcome: string; score: number | null; changes: number; ran_at: string }[] };
@@ -727,14 +731,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           : 'No changes since the previous snapshot.';
         const color = !latest || latest.outcome === 'ok' ? 'var(--pd-pass)' : latest.outcome === 'changed' ? 'var(--pd-warn)' : 'var(--pd-fail)';
         container.innerHTML =
+          '<div class="pd-act-anim">' +
           '<button type="button" class="pd-act-close" aria-label="Dismiss activity">×</button>' +
           '<div class="pd-act-head" style="color:' + color + '">' + headline + '</div>' +
           '<p class="pd-act-expl">' + esc(SCAN_EXPLANATION) + '</p>' +
           (runs.length
-            ? '<table class="pd-table pd-table-sm" style="width:100%"><thead><tr><th>Time (UTC)</th><th>Result</th><th>Score</th></tr></thead><tbody>' +
+            ? '<table class="pd-table pd-act-table" style="width:100%"><thead><tr><th>Time (UTC)</th><th>Result</th><th>Score</th></tr></thead><tbody>' +
               runs.map((r) => '<tr><td class="pd-mono">' + r.ran_at.slice(0, 16).replace('T', ' ') + '</td><td>' + (r.outcome === 'changed' ? '<span class="pd-text-warn">changed (' + r.changes + ')</span>' : r.outcome === 'unresolvable' ? '<span class="pd-text-fail">unresolvable</span>' : '<span class="pd-text-pass">no changes</span>') + '</td><td class="pd-mono">' + (r.score === null ? 'n/a' : r.score) + '</td></tr>').join('') +
               '</tbody></table>'
-            : '');
+            : '') +
+          '</div>';
         container.style.borderLeft = '3px solid ' + color;
         container.querySelector('.pd-act-close')!.addEventListener('click', () => {
           container.hidden = true;
@@ -746,7 +752,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     async function doRescan(id: number, container?: HTMLElement): Promise<void> {
-      if (container) { container.hidden = false; container.innerHTML = '<p class="pd-panel-note">Scanning…</p>'; }
+      if (container) { container.hidden = false; container.className = 'pd-panel'; container.style.position = 'relative'; container.style.borderLeft = '3px solid var(--pd-accent)'; container.innerHTML = '<div class="pd-act-anim"><p class="pd-panel-note" style="margin:0">Scanning…</p></div>'; }
       try {
         const res = await fetch('/api/domains/rescan?id=' + id, { method: 'POST' });
         const data = await res.json() as { ok: boolean; error?: string; changed?: boolean };
