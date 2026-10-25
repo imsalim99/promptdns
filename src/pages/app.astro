@@ -85,15 +85,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       el.classList.remove('hidden');
     };
 
+    function setCardStatus(domain: string, cls: string, text: string) {
+      const card = document.querySelector<HTMLElement>(`[data-domain="${CSS.escape(domain)}"]`);
+      const el = card?.querySelector<HTMLElement>('.card-status');
+      if (!el) return;
+      el.className = `card-status mt-3 rounded-md px-3 py-2 text-xs font-medium ${cls}`;
+      el.textContent = text;
+      el.classList.remove('hidden');
+    }
+
     function domainCard(d: DomainRow): HTMLElement {
       const card = document.createElement('div');
       card.className = 'rounded-xl border border-line bg-panel/60 p-5';
+      card.dataset.domain = d.domain;
       const head = document.createElement('div');
       head.className = 'flex flex-wrap items-center justify-between gap-3';
+      const left = document.createElement('div');
+      left.className = 'flex items-center gap-2 flex-wrap';
+      const monitorChip = document.createElement('span');
+      monitorChip.className = 'rounded-full border border-pass/30 bg-pass/10 px-2 py-0.5 font-mono text-[10px] text-pass';
+      monitorChip.title = 'This domain is re-checked automatically every 6 hours';
+      monitorChip.textContent = '● monitored';
+      left.appendChild(monitorChip);
       const name = document.createElement('span');
       name.className = 'font-mono text-sm font-semibold text-ink';
       name.textContent = d.domain;
-      head.appendChild(name);
+      left.appendChild(name);
+      head.appendChild(left);
       const right = document.createElement('div');
       right.className = 'flex items-center gap-3';
       if (d.grade) {
@@ -112,14 +130,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           const res = await fetch(`/api/domains/rescan?id=${d.id}`, { method: 'POST' });
           const data = (await res.json()) as { ok: boolean; error?: string; changed?: boolean };
           if (data.ok) {
-            showMsg('bg-pass/10 text-pass border border-pass/30', data.changed ? `${d.domain}: something changed - new snapshot stored. Check the alerts list.` : `${d.domain}: re-checked, no changes since the last snapshot.`);
             await loadDomains();
             await loadAlerts();
+            setCardStatus(
+              d.domain,
+              data.changed
+                ? 'bg-warn/10 text-warn border border-warn/30'
+                : 'bg-pass/10 text-pass border border-pass/30',
+              data.changed
+                ? 'Something changed on this check - new snapshot stored, alert added below.'
+                : 'Re-checked just now: no changes since the last snapshot.',
+            );
           } else {
-            showMsg('bg-fail/10 text-fail border border-fail/30', data.error ?? 'Rescan failed.');
+            setCardStatus(d.domain, 'bg-fail/10 text-fail border border-fail/30', data.error ?? 'Rescan failed.');
           }
         } catch {
-          showMsg('bg-warn/10 text-warn border border-warn/30', 'Could not reach the server.');
+          setCardStatus(d.domain, 'bg-warn/10 text-warn border border-warn/30', 'Could not reach the server.');
         }
         scanNow.disabled = false;
         scanNow.textContent = 'Scan now';
@@ -136,6 +162,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       right.appendChild(del);
       head.appendChild(right);
       card.appendChild(head);
+
+      const cardStatus = document.createElement('div');
+      cardStatus.className = 'card-status mt-3 hidden rounded-md px-3 py-2 text-xs font-medium';
+      card.appendChild(cardStatus);
 
       if (d.checks?.length) {
         const grid = document.createElement('div');
