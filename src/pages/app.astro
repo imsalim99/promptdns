@@ -44,6 +44,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div><p class="pd-user-mail" id="nav-user-mail"></p><p class="pd-user-role">Owner</p></div>
             </button>
             <div id="nav-user-menu" class="pd-user-menu" hidden>
+              <button type="button" class="pd-menu-item" data-menu-goto="settings">Settings</button>
+              <button type="button" class="pd-menu-item" data-menu-goto="settings" data-menu-scroll="billing-panel">Billing</button>
               <a href="/" class="pd-menu-item">Open website</a>
               <a href="/tools/" class="pd-menu-item">All tools</a>
               <button type="button" id="nav-signout" class="pd-menu-item pd-menu-signout">Sign out</button>
@@ -65,6 +67,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <!-- ============ OVERVIEW ============ -->
         <section class="pd-screen" id="screen-overview" hidden>
+          <div class="pd-hero-head">
+            <div>
+              <p class="font-mono text-xs uppercase tracking-widest" style="color:var(--pd-ink-faint)">Your domains</p>
+              <h2 class="pd-hero-heading">Live security scores, checked every 6 hours</h2>
+            </div>
+            <button type="button" class="pd-btn pd-btn-primary" id="ov-add"><i data-lucide="plus" aria-hidden="true"></i>Add domain</button>
+          </div>
           <div id="ov-hero" class="pd-hero-grid"></div>
 
           <div class="pd-stat-grid">
@@ -153,7 +162,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div class="pd-toggle-row pd-is-planned"><span>Slack / Teams webhooks</span><span class="pd-planned-chip">planned</span></div>
               <div class="pd-toggle-row pd-is-planned"><span>Weekly summary</span><span class="pd-planned-chip">planned</span></div>
             </div>
-            <div class="pd-panel">
+            <div class="pd-panel" id="billing-panel">
               <div class="pd-panel-head"><h2>Billing</h2><span class="pd-planned-chip">at launch</span></div>
               <p class="pd-panel-note">Paid plans start when monitoring launches - processed by Dodo Payments, our merchant of record. Early-access members keep the launch free tier.</p>
             </div>
@@ -208,6 +217,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-sidebar { width: 212px; flex-shrink: 0; border-right: 1px solid var(--pd-line); background: linear-gradient(180deg, #0a0f1e, #070c18); display: flex; flex-direction: column; padding: 16px 12px; }
     .pd-logo { font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; padding: 2px 8px 14px; color: var(--pd-ink); text-decoration: none; }
     .pd-hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .pd-hero-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .pd-hero-heading { font-size: 15px; margin-top: 2px; }
+    .pd-hero-status { margin-top: 7px; font-size: 11px; }
+    .pd-hero-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .pd-hero-actions .pd-link { font-size: 11px; }
     .pd-hero-card { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; }
     .pd-hero-score { font-family: var(--pd-font-display); font-weight: 700; font-size: 46px; line-height: 1; }
     .pd-hero-score small { font-size: 14px; color: var(--pd-ink-faint); font-weight: 500; }
@@ -294,10 +308,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-health-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 8px; border-radius: 9px; border-top: 1px solid var(--pd-line); transition: background .15s; }
     .pd-health-row:first-child { border-top: 0; }
     .pd-health-row:hover { background: rgba(34,211,238,.05); }
-    .pd-score { font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; }
-    .pd-score-a, .pd-score-b { color: var(--pd-pass); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); }
-    .pd-score-c, .pd-score-d { color: var(--pd-warn); background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
-    .pd-score-f { color: var(--pd-fail); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); }
+    .pd-score { font-family: var(--pd-font-display); font-weight: 700; font-size: 15px; color: var(--pd-ink); }
+    .pd-score-a, .pd-score-b { color: var(--pd-pass); }
+    .pd-score-c, .pd-score-d { color: var(--pd-warn); }
+    .pd-score-f { color: var(--pd-fail); }
     .pd-health-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
     .pd-domain-name { font-family: var(--pd-font-mono); font-size: 13px; font-weight: 500; }
     .pd-health-meta { display: flex; gap: 5px; flex-wrap: wrap; }
@@ -499,14 +513,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const tr = document.createElement('tr');
         tr.innerHTML =
           '<td class="pd-domain-name">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</td>' +
-          '<td><span class="pd-score ' + gradeClass(d.grade) + '" style="width:34px;height:34px;font-size:14px">' + (d.score ?? '-') + '</span></td>' +
+          '<td><span class="pd-score ' + gradeClass(d.grade) + '" style="font-size:14px">' + (d.score ?? '-') + '</span></td>' +
           '<td>' + domainChips(d, 2) + '</td>' +
           '<td class="pd-cell-dim pd-mono">' + (d.checkedAt ? d.checkedAt.slice(0, 16).replace('T', ' ') : '-') + '</td>' +
-          '<td><button type="button" class="pd-link" data-open="' + d.id + '">Open →</button></td>';
+          '<td style="white-space:nowrap"><button type="button" class="pd-btn pd-btn-xs" data-scan-row="' + d.id + '">Scan</button> <button type="button" class="pd-link" data-open="' + d.id + '">Open →</button></td>';
         tbody.appendChild(tr);
       }
+      const statusLine = document.createElement('p');
+      statusLine.id = 'dom-scan-status';
+      statusLine.className = 'pd-panel-note';
+      statusLine.hidden = true;
       list.appendChild(wrap);
+      list.appendChild(statusLine);
       list.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openDomain(Number((b as HTMLElement).dataset.open))));
+      list.querySelectorAll('[data-scan-row]').forEach((b) => {
+        const el = b as HTMLButtonElement;
+        el.addEventListener('click', () => {
+          el.disabled = true;
+          el.textContent = 'Scanning…';
+          void doRescan(Number(el.dataset.scanRow), statusLine).finally(() => { el.disabled = false; el.textContent = 'Scan'; });
+        });
+      });
     }
 
     function renderHealthRows(container: HTMLElement) {
@@ -550,6 +577,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return null;
     }
 
+    const lastScan: { id: number; cls: string; text: string } | null = null;
+    let lastScanInfo: { id: number; cls: string; text: string } | null = null;
+
+    function renderHeroCard(d: DomainRow): HTMLElement {
+      const card = document.createElement('div');
+      card.className = 'pd-hero-card';
+      card.dataset.hero = String(d.id);
+      card.innerHTML =
+        '<div class="pd-hero-score ' + gradeClass(d.grade) + '">' + (d.score ?? '-') + '<small>/100</small></div>' +
+        '<div class="pd-hero-main">' +
+        '<p class="pd-hero-domain">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</p>' +
+        '<div class="pd-health-meta">' + domainChips(d, 3) + '</div>' +
+        '<p class="pd-hero-meta">Grade ' + (d.grade ?? '-') + (d.checkedAt ? ' · checked ' + d.checkedAt.slice(11, 16) + ' UTC' : '') + '</p>' +
+        '<p class="pd-hero-status" hidden></p>' +
+        '</div>' +
+        '<div class="pd-hero-actions">' +
+        '<button type="button" class="pd-btn pd-btn-sm" data-scan="' + d.id + '">Scan now</button>' +
+        '<button type="button" class="pd-link" data-open="' + d.id + '">Details →</button>' +
+        '</div>';
+      const status = card.querySelector('.pd-hero-status') as HTMLElement;
+      if (lastScanInfo && lastScanInfo.id === d.id) {
+        status.textContent = lastScanInfo.text;
+        status.style.color = lastScanInfo.cls;
+        status.hidden = false;
+      }
+      card.querySelector('[data-scan]')!.addEventListener('click', (e) => {
+        const b = e.currentTarget as HTMLButtonElement;
+        b.disabled = true;
+        b.textContent = 'Scanning…';
+        void doRescan(d.id).finally(() => { b.disabled = false; b.textContent = 'Scan now'; });
+      });
+      card.querySelector('[data-open]')!.addEventListener('click', () => openDomain(d.id));
+      return card;
+    }
+
+    function renderHero() {
+      const hero = document.getElementById('ov-hero')!;
+      hero.innerHTML = '';
+      if (!state.domains.length) {
+        hero.innerHTML = '<div class="pd-empty" style="grid-column:1/-1">No domains monitored yet. Click "Add domain" above and its live health score appears here.</div>';
+        return;
+      }
+      for (const d of state.domains) hero.appendChild(renderHeroCard(d));
+    }
+
     function renderOverview(o: { domains: number; max: number; alertsOpen: number; avgScore: number | null; dmarc: { reports: number; messages: number; passRate: number | null; daily: DailyPoint[] } }) {
       (document.getElementById('ov-domains') as HTMLElement).textContent = String(o.domains);
       (document.getElementById('ov-domains-note') as HTMLElement).textContent = 'of ' + o.max + ' on Early access';
@@ -558,28 +630,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       pr.textContent = o.dmarc.passRate === null ? '-' : o.dmarc.passRate + '%';
       (document.getElementById('ov-passrate-note') as HTMLElement).textContent = o.dmarc.reports > 0 ? o.dmarc.reports + ' report(s), ' + o.dmarc.messages.toLocaleString() + ' messages' : 'no reports yet';
 
-      // Hero: the state of your domains, on your face.
-      const hero = document.getElementById('ov-hero')!;
-      hero.innerHTML = '';
-      if (!state.domains.length) {
-        hero.innerHTML = '<div class="pd-empty" style="grid-column:1/-1">No domains monitored yet. Add one from the Domains screen and its live health score appears here.</div>';
-      }
-      for (const d of state.domains) {
-        const card = document.createElement('div');
-        card.className = 'pd-hero-card';
-        const colorCls = gradeClass(d.grade);
-        card.innerHTML =
-          '<div class="pd-hero-score ' + colorCls + '">' + (d.score ?? '-') + '<small>/100</small></div>' +
-          '<div class="pd-hero-main">' +
-          '<p class="pd-hero-domain">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</p>' +
-          '<div class="pd-health-meta">' + domainChips(d, 3) + '</div>' +
-          '<p class="pd-hero-meta">Grade ' + (d.grade ?? '-') + (d.checkedAt ? ' · checked ' + d.checkedAt.slice(11, 16) + ' UTC' : '') + '</p>' +
-          '</div>' +
-          '<div class="pd-hero-actions"><button type="button" class="pd-btn pd-btn-sm" data-scan="' + d.id + '">Scan now</button></div>';
-        hero.appendChild(card);
-      }
-      hero.querySelectorAll('[data-scan]').forEach((b) => b.addEventListener('click', () => void doRescan(Number((b as HTMLElement).dataset.scan))));
-
+      renderHero();
       renderHealthRows(document.getElementById('ov-health')!);
 
       const action = nextAction();
@@ -621,26 +672,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       state.currentDomainId = id;
       show('domain', d.domain);
 
-      const head = document.getElementById('domain-head')!;
-      head.innerHTML =
-        '<div class="pd-domain-head"><div class="pd-domain-head-main">' +
-        '<h2 class="pd-domain-title">' + esc(d.domain) + '</h2>' +
-        '<span class="pd-chip ' + (d.paused ? 'pd-chip-warn' : 'pd-chip-pass') + '">● ' + (d.paused ? 'paused' : 'monitored') + '</span>' +
-        '<span class="pd-score ' + gradeClass(d.grade) + '" style="width:46px;height:46px;font-size:20px">' + (d.score ?? '-') + '</span><span class="pd-mono" style="color:var(--pd-ink-faint)">/100</span>' +
-        '<span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '" style="font-size:24px">' + (d.grade ?? '-') + '</span>' +
-        '</div><div class="pd-domain-head-actions">' +
-        '<button type="button" class="pd-btn pd-btn-sm" id="dd-rescan">Scan now</button>' +
-        '<button type="button" class="pd-btn pd-btn-sm" id="dd-pause">' + (d.paused ? 'Resume' : 'Pause') + '</button>' +
-        '<button type="button" class="pd-btn pd-btn-sm pd-btn-danger" id="dd-remove">Remove</button>' +
-        '</div></div>';
-
-      const status = document.createElement('div');
-      status.id = 'dd-status';
-      status.style.display = 'none';
-      status.className = 'pd-dd-status';
-      head.appendChild(status);
-
-      document.getElementById('dd-rescan')!.addEventListener('click', () => void doRescan(d.id));
+      renderDomainHead(d);
       document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
       document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
 
@@ -681,33 +713,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     }
 
-    async function doRescan(id: number) {
-      toast('pass', 'Scanning…');
+    async function doRescan(id: number, statusEl?: HTMLElement): Promise<void> {
       try {
         const res = await fetch('/api/domains/rescan?id=' + id, { method: 'POST' });
         const data = await res.json() as { ok: boolean; error?: string; changed?: boolean };
-        if (data.ok) {
-          await Promise.all([loadDomains(), loadOverview()]);
-          if (state.currentDomainId === id) {
-            const el = document.getElementById('dd-status');
-            if (el) {
-              el.style.display = 'block';
-              el.className = 'pd-dd-status ' + (data.changed ? 'border-warn/40 bg-warn/10 text-warn' : 'border-pass/40 bg-pass/10 text-pass');
-              el.style.borderColor = data.changed ? 'rgba(251,191,36,.4)' : 'rgba(74,222,128,.4)';
-              el.style.background = data.changed ? 'rgba(251,191,36,.08)' : 'rgba(74,222,128,.08)';
-              el.style.color = data.changed ? 'var(--pd-warn)' : 'var(--pd-pass)';
-              el.textContent = data.changed
-                ? 'Something changed on this check - new snapshot stored. The diff is in the Changes list below and on the Alerts screen.'
-                : 'Re-checked just now: no changes since the last snapshot. This run is logged in the Scan activity list below.';
-            }
-          }
-          if (state.dmarcDomainId === id) void loadDmarcScreen();
-        } else {
+        if (!data.ok) {
           toast('fail', data.error ?? 'Rescan failed.');
+          if (statusEl) { statusEl.textContent = data.error ?? 'Rescan failed.'; statusEl.style.color = 'var(--pd-fail)'; statusEl.hidden = false; }
+          return;
         }
+        await Promise.all([loadDomains(), loadOverview()]);
+        const d = state.domains.find((x) => x.id === id);
+        const text = data.changed
+          ? 'Something changed - new snapshot stored, alert added.'
+          : 'Re-checked just now: no changes since the last snapshot.';
+        const cls = data.changed ? 'var(--pd-warn)' : 'var(--pd-pass)';
+        toast(data.changed ? 'warn' : 'pass', text);
+        lastScanInfo = { id, cls, text: (data.changed ? 'Changed just now. ' : 'Re-checked just now: no changes. ') + 'Last run ' + (d && d.checkedAt ? d.checkedAt.slice(11, 16) + ' UTC' : '') };
+        renderHero();
+        if (statusEl) { statusEl.textContent = text; statusEl.style.color = cls; statusEl.hidden = false; }
+        if (state.currentDomainId === id && d) {
+          renderDomainHead(d);
+          const dd = document.getElementById('dd-status');
+          if (dd) { dd.textContent = text; dd.style.color = cls; dd.style.borderColor = data.changed ? 'rgba(251,191,36,.4)' : 'rgba(74,222,128,.4)'; dd.style.background = data.changed ? 'rgba(251,191,36,.08)' : 'rgba(74,222,128,.08)'; dd.style.display = 'block'; }
+        }
+        if (state.dmarcDomainId === id) void loadDmarcScreen();
       } catch {
         toast('fail', 'Could not reach the server.');
+        if (statusEl) { statusEl.textContent = 'Could not reach the server.'; statusEl.style.color = 'var(--pd-fail)'; statusEl.hidden = false; }
       }
+    }
+
+    function renderDomainHead(d: DomainRow) {
+      const head = document.getElementById('domain-head')!;
+      head.innerHTML =
+        '<div class="pd-domain-head"><div class="pd-domain-head-main">' +
+        '<h2 class="pd-domain-title">' + esc(d.domain) + '</h2>' +
+        '<span class="pd-chip ' + (d.paused ? 'pd-chip-warn' : 'pd-chip-pass') + '">● ' + (d.paused ? 'paused' : 'monitored') + '</span>' +
+        '<span class="pd-score ' + gradeClass(d.grade) + '" style="font-size:26px">' + (d.score ?? '-') + '</span>' +
+        '<span class="pd-mono" style="color:var(--pd-ink-faint)">/100</span>' +
+        '<span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '" style="font-size:24px">' + (d.grade ?? '-') + '</span>' +
+        '</div><div class="pd-domain-head-actions">' +
+        '<button type="button" class="pd-btn pd-btn-sm" id="dd-rescan">Scan now</button>' +
+        '<button type="button" class="pd-btn pd-btn-sm" id="dd-pause">' + (d.paused ? 'Resume' : 'Pause') + '</button>' +
+        '<button type="button" class="pd-btn pd-btn-sm pd-btn-danger" id="dd-remove">Remove</button>' +
+        '</div></div>' +
+        '<div id="dd-status" class="pd-dd-status" style="display:none"></div>';
+      document.getElementById('dd-rescan')!.addEventListener('click', () => void doRescan(d.id, document.getElementById('dd-status') as HTMLElement));
+      document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
+      document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
     }
 
     async function doPause(d: DomainRow, after: () => Promise<void>) {
@@ -959,6 +1013,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.getElementById('alerts-read')!.addEventListener('click', async () => {
       await fetch('/api/alerts/read', { method: 'POST' });
       await loadAlerts();
+    });
+
+    document.querySelectorAll('#nav-user-menu [data-menu-goto]').forEach((b) => {
+      b.addEventListener('click', () => {
+        userMenu.hidden = true;
+        userBtn.setAttribute('aria-expanded', 'false');
+        show((b as HTMLElement).dataset.menuGoto!);
+        void loadDomains();
+        const target = (b as HTMLElement).dataset.menuScroll;
+        if (target) document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+
+    document.getElementById('ov-add')!.addEventListener('click', () => {
+      show('domains');
+      document.getElementById('add-panel')!.hidden = false;
+      (document.getElementById('dom-input') as HTMLInputElement).focus();
     });
 
     const userBtn = document.getElementById('nav-user-btn')!;
