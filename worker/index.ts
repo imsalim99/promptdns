@@ -10,7 +10,8 @@ import { handleWaitlist } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
-import { handleDmarcEmail, handleDmarcQuery } from './dmarc-ingest';
+import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark } from './dmarc-ingest';
+import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 
 interface Env {
@@ -37,7 +38,9 @@ export default {
     if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
     if (path === '/api/domains/pause') return handleDomainsPause(request, env);
     if (path === '/api/domains/history') return handleHistory(request, env);
+    if (path === '/api/overview') return handleOverview(request, env);
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
+    if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);

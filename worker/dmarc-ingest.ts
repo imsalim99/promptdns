@@ -210,6 +210,23 @@ export async function handleDmarcQuery(request: Request, env: Env): Promise<Resp
     .bind(id)
     .all<{ org_name: string; report_id: string; date_begin: string | null; date_end: string | null; messages_total: number; received_at: string }>();
 
+  const daily = await env.DB
+    .prepare(
+      `SELECT r.date_end AS date,
+              SUM(s.count) AS total,
+              SUM(CASE WHEN s.dmarc_result = 'pass' THEN s.count ELSE 0 END) AS passing
+         FROM dmarc_sources s JOIN dmarc_reports r ON r.id = s.report_ref
+        WHERE r.domain_id = ?1 AND r.date_end IS NOT NULL
+        GROUP BY r.date_end ORDER BY r.date_end DESC LIMIT 30`,
+    )
+    .bind(id)
+    .all<{ date: string; total: number; passing: number }>();
+
+  const marks = await env.DB
+    .prepare('SELECT source_ip, mark FROM dmarc_marks WHERE domain_id = ?1')
+    .bind(id)
+    .all<{ source_ip: string; mark: string }>();
+
   const total = passRow?.total ?? 0;
   const passing = passRow?.passing ?? 0;
   return json({
@@ -223,5 +240,48 @@ export async function handleDmarcQuery(request: Request, env: Env): Promise<Resp
     },
     sources: sources.results ?? [],
     reports: reports.results ?? [],
+    daily: (daily.results ?? []).slice().reverse(),
+    marks: marks.results ?? [],
   });
+}
+
+/** POST /api/domains/dmarc/mark {id, ip, mark: 'me'|'notme'} - persist source identification. */
+export async function handleDmarcMark(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') return json({ ok: false, error: 'POST only.' }, 405);
+  if (!env.DB) return json({ ok: false, error: 'Storage is not configured.' }, 503);
+  const origin = request.headers.get('Origin');
+  if (origin) {
+    try {
+      if (new URL(origin).host !== new URL(request.url).host) return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
+    } catch {
+      return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
+    }
+  }
+  const user = await getUserBySession(env.DB, request);
+  if (!user) return json({ ok: false, error: 'Sign in first.' }, 401);
+
+  let body: { id?: unknown; ip?: unknown; mark?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ ok: false, error: 'Invalid JSON body.' }, 400);
+  }
+  const id = typeof body.id === 'number' ? body.id : Number.NaN;
+  const ip = typeof body.ip === 'string' ? body.ip.trim() : '';
+  const mark = body.mark === 'me' || body.mark === 'notme' ? body.mark : null;
+  if (!Number.isInteger(id) || !ip || ip.length > 45 || !mark) return json({ ok: false, error: 'id, ip and mark (me|notme) required.' }, 400);
+
+  const owned = await env.DB
+    .prepare('SELECT id FROM domains WHERE id = ?1 AND user_id = ?2')
+    .bind(id, user.id)
+    .first<{ id: number }>();
+  if (!owned) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
+
+  await env.DB
+    .prepare(
+      "INSERT INTO dmarc_marks (domain_id, source_ip, mark) VALUES (?1, ?2, ?3) ON CONFLICT(domain_id, source_ip) DO UPDATE SET mark = excluded.mark, updated_at = datetime('now')",
+    )
+    .bind(id, ip, mark)
+    .run();
+  return json({ ok: true, mark });
 }

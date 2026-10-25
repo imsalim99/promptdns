@@ -140,3 +140,13 @@ CREATE TABLE IF NOT EXISTS dmarc_sources (
 
 CREATE INDEX IF NOT EXISTS idx_dmarc_reports_domain ON dmarc_reports(domain_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_dmarc_sources_report ON dmarc_sources(report_ref);
+
+-- v7: per-source marks from the DMARC sources view ("this is me / not me").
+
+CREATE TABLE IF NOT EXISTS dmarc_marks (
+  domain_id INTEGER NOT NULL REFERENCES domains(id),
+  source_ip TEXT NOT NULL,
+  mark TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(domain_id, source_ip)
+);
