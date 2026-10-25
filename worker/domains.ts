@@ -53,7 +53,7 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
 
   const rows = await env.DB
     .prepare(
-      `SELECT d.id, d.domain, d.created_at,
+      `SELECT d.id, d.domain, d.created_at, d.paused,
               s.score, s.grade, s.checks_json, s.checked_at
          FROM domains d
          LEFT JOIN snapshots s ON s.id = (
@@ -69,6 +69,7 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
     id: r.id,
     domain: r.domain,
     addedAt: r.created_at,
+    paused: Boolean(r.paused),
     score: r.score,
     grade: r.grade,
     checkedAt: r.checked_at,
@@ -148,4 +149,32 @@ export async function handleDomainsDelete(request: Request, env: SessionEnv): Pr
   await env.DB.prepare('DELETE FROM snapshots WHERE domain_id = ?1').bind(id).run();
   await env.DB.prepare('DELETE FROM domains WHERE id = ?1').bind(id).run();
   return json({ ok: true });
+}
+
+/** POST /api/domains/pause {id, paused} - include/exclude from the automatic cycle. */
+export async function handleDomainsPause(request: Request, env: SessionEnv): Promise<Response> {
+  if (request.method !== 'POST') return json({ ok: false, error: 'POST only.' }, 405);
+  if (!sameOrigin(request)) return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
+  const userOrRes = await requireUser(request, env);
+  if (userOrRes instanceof Response) return userOrRes;
+  if (!env.DB) return json({ ok: false, error: 'Storage is not configured.' }, 503);
+
+  let body: { id?: unknown; paused?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ ok: false, error: 'Invalid JSON body.' }, 400);
+  }
+  const id = typeof body.id === 'number' ? body.id : Number.NaN;
+  const paused = body.paused === true;
+  if (!Number.isInteger(id)) return json({ ok: false, error: 'Missing domain id.' }, 400);
+
+  const owned = await env.DB
+    .prepare('SELECT id FROM domains WHERE id = ?1 AND user_id = ?2')
+    .bind(id, userOrRes.id)
+    .first<{ id: number }>();
+  if (!owned) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
+
+  await env.DB.prepare('UPDATE domains SET paused = ?2 WHERE id = ?1').bind(id, paused ? 1 : 0).run();
+  return json({ ok: true, paused });
 }

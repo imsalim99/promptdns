@@ -24,6 +24,7 @@ interface DomainRow {
   user_id: number;
   domain: string;
   fail_count: number;
+  paused: number;
 }
 
 function json(data: unknown, status = 200): Response {
@@ -62,6 +63,10 @@ async function scanAndCompare(db: D1Database, d: DomainRow): Promise<CompareOutc
     const failCount = d.fail_count + 1;
     await db.prepare('UPDATE domains SET fail_count = ?2, last_checked_at = datetime(\'now\') WHERE id = ?1')
       .bind(d.id, failCount)
+      .run();
+    await db
+      .prepare("INSERT INTO scan_runs (domain_id, outcome, score, changes) VALUES (?1, 'unresolvable', NULL, 0)")
+      .bind(d.id)
       .run();
     if (failCount === 2) {
       await db.prepare(
@@ -128,6 +133,10 @@ async function scanAndCompare(db: D1Database, d: DomainRow): Promise<CompareOutc
     }
   }
 
+  await db
+    .prepare("INSERT INTO scan_runs (domain_id, outcome, score, changes) VALUES (?1, ?2, ?3, ?4)")
+    .bind(d.id, changed ? 'changed' : 'ok', scan.score, diff.length)
+    .run();
   await db.prepare("UPDATE domains SET last_checked_at = datetime('now') WHERE id = ?1").bind(d.id).run();
   return { changed, unresolvable: false, scan, diff, severity };
 }
@@ -144,7 +153,7 @@ export async function handleRescan(request: Request, env: SessionEnv): Promise<R
   if (!Number.isInteger(id)) return json({ ok: false, error: 'Missing domain id.' }, 400);
 
   const row = await env.DB
-    .prepare('SELECT id, user_id, domain, fail_count FROM domains WHERE id = ?1 AND user_id = ?2')
+    .prepare('SELECT id, user_id, domain, fail_count, paused FROM domains WHERE id = ?1 AND user_id = ?2')
     .bind(id, user.id)
     .first<DomainRow>();
   if (!row) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
@@ -165,7 +174,9 @@ export async function handleRescan(request: Request, env: SessionEnv): Promise<R
 
 /** The cron entry: scan every monitored domain, 5 at a time. */
 export async function runScheduled(db: D1Database): Promise<void> {
-  const rows = await db.prepare('SELECT id, user_id, domain, fail_count FROM domains').all<DomainRow>();
+  const rows = await db
+    .prepare('SELECT id, user_id, domain, fail_count, paused FROM domains WHERE paused = 0')
+    .all<DomainRow>();
   const domains = rows.results ?? [];
   for (let i = 0; i < domains.length; i += 5) {
     const batch = domains.slice(i, i + 5);
@@ -201,4 +212,32 @@ export async function handleAlertsRead(request: Request, env: SessionEnv): Promi
     .bind(user.id)
     .run();
   return json({ ok: true });
+}
+
+/** GET /api/domains/history?id=N - run log + alerts for one domain. */
+export async function handleHistory(request: Request, env: SessionEnv): Promise<Response> {
+  if (!env.DB) return json({ ok: false, error: 'Storage is not configured.' }, 503);
+  const user = await getUserBySession(env.DB, request);
+  if (!user) return json({ ok: false, error: 'Sign in first.' }, 401);
+
+  const idParam = new URL(request.url).searchParams.get('id');
+  const id = idParam ? Number.parseInt(idParam, 10) : Number.NaN;
+  if (!Number.isInteger(id)) return json({ ok: false, error: 'Missing domain id.' }, 400);
+
+  const owned = await env.DB
+    .prepare('SELECT id FROM domains WHERE id = ?1 AND user_id = ?2')
+    .bind(id, user.id)
+    .first<{ id: number }>();
+  if (!owned) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
+
+  const runs = await env.DB
+    .prepare('SELECT outcome, score, changes, ran_at FROM scan_runs WHERE domain_id = ?1 ORDER BY id DESC LIMIT 30')
+    .bind(id)
+    .all<{ outcome: string; score: number | null; changes: number; ran_at: string }>();
+  const alerts = await env.DB
+    .prepare('SELECT severity, title, detail, created_at, read_at FROM alerts WHERE domain_id = ?1 ORDER BY id DESC LIMIT 20')
+    .bind(id)
+    .all<{ severity: string; title: string; detail: string; created_at: string; read_at: string | null }>();
+
+  return json({ ok: true, runs: runs.results ?? [], alerts: alerts.results ?? [] });
 }

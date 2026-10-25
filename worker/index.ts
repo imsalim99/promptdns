@@ -8,8 +8,8 @@
 
 import { handleWaitlist } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
-import { handleDomainsList, handleDomainsAdd, handleDomainsDelete } from './domains';
-import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead } from './monitor';
+import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
+import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 
 interface Env {
   DB?: D1Database;
@@ -32,6 +32,8 @@ export default {
     if (path === '/api/domains' && method === 'GET') return handleDomainsList(request, env);
     if (path === '/api/domains' && method === 'POST') return handleDomainsAdd(request, env);
     if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
+    if (path === '/api/domains/pause') return handleDomainsPause(request, env);
+    if (path === '/api/domains/history') return handleHistory(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);

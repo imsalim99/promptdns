@@ -92,3 +92,20 @@ CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, id DESC);
 
 ALTER TABLE domains ADD COLUMN last_checked_at TEXT;
 ALTER TABLE domains ADD COLUMN fail_count INTEGER NOT NULL DEFAULT 0;
+
+-- v5: monitoring visibility + pause. Every engine run is logged in
+-- scan_runs (including no-change runs) so users can verify monitoring
+-- actually happened; paused domains are skipped by the cron cycle.
+
+CREATE TABLE IF NOT EXISTS scan_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  domain_id INTEGER NOT NULL REFERENCES domains(id),
+  outcome TEXT NOT NULL,
+  score INTEGER,
+  changes INTEGER NOT NULL DEFAULT 0,
+  ran_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_scan_runs_domain ON scan_runs(domain_id, id DESC);
+
+ALTER TABLE domains ADD COLUMN paused INTEGER NOT NULL DEFAULT 0;
