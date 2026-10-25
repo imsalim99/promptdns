@@ -11,9 +11,11 @@ interface Props {
   schema?: object[];
   /** Exclude from indexing (app/account pages). */
   noindex?: boolean;
+  /** Set false for app screens: no site header/footer, full-bleed slot. */
+  chrome?: boolean;
 }
 
-const { title, description, schema = [], noindex = false } = Astro.props;
+const { title, description, schema = [], noindex = false, chrome = true } = Astro.props;
 const fullTitle = `${title} | PromptDNS`;
 
 // Self-referencing canonical: every page declares its one true URL so variant
@@ -81,10 +83,10 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     {allSchema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body class="flex min-h-screen flex-col">
-    <Header />
+    {chrome && <Header />}
     <main class="flex-1">
       <slot />
     </main>
-    <Footer />
+    {chrome && <Footer />}
   </body>
 </html>

@@ -6,6 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   title="Dashboard"
   description="Your PromptDNS dashboard: monitored domains, alerts, and DMARC sources."
   noindex
+  chrome={false}
 >
   <div id="dash-app">
     <div id="dash-loading" class="pd-loading">Checking sign-in…</div>
@@ -157,8 +158,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <style is:global>
 
     #dash-app {
       --pd-bg: #050810;
@@ -224,7 +226,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     .pd-toast { position: sticky; bottom: 12px; z-index: 30; margin: 0 22px; }
     .pd-toast:empty { display: none; }
-    .pd-toast > div { max-width: 480px; margin: 0 auto; border-radius: 10px; padding: 10px 14px; font-size: 13px; box-shadow: 0 8px 30px rgba(0,0,0,.45); display: flex; align-items: center; gap: 10px; }
+    .pd-toast > div { max-width: 480px; margin: 0 auto; border-radius: 10px; padding: 10px 14px; font-size: 13px; box-shadow: 0 8px 30px rgba(0,0,0,.45); display: flex; align-items: center; gap: 10px; border: 1px solid; }
+    .pd-toast > .pd-toast-pass { border-color: rgba(74,222,128,.4); background: rgba(74,222,128,.1); color: var(--pd-pass); }
+    .pd-toast > .pd-toast-warn { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.1); color: var(--pd-warn); }
+    .pd-toast > .pd-toast-fail { border-color: rgba(248,113,113,.4); background: rgba(248,113,113,.1); color: var(--pd-fail); }
     .pd-toast .pd-toast-x { margin-left: auto; color: var(--pd-ink-faint); font-size: 15px; }
     .pd-toast .pd-toast-x:hover { color: var(--pd-ink); }
 
@@ -385,8 +390,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function toast(cls: 'pass' | 'warn' | 'fail', text: string) {
       const el = document.getElementById('pd-toast')!;
-      const color = cls === 'pass' ? 'border-pass/40 bg-pass/10 text-pass' : cls === 'warn' ? 'border-warn/40 bg-warn/10 text-warn' : 'border-fail/40 bg-fail/10 text-fail';
-      el.innerHTML = '<div style="border:1px solid" class="' + color + '">' + text + '<button type="button" class="pd-toast-x" aria-label="Dismiss">×</button></div>';
+      el.innerHTML = '<div class="pd-toast-' + cls + '">' + text + '<button type="button" class="pd-toast-x" aria-label="Dismiss">×</button></div>';
       el.querySelector('.pd-toast-x')!.addEventListener('click', () => { el.innerHTML = ''; });
       const prev = dismissTimers.get(el);
       if (prev) clearTimeout(prev);
@@ -910,6 +914,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           (document.getElementById('nav-user-mail') as HTMLElement).textContent = d.email ?? '';
           (document.getElementById('set-email') as HTMLElement).textContent = d.email ?? '';
           document.getElementById('dash-shell')!.hidden = false;
+          const lucideGlobal = (window as unknown as { lucide?: { createIcons(o: { attrs: { width: number; height: number } }): void } }).lucide;
+          if (lucideGlobal) lucideGlobal.createIcons({ attrs: { width: 15, height: 15 } });
           show('overview');
           await loadDomains();
           await loadOverview();
