@@ -291,6 +291,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     .pd-screen { padding: 20px 22px 30px; display: flex; flex-direction: column; gap: 16px; }
     .pd-screen[hidden] { display: none; }
+    #dmarc-content { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
     .pd-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
     .pd-stat { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 12px; padding: 13px 15px; }
     .pd-stat-label { font-size: 11px; color: var(--pd-ink-faint); text-transform: uppercase; letter-spacing: .05em; }
@@ -600,7 +601,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       card.className = 'pd-hero-card';
       card.dataset.hero = String(d.id);
       card.innerHTML =
-        '<div class="pd-hero-score ' + gradeClass(d.grade) + '">' + (d.score ?? '-') + '<small>/100</small></div>' +
+        '<div class="pd-hero-score ' + gradeClass(d.grade) + '">' + (d.score ?? '-') + '</div>' +
         '<div class="pd-hero-main">' +
         '<p class="pd-hero-domain">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</p>' +
         '<div class="pd-health-meta">' + domainChips(d, 3) + '</div>' +
@@ -795,7 +796,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         '<h2 class="pd-domain-title">' + esc(d.domain) + '</h2>' +
         '<span class="pd-chip ' + (d.paused ? 'pd-chip-warn' : 'pd-chip-pass') + '">● ' + (d.paused ? 'paused' : 'monitored') + '</span>' +
         '<span class="pd-score ' + gradeClass(d.grade) + '" style="font-size:26px">' + (d.score ?? '-') + '</span>' +
-        '<span class="pd-mono" style="color:var(--pd-ink-faint)">/100</span>' +
         '<span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '" style="font-size:24px">' + (d.grade ?? '-') + '</span>' +
         '</div><div class="pd-domain-head-actions">' +
         '<button type="button" class="pd-btn pd-btn-sm" id="dd-rescan">Scan now</button>' +
