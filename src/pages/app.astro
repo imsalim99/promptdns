@@ -187,14 +187,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         del.disabled = true;
         try {
           const res = await fetch(`/api/domains/delete?id=${d.id}`, { method: 'POST' });
-          const data = (await res.json()) as { ok: boolean };
+          const data = (await res.json()) as { ok: boolean; error?: string };
           if (data.ok) {
             card.remove();
             ensureEmptyState();
             void loadAlerts();
+            showMsg('bg-pass/10 text-pass border border-pass/30', `${d.domain} removed from monitoring. You can add it again anytime.`);
             return;
           }
-        } catch { /* fall through: re-enable */ }
+          showMsg('bg-fail/10 text-fail border border-fail/30', data.error ?? 'Could not remove the domain.');
+        } catch {
+          showMsg('bg-warn/10 text-warn border border-warn/30', 'Could not reach the server.');
+        }
         del.disabled = false;
       });
       right.appendChild(del);
