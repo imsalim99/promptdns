@@ -751,6 +751,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const res = await fetch('/api/domains/rescan?id=' + id, { method: 'POST' });
         const data = await res.json() as { ok: boolean; error?: string; changed?: boolean };
         await Promise.all([loadDomains(), loadOverview()]);
+        // loadDomains rebuilds the list; re-resolve the container by id so we
+        // are not writing into a detached node.
+        if (container && container.id) {
+          const live = document.getElementById(container.id);
+          if (live) container = live;
+        }
         if (!data.ok) {
           if (container) { container.innerHTML = '<p class="pd-panel-note">' + esc(data.error ?? 'Rescan failed.') + '</p>'; container.style.borderLeft = '3px solid var(--pd-fail)'; }
           else toast('fail', data.error ?? 'Rescan failed.');
