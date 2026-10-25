@@ -109,3 +109,34 @@ CREATE TABLE IF NOT EXISTS scan_runs (
 CREATE INDEX IF NOT EXISTS idx_scan_runs_domain ON scan_runs(domain_id, id DESC);
 
 ALTER TABLE domains ADD COLUMN paused INTEGER NOT NULL DEFAULT 0;
+
+-- v6: DMARC aggregate report ingestion (Email Routing -> Email Worker).
+-- Reports are de-duplicated per (domain, reporting org, report id).
+
+CREATE TABLE IF NOT EXISTS dmarc_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  domain_id INTEGER NOT NULL REFERENCES domains(id),
+  org_name TEXT NOT NULL,
+  report_id TEXT NOT NULL,
+  date_begin TEXT,
+  date_end TEXT,
+  policy_published TEXT,
+  messages_total INTEGER NOT NULL DEFAULT 0,
+  received_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(domain_id, org_name, report_id)
+);
+
+CREATE TABLE IF NOT EXISTS dmarc_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_ref INTEGER NOT NULL REFERENCES dmarc_reports(id),
+  source_ip TEXT NOT NULL,
+  header_from TEXT,
+  count INTEGER NOT NULL,
+  spf_result TEXT,
+  dkim_result TEXT,
+  dmarc_result TEXT,
+  disposition TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_dmarc_reports_domain ON dmarc_reports(domain_id, id DESC);
+CREATE INDEX IF NOT EXISTS idx_dmarc_sources_report ON dmarc_sources(report_ref);

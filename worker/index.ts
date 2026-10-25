@@ -10,6 +10,7 @@ import { handleWaitlist } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
+import { handleDmarcEmail, handleDmarcQuery } from './dmarc-ingest';
 
 interface Env {
   DB?: D1Database;
@@ -34,6 +35,7 @@ export default {
     if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
     if (path === '/api/domains/pause') return handleDomainsPause(request, env);
     if (path === '/api/domains/history') return handleHistory(request, env);
+    if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);
@@ -46,5 +48,11 @@ export default {
   async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
     if (!env.DB) return;
     ctx.waitUntil(runScheduled(env.DB));
+  },
+
+  // DMARC aggregate report ingestion: invoked by the Email Routing rule
+  // for reports@promptdns.com (rule created in the Cloudflare dashboard).
+  async email(message: ForwardableEmailMessage, env: Env & AuthEnv, _ctx: ExecutionContext): Promise<void> {
+    await handleDmarcEmail(message, env);
   },
 } satisfies ExportedHandler<Env & AuthEnv>;
