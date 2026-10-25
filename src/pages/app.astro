@@ -152,10 +152,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         scanNow.textContent = 'Scanning…';
         try {
           const res = await fetch(`/api/domains/rescan?id=${d.id}`, { method: 'POST' });
-          const data = (await res.json()) as { ok: boolean; error?: string; changed?: boolean };
+          const data = (await res.json()) as { ok: boolean; error?: string; changed?: boolean; score?: number; grade?: string; checks?: ScanCheck[] };
           if (data.ok) {
-            await loadDomains();
-            await loadAlerts();
+            const when = card.querySelector<HTMLElement>('.last-scanned');
+            if (when) when.textContent = `Last scanned: ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC`;
+            if (data.changed && data.checks) {
+              const newRow: DomainRow = { ...d, score: data.score ?? d.score, grade: data.grade ?? d.grade, checks: data.checks, checkedAt: new Date().toISOString() };
+              card.replaceWith(domainCard(newRow));
+              void loadAlerts();
+            }
             setCardStatus(
               d.domain,
               data.changed
@@ -180,8 +185,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       del.textContent = 'Remove';
       del.addEventListener('click', async () => {
         del.disabled = true;
-        await fetch(`/api/domains/delete?id=${d.id}`, { method: 'POST' });
-        await loadDomains();
+        try {
+          const res = await fetch(`/api/domains/delete?id=${d.id}`, { method: 'POST' });
+          const data = (await res.json()) as { ok: boolean };
+          if (data.ok) {
+            card.remove();
+            ensureEmptyState();
+            void loadAlerts();
+            return;
+          }
+        } catch { /* fall through: re-enable */ }
+        del.disabled = false;
       });
       right.appendChild(del);
       head.appendChild(right);
@@ -202,7 +216,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
       if (d.checkedAt) {
         const when = document.createElement('p');
-        when.className = 'mt-3 font-mono text-[10px] text-ink-faint';
+        when.className = 'last-scanned mt-3 font-mono text-[10px] text-ink-faint';
         when.textContent = `Last scanned: ${d.checkedAt.replace('T', ' ').slice(0, 16)} UTC`;
         card.appendChild(when);
       }
@@ -228,12 +242,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       pauseBtn.addEventListener('click', async () => {
         pauseBtn.disabled = true;
         try {
-          await fetch('/api/domains/pause', {
+          const res = await fetch('/api/domains/pause', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: d.id, paused: !d.paused }),
           });
-          await loadDomains();
+          const data = (await res.json()) as { ok: boolean; paused: boolean };
+          if (data.ok) {
+            d.paused = data.paused;
+            monitorChip.className = d.paused
+              ? 'rounded-full border border-warn/30 bg-warn/10 px-2 py-0.5 font-mono text-[10px] text-warn'
+              : 'rounded-full border border-pass/30 bg-pass/10 px-2 py-0.5 font-mono text-[10px] text-pass';
+            monitorChip.title = d.paused
+              ? 'Automatic monitoring is paused for this domain. Resume to re-enter the 6-hour cycle.'
+              : 'This domain is re-checked automatically every 6 hours';
+            monitorChip.textContent = d.paused ? '\u25cf paused' : '\u25cf monitored';
+            pauseBtn.textContent = d.paused ? 'Resume monitoring' : 'Pause monitoring';
+          }
         } finally {
           pauseBtn.disabled = false;
         }
@@ -334,12 +359,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       (document.getElementById('app-max') as HTMLElement).textContent = String(data.max);
       if (!data.domains.length) {
         const empty = document.createElement('p');
-        empty.className = 'rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-ink-faint';
+        empty.className = 'empty-state rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-ink-faint';
         empty.textContent = 'No domains yet. Add one above and the first scan runs immediately.';
         list.appendChild(empty);
         return;
       }
       for (const d of data.domains) list.appendChild(domainCard(d));
+    }
+
+    function ensureEmptyState() {
+      const list = document.getElementById('dom-list')!;
+      if (list.querySelector('[data-domain]')) return;
+      list.textContent = '';
+      const empty = document.createElement('p');
+      empty.className = 'empty-state rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-ink-faint';
+      empty.textContent = 'No domains yet. Add one above and the first scan runs immediately.';
+      list.appendChild(empty);
     }
 
     async function loadAlerts() {
@@ -407,11 +442,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ domain: input.value }),
         });
-        const data = (await res.json()) as { ok: boolean; error?: string };
-        if (data.ok) {
-          showMsg('bg-pass/10 text-pass border border-pass/30', `${input.value.trim().toLowerCase()} added and scanned.`);
+        const data = (await res.json()) as { ok: boolean; error?: string; domain?: DomainRow };
+        if (data.ok && data.domain) {
+          const row: DomainRow = { ...data.domain, paused: false };
+          document.querySelector('#dom-list .empty-state')?.remove();
+          document.getElementById('dom-list')!.appendChild(domainCard(row));
+          showMsg('bg-pass/10 text-pass border border-pass/30', `${row.domain} added and scanned.`);
           input.value = '';
-          await loadDomains();
         } else {
           showMsg('bg-fail/10 text-fail border border-fail/30', data.error ?? 'Could not add the domain.');
         }
