@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { TOTAL_TOOLS } from '../data/tools';
+
+const steps = [
+  {
+    n: '1',
+    title: 'Add your domain, get an instant scan',
+    body: 'Type your domain and PromptDNS checks it immediately: website DNS, nameservers, mail routing, SPF, DMARC, DKIM, and DNSSEC - the same checks our free tools run, saved to your dashboard as your first snapshot.',
+    img: '/screenshots/domain-detail.png',
+    alt: 'Domain detail screen showing the seven authentication check cards with pass and warning states',
+  },
+  {
+    n: '2',
+    title: 'Everything at a glance',
+    body: 'Your dashboard opens on live security scores for every domain you monitor. Open a domain to see each check in detail, the exact DNS records we captured, and the full log of every scan we ran.',
+    img: '/screenshots/overview.png',
+    alt: 'Overview screen with large domain score cards, open alerts, and the next-step recommendation',
+  },
+  {
+    n: '3',
+    title: 'Watched every 6 hours, guided to enforcement',
+    body: 'Every domain is re-checked automatically. A new snapshot is stored and an alert is raised only when something actually changes - and the DMARC screen reads your aggregate reports and walks you from p=none to p=reject, step by step.',
+    img: '/screenshots/dmarc-roadmap.png',
+    alt: 'Email DMARC screen with the sources setup guidance and the three-step enforcement roadmap',
+  },
+];
+---
+
+<BaseLayout
+  title="How PromptDNS Works"
+  description="How PromptDNS monitoring works: add a domain for an instant scan, get live security scores on your dashboard, and receive alerts when anything changes - with DMARC reports turned into a guided path to p=reject."
+>
+  <div class="mx-auto max-w-4xl px-4 py-16">
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">How it works</p>
+    <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      From first scan to full enforcement, in three steps.
+    </h1>
+    <p class="mt-4 max-w-2xl text-lg text-ink-dim">
+      All {TOTAL_TOOLS} tools are free without an account. Monitoring adds the part tools can't do:
+      remembering your domains, checking them on a schedule, and telling you the moment something moves.
+    </p>
+
+    <div class="mt-12 space-y-14">
+      {steps.map((step) => (
+        <section class="grid items-start gap-6 md:grid-cols-[1fr_1.4fr]">
+          <div>
+            <span class="grid h-10 w-10 place-items-center rounded-xl border border-accent/40 bg-accent/10 font-display text-lg font-bold text-accent">{step.n}</span>
+            <h2 class="font-display mt-4 text-xl font-bold text-ink">{step.title}</h2>
+            <p class="mt-3 leading-relaxed text-ink-dim">{step.body}</p>
+          </div>
+          <figure>
+            <img src={step.img} alt={step.alt} loading="lazy" width="1228" height="700"
+              class="w-full rounded-xl border border-line shadow-[0_10px_40px_rgba(0,0,0,.4)]" />
+          </figure>
+        </section>
+      ))}
+    </div>
+
+    <div class="mt-14 rounded-xl border border-accent/30 bg-accent/5 p-6 sm:p-7">
+      <h2 class="font-display text-lg font-bold text-ink">What the score means</h2>
+      <p class="mt-2 text-sm leading-relaxed text-ink-dim">
+        The score is deterministic: seven checks with published weights (DMARC 25, SPF 20, website DNS 15,
+        DKIM 15, mail routing 10, DNSSEC 10, nameservers 5). The same DNS state always produces the same
+        score - the full breakdown is on the <a href="/methodology/" class="text-accent hover:text-accent-soft">methodology page</a>.
+      </p>
+    </div>
+
+    <div class="mt-10 flex flex-wrap gap-4">
+      <a href="/early-access/" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Join early access</a>
+      <a href="/tools/" class="rounded-lg border border-line bg-panel-2 px-5 py-2.5 text-sm font-semibold text-ink hover:border-accent/40">Try the free tools first</a>
+    </div>
+  </div>
+</BaseLayout>
