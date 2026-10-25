@@ -16,11 +16,14 @@ export interface ScanCheck {
   weight: number;
 }
 
+export interface ScanRecord { type: string; name: string; value: string }
+
 export interface ScanResult {
   domain: string;
   score: number;
   grade: string;
   checks: ScanCheck[];
+  records: ScanRecord[];
 }
 
 interface DohAnswer { name: string; type: number; TTL: number; data: string }
@@ -57,11 +60,20 @@ const DKIM_SELECTORS = ['google', 'selector1', 'selector2', 'k1', 's1', 's2', 'd
 export async function scanDomainServer(domain: string): Promise<ScanResult> {
   const checks: ScanCheck[] = [];
 
+  const records: ScanRecord[] = [];
+  const addRecords = (type: string, name: string, answers: DohAnswer[], typeId: number) => {
+    for (const a of answers.filter((x) => x.type === typeId)) {
+      records.push({ type, name, value: a.data.replace(/^"|"$/g, '') });
+    }
+  };
+
   // Website DNS (15)
   let aRecords = 0;
   try {
     const [a, aaaa] = await Promise.all([doh(domain, 'A'), doh(domain, 'AAAA')]);
     aRecords = answersOf(a).filter((x) => x.type === 1).length + answersOf(aaaa).filter((x) => x.type === 28).length;
+    addRecords('A', domain, answersOf(a), 1);
+    addRecords('AAAA', domain, answersOf(aaaa), 28);
   } catch { /* treated as no records */ }
   checks.push({
     id: 'website', label: 'Website DNS', weight: 15,
@@ -73,7 +85,9 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   // Nameservers (5)
   let nsCount = 0;
   try {
-    nsCount = answersOf(await doh(domain, 'NS')).filter((x) => x.type === 2).length;
+    const nsRes = await doh(domain, 'NS');
+    nsCount = answersOf(nsRes).filter((x) => x.type === 2).length;
+    addRecords('NS', domain, answersOf(nsRes), 2);
   } catch { /* ignore */ }
   checks.push({
     id: 'ns', label: 'Nameservers', weight: 5,
@@ -85,7 +99,9 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   // Mail routing (10)
   let mxHosts: string[] = [];
   try {
-    mxHosts = answersOf(await doh(domain, 'MX')).filter((x) => x.type === 15).map((x) => x.data.replace(/^\d+\s+/, ''));
+    const mxRes = await doh(domain, 'MX');
+    mxHosts = answersOf(mxRes).filter((x) => x.type === 15).map((x) => x.data.replace(/^\d+\s+/, ''));
+    addRecords('MX', domain, answersOf(mxRes), 15);
   } catch { /* ignore */ }
   checks.push({
     id: 'mx', label: 'Mail Routing (MX)', weight: 10,
@@ -98,9 +114,11 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   let spf: string | null = null;
   let spfLookups = 0;
   try {
-    const records = txts(await doh(domain, 'TXT')).filter((t) => t.toLowerCase().startsWith('v=spf1'));
-    spf = records[0] ?? null;
+    const spfRes = await doh(domain, 'TXT');
+    const spfRecords = txts(spfRes).filter((t) => t.toLowerCase().startsWith('v=spf1'));
+    spf = spfRecords[0] ?? null;
     spfLookups = spf ? spf.trim().split(/\s+/).slice(1).filter(isSpfLookupTerm).length : 0;
+    for (const t of spfRecords) records.push({ type: 'TXT', name: domain, value: t });
   } catch { /* ignore */ }
   const spfEarned = !spf ? 0 : spfLookups <= 10 ? 20 : 5;
   checks.push({
@@ -113,8 +131,10 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   // DMARC (25)
   let policy: string | null = null;
   try {
-    const rec = txts(await doh(`_dmarc.${domain}`, 'TXT')).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
+    const dmarcRes = await doh(`_dmarc.${domain}`, 'TXT');
+    const rec = txts(dmarcRes).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
     policy = rec?.match(/p\s*=\s*(none|quarantine|reject)/i)?.[1]?.toLowerCase() ?? null;
+    if (rec) records.push({ type: 'TXT', name: `_dmarc.${domain}`, value: rec });
   } catch { /* ignore */ }
   const dmarcEarned = policy === 'reject' ? 25 : policy === 'quarantine' ? 20 : policy === 'none' ? 10 : 0;
   checks.push({
@@ -158,5 +178,5 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   const earned = checks.reduce((s, c) => s + c.earned, 0);
   const score = Math.round(earned); // weights sum to 100
   const grade = score >= 90 ? 'A' : score >= 75 ? 'B' : score >= 60 ? 'C' : score >= 40 ? 'D' : 'F';
-  return { domain, score, grade, checks };
+  return { domain, score, grade, checks, records };
 }

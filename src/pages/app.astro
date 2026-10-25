@@ -125,9 +125,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <div id="domain-head"></div>
           <div class="pd-tabs" role="tablist" aria-label="Domain sections">
             <button type="button" class="pd-tab is-active" data-tab="auth" aria-selected="true">Authentication</button>
+            <button type="button" class="pd-tab" data-tab="records" aria-selected="false">Records</button>
             <button type="button" class="pd-tab" data-tab="activity" aria-selected="false">Activity</button>
           </div>
           <div class="pd-tabpanel" id="tab-auth"></div>
+          <div class="pd-tabpanel" id="tab-records" hidden></div>
           <div class="pd-tabpanel" id="tab-activity" hidden></div>
         </section>
 
@@ -434,7 +436,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     import { lookup, RESOLVERS } from '../lib/doh';
 
     type ScanCheck = { id: string; label: string; status: string; value: string; earned: number; weight: number };
-    type DomainRow = { id: number; domain: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: ScanCheck[] | null };
+    type ScanRecord = { type: string; name: string; value: string };
+    type DomainRow = { id: number; domain: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: ScanCheck[] | null; records: ScanRecord[] | null };
     type AlertRow = { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string };
     type DmarcSource = { ip: string; volume: number; dmarcPass: number; spfPass: number; dkimPass: number; disposition: string; lastReport: string | null };
     type DailyPoint = { date: string; total: number; passing: number };
@@ -461,8 +464,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         t.classList.toggle('is-active', active);
         t.setAttribute('aria-selected', String(active));
       });
-      document.getElementById('tab-auth')!.hidden = tab !== 'auth';
-      document.getElementById('tab-activity')!.hidden = tab !== 'activity';
+      document.querySelectorAll('#screen-domain .pd-tabpanel').forEach((p) => { p.hidden = p.id !== 'tab-' + tab; });
     }
 
     function show(screen: string, sub?: string) {
@@ -698,6 +700,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return '<div class="pd-panel"><div class="pd-panel-head"><h2>' + esc(c.label) + '</h2>' + chip(c.status) + '</div><p class="pd-mono" style="color:var(--pd-ink-dim)">' + esc(c.value) + '</p>' + extra + '</div>';
       }).join('');
       auth.innerHTML = '<div class="pd-grid-2">' + cards + '</div><p class="pd-panel-note">Checks and weights follow the methodology. Values are from the latest scan.</p>';
+
+      const recBox = document.getElementById('tab-records')!;
+      if (d.records && d.records.length) {
+        recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records as seen in the last scan</h2><span class="pd-chip pd-chip-info">' + d.records.length + ' record(s)</span></div><div class="pd-table-wrap"><table class="pd-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th></tr></thead><tbody>' +
+          d.records.map((r) => '<tr><td class="pd-mono">' + esc(r.type) + '</td><td class="pd-mono">' + esc(r.name) + '</td><td class="pd-mono" style="word-break:break-all">' + esc(r.value) + '</td></tr>').join('') +
+          '</tbody></table></div><p class="pd-panel-note">Captured during the most recent scan. TXT records include the SPF and DMARC policies.</p></div>';
+      } else {
+        recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records</h2></div><div class="pd-empty">No record values captured yet. Run a scan and they will appear here.</div></div>';
+      }
 
       showDomainTab('auth');
 

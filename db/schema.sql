@@ -150,3 +150,7 @@ CREATE TABLE IF NOT EXISTS dmarc_marks (
   updated_at TEXT DEFAULT (datetime('now')),
   UNIQUE(domain_id, source_ip)
 );
+
+-- v8: raw DNS record values captured by each scan (Records tab).
+
+ALTER TABLE snapshots ADD COLUMN records_json TEXT;

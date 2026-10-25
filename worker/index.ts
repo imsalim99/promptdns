@@ -53,7 +53,7 @@ export default {
   // (crontab in wrangler.toml).
   async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
     if (!env.DB) return;
-    ctx.waitUntil(runScheduled(env.DB));
+    ctx.waitUntil(runScheduled(env));
   },
 
   // DMARC aggregate report ingestion: invoked by the Email Routing rule

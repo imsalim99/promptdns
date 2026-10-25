@@ -43,6 +43,7 @@ function sameOrigin(request: Request): boolean {
 
 interface SessionEnv extends Env {
   OWNER_EMAIL?: string;
+  SEND_EMAIL?: { send(message: unknown): Promise<void> };
 }
 
 interface CompareOutcome {
@@ -53,7 +54,37 @@ interface CompareOutcome {
   severity: 'info' | 'warn' | 'fail';
 }
 
-async function scanAndCompare(db: D1Database, d: DomainRow): Promise<CompareOutcome> {
+async function emailAlert(env: SessionEnv, userId: number, domainName: string, title: string, detail: string): Promise<void> {
+  if (!env.SEND_EMAIL || !env.DB) return;
+  try {
+    const user = await env.DB.prepare('SELECT email FROM users WHERE id = ?1').bind(userId).first<{ email: string }>();
+    if (!user) return;
+    // Cloudflare Email Sending delivers only to addresses verified on the
+    // account; unverified destinations throw and are skipped silently until
+    // a transactional provider (Resend) takes over customer-scale sending.
+    const raw = [
+      'From: PromptDNS Alerts <alerts@promptdns.com>',
+      `To: ${user.email}`,
+      `Subject: [PromptDNS] ${title}`,
+      '',
+      title,
+      '',
+      detail,
+      '',
+      'Open your dashboard: https://promptdns.com/app/',
+      '',
+      `You receive this because ${domainName} is monitored on your PromptDNS account. Manage alert channels in Settings.`,
+      '',
+    ].join('\r\n');
+    const { EmailMessage } = await import('cloudflare:email');
+    await env.SEND_EMAIL.send(new EmailMessage('alerts@promptdns.com', user.email, raw));
+  } catch {
+    // the alert stays in the inbox regardless; email is best-effort
+  }
+}
+
+async function scanAndCompare(env: SessionEnv, d: DomainRow): Promise<CompareOutcome> {
+  const db = env.DB!;
   const scan = await scanDomainServer(d.domain);
 
   const nsOk = scan.checks.some((c) => c.id === 'ns' && c.earned > 0);
@@ -69,14 +100,12 @@ async function scanAndCompare(db: D1Database, d: DomainRow): Promise<CompareOutc
       .bind(d.id)
       .run();
     if (failCount === 2) {
+      const title = `${d.domain} stopped resolving`;
+      const detail = 'Two consecutive checks could not resolve this domain\'s nameservers. It may have expired, been deleted, or its DNS provider is down. Verify at your registrar.';
       await db.prepare(
         "INSERT INTO alerts (user_id, domain_id, severity, title, detail) VALUES (?1, ?2, 'fail', ?3, ?4)",
-      ).bind(
-        d.user_id,
-        d.id,
-        `${d.domain} stopped resolving`,
-        'Two consecutive checks could not resolve this domain\'s nameservers. It may have expired, been deleted, or its DNS provider is down. Verify at your registrar.',
-      ).run();
+      ).bind(d.user_id, d.id, title, detail).run();
+      await emailAlert(env, d.user_id, d.domain, title, detail);
     }
     return { changed: false, unresolvable: true, scan, diff: [], severity: 'info' };
   }
@@ -116,20 +145,17 @@ async function scanAndCompare(db: D1Database, d: DomainRow): Promise<CompareOutc
 
   if (changed) {
     await db
-      .prepare('INSERT INTO snapshots (domain_id, score, grade, checks_json) VALUES (?1, ?2, ?3, ?4)')
-      .bind(d.id, scan.score, scan.grade, JSON.stringify(scan.checks))
+      .prepare('INSERT INTO snapshots (domain_id, score, grade, checks_json, records_json) VALUES (?1, ?2, ?3, ?4, ?5)')
+      .bind(d.id, scan.score, scan.grade, JSON.stringify(scan.checks), JSON.stringify(scan.records))
       .run();
     if (prev && diff.length) {
       const changedCount = diff.length;
+      const title = `${d.domain}: ${changedCount} check${changedCount > 1 ? 's' : ''} changed`;
+      const detail = diff.join('\n');
       await db.prepare(
         'INSERT INTO alerts (user_id, domain_id, severity, title, detail) VALUES (?1, ?2, ?3, ?4, ?5)',
-      ).bind(
-        d.user_id,
-        d.id,
-        severity,
-        `${d.domain}: ${changedCount} check${changedCount > 1 ? 's' : ''} changed`,
-        diff.join('\n'),
-      ).run();
+      ).bind(d.user_id, d.id, severity, title, detail).run();
+      await emailAlert(env, d.user_id, d.domain, title, detail);
     }
   }
 
@@ -158,7 +184,7 @@ export async function handleRescan(request: Request, env: SessionEnv): Promise<R
     .first<DomainRow>();
   if (!row) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
 
-  const outcome = await scanAndCompare(env.DB, row);
+  const outcome = await scanAndCompare(env, row);
   if (outcome.unresolvable) {
     return json({ ok: false, error: `${row.domain} did not resolve on this run. Try again later.` }, 502);
   }
@@ -173,14 +199,15 @@ export async function handleRescan(request: Request, env: SessionEnv): Promise<R
 }
 
 /** The cron entry: scan every monitored domain, 5 at a time. */
-export async function runScheduled(db: D1Database): Promise<void> {
-  const rows = await db
+export async function runScheduled(env: SessionEnv): Promise<void> {
+  if (!env.DB) return;
+  const rows = await env.DB
     .prepare('SELECT id, user_id, domain, fail_count, paused FROM domains WHERE paused = 0')
     .all<DomainRow>();
   const domains = rows.results ?? [];
   for (let i = 0; i < domains.length; i += 5) {
     const batch = domains.slice(i, i + 5);
-    await Promise.allSettled(batch.map((d) => scanAndCompare(db, d)));
+    await Promise.allSettled(batch.map((d) => scanAndCompare(env, d)));
   }
 }
 
