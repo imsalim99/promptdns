@@ -18,7 +18,6 @@ import type { Env } from './index';
 
 const SESSION_COOKIE = 'pdns_session';
 const SESSION_DAYS = 30;
-const MAGIC_MINUTES = 15;
 
 export interface AuthEnv extends Env {
   OWNER_EMAIL?: string;

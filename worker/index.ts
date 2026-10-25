@@ -8,6 +8,7 @@
 
 import { handleWaitlist } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
+import { handleDomainsList, handleDomainsAdd, handleDomainsDelete } from './domains';
 
 interface Env {
   DB?: D1Database;
@@ -20,12 +21,16 @@ export default {
   async fetch(request: Request, env: Env & AuthEnv): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
+    const method = request.method;
 
     if (path === '/api/waitlist') return handleWaitlist(request, env);
     if (path === '/api/auth/magic-link') return handleMagicLink(request, env);
     if (path === '/api/auth/verify') return handleVerify(request, env);
     if (path === '/api/auth/me') return handleMe(request, env);
     if (path === '/api/auth/logout') return handleLogout(request, env);
+    if (path === '/api/domains' && method === 'GET') return handleDomainsList(request, env);
+    if (path === '/api/domains' && method === 'POST') return handleDomainsAdd(request, env);
+    if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
 
     return env.ASSETS.fetch(request);
   },

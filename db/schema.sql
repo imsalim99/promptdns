@@ -50,3 +50,23 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count INTEGER NOT NULL DEFAULT 0,
   window_start TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- v3: monitored domains + scan snapshots (taken at add-time now; scheduled
+-- re-checks arrive with the monitoring engine, which reuses this table).
+
+CREATE TABLE IF NOT EXISTS domains (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  domain TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, domain)
+);
+
+CREATE TABLE IF NOT EXISTS snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  domain_id INTEGER NOT NULL REFERENCES domains(id),
+  score INTEGER,
+  grade TEXT,
+  checks_json TEXT NOT NULL,
+  checked_at TEXT DEFAULT (datetime('now'))
+);

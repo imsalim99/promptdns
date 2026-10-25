@@ -4,10 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Your Account"
-  description="Your PromptDNS account. Domain monitoring appears here as it ships."
+  description="Your PromptDNS account: domains you monitor and their latest scan."
   noindex
 >
-  <div class="mx-auto max-w-3xl px-4 py-16">
+  <div class="mx-auto max-w-4xl px-4 py-16">
     <p id="app-state" class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Checking sign-in…</p>
 
     <div id="app-signed-out" class="mt-6 hidden">
@@ -17,31 +17,165 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
 
     <div id="app-signed-in" class="mt-6 hidden">
-      <h1 class="font-display text-3xl font-bold tracking-tight text-ink">Your account</h1>
-      <p class="mt-2 text-sm text-ink-dim">Signed in as <span id="app-email" class="font-mono text-accent"></span></p>
-
-      <div class="mt-8 rounded-xl border border-line bg-panel/60 p-6">
-        <h2 class="font-display text-lg font-bold text-ink">Monitored domains</h2>
-        <p class="mt-2 text-sm leading-relaxed text-ink-dim">
-          Nothing here yet, and that is the honest state: domain monitoring is the next thing being
-          built on this account. When it ships, this page shows each domain you add, its current
-          DNS and email-authentication state, and alerts when something changes.
-        </p>
-        <p class="mt-3 text-xs text-ink-faint">
-          In the meantime the <a href="/tools/" class="text-accent hover:text-accent-soft">tools</a>
-          and <a href="/early-access/" class="text-accent hover:text-accent-soft">early access list</a>
-          keep working without an account.
-        </p>
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <h1 class="font-display text-3xl font-bold tracking-tight text-ink">Your account</h1>
+          <p class="mt-1 text-sm text-ink-dim">Signed in as <span id="app-email" class="font-mono text-accent"></span></p>
+        </div>
+        <button id="app-logout" class="rounded-lg border border-line bg-panel-2 px-4 py-2 text-xs font-semibold text-ink-dim transition-colors hover:border-fail/40 hover:text-fail">Sign out</button>
       </div>
 
-      <button id="app-logout" class="mt-8 rounded-lg border border-line bg-panel-2 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-fail/40 hover:text-fail">Sign out</button>
+      <div class="mt-8 rounded-xl border border-line bg-panel/60 p-6">
+        <h2 class="font-display text-lg font-bold text-ink">Add a domain</h2>
+        <p class="mt-1 text-sm text-ink-dim">
+          Adding a domain runs an instant scan of its DNS and email authentication. Up to
+          <span class="font-mono text-accent" id="app-max">3</span> domains while monitoring is in
+          development.
+        </p>
+        <form id="dom-form" class="mt-4 flex flex-col gap-3 sm:flex-row">
+          <label class="sr-only" for="dom-input">Domain</label>
+          <input id="dom-input" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="yourdomain.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+          <button type="submit" id="dom-submit" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Add &amp; scan</button>
+        </form>
+        <div id="dom-msg" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+      </div>
+
+      <div class="mt-8">
+        <h2 class="font-display text-lg font-bold text-ink">Your domains</h2>
+        <div id="dom-list" class="mt-4 grid gap-3"></div>
+        <p class="mt-3 text-xs text-ink-faint">
+          Scores use the same checks as the <a href="/" class="text-accent hover:text-accent-soft">homepage scanner</a>
+          (<a href="/methodology/" class="text-accent hover:text-accent-soft">methodology</a>). Scans run when you add a
+          domain today; automatic re-checks and alerts are the next piece being built.
+        </p>
+      </div>
     </div>
   </div>
 
   <script>
+    type ScanCheck = { id: string; label: string; status: string; value: string; earned: number; weight: number };
+    type DomainRow = { id: number; domain: string; score: number | null; grade: string | null; checkedAt: string | null; checks: ScanCheck[] | null };
+
     const state = document.getElementById('app-state')!;
     const signedOut = document.getElementById('app-signed-out')!;
     const signedIn = document.getElementById('app-signed-in')!;
+
+    const GRADE_CLASS: Record<string, string> = {
+      A: 'text-pass border-pass/40 bg-pass/10',
+      B: 'text-pass border-pass/40 bg-pass/10',
+      C: 'text-warn border-warn/40 bg-warn/10',
+      D: 'text-warn border-warn/40 bg-warn/10',
+      F: 'text-fail border-fail/40 bg-fail/10',
+    };
+
+    const showMsg = (cls: string, text: string) => {
+      const el = document.getElementById('dom-msg')!;
+      el.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+      el.textContent = text;
+      el.classList.remove('hidden');
+    };
+
+    function domainCard(d: DomainRow): HTMLElement {
+      const card = document.createElement('div');
+      card.className = 'rounded-xl border border-line bg-panel/60 p-5';
+      const head = document.createElement('div');
+      head.className = 'flex flex-wrap items-center justify-between gap-3';
+      const name = document.createElement('span');
+      name.className = 'font-mono text-sm font-semibold text-ink';
+      name.textContent = d.domain;
+      head.appendChild(name);
+      const right = document.createElement('div');
+      right.className = 'flex items-center gap-3';
+      if (d.grade) {
+        const badge = document.createElement('span');
+        badge.className = `rounded border px-2 py-0.5 font-mono text-xs ${GRADE_CLASS[d.grade] ?? 'text-ink border-line'}`;
+        badge.textContent = `${d.score}/100 - ${d.grade}`;
+        right.appendChild(badge);
+      }
+      const del = document.createElement('button');
+      del.className = 'text-xs text-ink-faint hover:text-fail';
+      del.textContent = 'Remove';
+      del.addEventListener('click', async () => {
+        del.disabled = true;
+        await fetch(`/api/domains/delete?id=${d.id}`, { method: 'POST' });
+        await loadDomains();
+      });
+      right.appendChild(del);
+      head.appendChild(right);
+      card.appendChild(head);
+
+      if (d.checks?.length) {
+        const grid = document.createElement('div');
+        grid.className = 'mt-3 grid gap-1.5 sm:grid-cols-2';
+        for (const c of d.checks) {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between gap-2 text-xs';
+          const icon = c.status === 'pass' ? '✔' : c.status === 'warn' ? '▲' : '✕';
+          const cls = c.status === 'pass' ? 'text-pass' : c.status === 'warn' ? 'text-warn' : 'text-fail';
+          row.innerHTML = `<span class="${cls}">${icon}</span><span class="text-ink-dim">${c.label}</span><span class="ml-auto font-mono text-ink-faint">${c.value}</span>`;
+          grid.appendChild(row);
+        }
+        card.appendChild(grid);
+      }
+      if (d.checkedAt) {
+        const when = document.createElement('p');
+        when.className = 'mt-3 font-mono text-[10px] text-ink-faint';
+        when.textContent = `Last scanned: ${d.checkedAt.replace('T', ' ').slice(0, 16)} UTC`;
+        card.appendChild(when);
+      }
+      return card;
+    }
+
+    async function loadDomains() {
+      const list = document.getElementById('dom-list')!;
+      list.textContent = '';
+      const res = await fetch('/api/domains');
+      if (!res.ok) return;
+      const data = (await res.json()) as { domains: DomainRow[]; max: number };
+      (document.getElementById('app-max') as HTMLElement).textContent = String(data.max);
+      if (!data.domains.length) {
+        const empty = document.createElement('p');
+        empty.className = 'rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-ink-faint';
+        empty.textContent = 'No domains yet. Add one above and the first scan runs immediately.';
+        list.appendChild(empty);
+        return;
+      }
+      for (const d of data.domains) list.appendChild(domainCard(d));
+    }
+
+    const form = document.getElementById('dom-form') as HTMLFormElement;
+    const input = document.getElementById('dom-input') as HTMLInputElement;
+    const btn = document.getElementById('dom-submit') as HTMLButtonElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.textContent = 'Scanning…';
+      try {
+        const res = await fetch('/api/domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain: input.value }),
+        });
+        const data = (await res.json()) as { ok: boolean; error?: string };
+        if (data.ok) {
+          showMsg('bg-pass/10 text-pass border border-pass/30', `${input.value.trim().toLowerCase()} added and scanned.`);
+          input.value = '';
+          await loadDomains();
+        } else {
+          showMsg('bg-fail/10 text-fail border border-fail/30', data.error ?? 'Could not add the domain.');
+        }
+      } catch {
+        showMsg('bg-warn/10 text-warn border border-warn/30', 'Could not reach the server. Try again.');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Add & scan';
+    });
+
+    document.getElementById('app-logout')?.addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login/';
+    });
 
     fetch('/api/auth/me')
       .then((r) => r.json())
@@ -50,6 +184,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (d.authenticated) {
           (document.getElementById('app-email') as HTMLElement).textContent = d.email ?? '';
           signedIn.classList.remove('hidden');
+          void loadDomains();
         } else {
           signedOut.classList.remove('hidden');
         }
@@ -58,10 +193,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         state.textContent = 'Could not reach the server.';
         signedOut.classList.remove('hidden');
       });
-
-    document.getElementById('app-logout')?.addEventListener('click', async () => {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/login/';
-    });
   </script>
 </BaseLayout>
