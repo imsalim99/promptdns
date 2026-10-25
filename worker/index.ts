@@ -11,10 +11,12 @@ import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } f
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery } from './dmarc-ingest';
+import { handleDmarcSeed } from './dev-tools';
 
 interface Env {
   DB?: D1Database;
   ASSETS: { fetch(request: Request): Promise<Response> };
+  SEND_EMAIL?: { send(message: unknown): Promise<void> };
 }
 
 export type { Env };
@@ -36,6 +38,7 @@ export default {
     if (path === '/api/domains/pause') return handleDomainsPause(request, env);
     if (path === '/api/domains/history') return handleHistory(request, env);
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
+    if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);
