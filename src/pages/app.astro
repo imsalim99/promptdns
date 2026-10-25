@@ -223,6 +223,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-hero-heading { font-size: 15px; margin-top: 2px; }
     .pd-act-head { font-family: var(--pd-font-display); font-weight: 600; font-size: 14px; }
     .pd-act-expl { font-size: 12px; color: var(--pd-ink-dim); margin-top: 5px; }
+    .pd-act-close { position: absolute; top: 10px; right: 12px; font-size: 16px; line-height: 1; color: var(--pd-ink-faint); }
+    .pd-act-close:hover { color: var(--pd-ink); }
     .pd-hero-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
     .pd-hero-actions .pd-link { font-size: 11px; }
     .pd-hero-card { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; }
@@ -522,9 +524,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           '<td style="white-space:nowrap"><button type="button" class="pd-btn pd-btn-xs" data-scan-row="' + d.id + '">Scan</button> <button type="button" class="pd-link" data-open="' + d.id + '">Open →</button></td>';
         tbody.appendChild(tr);
       }
-      const statusLine = document.createElement('p');
+      const statusLine = document.createElement('div');
       statusLine.id = 'dom-scan-status';
-      statusLine.className = 'pd-panel-note';
+      statusLine.className = 'pd-panel';
       statusLine.hidden = true;
       list.appendChild(wrap);
       list.appendChild(statusLine);
@@ -711,6 +713,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     async function showActivityCard(domainId: number, container: HTMLElement): Promise<void> {
       container.hidden = false;
+      container.className = 'pd-panel';
+      container.style.position = 'relative';
       container.innerHTML = '<p class="pd-panel-note">Loading activity…</p>';
       try {
         const res = await fetch('/api/domains/history?id=' + domainId);
@@ -723,6 +727,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           : 'No changes since the previous snapshot.';
         const color = !latest || latest.outcome === 'ok' ? 'var(--pd-pass)' : latest.outcome === 'changed' ? 'var(--pd-warn)' : 'var(--pd-fail)';
         container.innerHTML =
+          '<button type="button" class="pd-act-close" aria-label="Dismiss activity">×</button>' +
           '<div class="pd-act-head" style="color:' + color + '">' + headline + '</div>' +
           '<p class="pd-act-expl">' + esc(SCAN_EXPLANATION) + '</p>' +
           (runs.length
@@ -731,6 +736,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               '</tbody></table>'
             : '');
         container.style.borderLeft = '3px solid ' + color;
+        container.querySelector('.pd-act-close')!.addEventListener('click', () => {
+          container.hidden = true;
+          container.innerHTML = '';
+        });
       } catch {
         container.innerHTML = '<p class="pd-panel-note">Could not load activity.</p>';
       }
