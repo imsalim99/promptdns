@@ -194,7 +194,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-signedout h1 { font-size: 24px; color: var(--pd-ink); margin-bottom: 8px; }
     .pd-signedout .pd-btn { margin-top: 16px; display: inline-flex; }
 
-    .pd-shell { display: flex; min-height: 640px; }
+    .pd-shell { display: flex; min-height: 100vh; }
     .pd-sidebar { width: 212px; flex-shrink: 0; border-right: 1px solid var(--pd-line); background: linear-gradient(180deg, #0a0f1e, #070c18); display: flex; flex-direction: column; padding: 16px 12px; }
     .pd-logo { font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; padding: 2px 8px 14px; }
     .pd-logo-accent { background: linear-gradient(90deg, var(--pd-accent), var(--pd-violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -224,8 +224,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-page-sub { font-size: 12px; color: var(--pd-ink-faint); margin-top: 1px; }
     .pd-topbar .pd-btn svg { width: 13px; height: 13px; }
 
-    .pd-toast { position: sticky; bottom: 12px; z-index: 30; margin: 0 22px; }
+    .pd-toast { position: fixed; bottom: 20px; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; pointer-events: none; }
     .pd-toast:empty { display: none; }
+    .pd-toast > div { pointer-events: auto; }
     .pd-toast > div { max-width: 480px; margin: 0 auto; border-radius: 10px; padding: 10px 14px; font-size: 13px; box-shadow: 0 8px 30px rgba(0,0,0,.45); display: flex; align-items: center; gap: 10px; border: 1px solid; }
     .pd-toast > .pd-toast-pass { border-color: rgba(74,222,128,.4); background: rgba(74,222,128,.1); color: var(--pd-pass); }
     .pd-toast > .pd-toast-warn { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.1); color: var(--pd-warn); }
@@ -398,6 +399,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       dismissTimers.set(el, window.setTimeout(() => { el.innerHTML = ''; }, wait));
     }
 
+    function showDomainTab(tab: string) {
+      document.querySelectorAll('.pd-tab').forEach((t) => {
+        const active = t.getAttribute('data-tab') === tab;
+        t.classList.toggle('is-active', active);
+        t.setAttribute('aria-selected', String(active));
+      });
+      document.getElementById('tab-auth')!.hidden = tab !== 'auth';
+      document.getElementById('tab-activity')!.hidden = tab !== 'activity';
+    }
+
     function show(screen: string, sub?: string) {
       document.querySelectorAll('#dash-shell .pd-screen').forEach((s) => { (s as HTMLElement).hidden = s.id !== 'screen-' + screen; });
       document.querySelectorAll('#dash-shell .pd-nav-item').forEach((n) => n.classList.toggle('is-active', (n as HTMLElement).dataset.screen === screen));
@@ -412,7 +423,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         alerts: 'Changes and problems, newest first.',
         settings: 'Account, notifications, and billing.',
       } as Record<string, string>)[screen] ?? '';
-      document.getElementById('topbar-add')!.style.display = screen === 'domains' ? '' : '';
+      document.getElementById('topbar-add')!.style.display = screen === 'domains' ? '' : 'none';
     }
 
     function chip(status: string): string {
@@ -571,7 +582,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         '<div class="pd-domain-head"><div class="pd-domain-head-main">' +
         '<h2 class="pd-domain-title">' + esc(d.domain) + '</h2>' +
         '<span class="pd-chip ' + (d.paused ? 'pd-chip-warn' : 'pd-chip-pass') + '">● ' + (d.paused ? 'paused' : 'monitored') + '</span>' +
-        '<span class="pd-score ' + gradeClass(d.grade) + '" style="width:46px;height:46px;font-size:19px">' + (d.score ?? '-') + '<span style="font-size:11px;color:var(--pd-ink-faint)">/100</span></span>' +
+        '<span class="pd-score ' + gradeClass(d.grade) + '" style="width:46px;height:46px;font-size:20px">' + (d.score ?? '-') + '</span><span class="pd-mono" style="color:var(--pd-ink-faint)">/100</span>' +
         '<span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '" style="font-size:24px">' + (d.grade ?? '-') + '</span>' +
         '</div><div class="pd-domain-head-actions">' +
         '<button type="button" class="pd-btn pd-btn-sm" id="dd-rescan">Scan now</button>' +
@@ -597,13 +608,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }).join('');
       auth.innerHTML = '<div class="pd-grid-2">' + cards + '</div><p class="pd-panel-note">Checks and weights follow the methodology. Values are from the latest scan.</p>';
 
-      document.querySelectorAll('.pd-tab').forEach((t) => {
-        const active = t.getAttribute('data-tab') === 'auth';
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
-      document.getElementById('tab-auth')!.hidden = false;
-      document.getElementById('tab-activity')!.hidden = true;
+      showDomainTab('auth');
 
       const act = document.getElementById('tab-activity')!;
       act.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Loading activity…</p></div>';
@@ -634,7 +639,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (data.ok) {
           await Promise.all([loadDomains(), loadOverview()]);
           toast('pass', data.changed ? 'Something changed - new snapshot stored, alert added.' : 'Re-checked: no changes since the last snapshot.');
-          if (state.currentDomainId === id) await openDomain(id);
+          if (state.currentDomainId === id) { await openDomain(id); showDomainTab('activity'); }
           if (state.dmarcDomainId === id) void loadDmarcScreen();
         } else {
           toast('fail', data.error ?? 'Rescan failed.');
@@ -852,13 +857,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     });
 
     document.querySelectorAll('.pd-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.pd-tab').forEach((t) => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
-        tab.classList.add('is-active');
-        tab.setAttribute('aria-selected', 'true');
-        document.getElementById('tab-auth')!.hidden = tab.getAttribute('data-tab') !== 'auth';
-        document.getElementById('tab-activity')!.hidden = tab.getAttribute('data-tab') !== 'activity';
-      });
+      tab.addEventListener('click', () => showDomainTab(tab.getAttribute('data-tab') ?? 'auth'));
     });
 
     document.getElementById('topbar-add')!.addEventListener('click', () => {
