@@ -73,8 +73,8 @@ const learnMenu = [
     </nav>
 
     <div class="ml-auto hidden items-center gap-4 lg:flex">
-      <a href="/login/" class="text-sm text-ink-dim transition-colors hover:text-ink">Sign in</a>
-      <a href="/early-access/" class="btn-cta btn-shimmer px-4 py-2 text-sm">Get Started Free</a>
+      <a href="/login/" id="nav-auth-link" class="text-sm text-ink-dim transition-colors hover:text-ink">Sign in</a>
+      <a href="/early-access/" id="nav-auth-cta" class="btn-cta btn-shimmer px-4 py-2 text-sm">Get Started Free</a>
     </div>
 
     <!-- Mobile toggle -->
@@ -115,4 +115,25 @@ const learnMenu = [
     const open = menu.classList.toggle('hidden') === false;
     btn.setAttribute('aria-expanded', String(open));
   });
+</script>
+
+<script>
+  // Session-aware nav: swap "Sign in" for "Your account" when a session exists.
+  // Anonymous visitors (no cookie) get a null answer without touching the database.
+  fetch('/api/auth/me')
+    .then((r) => r.json())
+    .then((d: { authenticated: boolean }) => {
+      if (!d.authenticated) return;
+      const link = document.getElementById('nav-auth-link');
+      const cta = document.getElementById('nav-auth-cta');
+      if (link) {
+        link.textContent = 'Your account';
+        link.setAttribute('href', '/app/');
+      }
+      if (cta) {
+        cta.setAttribute('href', '/app/');
+        cta.textContent = 'Your account';
+      }
+    })
+    .catch(() => {});
 </script>

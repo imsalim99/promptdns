@@ -101,8 +101,10 @@ export async function handleMagicLink(request: Request, env: AuthEnv): Promise<R
   if (!sameOrigin(request)) return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
   if (!env.DB) return json({ ok: false, error: 'Auth storage is not configured.' }, 503);
 
+  // Per-IP limit is generous (CGNAT households share one public IP);
+  // the per-email limit is the anti-bombing control.
   const ipKey = `magic:${await ipHashOf(request)}`;
-  if (!(await allowRate(env.DB, ipKey, 5))) {
+  if (!(await allowRate(env.DB, ipKey, 10))) {
     return json({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
   }
 
@@ -115,6 +117,10 @@ export async function handleMagicLink(request: Request, env: AuthEnv): Promise<R
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   if (!email || email.length > 254 || !/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(email)) {
     return json({ ok: false, error: 'Enter a valid email address.' }, 400);
+  }
+  const emailKey = `magicemail:${await hashHex(email)}`;
+  if (!(await allowRate(env.DB, emailKey, 5))) {
+    return json({ ok: false, error: 'Too many sign-in attempts for this email. Try again later.' }, 429);
   }
 
   // Ensure a user row exists so the token has an owner.
