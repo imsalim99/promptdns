@@ -163,7 +163,10 @@ async function scanAndCompare(env: SessionEnv, d: DomainRow): Promise<CompareOut
     .prepare("INSERT INTO scan_runs (domain_id, outcome, score, changes) VALUES (?1, ?2, ?3, ?4)")
     .bind(d.id, changed ? 'changed' : 'ok', scan.score, diff.length)
     .run();
-  await db.prepare("UPDATE domains SET last_checked_at = datetime('now') WHERE id = ?1").bind(d.id).run();
+  await db
+    .prepare("UPDATE domains SET last_checked_at = datetime('now'), records_json = ?2 WHERE id = ?1")
+    .bind(d.id, JSON.stringify(scan.records))
+    .run();
   return { changed, unresolvable: false, scan, diff, severity };
 }
 

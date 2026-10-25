@@ -154,3 +154,8 @@ CREATE TABLE IF NOT EXISTS dmarc_marks (
 -- v8: raw DNS record values captured by each scan (Records tab).
 
 ALTER TABLE snapshots ADD COLUMN records_json TEXT;
+
+-- v8b: latest known DNS records live on the domain row (updated every scan;
+-- snapshot records_json stays as the historical record at change points).
+
+ALTER TABLE domains ADD COLUMN records_json TEXT;
