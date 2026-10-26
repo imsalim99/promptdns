@@ -8,8 +8,27 @@ import { RECORD_TYPES } from '../lib/doh';
 import ResultCard from './ResultCard.astro';
 const types = RECORD_TYPES;
 ---
-<section id="propagation-checker" class="not-prose">
-  <div class="glass rounded-xl p-5 shadow-lg">
+<section id="propagation-checker" class="not-prose relative my-6" aria-label="DNS Propagation Checker Centerpiece">
+  <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
+    <!-- Visual Semantic Attribute Bar (Recognized by Google Multimodal & Agentic Retrieval) -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+          <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+          100% Free · No Sign Up
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">
+          ⚡ 12 Global Resolvers
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">
+          🛡️ Real-Time DNS-over-HTTPS
+        </span>
+      </div>
+      <div class="flex items-center gap-2 text-ink-faint">
+        <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
+        <span class="font-mono text-[11px]">Parallel Query</span>
+      </div>
+    </div>
     <form id="pdns-form" class="flex flex-col gap-3 sm:flex-row">
       <label class="sr-only" for="pdns-domain">Domain name</label>
       <input
