@@ -19,7 +19,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <div id="dash-shell" class="pd-shell" hidden>
       <aside class="pd-sidebar">
-        <a href="/" class="pd-logo" title="Back to promptdns.com"><span>Prompt</span><span class="pd-logo-accent">DNS</span></a>
+        <a href="/" class="pd-logo" title="Back to promptdns.com">
+          <span class="pd-logo-badge">DNS</span>
+          <span>Prompt<span class="pd-logo-accent">DNS</span></span>
+        </a>
         <nav class="pd-nav" aria-label="Dashboard">
           <button type="button" class="pd-nav-item" data-screen="overview"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Overview</button>
           <button type="button" class="pd-nav-item" data-screen="domains"><i data-lucide="globe" aria-hidden="true"></i>Domains</button>
@@ -32,6 +35,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <a href="/dns/" class="pd-nav-item"><i data-lucide="book-open" aria-hidden="true"></i>Guides</a>
           <div class="pd-nav-sep" aria-hidden="true"></div>
           <button type="button" class="pd-nav-item" data-screen="settings"><i data-lucide="settings" aria-hidden="true"></i>Settings</button>
+          <button type="button" class="pd-nav-item" id="nav-theme-toggle" title="Switch between dark and light">
+            <i data-lucide="sun-medium" aria-hidden="true"></i><span id="nav-theme-label">Light mode</span>
+          </button>
         </nav>
         <div class="pd-sidebar-foot">
           <div class="pd-plan-card">
@@ -248,7 +254,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     .pd-shell { display: flex; min-height: 100vh; }
     .pd-sidebar { width: 212px; flex-shrink: 0; border-right: 1px solid var(--pd-line); background: var(--pd-sidebar-grad); display: flex; flex-direction: column; padding: 16px 12px; }
-    .pd-logo { font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; padding: 2px 8px 14px; color: var(--pd-ink); text-decoration: none; }
+    .pd-logo { display: flex; align-items: center; gap: 10px; font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; padding: 2px 8px 14px; color: var(--pd-ink); text-decoration: none; letter-spacing: -0.01em; }
+    .pd-logo-badge { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--pd-accent), var(--pd-violet)); font-family: var(--pd-font-mono); font-size: 10px; font-weight: 700; color: var(--pd-on-accent); }
     .pd-hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
     .pd-hero-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .pd-hero-heading { font-size: 15px; margin-top: 2px; }
@@ -284,7 +291,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-theme-active { border-color: var(--pd-accent); color: var(--pd-accent); }
     .pd-menu-signout:hover { color: var(--pd-fail); }
     .pd-dd-status { margin-top: 10px; border-radius: 9px; padding: 9px 13px; font-size: 12.5px; border: 1px solid; }
-    .pd-logo-accent { background: linear-gradient(90deg, var(--pd-accent), var(--pd-violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .pd-logo-accent { color: var(--pd-accent); }
     .pd-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
     .pd-nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; color: var(--pd-ink-dim); font-size: 13px; text-align: left; transition: background .15s, color .15s; }
     .pd-nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
@@ -344,7 +351,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .pd-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--pd-line); background: var(--pd-panel-2); color: var(--pd-ink); border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 500; transition: border-color .15s; }
     .pd-btn:hover { border-color: color-mix(in srgb, var(--pd-accent) 45%, transparent); }
     .pd-btn svg { width: 13px; height: 13px; }
-    .pd-btn-primary { background: linear-gradient(90deg, var(--pd-accent), var(--pd-violet)); color: var(--pd-on-accent); border: 0; font-weight: 600; }
+    .pd-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: linear-gradient(100deg, var(--pd-accent), var(--pd-violet)); color: var(--pd-on-accent); border: 0; font-family: var(--pd-font-display); font-weight: 600; position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 8px 30px -10px color-mix(in srgb, var(--pd-accent) 60%, transparent); }
+    .pd-btn-primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%); transform: translateX(-120%); transition: transform .7s ease; }
+    .pd-btn-primary:hover::after { transform: translateX(120%); }
+    .pd-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 34px -8px color-mix(in srgb, var(--pd-accent) 70%, transparent); }
     .pd-btn-danger:hover { border-color: color-mix(in srgb, var(--pd-fail) 50%, transparent); color: var(--pd-fail); }
     .pd-btn-sm { padding: 5px 11px; font-size: 12px; }
     .pd-btn-xs { padding: 3px 9px; font-size: 11px; border-radius: 6px; }
@@ -474,7 +484,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     const state = { domains: [] as DomainRow[], currentDomainId: null as number | null, dmarcDomainId: null as number | null, max: 3 };
 
+    let currentTheme: 'dark' | 'light' = 'dark';
     function applyTheme(t: 'dark' | 'light') {
+      currentTheme = t;
       const app = document.getElementById('dash-app')!;
       if (t === 'light') app.setAttribute('data-theme', 'light');
       else app.removeAttribute('data-theme');
@@ -484,6 +496,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         b.setAttribute('aria-pressed', String(active));
         b.classList.toggle('pd-theme-active', active);
       });
+      const label = document.getElementById('nav-theme-label');
+      if (label) label.textContent = t === 'light' ? 'Dark mode' : 'Light mode';
+      const toggle = document.getElementById('nav-theme-toggle');
+      if (toggle) toggle.title = t === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
     }
     try {
       const savedTheme = localStorage.getItem('pd-theme');
@@ -725,10 +741,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (!g) return;
       const W = 640, H = 150, padL = 6, padB = 16, padT = 6;
       const n = Math.max(activity.length, 1);
-      const bw = (W - padL * 2) / n;
+      const slot = (W - padL * 2) / n;
+      const bw = Math.min(slot, 46);
+      const offsetX = (W - padL * 2 - bw * n) / 2;
       let out = '<line x1="' + padL + '" y1="' + (padT + 1) + '" x2="' + (W - padL) + '" y2="' + (padT + 1) + '" stroke="var(--pd-line)" stroke-width="1"/>';
       activity.forEach((a, i) => {
-        const x = padL + i * bw;
+        const x = padL + offsetX + i * slot;
         const h = Math.max(2, (H - padB - padT) * (a.avgScore / 100));
         out += '<rect x="' + (x + 1).toFixed(1) + '" y="' + (H - padB - h).toFixed(1) + '" width="' + Math.max(1.5, bw - 2.5).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="1.5" fill="var(--pd-accent)" opacity="0.8"><title>' + a.date + ': avg score ' + a.avgScore + ' across ' + a.runs + ' run(s)</title></rect>';
         if (i % Math.ceil(n / 8) === 0) out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 4) + '" font-size="9" fill="var(--pd-ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">' + a.date.slice(5) + '</text>';
@@ -1102,11 +1120,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (!g) return;
       const W = 640, H = 150, padL = 6, padB = 16, padT = 6;
       const n = Math.max(daily.length, 1);
-      const bw = (W - padL * 2) / n;
+      const slot = (W - padL * 2) / n;
+      const bw = Math.min(slot, 46);
+      const offsetX = (W - padL * 2 - bw * n) / 2;
       const maxTotal = Math.max(...daily.map((d) => d.total), 1);
       let out = '';
       daily.forEach((d, i) => {
-        const x = padL + i * bw;
+        const x = padL + offsetX + i * slot;
         const scale = (H - padB - padT) / maxTotal;
         const hp = d.passing * scale;
         const hf = (d.total - d.passing) * scale;
@@ -1179,6 +1199,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.querySelectorAll('[data-theme-set]').forEach((b) => {
       b.addEventListener('click', () => applyTheme((b as HTMLElement).dataset.themeSet as 'dark' | 'light'));
     });
+    document.getElementById('nav-theme-toggle')!.addEventListener('click', () => applyTheme(currentTheme === 'light' ? 'dark' : 'light'));
 
     document.querySelectorAll('#nav-user-menu [data-menu-goto]').forEach((b) => {
       b.addEventListener('click', () => {
