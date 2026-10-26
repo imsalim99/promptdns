@@ -19,37 +19,7 @@ const learnMenu = [
     </a>
 
     <nav class="hidden items-center gap-2 text-[15px] font-normal lg:flex" aria-label="Main">
-      <!-- Tools mega menu: every tool, every category -->
-      <div class="group relative">
-        <button class="nav-item flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink" aria-expanded="false">
-          Tools
-          <svg class="h-3 w-3 opacity-60 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-        </button>
-        <div class="invisible absolute left-0 top-full z-50 w-[46rem] max-w-[92vw] translate-y-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-          <div class="menu-panel mt-2 grid grid-cols-4 gap-5 rounded-xl p-5">
-            {NAV_MENU.map((col) => (
-              <div>
-                <p class="mb-2 font-display text-xs font-semibold uppercase tracking-wider text-ink">{col.heading}</p>
-                {col.groups.map((g) => (
-                  <div class="mb-3 last:mb-0">
-                    <p class="mb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent">{g.sub}</p>
-                    <ul class="space-y-0.5">
-                      {g.tools.map(([label, href]) => (
-                        <li><a href={href} class="block text-xs leading-snug text-ink-dim transition-colors hover:text-accent">{label}</a></li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            ))}
-            <div class="col-span-4 border-t border-line pt-2 text-center">
-              <a href="/tools/" class="font-mono text-xs text-accent hover:text-accent-soft">Browse all {TOTAL_TOOLS} tools, categorized →</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Learn dropdown -->
+      <a href="/tools/" class="nav-item rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink">Tools</a>
       <div class="group relative">
         <button class="nav-item flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-ink-dim transition-colors hover:text-ink" aria-expanded="false">
           Learn
@@ -84,20 +54,10 @@ const learnMenu = [
     </button>
   </div>
 
-  <!-- Mobile drawer -->
-  <div id="mobile-menu" class="hidden max-h-[70vh] overflow-y-auto border-t border-line/60 bg-canvas px-4 py-4 lg:hidden">
+  <!-- Mobile drawer: lightweight links only (full tool list lives at /tools/) -->
+  <div id="mobile-menu" class="hidden border-t border-line/60 bg-canvas px-4 py-4 lg:hidden">
     <nav class="grid gap-1 text-sm" aria-label="Mobile">
-      {TOOL_CATEGORIES.map((c) => (
-        <div class="mb-2">
-          <p class="px-2 pt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{c.cat}</p>
-          <div class="grid grid-cols-2 gap-x-3">
-            {c.tools.map((t) => (
-              <a href={t.href} class="rounded-md px-2 py-1.5 text-xs text-ink-dim hover:text-accent">{t.name}</a>
-            ))}
-          </div>
-        </div>
-      ))}
-      <p class="px-2 pt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Learn</p>
+      <a href="/tools/" class="rounded-md px-2 py-2 font-medium text-ink-dim hover:text-accent">All {TOTAL_TOOLS} tools</a>
       {learnMenu.map(([title, , href]) => (
         <a href={href} class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">{title}</a>
       ))}
@@ -121,7 +81,6 @@ const learnMenu = [
 
 <script>
   // Session-aware nav: swap "Sign in" for "Your account" when a session exists.
-  // Anonymous visitors (no cookie) get a null answer without touching the database.
   fetch('/api/auth/me')
     .then((r) => r.json())
     .then((d: { authenticated: boolean }) => {
