@@ -115,7 +115,7 @@ const building = [
         const data = (await res.json()) as { ok: boolean; already?: boolean; error?: string };
         if (res.ok && data.ok) {
           show('bg-pass/10 text-pass border border-pass/30',
-            data.already ? 'This email is already on the list. You will hear from us at launch.' : 'You are on the list. You will hear from us when monitoring is ready.',
+            data.already ? 'This email is already on the list. You will hear from us at launch.' : 'Almost done: check your inbox and click the confirmation link to finish joining the list.',
             false);
         } else {
           show('bg-warn/10 text-warn border border-warn/30', data.error ?? 'Something went wrong. Please try again.', true);

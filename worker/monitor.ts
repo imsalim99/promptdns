@@ -55,31 +55,43 @@ interface CompareOutcome {
 }
 
 async function emailAlert(env: SessionEnv, userId: number, domainName: string, title: string, detail: string): Promise<void> {
-  if (!env.SEND_EMAIL || !env.DB) return;
-  try {
-    const user = await env.DB.prepare('SELECT email FROM users WHERE id = ?1').bind(userId).first<{ email: string }>();
-    if (!user) return;
-    // Cloudflare Email Sending delivers only to addresses verified on the
-    // account; unverified destinations throw and are skipped silently until
-    // a transactional provider (Resend) takes over customer-scale sending.
-    const raw = [
-      'From: PromptDNS Alerts <alerts@promptdns.com>',
-      `To: ${user.email}`,
-      `Subject: [PromptDNS] ${title}`,
-      '',
-      title,
-      '',
-      detail,
-      '',
-      'Open your dashboard: https://promptdns.com/app/',
-      '',
-      `You receive this because ${domainName} is monitored on your PromptDNS account. Manage alert channels in Settings.`,
-      '',
-    ].join('\r\n');
-    const { EmailMessage } = await import('cloudflare:email');
-    await env.SEND_EMAIL.send(new EmailMessage('alerts@promptdns.com', user.email, raw));
-  } catch {
-    // the alert stays in the inbox regardless; email is best-effort
+  if (!env.DB) return;
+  const user = await env.DB.prepare('SELECT email FROM users WHERE id = ?1').bind(userId).first<{ email: string }>();
+  if (!user) return;
+  const text = [title, '', detail, '', 'Open your dashboard: https://promptdns.com/app/', '', `You receive this because ${domainName} is monitored on your PromptDNS account. Manage alert channels in Settings.`].join('\r\n');
+
+  // Resend first: works for any customer address.
+  if (env.RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'PromptDNS Alerts <alerts@promptdns.com>',
+          to: [user.email],
+          subject: `[PromptDNS] ${title}`,
+          text,
+        }),
+      });
+      if (res.ok) return;
+    } catch { /* fall through to the binding */ }
+  }
+
+  // Fallback: Cloudflare Email Sending (delivers only to verified addresses).
+  if (env.SEND_EMAIL) {
+    try {
+      const raw = [
+        'From: PromptDNS Alerts <alerts@promptdns.com>',
+        `To: ${user.email}`,
+        `Subject: [PromptDNS] ${title}`,
+        '',
+        text,
+      ].join('\r\n');
+      const { EmailMessage } = await import('cloudflare:email');
+      await env.SEND_EMAIL.send(new EmailMessage('alerts@promptdns.com', user.email, raw));
+    } catch {
+      // the alert stays in the inbox regardless; email is best-effort
+    }
   }
 }
 

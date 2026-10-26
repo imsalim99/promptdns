@@ -159,3 +159,9 @@ ALTER TABLE snapshots ADD COLUMN records_json TEXT;
 -- snapshot records_json stays as the historical record at change points).
 
 ALTER TABLE domains ADD COLUMN records_json TEXT;
+
+-- v9: waitlist double opt-in. Signups receive a verification email; only
+-- verified rows count as confirmed. Tokens stored hashed (SHA-256).
+
+ALTER TABLE waitlist ADD COLUMN verified_at TEXT;
+ALTER TABLE waitlist ADD COLUMN token_hash TEXT;

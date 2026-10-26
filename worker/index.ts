@@ -6,7 +6,7 @@
  * falls through to the asset layer, which serves the Astro 404 page.
  */
 
-import { handleWaitlist } from './waitlist';
+import { handleWaitlist, handleWaitlistVerify } from './waitlist';
 import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } from './auth';
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
@@ -18,6 +18,7 @@ interface Env {
   DB?: D1Database;
   ASSETS: { fetch(request: Request): Promise<Response> };
   SEND_EMAIL?: { send(message: unknown): Promise<void> };
+  RESEND_API_KEY?: string;
 }
 
 export type { Env };
@@ -29,6 +30,7 @@ export default {
     const method = request.method;
 
     if (path === '/api/waitlist') return handleWaitlist(request, env);
+    if (path === '/api/waitlist/verify') return handleWaitlistVerify(request, env);
     if (path === '/api/auth/magic-link') return handleMagicLink(request, env);
     if (path === '/api/auth/verify') return handleVerify(request, env);
     if (path === '/api/auth/me') return handleMe(request, env);
