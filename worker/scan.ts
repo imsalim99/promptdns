@@ -55,7 +55,7 @@ const isSpfLookupTerm = (t: string) => {
   return SPF_LOOKUP_PREFIXES.some((p) => l.startsWith(p)) || l === 'a' || l === 'mx';
 };
 
-const DKIM_SELECTORS = ['google', 'selector1', 'selector2', 'k1', 's1', 's2', 'default', 'mail', 'zoho'];
+const DKIM_SELECTORS = ['google', 'selector1', 'selector2', 'k1', 's1', 's2', 'default', 'mail', 'zoho', 'resend'];
 
 export async function scanDomainServer(domain: string): Promise<ScanResult> {
   const checks: ScanCheck[] = [];
