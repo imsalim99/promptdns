@@ -4,16 +4,13 @@
  * Implements Google Centerpiece Annotation & Document-Aware Layout Ranking:
  * - Prominent above-the-fold visual bounding box for layout tree evaluation
  * - Visual semantic attribute badges (100% Free, No Sign Up, Client-Side, DoH)
- * - Semantic HTML5 (<section>, <header>, <slot>)
+ * - 1-Click Instant Test Presets for NavBoost click engagement
+ * - Pre-rendered diagnostic scope so the panel never renders as an empty box
  */
-interface Props {
-  headline?: string;
-}
-const { headline } = Astro.props;
 ---
-<section class="not-prose relative my-6" aria-label="Interactive Diagnostic Tool Centerpiece">
+<section class="not-prose relative my-6" aria-label="Interactive DNS Tool">
   <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
-    <!-- Visual Semantic Attribute Bar (Recognized by Google Multimodal & Agentic Retrieval) -->
+    <!-- Visual Semantic Attribute Bar -->
     <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes">
       <div class="flex flex-wrap items-center gap-2">
         <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
@@ -35,5 +32,28 @@ const { headline } = Astro.props;
 
     <!-- Centerpiece Functional Body -->
     <slot />
+
+    <!-- 1-Click Instant Test Presets (NavBoost engagement) -->
+    <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line/40 pt-3" aria-label="Instant test domains">
+      <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+      <button type="button" data-preset-domain="cloudflare.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
+      <button type="button" data-preset-domain="google.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">google.com</button>
+      <button type="button" data-preset-domain="github.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">github.com</button>
+    </div>
   </div>
 </section>
+
+<script>
+  // 1-click preset: find the first text input in the tool panel, fill it, submit the form.
+  document.addEventListener('click', (e) => {
+    const pill = (e.target as HTMLElement).closest('[data-preset-domain]');
+    if (!pill) return;
+    const panel = pill.closest('.glass');
+    if (!panel) return;
+    const input = panel.querySelector<HTMLInputElement>('input[type="text"], input[type="url"], input:not([type])');
+    if (!input) return;
+    input.value = pill.getAttribute('data-preset-domain') ?? '';
+    const form = input.closest('form');
+    if (form) form.requestSubmit();
+  });
+</script>
