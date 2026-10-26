@@ -9,50 +9,26 @@ const faqSchema = {
  "mainEntity": [
   {
    "@type": "Question",
-   "name": "Is the DNS Record Lookup really free?",
+   "name": "What record types can I look up?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The DNS record lookup runs entirely in your browser."
+    "text": "All major types: A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA, DNSKEY, and DS. Each returns full values and TTLs from live DNS-over-HTTPS queries."
    }
   },
   {
    "@type": "Question",
-   "name": "How accurate are the results?",
+   "name": "Why do different tools show different results for the same domain?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The DNS record lookup queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives."
+    "text": "DNS results vary by resolver due to caching and TTL. Our tool queries Cloudflare, Google, and AliDNS directly. The propagation checker shows differences across all three side by side."
    }
   },
   {
    "@type": "Question",
-   "name": "Do you store the domains I look up?",
+   "name": "What does TTL mean in the results?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use this tool for client work?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I run this check?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if the results look wrong?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree."
+    "text": "TTL (Time To Live) is how long a resolver caches the record before re-querying the authoritative server. Lower TTLs mean faster propagation but more resolver load."
    }
   }
  ]
@@ -106,7 +82,7 @@ const faqSchema = {
       <p><strong>TTL</strong> is how long resolvers may cache the answer (seconds), it's why changes take time to spread. The <strong>Type</strong> column tells you what the record does; every type has a full guide in the <a href="/dns-records/">record types reference</a>. Empty answers with NOERROR mean the record type exists for the name but has no values; NXDOMAIN means the name itself doesn't exist.</p>
       
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the DNS Record Lookup really free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The DNS record lookup runs entirely in your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate are the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS record lookup queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do you store the domains I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use this tool for client work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I run this check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if the results look wrong?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree.</p></details></div>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What record types can I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">All major types: A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA, DNSKEY, and DS. Each returns full values and TTLs from live DNS-over-HTTPS queries.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do different tools show different results for the same domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS results vary by resolver due to caching and TTL. Our tool queries Cloudflare, Google, and AliDNS directly. The propagation checker shows differences across all three side by side.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does TTL mean in the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TTL (Time To Live) is how long a resolver caches the record before re-querying the authoritative server. Lower TTLs mean faster propagation but more resolver load.</p></details></div>
 <h2>Related tools</h2>
       <ul>
         <li><a href="/dns-propagation-checker/">DNS Propagation Checker</a>, compare across resolvers</li>

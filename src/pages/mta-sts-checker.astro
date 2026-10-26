@@ -8,50 +8,26 @@ const faqSchema = {
  "mainEntity": [
   {
    "@type": "Question",
-   "name": "Is the MTA-STS Checker really free?",
+   "name": "What is the difference between MTA-STS and DANE?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The MTA-STS validation runs entirely in your browser."
+    "text": "MTA-STS uses a DNS TXT record and an HTTPS-hosted policy file to enforce TLS for SMTP. DANE uses DNSSEC-signed TLSA records. They solve the same problem differently; MTA-STS is more widely adopted."
    }
   },
   {
    "@type": "Question",
-   "name": "How accurate are the results?",
+   "name": "Does MTA-STS work without DNSSEC?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The MTA-STS validation queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives."
+    "text": "Yes. MTA-STS relies on HTTPS certificate validation for the policy file, not DNSSEC. This makes it easier to deploy than DANE, which requires DNSSEC."
    }
   },
   {
    "@type": "Question",
-   "name": "Do you store the domains I look up?",
+   "name": "What happens if my MTA-STS policy file is unreachable?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use this tool for client work?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I run this check?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if the results look wrong?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree."
+    "text": "Receiving servers fall back to their cached copy of your policy. If no cached copy exists, they skip MTA-STS enforcement and deliver normally."
    }
   }
  ]
@@ -83,7 +59,7 @@ const faqSchema = {
     </div>
     <article class="rich-text mt-12 max-w-none">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the MTA-STS Checker really free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The MTA-STS validation runs entirely in your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate are the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The MTA-STS validation queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do you store the domains I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use this tool for client work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I run this check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if the results look wrong?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree.</p></details></div>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between MTA-STS and DANE?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">MTA-STS uses a DNS TXT record and an HTTPS-hosted policy file to enforce TLS for SMTP. DANE uses DNSSEC-signed TLSA records. They solve the same problem differently; MTA-STS is more widely adopted.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does MTA-STS work without DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. MTA-STS relies on HTTPS certificate validation for the policy file, not DNSSEC. This makes it easier to deploy than DANE, which requires DNSSEC.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my MTA-STS policy file is unreachable?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Receiving servers fall back to their cached copy of your policy. If no cached copy exists, they skip MTA-STS enforcement and deliver normally.</p></details></div>
 <h2>Related</h2><ul><li><a href="/mta-sts/">MTA-STS explained</a> · <a href="/tls-rpt-checker/">TLS-RPT checker</a></li></ul></article>
   </div>
 </BaseLayout>

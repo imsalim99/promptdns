@@ -8,50 +8,26 @@ const faqSchema = {
  "mainEntity": [
   {
    "@type": "Question",
-   "name": "Is the BIMI Record Checker really free?",
+   "name": "Do I need a VMC certificate for BIMI?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The BIMI validation runs entirely in your browser."
+    "text": "Yes, for Gmail and Apple Mail you need a Verified Mark Certificate (VMC) issued by a certificate authority like DigiCert or Entrust. Some providers accept Common Mark Certificates (CMC) which are cheaper."
    }
   },
   {
    "@type": "Question",
-   "name": "How accurate are the results?",
+   "name": "Does BIMI work without DMARC?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The BIMI validation queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives."
+    "text": "No. BIMI requires your domain to have DMARC enforced at p=quarantine or p=reject. p=none is not sufficient. This is why DMARC enforcement is a prerequisite for BIMI deployment."
    }
   },
   {
    "@type": "Question",
-   "name": "Do you store the domains I look up?",
+   "name": "Which email providers support BIMI?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use this tool for client work?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I run this check?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if the results look wrong?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree."
+    "text": "Gmail, Apple Mail (iOS 16+), and Yahoo Mail support BIMI. Microsoft Outlook does not currently support the BIMI standard."
    }
   }
  ]
@@ -83,7 +59,7 @@ const faqSchema = {
     </div>
     <article class="rich-text mt-12 max-w-none">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the BIMI Record Checker really free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: every tool on PromptDNS is free forever, with no account, no limits, and no trial timers. The BIMI validation runs entirely in your browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate are the results?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The BIMI validation queries public DNS-over-HTTPS resolvers (Cloudflare, Google, AliDNS) in real time. Results reflect what those resolvers actually serve, which is the same data the wider internet receives.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do you store the domains I look up?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Lookups happen client-side in your browser. Domains are not sent to our servers, stored, or logged. See the privacy policy for details.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use this tool for client work?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the tools are free for commercial use. Agencies on the Business plan can also generate white-label automated reports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I run this check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS or infrastructure change, and periodically (weekly or monthly) as part of routine health monitoring. The paid plans automate this.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if the results look wrong?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare with a second tool or dig from a terminal. If results differ between tools, one may be showing a cached answer: the propagation checker reveals which resolvers disagree.</p></details></div>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need a VMC certificate for BIMI?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, for Gmail and Apple Mail you need a Verified Mark Certificate (VMC) issued by a certificate authority like DigiCert or Entrust. Some providers accept Common Mark Certificates (CMC) which are cheaper.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does BIMI work without DMARC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. BIMI requires your domain to have DMARC enforced at p=quarantine or p=reject. p=none is not sufficient. This is why DMARC enforcement is a prerequisite for BIMI deployment.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which email providers support BIMI?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail, Apple Mail (iOS 16+), and Yahoo Mail support BIMI. Microsoft Outlook does not currently support the BIMI standard.</p></details></div>
 <h2>Related</h2><ul><li><a href="/bimi/">BIMI explained</a> · <a href="/dmarc-record-checker/">DMARC checker (prerequisite)</a></li></ul></article>
   </div>
 </BaseLayout>
