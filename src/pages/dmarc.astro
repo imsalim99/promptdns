@@ -7,7 +7,7 @@ const faq = {
   mainEntity: [
     { '@type': 'Question', name: 'What does DMARC do?', acceptedAnswer: { '@type': 'Answer', text: 'DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.' } },
     { '@type': 'Question', name: 'What is a good DMARC policy?', acceptedAnswer: { '@type': 'Answer', text: 'Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.' } },
-    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.' } },
+    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading reinforce.' } },
   ],
 };
 ---
@@ -23,7 +23,7 @@ const faq = {
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC: The Complete Guide</h1>
     <p class="mt-5 text-lg leading-relaxed text-ink-dim">
       SPF and DKIM verify mail, but neither tells the receiver <em>what to do</em> when verification
-      fails. DMARC is the policy layer: it sets the consequence, requires alignment, and, crucially,
+      fails. DMARC is the policy layer: it sets the consequence, requires alignment, and, essentially,
       reports back to you.
     </p>
     <Diagram name="dmarc-tree" caption="The DMARC decision tree: SPF/DKIM pass, alignment, policy" />
