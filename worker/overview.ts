@@ -72,6 +72,18 @@ export async function handleOverview(request: Request, env: Env): Promise<Respon
     .bind(uid)
     .all<{ date: string; total: number; passing: number }>();
 
+  const activity = await env.DB
+    .prepare(
+      `SELECT date(ran_at) AS date,
+              COUNT(*) AS runs,
+              ROUND(AVG(score)) AS avgScore
+         FROM scan_runs
+        WHERE domain_id IN (SELECT id FROM domains WHERE user_id = ?1) AND score IS NOT NULL
+        GROUP BY date(ran_at) ORDER BY date DESC LIMIT 14`,
+    )
+    .bind(uid)
+    .all<{ date: string; runs: number; avgScore: number }>();
+
   const total = dmarcPass?.total ?? 0;
   return json({
     ok: true,
@@ -85,5 +97,6 @@ export async function handleOverview(request: Request, env: Env): Promise<Respon
       passRate: total > 0 ? Math.round(((dmarcPass?.passing ?? 0) / total) * 100) : null,
       daily: (daily.results ?? []).slice().reverse(),
     },
+    activity: (activity.results ?? []).slice().reverse().map((a) => ({ date: a.date, runs: a.runs, avgScore: Math.round(a.avgScore) })),
   });
 }
