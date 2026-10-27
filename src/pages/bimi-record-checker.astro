@@ -52,8 +52,11 @@ const faqSchema = {
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check BIMI</button>
   </form>
   <div id="bimi-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="bimi-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Tag</th><th>Value</th><th>Meaning</th></tr></thead><tbody id="bimi-tbody"></tbody></table>
+  <p id="bimi-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="bimi-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Tag</th><th>Value</th><th>Meaning</th></tr></thead><tbody id="bimi-tbody"><tr><td class="font-mono text-xs text-accent-soft">v</td><td class="font-mono text-xs">BIMI1</td><td class="text-sm text-ink-dim">Protocol version</td></tr><tr><td class="font-mono text-xs text-accent-soft">l</td><td class="font-mono text-xs">https://example.com/bimi/logo.svg</td><td class="text-sm text-ink-dim">Logo location, SVG Tiny 1.2 format</td></tr><tr><td class="font-mono text-xs text-accent-soft">a</td><td class="font-mono text-xs">https://example.com/bimi/vmc.pem</td><td class="text-sm text-ink-dim">VMC certificate location (optional)</td></tr></tbody></table>
   </div>
 </ToolPanel>
     </div>
@@ -81,6 +84,7 @@ const faqSchema = {
     const v = rec.match(/v=([^;]+)/i)?.[1] ?? '';
     const l = rec.match(/l=([^;]+)/i)?.[1] ?? '';
     const a = rec.match(/a=([^;]+)/i)?.[1] ?? '';
+    document.getElementById('bimi-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const [tag, val, meaning] of [['v=', v, 'Version (BIMI1)'], ['l=', l, 'Logo SVG URL'], ['a=', a, 'VMC certificate (empty = no VMC, Gmail requires one)']] as [string, string, string][]) {
       tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${tag}</td><td class="font-mono text-xs">${val.replace(/</g, '&lt;') || '(missing)'}</td><td class="text-xs text-ink-dim">${meaning}</td></tr>`);

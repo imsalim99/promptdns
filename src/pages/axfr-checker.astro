@@ -21,7 +21,10 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Exposure</button>
   </form>
   <div id="ax-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ax-results" class="mt-6 hidden grid gap-2"></div>
+  <p id="ax-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="ax-results" class="mt-6 grid gap-2"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">a.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">AXFR refused, zone transfer properly restricted</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">b.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">AXFR refused, zone transfer properly restricted</p></div></div>
 </ToolPanel>
 
     <ToolArticle slug="axfr-checker" />
@@ -41,6 +44,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     statusEl.textContent = `Auditing nameservers for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
     const ns = await lookup(domain, 'NS', RESOLVERS[0]);
     const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
+    document.getElementById('ax-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = '';
     for (const h of hosts) {
       const a = await lookup(h, 'A', RESOLVERS[0]);

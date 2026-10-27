@@ -28,8 +28,10 @@ import ToolPanel from '../components/ToolPanel.astro';
 
       <div id="st-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
 
-      <div id="st-results" class="mt-6 hidden grid gap-4">
-</div>
+      <p id="st-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="st-results" class="mt-6 grid gap-4"><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-accent">12 ms</div><div class="text-xs text-ink-faint">Cloudflare, ranked fastest</div></div><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-ink">24 ms</div><div class="text-xs text-ink-faint">Google</div></div><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-ink">48 ms</div><div class="text-xs text-ink-faint">AliDNS</div></div></div>
 
       <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
     </ToolPanel>
@@ -57,6 +59,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const domain = normalizeDomain(input.value) || 'example.com';
     const btn = form.querySelector('button') as HTMLButtonElement;
     btn.disabled = true;
+    document.getElementById('st-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = '';
     resultsEl.classList.remove('hidden');
 

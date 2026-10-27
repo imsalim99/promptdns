@@ -93,10 +93,13 @@ const faqSchema = {
 
       <div id="draf-policy" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4 text-sm"></div>
 
-      <div id="draf-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+      <p id="draf-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="draf-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
         <table class="pdns-table">
           <thead><tr><th>Source IP</th><th>Count</th><th>From</th><th>SPF</th><th>DKIM</th><th>DMARC</th><th>Disposition</th></tr></thead>
-          <tbody id="draf-tbody"></tbody>
+          <tbody id="draf-tbody"><tr><td class="font-mono text-xs text-accent-soft">209.85.220.41</td><td>12</td><td class="text-sm text-ink-dim">example.com</td><td>pass</td><td>pass</td><td>pass</td><td>none</td></tr><tr><td class="font-mono text-xs text-accent-soft">203.0.113.9</td><td>3</td><td class="text-sm text-ink-dim">example.com</td><td>fail</td><td>fail</td><td>fail</td><td>none</td></tr></tbody>
         </table>
     </div>
 
@@ -231,7 +234,8 @@ const faqSchema = {
       policyEl.innerHTML = `<span class="text-ink-dim">Published policy:</span> <span class="font-mono text-accent">${r0.policy}</span>`;
       policyEl.classList.remove('hidden');
 
-      tbody.innerHTML = '';
+      document.getElementById('draf-sample-note')?.classList.add('hidden');
+    tbody.innerHTML = '';
       for (const r of rows.slice(0, 100)) {
         const badge = (s: string) => s === 'pass'
           ? '<span class="rounded bg-pass/15 px-1.5 py-0.5 text-xs text-pass">pass</span>'

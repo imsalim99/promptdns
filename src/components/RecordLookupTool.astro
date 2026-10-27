@@ -7,6 +7,23 @@ import ToolPanel from './ToolPanel.astro';
 import ResultCard from './ResultCard.astro';
 interface Props { type: string; label: string; hint: string }
 const { type, label, hint } = Astro.props;
+
+/** One realistic sample row per record type, shown at first paint (labeled as sample). */
+const SAMPLE_VALUES: Record<string, string> = {
+  A: '93.184.216.34',
+  AAAA: '2606:2800:220:1:248:1893:25c8:1946',
+  CNAME: 'Redirects to www.example.com',
+  MX: '0 example.com',
+  NS: 'a.iana-servers.net',
+  SOA: 'ns1.example.com hostmaster 2026010101 7200 3600 1209600 3600',
+  SRV: '10 60 5060 sip.example.com',
+  PTR: 'dns.google (for 8.8.8.8)',
+  CAA: '0 issue "letsencrypt.org"',
+  DS: '31589 8 2 (digest present, valid at parent)',
+  DNSKEY: '257 3 8 (2048-bit RSASHA256 key signing key)',
+  TXT: '"v=spf1 -all"',
+};
+const sampleValue = SAMPLE_VALUES[type] ?? '93.184.216.34';
 ---
 <ToolPanel>
   <form data-record-form data-type={type} class="flex flex-col gap-3 sm:flex-row">
@@ -16,10 +33,13 @@ const { type, label, hint } = Astro.props;
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Lookup {type}</button>
   </form>
   <div data-status class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div data-results class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+  <p data-sample-note data-vs="example" class="mt-6 text-xs text-ink-faint">
+    Sample diagnostic for <code>example.com</code> ({type} record). Enter any domain above for live results.
+  </p>
+  <div data-results class="mt-2 overflow-x-auto rounded-lg border border-line/60">
     <table class="pdns-table">
       <thead><tr><th>Name</th><th>TTL</th><th>Value</th></tr></thead>
-      <tbody data-tbody></tbody>
+      <tbody data-tbody><tr><td class="font-medium text-ink">example.com</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>{sampleValue}</code></td></tr></tbody>
     </table>
   </div>
   <p class="mt-4 text-xs text-ink-faint">{hint}</p>
@@ -66,6 +86,7 @@ const { type, label, hint } = Astro.props;
       return;
     }
     setStatus('bg-panel-2 text-accent border border-line', `Querying ${TYPE} records for ${domain}…`);
+    document.querySelector('[data-sample-note]')?.classList.add('hidden');
     resultsEl.classList.add('hidden');
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 

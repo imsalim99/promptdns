@@ -52,8 +52,11 @@ const faqSchema = {
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check MTA-STS</button>
   </form>
   <div id="ms-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ms-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="ms-tbody"></tbody></table>
+  <p id="ms-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="ms-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="ms-tbody"><tr><td class="font-medium text-ink">DNS record</td><td class="text-sm text-ink-dim"><code>v=STS1</code> present at _smtp._tls.example.com</td></tr><tr><td class="font-medium text-ink">Policy mode</td><td class="text-sm text-ink-dim">enforce</td></tr><tr><td class="font-medium text-ink">MX matches policy</td><td class="text-sm text-ink-dim">All MX hosts are listed in the policy file</td></tr></tbody></table>
   </div>
 </ToolPanel>
     </div>
@@ -90,6 +93,7 @@ const faqSchema = {
     } else {
       rows.push(['Policy file', 'Could not fetch over HTTPS - MTA-STS requires the policy at https://mta-sts.' + domain + '/.well-known/mta-sts.txt']);
     }
+    document.getElementById('ms-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs">${v.replace(/</g, '&lt;')}</td></tr>`);
     statusEl.textContent = 'MTA-STS check complete.';

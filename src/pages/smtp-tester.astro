@@ -21,7 +21,10 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Preflight</button>
   </form>
   <div id="sm-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="sm-results" class="mt-6 hidden grid gap-2"></div>
+  <p id="sm-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="sm-results" class="mt-6 grid gap-2"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">MX: mx1.example.com (10)</p><p class="mt-1 text-sm text-ink-dim">Port 25 reachable, STARTTLS offered</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">TLS certificate</p><p class="mt-1 text-sm text-ink-dim">Valid for mx1.example.com, not expired</p></div></div>
 </ToolPanel>
 
     <ToolArticle slug="smtp-tester" />
@@ -55,6 +58,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const dmarc = txtRecords(dm.answers).find(t => t.toLowerCase().startsWith('v=dmarc1'));
     const firstMx = mxHosts[0]?.data.replace(/^\d+\s+/, '').replace(/\.$/, '');
     const ptr = firstMx ? await ptrOf(await lookup(firstMx, 'A', RESOLVERS[0]).then(r => r.answers.find(x => x.type === 1)?.data ?? '')) : null;
+    document.getElementById('sm-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = '';
     const rows: [string, boolean, string, boolean?][] = [
       ['MX routing', mxHosts.length > 0, mxHosts.map(h => h.data).join(', ') || 'no MX records'],

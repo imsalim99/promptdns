@@ -21,8 +21,11 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Find Nameservers</button>
   </form>
   <div id="nsl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="nsl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Nameserver</th><th>IPv4</th><th>IPv6</th></tr></thead><tbody id="nsl-tbody"></tbody></table>
+  <p id="nsl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="nsl-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Nameserver</th><th>IPv4</th><th>IPv6</th></tr></thead><tbody id="nsl-tbody"><tr><td class="font-medium text-ink">a.iana-servers.net</td><td><code>199.43.135.53</code></td><td><code>2001:500:8f::53</code></td></tr><tr><td class="font-medium text-ink">b.iana-servers.net</td><td><code>199.43.133.53</code></td><td><code>2001:500:8d::53</code></td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -45,6 +48,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const ns = await lookup(domain, 'NS', RESOLVERS[0]);
     const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
     if (!hosts.length) { statusEl.textContent = 'No NS records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; return; }
+    document.getElementById('nsl-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const h of hosts) {
       const [a, aaaa] = await Promise.all([lookup(h, 'A', RESOLVERS[0]), lookup(h, 'AAAA', RESOLVERS[0])]);

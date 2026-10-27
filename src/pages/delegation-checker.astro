@@ -21,7 +21,10 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Delegation</button>
   </form>
   <div id="dl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="dl-results" class="mt-6 hidden grid gap-2"></div>
+  <p id="dl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="dl-results" class="mt-6 grid gap-2"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">a.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">Answering, authoritative for the zone</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">b.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">Answering, answers match the first NS</p></div></div>
 </ToolPanel>
 
     <ToolArticle slug="delegation-checker" />
@@ -42,6 +45,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const ns = await lookup(domain, 'NS', RESOLVERS[0]);
     const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
     if (!hosts.length) { statusEl.textContent = 'No NS records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; return; }
+    document.getElementById('dl-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = '';
     let healthy = 0;
     for (const host of hosts) {

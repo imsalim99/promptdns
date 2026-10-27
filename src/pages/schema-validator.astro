@@ -21,7 +21,10 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Validate Schema</button>
   </form>
   <div id="sv-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="sv-results" class="mt-4 hidden grid gap-2"></div>
+  <p id="sv-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="sv-results" class="mt-4 grid gap-2"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">Valid JSON-LD</p><p class="mt-1 text-sm text-ink-dim">@type: WebApplication, 0 errors</p></div></div>
 </ToolPanel>
 
     <ToolArticle slug="schema-validator" />
@@ -40,6 +43,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const url = normalizeSite(input.value);
     if (!url.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a page URL.'); return; }
     setStatus('bg-panel-2 text-accent border border-line', `Fetching ${url}…`);
+    document.getElementById('sv-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = ''; resultsEl.classList.add('hidden');
     const res = await fetchText(url);
     if (!res.ok) { setStatus('bg-warn/10 text-warn border border-warn/30', 'Could not fetch that page.'); return; }

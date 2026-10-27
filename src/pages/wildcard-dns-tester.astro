@@ -21,8 +21,11 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Test Wildcard</button>
   </form>
   <div id="wc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="wc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Random host</th><th>Result</th></tr></thead><tbody id="wc-tbody"></tbody></table>
+  <p id="wc-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="wc-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Random host</th><th>Result</th></tr></thead><tbody id="wc-tbody"><tr><td class="font-mono text-xs text-accent-soft">q7x2p9.example.com</td><td class="text-sm text-ink-dim">NXDOMAIN, no wildcard record detected</td></tr><tr><td class="font-mono text-xs text-accent-soft">k4m8w1.example.com</td><td class="text-sm text-ink-dim">NXDOMAIN, no wildcard record detected</td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -42,6 +45,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
     statusEl.textContent = `Probing random subdomains of ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    document.getElementById('wc-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     let answered = 0;
     for (let i = 0; i < 3; i++) {

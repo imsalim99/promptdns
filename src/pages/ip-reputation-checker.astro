@@ -22,8 +22,11 @@ import ToolPanel from '../components/ToolPanel.astro';
   </form>
   <div id="ipr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
   <div id="ipr-ptr" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4 font-mono text-sm text-accent"></div>
-  <div id="ipr-results" class="mt-4 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Blocklist</th><th>Result</th><th>Detail</th></tr></thead><tbody id="ipr-tbody"></tbody></table>
+  <p id="ipr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="ipr-results" class="mt-4 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Blocklist</th><th>Result</th><th>Detail</th></tr></thead><tbody id="ipr-tbody"><tr><td class="font-medium text-ink">Spamhaus SBL</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr><tr><td class="font-medium text-ink">Barracuda</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr><tr><td class="font-medium text-ink">SpamCop</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -48,6 +51,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const ptr = await ptrOf(ip);
     if (ptr) { ptrEl.textContent = `PTR: ${ptr}`; ptrEl.classList.remove('hidden'); }
     const results = await checkIpBlacklists(ip, (m) => (statusEl.textContent = m));
+    document.getElementById('ipr-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     let listed = 0;
     for (const r of results) {

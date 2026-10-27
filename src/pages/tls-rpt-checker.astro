@@ -44,8 +44,11 @@ const faqSchema = {
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TLS-RPT</button>
   </form>
   <div id="tr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="tr-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="tr-tbody"></tbody></table>
+  <p id="tr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="tr-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="tr-tbody"><tr><td class="font-medium text-ink">Record</td><td><code>v=TLSRPTv1; rua=mailto:tls-reports@example.com</code></td></tr><tr><td class="font-medium text-ink">Reporting address</td><td class="text-sm text-ink-dim">tls-reports@example.com</td></tr><tr><td class="font-medium text-ink">Report format</td><td class="text-sm text-ink-dim">Daily JSON summaries (RFC 8460)</td></tr></tbody></table>
   </div>
 </ToolPanel>
     </div>
@@ -71,6 +74,7 @@ const faqSchema = {
     const rec = txtRecords(res.answers).find(t => t.toLowerCase().includes('tlsrpt'));
     if (!rec) { statusEl.textContent = 'No TLS-RPT record found. You receive no TLS failure reports.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
     const rua = rec.match(/rua=([^;]+)/i)?.[1] ?? '';
+    document.getElementById('tr-sample-note')?.classList.add('hidden');
     tbody.innerHTML = `<tr><td class="text-ink-dim">Record</td><td class="font-mono text-xs">${rec.replace(/</g, '&lt;')}</td></tr><tr><td class="text-ink-dim">Reports sent to</td><td class="font-mono text-xs text-accent">${rua.replace(/</g, '&lt;')}</td></tr>`;
     statusEl.textContent = 'TLS-RPT record found.';
     statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';

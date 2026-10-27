@@ -54,8 +54,11 @@ const faqSchema = {
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Convert</button>
   </form>
   <div id="v6-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="v6-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="v6-tbody"></tbody></table>
+  <p id="v6-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="v6-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="v6-tbody"><tr><td class="font-medium text-ink">IPv4 input</td><td><code>8.8.8.8</code></td></tr><tr><td class="font-medium text-ink">IPv6 mapped form</td><td><code>::ffff:8.8.8.8</code></td></tr><tr><td class="font-medium text-ink">IPv6 dotted form</td><td><code>::ffff:808:808</code></td></tr></tbody></table>
   </div>
 </ToolPanel>
     </div>
@@ -81,6 +84,7 @@ const faqSchema = {
     const mapped = `::ffff:${ip}`;
     const sixToFour = `2002:${hex[0]}${hex[1]}:${hex[2]}${hex[3]}::`;
     const full = `0000:0000:0000:0000:0000:ffff:${((oct[0] << 8) | oct[1]).toString(16).padStart(4, '0')}:${((oct[2] << 8) | oct[3]).toString(16).padStart(4, '0')}`;
+    document.getElementById('v6-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const [k, v] of [['IPv6-mapped (common)', mapped], ['Full uncompressed', full], ['6to4 prefix', sixToFour]] as [string, string][]) {
       tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs text-accent">${v}</td></tr>`);

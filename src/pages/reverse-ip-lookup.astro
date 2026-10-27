@@ -21,8 +21,11 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Reverse Lookup</button>
   </form>
   <div id="ri-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ri-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody id="ri-tbody"></tbody></table>
+  <p id="ri-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="ri-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody id="ri-tbody"><tr><td class="font-medium text-ink">PTR query for 8.8.8.8</td><td class="text-sm text-ink-dim"><code>dns.google</code></td></tr><tr><td class="font-medium text-ink">Forward-confirm (FCrDNS)</td><td class="text-sm text-ink-dim"><code>dns.google</code> resolves back to 8.8.8.8, valid</td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -50,6 +53,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     const fwd = await lookup(ptr, ip.includes(':') ? 'AAAA' : 'A', RESOLVERS[0]);
     const fwdIp = fwd.answers.find(x => x.type === (ip.includes(':') ? 28 : 1))?.data;
     const confirmed = fwdIp === ip;
+    document.getElementById('ri-sample-note')?.classList.add('hidden');
     tbody.innerHTML = `
       <tr><td class="text-ink-dim">PTR hostname</td><td class="font-mono text-xs text-accent">${ptr}</td></tr>
       <tr><td class="text-ink-dim">Forward lookup</td><td class="font-mono text-xs">${fwdIp ?? 'no address'}</td></tr>

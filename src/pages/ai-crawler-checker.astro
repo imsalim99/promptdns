@@ -69,7 +69,10 @@ const faqSchema = {
 
       <div id="aic-summary" class="mt-4 hidden grid gap-3 sm:grid-cols-4"></div>
 
-      <div id="aic-results" class="mt-6 hidden grid gap-2"></div>
+      <p id="aic-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="aic-results" class="mt-6 grid gap-2"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">GPTBot</p><p class="mt-1 text-sm text-ink-dim">Allowed on all paths</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">ClaudeBot</p><p class="mt-1 text-sm text-ink-dim">Allowed on all paths</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">CCBot</p><p class="mt-1 text-sm text-ink-dim">Blocked by Disallow: /</p></div></div>
 
       <div id="aic-raw" class="mt-6 hidden">
         <p class="mb-2 text-sm font-semibold text-ink">robots.txt (parsed rules per bot)</p>
@@ -137,6 +140,7 @@ const faqSchema = {
     }
     summaryEl.classList.remove('hidden');
 
+    document.getElementById('aic-sample-note')?.classList.add('hidden');
     resultsEl.innerHTML = '';
     for (const v of verdicts) {
       const badge = v.status === 'blocked'

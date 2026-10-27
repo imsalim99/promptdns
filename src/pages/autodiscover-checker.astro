@@ -21,8 +21,11 @@ import ToolPanel from '../components/ToolPanel.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Autodiscover</button>
   </form>
   <div id="ad-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ad-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Record</th><th>Result</th></tr></thead><tbody id="ad-tbody"></tbody></table>
+  <p id="ad-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="ad-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Record</th><th>Result</th></tr></thead><tbody id="ad-tbody"><tr><td class="font-mono text-xs text-accent-soft">autodiscover.example.com</td><td class="text-sm text-ink-dim">CNAME found, pointing to autodiscover.outlook.com</td></tr><tr><td class="font-mono text-xs text-accent-soft">_autodiscover._tcp.example.com (SRV)</td><td class="text-sm text-ink-dim">No SRV record (CNAME method is in use)</td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -53,6 +56,7 @@ import ToolPanel from '../components/ToolPanel.astro';
     checks.push(['autoconfig CNAME', ac.answers.find(a => a.type === 5)?.data ?? (ac.status === 3 ? 'NXDOMAIN' : 'none')]);
     checks.push(['_autodiscover._tcp SRV', srv.answers.find(a => a.type === 33)?.data ?? 'none']);
     checks.push(['MX (fallback hint)', mx.answers.find(a => a.type === 15)?.data ?? 'none']);
+    document.getElementById('ad-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const [k, v] of checks) {
       const found = v !== 'NXDOMAIN' && v !== 'none';

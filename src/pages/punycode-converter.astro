@@ -52,8 +52,11 @@ const faqSchema = {
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Convert</button>
   </form>
   <div id="pc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="pc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="pc-tbody"></tbody></table>
+  <p id="pc-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="pc-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Form</th><th>Value</th></tr></thead><tbody id="pc-tbody"><tr><td class="font-medium text-ink">Unicode</td><td><code>münchen.de</code></td></tr><tr><td class="font-medium text-ink">Punycode (IDNA)</td><td><code>xn--mnchen-3ya.de</code></td></tr></tbody></table>
   </div>
 </ToolPanel>
     </div>
@@ -80,7 +83,8 @@ const faqSchema = {
       let display = ascii;
       try { (display as any) = ascii; } catch {}
       const isAscii = /^[\x00-\x7F]+$/.test(raw);
-      tbody.innerHTML = '';
+      document.getElementById('pc-sample-note')?.classList.add('hidden');
+    tbody.innerHTML = '';
       const rows: [string, string][] = [
         ['Punycode (ASCII)', ascii],
         ['Unicode form', isAscii ? '(input is ASCII)' : raw],

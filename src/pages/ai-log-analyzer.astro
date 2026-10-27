@@ -23,8 +23,11 @@ import ToolPanel from '../components/ToolPanel.astro';
   </form>
   <div id="al-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
   <div id="al-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-3"></div>
-  <div id="al-results" class="mt-4 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Bot</th><th>Requests</th><th>Top paths</th></tr></thead><tbody id="al-tbody"></tbody></table>
+  <p id="al-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+      </p>
+<div id="al-results" class="mt-4 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Bot</th><th>Requests</th><th>Top paths</th></tr></thead><tbody id="al-tbody"><tr><td class="font-mono text-xs text-accent-soft">GPTBot</td><td>42</td><td class="text-sm text-ink-dim">/blog/, /docs/</td></tr><tr><td class="font-mono text-xs text-accent-soft">ClaudeBot</td><td>18</td><td class="text-sm text-ink-dim">/, /pricing/</td></tr></tbody></table>
   </div>
 </ToolPanel>
 
@@ -71,6 +74,7 @@ import ToolPanel from '../components/ToolPanel.astro';
       cardsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold ${cls}">${v}</div><div class="text-xs text-ink-faint">${k}</div></div>`);
     }
     cardsEl.classList.remove('hidden');
+    document.getElementById('al-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const [name, h] of [...hits.entries()].sort((a, b) => b[1].count - a[1].count)) {
       const top = [...h.paths.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p, n]) => `${p} (${n})`).join(', ');
