@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Does ARC replace SPF and DKIM?", "No. ARC preserves the original SPF and DKIM results through intermediary servers. The underlying authentication must still pass at the first hop."], ["Do I need to deploy ARC on my mail server?", "Only if your server is an intermediate hop (mailing list, forwarder). End-user mail servers do not need ARC; they evaluate it if present."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "ARC Seal Explained",
+  description: "ARC seal explained: how Authenticated Received Chain preserves SPF and DKIM results when email is forwarded. RFC 8617.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "ARC Seal Explained" },
+  ],
+};
 ---
 <BaseLayout
   title="ARC Seal Explained: How Authenticated Received Chain Preserves Email Authentication on Forwarding"
   description="ARC seal explained: how Authenticated Received Chain preserves SPF and DKIM results when email is forwarded. RFC 8617."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ARC Seal Explained</h1>
     <p class="mt-4 text-lg text-ink-dim">ARC seal explained: how Authenticated Received Chain preserves SPF and DKIM results when email is forwarded. RFC 8617.</p>
 
-    <!-- Visual Centerpiece: Reference Table -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Scenario</th><th class='whitespace-nowrap'>Without ARC</th><th class='whitespace-nowrap'>With ARC</th></tr></thead><tbody><tr><td class='pd-mono'>Direct delivery</td><td>SPF + DKIM pass normally</td><td>Same</td></tr><tr><td class='pd-mono'>Forwarded via mailing list</td><td>SPF fails (new IP), DKIM may break (body modified)</td><td>ARC seal preserves the original authentication results</td></tr><tr><td class='pd-mono'>Forwarded via auto-forwarder</td><td>SPF fails (new IP)</td><td>ARC seal maintains the authentication chain</td></tr><tr><td class='pd-mono'>Gmail treatment</td><td>May show as unauthenticated</td><td>Accepts ARC-sealed original results</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>ARC (Authenticated Received Chain) is an email authentication protocol defined in RFC 8617 that preserves the original SPF and DKIM authentication results when a message passes through intermediate servers (such as mailing lists or forwarding services) that modify the message.</p><p class='mt-3'>Each intermediate server that handles the message adds an ARC-Authentication-Results header and an ARC-Message-Signature header, creating a chain of custody that the final receiver can evaluate.</p><p class='mt-3'>ARC addresses the fundamental limitation of SPF and DKIM: both break when an intermediate server modifies the message or sends from a different IP, which is common with mailing lists and forwarding services.</p>

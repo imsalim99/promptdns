@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Is BIMI free?", "The DNS record is free, but Gmail requires a VMC certificate ($1,000-1,500/year) to display the logo. Apple Mail may work without a VMC in some cases."], ["What logo format does BIMI require?", "SVG Tiny 1.2 (a specific SVG profile). The logo must be square, fit within specific dimensions, and have no external references."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "BIMI Record",
+  description: "BIMI record: display your brand logo in Gmail and Apple Mail. Requires DMARC enforcement and a VMC certificate.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "BIMI Record" },
+  ],
+};
 ---
 <BaseLayout
   title="BIMI Record: Display Your Brand Logo in Email Inboxes (DMARC Required)"
   description="BIMI record: display your brand logo in Gmail and Apple Mail. Requires DMARC enforcement and a VMC certificate."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">BIMI Record</h1>
     <p class="mt-4 text-lg text-ink-dim">BIMI record: display your brand logo in Gmail and Apple Mail inboxes. Requires DMARC enforcement and VMC.</p>
 
-    <!-- Visual Centerpiece: Reference Table -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Requirement</th><th class='whitespace-nowrap'>Details</th></tr></thead><tbody><tr><td class='pd-mono'>DMARC enforcement</td><td>p=quarantine or p=reject (p=none is not sufficient)</td></tr><tr><td class='pd-mono'>DNS record</td><td>TXT at default._bimi.domain.com: v=BIMI1; l=https://url/to/logo.svg</td></tr><tr><td class='pd-mono'>Logo format</td><td>SVG Tiny 1.2 profile (specific requirements apply)</td></tr><tr><td class='pd-mono'>VMC certificate</td><td>Verified Mark Certificate from DigiCert or Entrust (required for Gmail)</td></tr><tr><td class='pd-mono'>Supported providers</td><td>Gmail, Apple Mail (iOS 16+), Yahoo Mail, Fastmail</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>A BIMI (Brand Indicators for Message Identification) record is a DNS TXT record published at default._bimi.domain.com that specifies the location of a brand logo to be displayed next to verified email messages in supporting inbox providers.</p><p class='mt-3'>BIMI requires DMARC enforcement at p=quarantine or p=reject as a prerequisite, ensuring that only authenticated email from the domain displays the brand logo.</p><p class='mt-3'>Gmail additionally requires a Verified Mark Certificate (VMC) issued by a trusted certificate authority to validate the trademark ownership of the logo before displaying it.</p>

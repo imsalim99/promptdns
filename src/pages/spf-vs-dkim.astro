@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Can I have SPF without DKIM?", "Yes, but DMARC alignment will fail whenever the mail is forwarded or the sending IP is not in your SPF record. DKIM provides forward-safe authentication."], ["Can I have DKIM without SPF?", "Yes, but SPF provides IP-level authorization that DKIM does not. DKIM alone cannot prevent IP spoofing if the signing key is compromised."], ["Which is more important for deliverability?", "Both matter. Gmail and Microsoft require both SPF and DKIM to pass for bulk senders. DKIM is slightly more critical because it survives forwarding."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "SPF vs DKIM",
+  description: "SPF vs DKIM: SPF authorizes sending IPs via DNS TXT, DKIM cryptographically signs messages. You need both for DMARC.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "SPF vs DKIM" },
+  ],
+};
 ---
 <BaseLayout
   title="SPF vs DKIM: Key Differences, When to Use Each, and Why You Need Both"
   description="SPF vs DKIM: SPF authorizes sending IPs via DNS TXT, DKIM cryptographically signs messages. You need both for DMARC."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF vs DKIM</h1>
     <p class="mt-4 text-lg text-ink-dim">SPF vs DKIM compared: SPF authorizes sending IPs via DNS, DKIM cryptographically signs messages. You need both for DMARC.</p>
 
-    <!-- Visual Centerpiece: Comparison Matrix -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'></th><th class='whitespace-nowrap'>SPF</th><th class='whitespace-nowrap'>DKIM</th></tr></thead><tbody><tr><td class='pd-mono'>RFC</td><td>7208</td><td>6376</td></tr><tr><td class='pd-mono'>What it authenticates</td><td>Envelope sender (MAIL FROM)</td><td>Message content (From header)</td></tr><tr><td class='pd-mono'>How it works</td><td>IP-based: checks sending IP against DNS TXT record</td><td>Cryptographic: verifies digital signature in email header</td></tr><tr><td class='pd-mono'>Survives forwarding</td><td>No (forwarding changes the IP)</td><td>Yes (signature travels with the message)</td></tr><tr><td class='pd-mono'>DNS record</td><td>TXT at root: v=spf1 ...</td><td>TXT at selector._domainkey: v=DKIM1; k=rsa; p=...</td></tr><tr><td class='pd-mono'>DNS lookups</td><td>Up to 10 per evaluation</td><td>1 (to fetch the public key)</td></tr><tr><td class='pd-mono'>Can be broken by</td><td>New sending IP not in the record</td><td>Key rotation without DNS update</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>SPF and DKIM are complementary email authentication protocols: SPF (RFC 7208) authorizes sending IP addresses via a DNS TXT record, while DKIM (RFC 6376) cryptographically signs message content with a private key.</p><p class='mt-3'>DMARC requires at least one of SPF or DKIM to pass AND align with the visible From header domain; using both provides redundancy when one mechanism fails.</p><p class='mt-3'>SPF breaks when email is forwarded (the forwarding server's IP is not in the original SPF record), while DKIM survives forwarding because the cryptographic signature travels with the message content.</p>

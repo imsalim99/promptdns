@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Can I combine multiple email providers in one SPF record?", "Yes. Add each provider's include: mechanism to the same v=spf1 record. Watch the 10-DNS-lookup limit when combining multiple providers."], ["Should I use ~all or -all at the end?", "~all (softfail) is safer while setting up. Switch to -all (hardfail) once you are confident every legitimate sender is listed."], ["What if my provider is not in these examples?", "Check your provider's documentation for their include: domain. Add it as an include: mechanism in your existing v=spf1 record."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "SPF Record Examples",
+  description: "SPF record examples: real v=spf1 records for Google Workspace, Microsoft 365, SendGrid, Mailchimp. Copy-paste ready.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "SPF Record Examples" },
+  ],
+};
 ---
 <BaseLayout
   title="SPF Record Examples: Real v=spf1 Records for Google, Microsoft, SendGrid"
   description="SPF record examples: real v=spf1 records for Google Workspace, Microsoft 365, SendGrid, Mailchimp. Copy-paste ready."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Examples</h1>
     <p class="mt-4 text-lg text-ink-dim">Real v=spf1 SPF record examples for Google Workspace, Microsoft 365, SendGrid, Mailchimp and Zoho. Copy-paste ready.</p>
 
-    <!-- Visual Centerpiece: Reference Table -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Provider</th><th class='whitespace-nowrap'>SPF Record (v=spf1 ...)</th></tr></thead><tbody><tr><td class='pd-mono'>Google Workspace</td><td>v=spf1 include:_spf.google.com ~all</td></tr><tr><td class='pd-mono'>Microsoft 365</td><td>v=spf1 include:spf.protection.outlook.com -all</td></tr><tr><td class='pd-mono'>SendGrid</td><td>v=spf1 include:sendgrid.net ~all</td></tr><tr><td class='pd-mono'>Mailchimp</td><td>v=spf1 include:servers.mcsv.net ~all</td></tr><tr><td class='pd-mono'>Zoho Mail</td><td>v=spf1 include:zohomail.com ~all</td></tr><tr><td class='pd-mono'>Amazon SES</td><td>v=spf1 include:amazonses.com ~all</td></tr><tr><td class='pd-mono'>Cloudflare Email Routing</td><td>v=spf1 include:_spf.mx.cloudflare.net ~all</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>An SPF record is a DNS TXT record that starts with v=spf1 and lists authorized sending sources using mechanisms defined in RFC 7208.</p><p class='mt-3'>Each mechanism is evaluated left to right during the SMTP MAIL FROM handshake, and the first match determines the authorization result.</p><p class='mt-3'>The record must be published as a single TXT record at the root of the domain, with a maximum of 10 DNS-querying mechanisms.</p>

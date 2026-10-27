@@ -2,6 +2,7 @@
 Each page: attribute badges + compact H1 + entity-dense lead + visual centerpiece
 (comparison table / spec card / syntax block) above the fold.
 """
+import json
 import pathlib
 
 TPL_DIR = pathlib.Path("src/pages")
@@ -9,13 +10,15 @@ OUT_DIR = pathlib.Path("src/data/email-auth-pages")
 
 OUT_DIR.mkdir(exist_ok=True)
 
+DATE_PUBLISHED = '2026-10-27'
+
 # Per-page content definitions (entity-dense, visual-semantics compliant)
 PAGES = [
     {
         "slug": "spf-mechanisms-explained",
         "h1": "SPF Mechanisms Explained",
         "title": "SPF Mechanisms Explained: include, a, mx, ptr, exists, ip4, ip6",
-        "description": "SPF mechanisms explained: include, a, mx, ptr, exists, ip4, ip6 and all qualifier. RFC 7208.",
+        "description": "SPF mechanisms explained: include, a, mx, ptr, exists, ip4, ip6, all. Qualifiers, syntax and lookup cost. RFC 7208.",
         "entities": "SPF, RFC 7208, include, a, mx, ptr, exists, ip4, ip6, all, softfail, hardfail, permerror",
         "lead": "Free SPF mechanism reference: every mechanism in RFC 7208 (include, a, mx, ptr, exists, ip4, ip6, all) explained with syntax and lookup cost.",
         "centerpiece_type": "table",
@@ -872,9 +875,6 @@ count = 0
 for pg in PAGES:
     slug = pg["slug"]
     out = TPL_DIR / f"{slug}.astro"
-    if out.exists():
-        print(f"SKIP {slug} (exists)")
-        continue
 
     is_comparison = pg["centerpiece_type"] == "comparison"
     is_steps = pg["centerpiece_type"] == "steps"
@@ -904,12 +904,51 @@ for pg in PAGES:
             f'<p class="mt-3 text-sm leading-relaxed text-ink-dim">{a}</p></details>'
         )
 
+    faqs_json = json.dumps(pg["faqs"], ensure_ascii=False)
+    h1_json = json.dumps(pg["h1"], ensure_ascii=False)
+    desc_json = json.dumps(pg["description"], ensure_ascii=False)
+
     page_content = f"""---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = {faqs_json};
+
+const article = {{
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: {h1_json},
+  description: {desc_json},
+  inLanguage: 'en',
+  author: {{ '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' }},
+  publisher: {{ '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: {{ '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' }} }},
+  datePublished: '{DATE_PUBLISHED}',
+  dateModified: '{DATE_PUBLISHED}',
+}};
+
+const faqSchema = {{
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({{
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: {{ '@type': 'Answer', text: a }},
+  }})),
+}};
+
+const breadcrumbs = {{
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' }},
+    {{ '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' }},
+    {{ '@type': 'ListItem', position: 3, name: {h1_json} }},
+  ],
+}};
 ---
 <BaseLayout
   title="{pg['title']}"
   description="{pg['description']}"
+  schema={{[article, faqSchema, breadcrumbs]}}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -922,14 +961,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{pg['h1']}</h1>
     <p class="mt-4 text-lg text-ink-dim">{pg['lead']}</p>
 
-    <!-- Visual Centerpiece: {"Comparison Matrix" if is_comparison else "Step-by-Step Guide" if is_steps else "Reference Table"} -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         {table_html}
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       {factual_ps}

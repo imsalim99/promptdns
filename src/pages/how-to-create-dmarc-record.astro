@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["How long does it take for a DMARC record to take effect?", "DNS propagation is fast (minutes on Cloudflare), but mailbox providers cache the policy. Changes typically take effect within 24-48 hours."], ["What if I already have a DMARC record?", "Edit the existing record to update the policy or add rua=. Do not create a second record: only one DMARC record per domain is valid."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "How to Create a DMARC Record",
+  description: "How to create a DMARC record: step by step with correct v=DMARC1 syntax for Cloudflare, Namecheap and GoDaddy.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "How to Create a DMARC Record" },
+  ],
+};
 ---
 <BaseLayout
   title="How to Create a DMARC Record: Step-by-Step Guide with Correct Syntax"
   description="How to create a DMARC record: step by step with correct v=DMARC1 syntax for Cloudflare, Namecheap and GoDaddy."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Create a DMARC Record</h1>
     <p class="mt-4 text-lg text-ink-dim">How to create a DMARC record: step by step with correct v=DMARC1 syntax for Cloudflare, Namecheap and GoDaddy.</p>
 
-    <!-- Visual Centerpiece: Step-by-Step Guide -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Step</th><th class='whitespace-nowrap'>Action</th></tr></thead><tbody><tr><td class='pd-mono'>1</td><td>Go to your DNS provider (Cloudflare, Namecheap, GoDaddy)</td></tr><tr><td class='pd-mono'>2</td><td>Add a TXT record with name: _dmarc.yourdomain.com (or _dmarc for root)</td></tr><tr><td class='pd-mono'>3</td><td>Set the value: v=DMARC1; p=none; rua=mailto:you@yourdomain.com</td></tr><tr><td class='pd-mono'>4</td><td>Wait 24-48 hours for aggregate reports to arrive</td></tr><tr><td class='pd-mono'>5</td><td>Read the reports, fix legitimate senders, then advance to quarantine and reject</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>A DMARC record is created by adding a DNS TXT record at _dmarc.yourdomain.com that starts with v=DMARC1 and defines the policy and reporting configuration for email authentication.</p><p class='mt-3'>The p= tag controls what happens to mail that fails authentication: none (deliver normally, monitor only), quarantine (deliver to spam), or reject (bounce).</p><p class='mt-3'>The rua= tag specifies the email address where mailbox providers send daily aggregate reports, which are essential for identifying all legitimate sending sources before advancing the policy.</p>

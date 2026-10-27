@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Can DKIM prevent email spoofing?", "Yes, if the private key is kept secret. A spoofed message cannot produce a valid DKIM signature because the attacker does not have the private key."], ["What happens if the DKIM private key is leaked?", "Anyone with the private key can sign messages as your domain. Rotate the key immediately: generate a new pair, publish the new public key, and delete the old DNS record."], ["Does DKIM encrypt the email?", "No. DKIM only signs (authenticates) the message. For encryption, use S/MIME or PGP. DKIM proves authenticity, not confidentiality."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "How DKIM Works",
+  description: "How DKIM works: the signing process, public-private key pairs, selector lookup and cryptographic verification. RFC 6376.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "How DKIM Works" },
+  ],
+};
 ---
 <BaseLayout
   title="How DKIM Works: Cryptographic Email Signing Explained (RFC 6376)"
   description="How DKIM works: the signing process, public-private key pairs, selector lookup and cryptographic verification. RFC 6376."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How DKIM Works</h1>
     <p class="mt-4 text-lg text-ink-dim">How DKIM works: the signing process, public-private key pairs, selector lookup, and cryptographic verification. RFC 6376.</p>
 
-    <!-- Visual Centerpiece: Step-by-Step Guide -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Step</th><th class='whitespace-nowrap'>What happens</th></tr></thead><tbody><tr><td class='pd-mono'>1</td><td>Sending server generates a cryptographic hash of the message body and selected headers using its private key</td></tr><tr><td class='pd-mono'>2</td><td>The hash is added as a DKIM-Signature header with the selector (s=), domain (d=), and algorithm (a=)</td></tr><tr><td class='pd-mono'>3</td><td>Receiving server queries DNS at selector._domainkey.domain.com to fetch the public key</td></tr><tr><td class='pd-mono'>4</td><td>Receiving server verifies the hash using the public key: if it matches, DKIM passes</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>DKIM (DomainKeys Identified Mail) is an email authentication protocol defined in RFC 6376 that uses asymmetric cryptography to prove that a message was sent by an authorized server and was not modified in transit.</p><p class='mt-3'>The sending server signs selected headers and the message body with a private key, and the receiving server verifies the signature using the public key published in DNS at selector._domainkey.domain.com.</p><p class='mt-3'>DKIM survives email forwarding because the cryptographic signature is embedded in the message headers and travels with the message regardless of the forwarding server's IP address.</p>

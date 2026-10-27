@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["Is the order of DMARC tags important?", "Only v=DMARC1 must be first. The other tags can appear in any order, separated by semicolons."], ["What happens if I omit the p= tag?", "The record is invalid and receivers ignore DMARC entirely. p= is mandatory."], ["Can I use a URL instead of mailto: for rua=?", "Yes, but mailto: is the most widely supported. HTTPS URIs (https://) are also allowed by RFC 7489 but less commonly implemented by mailbox providers."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "DMARC Record Syntax",
+  description: "DMARC record syntax: every tag explained. v, p, rua, ruf, sp, pct, adkim, aspf. Build correct v=DMARC1 records.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "DMARC Record Syntax" },
+  ],
+};
 ---
 <BaseLayout
   title="DMARC Record Syntax: Every Tag Explained (v, p, rua, ruf, sp, pct, adkim, aspf)"
   description="DMARC record syntax: every tag explained. v, p, rua, ruf, sp, pct, adkim, aspf. Build correct v=DMARC1 records."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record Syntax</h1>
     <p class="mt-4 text-lg text-ink-dim">DMARC record syntax: every tag explained. v=DMARC1, p=, rua=, ruf=, sp=, pct=, adkim=, aspf=. RFC 7489.</p>
 
-    <!-- Visual Centerpiece: Reference Table -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Tag</th><th class='whitespace-nowrap'>Required</th><th class='whitespace-nowrap'>Values</th><th class='whitespace-nowrap'>What it does</th></tr></thead><tbody><tr><td class='pd-mono'>v</td><td>Yes</td><td>DMARC1</td><td>Protocol version (must be first tag)</td></tr><tr><td class='pd-mono'>p</td><td>Yes</td><td>none / quarantine / reject</td><td>Policy for the domain: what to do with failing mail</td></tr><tr><td class='pd-mono'>rua</td><td>No</td><td>mailto:address</td><td>Where to send aggregate reports (daily XML)</td></tr><tr><td class='pd-mono'>ruf</td><td>No</td><td>mailto:address</td><td>Where to send forensic reports (failure samples)</td></tr><tr><td class='pd-mono'>sp</td><td>No</td><td>none / quarantine / reject</td><td>Policy for subdomains (inherits p= if absent)</td></tr><tr><td class='pd-mono'>pct</td><td>No</td><td>0-100 (default 100)</td><td>Percentage of failing mail that receives the policy</td></tr><tr><td class='pd-mono'>adkim</td><td>No</td><td>r (relaxed) / s (strict)</td><td>DKIM alignment mode (default relaxed)</td></tr><tr><td class='pd-mono'>aspf</td><td>No</td><td>r (relaxed) / s (strict)</td><td>SPF alignment mode (default relaxed)</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>A DMARC record is a DNS TXT record published at _dmarc.domain.com that starts with v=DMARC1 and defines the policy, reporting, and alignment settings for email authentication, as specified in RFC 7489.</p><p class='mt-3'>The p= tag is the only mandatory policy tag (after v=) and tells receiving servers what to do with mail that fails both SPF and DKIM alignment: none (deliver anyway), quarantine (send to spam), or reject (bounce).</p><p class='mt-3'>The rua= tag specifies the email address where mailbox providers send daily aggregate reports containing every source IP, message volume, and SPF/DKIM evaluation result for the domain.</p>

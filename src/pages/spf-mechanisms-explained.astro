@@ -1,9 +1,44 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [["How many SPF mechanisms can I have?", "You can have unlimited non-DNS mechanisms (ip4, ip6, all). DNS-querying mechanisms (include, a, mx, ptr, exists) are capped at 10 total."], ["What happens if I use two all mechanisms?", "Only the first all mechanism is evaluated. The second is ignored. RFC 7208 requires all to be the last mechanism."], ["Does include: recursive counting apply to nested includes?", "Yes. Each include: triggers a new SPF evaluation of the target domain, and its own DNS-querying mechanisms count against your total of 10."]];
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "SPF Mechanisms Explained",
+  description: "SPF mechanisms explained: include, a, mx, ptr, exists, ip4, ip6, all. Qualifiers, syntax and lookup cost. RFC 7208.",
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/' },
+  publisher: { '@type': 'Organization', name: 'PromptDNS', url: 'https://promptdns.com/', logo: { '@type': 'ImageObject', url: 'https://promptdns.com/favicon.svg' } },
+  datePublished: '2026-10-27',
+  dateModified: '2026-10-27',
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+    { '@type': 'ListItem', position: 3, name: "SPF Mechanisms Explained" },
+  ],
+};
 ---
 <BaseLayout
   title="SPF Mechanisms Explained: include, a, mx, ptr, exists, ip4, ip6"
   description="SPF mechanisms explained: include, a, mx, ptr, exists, ip4, ip6, all. Qualifiers, syntax and lookup cost. RFC 7208."
+  schema={[article, faqSchema, breadcrumbs]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -16,14 +51,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Mechanisms Explained</h1>
     <p class="mt-4 text-lg text-ink-dim">Free SPF mechanism reference: every mechanism in RFC 7208 (include, a, mx, ptr, exists, ip4, ip6, all) explained with syntax and lookup cost.</p>
 
-    <!-- Visual Centerpiece: Reference Table -->
     <section class="not-prose my-8" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Mechanism</th><th class='whitespace-nowrap'>Syntax</th><th class='whitespace-nowrap'>DNS Lookup</th><th class='whitespace-nowrap'>What it matches</th></tr></thead><tbody><tr><td class='pd-mono'>include</td><td>include:domain.com</td><td>Yes</td><td>The SPF record of domain.com (recursive)</td></tr><tr><td class='pd-mono'>a</td><td>a[:domain] [/cidr]</td><td>Yes</td><td>A records of domain (or current domain)</td></tr><tr><td class='pd-mono'>mx</td><td>mx[:domain] [/cidr]</td><td>Yes</td><td>MX hosts of domain, then their A records</td></tr><tr><td class='pd-mono'>ptr</td><td>ptr[:domain]</td><td>Yes (deprecated)</td><td>Reverse DNS lookup of the sender IP</td></tr><tr><td class='pd-mono'>ip4</td><td>ip4:1.2.3.0/24</td><td>No</td><td>IPv4 address or range</td></tr><tr><td class='pd-mono'>ip6</td><td>ip6:2001:db8::/32</td><td>No</td><td>IPv6 address or range</td></tr><tr><td class='pd-mono'>exists</td><td>exists:domain.com</td><td>Yes</td><td>A record exists at the given domain</td></tr><tr><td class='pd-mono'>all</td><td>all</td><td>No</td><td>Matches everything (always last)</td></tr></tbody></table>
       </div>
     </section>
 
-    <!-- Factual Content (3-Sentence Rule) -->
     <article class="rich-text mt-10 max-w-none">
       <h2>Technical details</h2>
       <p class='mt-3'>An SPF mechanism is a single evaluation rule inside a v=spf1 TXT record defined in RFC 7208 that determines whether a sending IP is authorized to send email for a domain.</p><p class='mt-3'>SPF mechanisms are evaluated left to right, and the first mechanism that matches the connecting IP address determines the result (pass, fail, softfail, or neutral).</p><p class='mt-3'>The 10-DNS-lookup limit in RFC 7208 caps the total number of mechanisms that trigger DNS queries (include, a, mx, ptr, and exists) to prevent denial-of-service amplification.</p>
