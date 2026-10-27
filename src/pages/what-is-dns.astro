@@ -21,16 +21,30 @@ const faq = {
       <span class="text-ink-dim">What Is DNS</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNS?</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       DNS, the <strong class="text-ink">Domain Name System</strong>, is the internet's address book.
       People remember <code>promptdns.com</code>; computers connect to <code>104.21.x.x</code>. DNS is
       the system that translates between the two, billions of times per day, for every website visit
       and every email delivery.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-problem-dns-solves">The problem DNS solves</a></li>
+        <li><a href="#a-hierarchy-not-one-computer">A hierarchy, not one computer</a></li>
+        <li><a href="#more-than-websites">More than websites</a></li>
+        <li><a href="#check-it-yourself-right-now">Check it yourself, right now</a></li>
+        <li><a href="#key-facts">Key facts</a></li>
+        <li><a href="#next-steps">Next steps</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
     <Diagram name="resolution" caption="The DNS resolution path from browser to website" />
 
     <div class="rich-text mt-8">
-      <h2>The problem DNS solves</h2>
+      <h2 id="the-problem-dns-solves">The problem DNS solves</h2>
       <p>
         Every device on the internet is reachable by an IP address. IPv4 addresses look like
         <code>192.0.2.1</code>; IPv6 addresses look like <code>2606:4700::1111</code>. Humans are
@@ -39,7 +53,7 @@ const faq = {
         the same basic design runs the entire internet.
       </p>
 
-      <h2>A hierarchy, not one computer</h2>
+      <h2 id="a-hierarchy-not-one-computer">A hierarchy, not one computer</h2>
       <p>DNS is a tree with four levels involved in every lookup:</p>
       <ul>
         <li><strong>Root servers</strong>, 13 logical names (hundreds of machines worldwide) that know where TLD servers live.</li>
@@ -48,7 +62,7 @@ const faq = {
         <li><strong>Recursive resolvers</strong>, the "librarians" (like Cloudflare 1.1.1.1 or Google 8.8.8.8) that walk the tree on your behalf and cache the answers.</li>
       </ul>
 
-      <h2>More than websites</h2>
+      <h2 id="more-than-websites">More than websites</h2>
       <p>
         DNS doesn't just point domains at servers. Records decide <strong>where your email goes</strong>
         (MX), <strong>who may send as your domain</strong> (SPF, DKIM, DMARC), <strong>which certificate
@@ -57,7 +71,7 @@ const faq = {
         it's a site that won't load, or mail that lands in spam.
       </p>
 
-      <h2>Check it yourself, right now</h2>
+      <h2 id="check-it-yourself-right-now">Check it yourself, right now</h2>
       <p>
         The fastest way to understand DNS is to watch it work. Run any domain through our
         <a href="/dns-record-lookup/">DNS record lookup</a> to see exactly what the system returns,
@@ -65,14 +79,14 @@ const faq = {
         resolvers answer for the same name.
       </p>
 
-      <h2>Key facts</h2>
+      <h2 id="key-facts">Key facts</h2>
       <ul>
         <li>Created in 1983 (RFC 882/883), standardized as RFC 1034/1035 in 1987.</li>
         <li>Runs on UDP/TCP port 53 classically; encrypted as DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) today.</li>
         <li>Caching with TTLs is why changes "propagate" rather than appearing instantly.</li>
       </ul>
 
-      <h2>Next steps</h2>
+      <h2 id="next-steps">Next steps</h2>
       <ul>
         <li><a href="/how-dns-works/">How DNS works, the resolution walkthrough</a></li>
         <li><a href="/dns-records/">Every DNS record type explained</a></li>
@@ -83,7 +97,7 @@ const faq = {
 
     </div>
   
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DNS stand for?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Domain Name System. It is the internet’s directory that translates human-readable domain names into IP addresses computers use to connect.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Is DNS the same as a website host?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DNS only translates names to addresses and routes mail; the hosting server is where your site actually lives. You can change either independently.</p></details>

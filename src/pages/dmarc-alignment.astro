@@ -12,12 +12,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">DMARC Alignment</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Alignment: Relaxed vs Strict Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       DMARC alignment is the rule that connects authentication results to the domain the recipient actually sees. A message can pass SPF and pass DKIM and still fail DMARC - because the authenticated domains do not match the visible From domain. This page explains why that happens and what to change.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-three-domains-involved">The three domains involved</a></li>
+        <li><a href="#how-dmarc-uses-these-domains">How DMARC uses these domains</a></li>
+        <li><a href="#relaxed-vs-strict-alignment">Relaxed vs strict alignment</a></li>
+        <li><a href="#synthetic-examples-labeled-not-customer-">Synthetic examples (labeled, not customer evidence)</a></li>
+        <li><a href="#fixing-alignment-failures">Fixing alignment failures</a></li>
+        <li><a href="#what-our-dns-based-tools-can-and-cannot-">What our DNS-based tools can and cannot determine</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>The three domains involved</h2>
+      <h2 id="the-three-domains-involved">The three domains involved</h2>
       <p>Every email carries three domain identities that DMARC compares:</p>
       <div class="mt-3 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
@@ -30,12 +44,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </table>
       </div>
 
-      <h2>How DMARC uses these domains</h2>
+      <h2 id="how-dmarc-uses-these-domains">How DMARC uses these domains</h2>
       <p>
         DMARC checks whether the SPF-authenticated domain or the DKIM-authenticated domain <strong class="text-ink">aligns</strong> with the From domain. Only one needs to align - DMARC passes if <em>either</em> aligned SPF pass <em>or</em> aligned DKIM pass exists. It does not require both. This is defined in RFC 7489 <a href="https://www.rfc-editor.org/rfc/rfc7489#section-3.1" class="text-accent hover:text-accent-soft" rel="noopener">§3.1</a>.
       </p>
 
-      <h2>Relaxed vs strict alignment</h2>
+      <h2 id="relaxed-vs-strict-alignment">Relaxed vs strict alignment</h2>
       <p>
         The alignment mode is controlled by the <code class="font-mono">aspf</code> (for SPF) and <code class="font-mono">adkim</code> (for DKIM) tags in your DMARC record. Both default to <strong class="text-ink">relaxed</strong>.
       </p>
@@ -57,7 +71,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </table>
       </div>
 
-      <h2>Synthetic examples (labeled, not customer evidence)</h2>
+      <h2 id="synthetic-examples-labeled-not-customer-">Synthetic examples (labeled, not customer evidence)</h2>
       <p class="text-sm text-ink-faint">All examples use reserved documentation domains (<code class="font-mono">example.com</code>, <code class="font-mono">example.net</code>, <code class="font-mono">example.org</code>) per RFC 2606. These are synthetic illustrations of the alignment rules, not output from any tool.</p>
 
       <h3>Example 1: SPF and DKIM pass, but DMARC fails (alignment failure)</h3>
@@ -133,7 +147,7 @@ DMARC check:
   → DMARC pass</pre>
       <p class="mt-2 text-xs text-ink-faint">Synthetic example. In both forwarding scenarios (rewritten or preserved envelope), SPF typically fails at the final recipient. DKIM can provide the aligned pass - but only if the signature survives any modifications made during forwarding.</p>
 
-      <h2>Fixing alignment failures</h2>
+      <h2 id="fixing-alignment-failures">Fixing alignment failures</h2>
       <p>
         The fix depends on your sending setup and your email provider's capabilities. There is no single universal DNS change.
       </p>
@@ -144,12 +158,12 @@ DMARC check:
         <li><strong class="text-ink">Check alignment mode.</strong> If you use subdomains for sending, relaxed alignment (the default) is usually sufficient. Strict alignment requires exact domain matching and may not be necessary for your use case.</li>
       </ol>
 
-      <h2>What our DNS-based tools can and cannot determine</h2>
+      <h2 id="what-our-dns-based-tools-can-and-cannot-">What our DNS-based tools can and cannot determine</h2>
       <p>
         The <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC Record Checker</a> inspects your published DMARC record (policy, reporting, alignment mode tags). It cannot evaluate a specific message's alignment - that requires reading the <code class="font-mono">Authentication-Results</code> header on a received message. DNS-based tools verify that the policy is correctly published; message-level inspection verifies that the policy is being satisfied by your senders.
       </p>
 
-      <h2>Related</h2>
+      <h2 id="related">Related</h2>
       <ul class="grid gap-2">
         <li><a href="/dmarc/" class="text-accent hover:text-accent-soft">DMARC: the complete guide</a></li>
         <li><a href="/spf-record/" class="text-accent hover:text-accent-soft">SPF records explained</a></li>

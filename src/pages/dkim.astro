@@ -14,22 +14,34 @@ import Diagram from '../components/Diagram.astro';
       <span class="text-ink-dim">DKIM</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       SPF lists <em>who may send</em>. DKIM proves <em>the mail itself is intact</em>: every message
       is cryptographically signed with a private key, and receivers verify the signature against the
       public key you publish in DNS.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works-end-to-end">How it works, end to end</a></li>
+        <li><a href="#selectors-one-domain-many-keys">Selectors: one domain, many keys</a></li>
+        <li><a href="#key-strength-matters">Key strength matters</a></li>
+        <li><a href="#dkim-the-rest">DKIM + the rest</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="dkim-signing" caption="How DKIM signing and verification work" />
 
     <div class="rich-text mt-8">
-      <h2>How it works, end to end</h2>
+      <h2 id="how-it-works-end-to-end">How it works, end to end</h2>
       <ul>
         <li>Your sending server generates a key pair. The <strong>private key</strong> stays on the server; the <strong>public key</strong> goes into DNS at <code>selector._domainkey.yourdomain.com</code>.</li>
         <li>Each outgoing message gets a <code>DKIM-Signature</code> header covering the important headers and body, tagged with the selector used.</li>
         <li>The receiver's mail server fetches that public key from DNS and verifies the signature. Valid = the mail genuinely came from your domain and wasn't modified in transit.</li>
       </ul>
 
-      <h2>Selectors: one domain, many keys</h2>
+      <h2 id="selectors-one-domain-many-keys">Selectors: one domain, many keys</h2>
       <p>
         The selector is the label in the DNS name (<code>google._domainkey…</code>,
         <code>k1._domainkey…</code>, <code>s1._domainkey…</code>). It lets every service you send
@@ -38,14 +50,14 @@ import Diagram from '../components/Diagram.astro';
         with the selector your provider documents.
       </p>
 
-      <h2>Key strength matters</h2>
+      <h2 id="key-strength-matters">Key strength matters</h2>
       <p>
         1024-bit RSA keys are considered weak today; some receivers refuse them outright. 2048-bit is
         the standard recommendation (ed25519 is the modern alternative). Rotating keys is normal,
         publish the new selector before retiring the old one so in-flight mail still verifies.
       </p>
 
-      <h2>DKIM + the rest</h2>
+      <h2 id="dkim-the-rest">DKIM + the rest</h2>
       <p>
         DKIM passes are one of the two inputs <a href="/dmarc/">DMARC</a> evaluates (SPF is the other).
         Gmail and Yahoo's sender requirements make both effectively mandatory for bulk mail. Check
@@ -54,7 +66,7 @@ import Diagram from '../components/Diagram.astro';
       </p>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/how-to-add-dkim-record/">How to add a DKIM record</a></li>
         <li><a href="/dkim-selector/">What is a DKIM selector?</a></li>

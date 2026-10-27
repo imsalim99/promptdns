@@ -12,12 +12,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">SPF PermError</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF PermError: What It Means and How to Fix It</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       A permerror result means the domain's published records could not be correctly interpreted. Unlike <code class="font-mono text-accent-soft">fail</code> (which is an explicit statement that the sender is not authorized), permerror indicates the policy itself is broken and cannot be evaluated. It is a distinct error result, not a sender-authorization verdict.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#permerror-vs-other-spf-results">PermError vs. other SPF results</a></li>
+        <li><a href="#common-causes-of-permerror">Common causes of permerror</a></li>
+        <li><a href="#worked-example-recursive-lookup-counting">Worked example: recursive lookup counting</a></li>
+        <li><a href="#safe-correction-steps">Safe correction steps</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>PermError vs. other SPF results</h2>
+      <h2 id="permerror-vs-other-spf-results">PermError vs. other SPF results</h2>
       <div class="mt-3 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
           <thead><tr><th>Result</th><th>What it means (RFC 7208 §2.6)</th><th>Receiver action</th></tr></thead>
@@ -34,7 +46,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
       <p class="mt-3 text-xs text-ink-faint">Source: RFC 7208 <a href="https://www.rfc-editor.org/rfc/rfc7208#section-2.6" class="text-accent hover:text-accent-soft" rel="noopener">§2.6</a>. The "Receiver action" column describes the receiver's decision domain, not a specified outcome.</p>
 
-      <h2>Common causes of permerror</h2>
+      <h2 id="common-causes-of-permerror">Common causes of permerror</h2>
       <p>The following are common causes, not an exhaustive list. Other conditions in RFC 7208 can also produce this result.</p>
 
       <h3>1. Multiple SPF records</h3>
@@ -63,7 +75,7 @@ example.com.  IN TXT  "v=spf1 include:sendgrid.net ~all"
         A top-level count of lookup terms in your record is a useful screening tool, but it is incomplete: nested includes can add additional DNS-querying terms during evaluation. Only a recursive evaluation can confirm the total.
       </p>
 
-      <h2>Worked example: recursive lookup counting</h2>
+      <h2 id="worked-example-recursive-lookup-counting">Worked example: recursive lookup counting</h2>
       <p class="text-sm text-ink-faint">
         The following is a self-contained synthetic example. All records and the test sender IP are defined below. You can reproduce the count by following RFC 7208 §4.6.4 and §5 step by step.
       </p>
@@ -114,7 +126,7 @@ Terms NOT evaluated: include:esp2.example, ~all
         This is a synthetic walkthrough for illustration - it is not output from our checker or any tool. Our <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF Record Checker</a> counts top-level terms only; it does not recursively evaluate include chains.
       </p>
 
-      <h2>Safe correction steps</h2>
+      <h2 id="safe-correction-steps">Safe correction steps</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li><strong class="text-ink">Diagnose the cause.</strong> Use the <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF Record Checker</a> to inspect your record's syntax and count its top-level lookup terms. The tool reports syntax errors and a top-level count that may indicate a problem.</li>
         <li><strong class="text-ink">If multiple records:</strong> merge all mechanisms into a single <code class="font-mono">v=spf1</code> record and delete the duplicate. Every authorized sender must appear in the one remaining record.</li>
@@ -123,7 +135,7 @@ Terms NOT evaluated: include:esp2.example, ~all
         <li><strong class="text-ink">Retest.</strong> Run the <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF Record Checker</a> again. For sender-level verification, send a test message and inspect the <code class="font-mono">Authentication-Results</code> header.</li>
       </ol>
 
-      <h2>Related</h2>
+      <h2 id="related">Related</h2>
       <ul class="grid gap-2">
         <li><a href="/spf-lookup-limit/" class="text-accent hover:text-accent-soft">The SPF 10-lookup limit explained</a></li>
         <li><a href="/spf-record/" class="text-accent hover:text-accent-soft">SPF records: the complete guide</a></li>

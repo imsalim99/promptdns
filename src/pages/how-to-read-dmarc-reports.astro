@@ -16,14 +16,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Read DMARC Reports</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Read DMARC Reports</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       DMARC aggregate reports are XML files mailed to your <code class="font-mono text-accent-soft">rua</code>
       address daily. Raw, they're unreadable; understood, they're a complete map of everything
       sending mail as your domain, legitimate or not.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-fields-that-matter">The fields that matter</a></li>
+        <li><a href="#how-to-read-a-row">How to read a row</a></li>
+        <li><a href="#the-weekly-rhythm">The weekly rhythm</a></li>
+        <li><a href="#skip-the-xml-entirely">Skip the XML entirely</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>The fields that matter</h2>
+      <h2 id="the-fields-that-matter">The fields that matter</h2>
       <ul>
         <li><strong>report_metadata</strong>: who sent the report (Google, Microsoft...) and the date range it covers.</li>
         <li><strong>policy_published</strong>: the DMARC policy they saw, confirming your DNS is what you think it is.</li>
@@ -31,7 +43,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><strong>policy_evaluated</strong>: what the provider actually did: <code>disposition</code> none/quarantine/reject, plus aligned DKIM/SPF verdicts.</li>
       </ul>
 
-      <h2>How to read a row</h2>
+      <h2 id="how-to-read-a-row">How to read a row</h2>
       <p>
         Alignment is the story. A row with SPF pass but DMARC fail usually means the sender is
         legitimate but not aligned (a SaaS sending from its own domain); fix it by configuring that
@@ -39,7 +51,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         spoofing, and your reason to move past <code>p=none</code>.
       </p>
 
-      <h2>The weekly rhythm</h2>
+      <h2 id="the-weekly-rhythm">The weekly rhythm</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li>Collect the attachments (XML or zipped XML) each day or week.</li>
         <li>Group rows by source IP and count: your top senders surface immediately.</li>
@@ -47,14 +59,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>Step the policy up: quarantine, then reject.</li>
       </ol>
 
-      <h2>Skip the XML entirely</h2>
+      <h2 id="skip-the-xml-entirely">Skip the XML entirely</h2>
       <p>
         Drop any report file into the <a href="/dmarc-report-analyzer/">free DMARC report analyzer</a>:
         summary cards, pass rates, top sources, and the full records table, parsed in your browser.
       </p>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/dmarc/">DMARC: the complete guide</a></li>
         <li><a href="/dmarc-record-generator/">DMARC record generator</a></li>

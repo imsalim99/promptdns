@@ -15,34 +15,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Barracuda Removal</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Get Off the Barracuda Blocklist</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       Barracuda's BBRB (b.barracudacentral.org) is reputation-based: listings follow observed spam
       behavior or poor sending practices from your IP, and removal follows demonstrated good
       behavior plus a request.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#why-ips-land-on-it">Why IPs land on it</a></li>
+        <li><a href="#the-removal-process">The removal process</a></li>
+        <li><a href="#what-not-to-do">What not to do</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>Why IPs land on it</h2>
+      <h2 id="why-ips-land-on-it">Why IPs land on it</h2>
       <ul>
         <li>Spamtrap hits, usually from stale or scraped lists.</li>
         <li>High complaint rates from Barracuda's customer base.</li>
         <li>New IPs with sudden volume and no reputation history.</li>
         <li>Missing authentication or reverse DNS, which weigh into the score.</li>
       </ul>
-      <h2>The removal process</h2>
+      <h2 id="the-removal-process">The removal process</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li><strong>Verify the listing</strong> with the <a href="/blacklist-checker/">blacklist checker</a> (noting that some lists refuse public-resolver queries, in which case check on Barracuda's own lookup page).</li>
         <li><strong>Fix sending practices first</strong>: authentication (<a href="/spf-record-checker/">SPF</a>, <a href="/dkim-record-checker/">DKIM</a>, <a href="/dmarc-record-checker/">DMARC</a>), PTR, list hygiene, volume ramp.</li>
         <li><strong>Submit the removal request</strong> at Barracuda Central's lookup/removal form. One request per IP; include what you fixed.</li>
         <li><strong>Wait the stated interval.</strong> First requests typically process within 24-72 hours; repeated or unfixed listings take longer and repeat-listing shortens patience.</li>
       </ol>
-      <h2>What not to do</h2>
+      <h2 id="what-not-to-do">What not to do</h2>
       <ul>
         <li>Resubmitting daily: it does not accelerate and looks like automation abuse.</li>
         <li>Requesting removal while the spam source is still active; relisting is faster the second time.</li>
         <li>Switching to a fresh IP instead of fixing practices: the new IP inherits the behavior, and old listings linger.</li>
       </ul>
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a> and <a href="/sorbs-delisting-guide/">SORBS delisting</a></li>
         <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>

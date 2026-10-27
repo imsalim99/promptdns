@@ -11,20 +11,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Why Emails Go to Spam</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Why Your Emails Go to Spam</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       Spam placement is almost never one thing: it is a scoring system weighing your authentication,
       your sending history, your content, and your infrastructure. Here are the causes that account
       for nearly everything, strongest first.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#authentication-the-big-three">Authentication (the big three)</a></li>
+        <li><a href="#reputation">Reputation</a></li>
+        <li><a href="#content-and-behavior">Content and behavior</a></li>
+        <li><a href="#the-diagnostic-order-that-works">The diagnostic order that works</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>Authentication (the big three)</h2>
+      <h2 id="authentication-the-big-three">Authentication (the big three)</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li><strong>Missing or broken SPF.</strong> Check with the <a href="/spf-record-checker/">SPF checker</a>; over the 10-lookup limit counts as broken.</li>
         <li><strong>No DKIM signature.</strong> Common after moving senders; verify the selector with the <a href="/dkim-record-checker/">DKIM checker</a>.</li>
         <li><strong>No DMARC, or p=none with failures unaddressed.</strong> The <a href="/dmarc-record-checker/">DMARC checker</a> grades you instantly.</li>
         <li><strong>Gmail/Yahoo 2024 sender requirements unmet.</strong> Bulk senders without aligned SPF/DKIM, DMARC, and one-click unsubscribe are increasingly rejected outright.</li>
       </ol>
-      <h2>Reputation</h2>
+      <h2 id="reputation">Reputation</h2>
       <ol class="list-decimal space-y-1.5 pl-5" start="5">
         <li><strong>Listing on a blocklist.</strong> Run the <a href="/blacklist-checker/">blacklist checker</a>; one major listing can junk everything.</li>
         <li><strong>No reverse DNS (PTR) on your sending IP.</strong> Set it with your host; match your HELO name.</li>
@@ -32,7 +43,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><strong>Shared IP with a noisy neighbor.</strong> Consider dedicated sending IP at volume.</li>
         <li><strong>Spam complaints above ~0.1%.</strong> List hygiene and expectation-setting fix this; nothing technical does.</li>
       </ol>
-      <h2>Content and behavior</h2>
+      <h2 id="content-and-behavior">Content and behavior</h2>
       <ol class="list-decimal space-y-1.5 pl-5" start="10">
         <li><strong>Spammy content patterns</strong>: excessive caps, deceptive subject lines, image-only bodies, URL shorteners.</li>
         <li><strong>Sudden volume spikes</strong> the sending history can't explain.</li>
@@ -41,7 +52,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><strong>Missing unsubscribe</strong>, or one that is hard to use (now a compliance failure, not just a scoring one).</li>
         <li><strong>Sending from a domain with no website or MX</strong>: the domain itself looks disposable.</li>
       </ol>
-      <h2>The diagnostic order that works</h2>
+      <h2 id="the-diagnostic-order-that-works">The diagnostic order that works</h2>
       <p>
         Authenticate first (it is free and fast), then check listings, then inspect engagement. The
         homepage <a href="/">security scanner</a> covers the authentication block in one pass, and the

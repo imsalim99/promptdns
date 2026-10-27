@@ -13,43 +13,57 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Site Down After DNS Change</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Site Down After a DNS Change?</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       You changed one record and the site vanished. Almost every time, it is one of five causes, and
       the first two account for the majority. Diagnose in this order.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#1-cached-old-answers-the-innocent-one">1. Cached old answers (the innocent one)</a></li>
+        <li><a href="#2-the-record-points-at-the-wrong-place">2. The record points at the wrong place</a></li>
+        <li><a href="#3-the-target-is-down-dns-took-the-blame">3. The target is down (DNS took the blame)</a></li>
+        <li><a href="#4-delegation-broke">4. Delegation broke</a></li>
+        <li><a href="#5-the-old-server-was-turned-off-too-earl">5. The old server was turned off too early</a></li>
+        <li><a href="#the-10-minute-recovery-checklist">The 10-minute recovery checklist</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>1. Cached old answers (the innocent one)</h2>
+      <h2 id="1-cached-old-answers-the-innocent-one">1. Cached old answers (the innocent one)</h2>
       <p>
         If <em>some</em> users see the site and others don't, propagation is still in flight: resolvers
         hold the old value until its TTL expires. Check the
         <a href="/dns-propagation-checker/">propagation checker</a>; when resolvers disagree, wait.
         <a href="/flush-dns-cache/">Flush your own caches</a> to test cleanly.
       </p>
-      <h2>2. The record points at the wrong place</h2>
+      <h2 id="2-the-record-points-at-the-wrong-place">2. The record points at the wrong place</h2>
       <p>
         A typo'd IP, a missing digit, an old server's address. The lookup shows exactly what the world
         receives; compare it to what the new server should be. This is also where CDN setups bite:
         pointing at origin instead of the CDN edge (or vice versa) serves errors from a healthy server.
       </p>
-      <h2>3. The target is down (DNS took the blame)</h2>
+      <h2 id="3-the-target-is-down-dns-took-the-blame">3. The target is down (DNS took the blame)</h2>
       <p>
         DNS only points. If the lookup is correct and the site is still down, the server, its
         firewall, or its TLS cert is the problem. Test the IP directly or check the host's status
         page before touching DNS again.
       </p>
-      <h2>4. Delegation broke</h2>
+      <h2 id="4-delegation-broke">4. Delegation broke</h2>
       <p>
         If lookups return SERVFAIL everywhere, the nameserver chain is broken: a half-finished
         provider switch, expired domain, or DNSSEC mismatch (a stale
         <a href="/ds-record/">DS record</a> after key rotation SERVFAILs the whole domain). Verify
         your <a href="/ns-record/">NS records</a> and registrar delegation match.
       </p>
-      <h2>5. The old server was turned off too early</h2>
+      <h2 id="5-the-old-server-was-turned-off-too-earl">5. The old server was turned off too early</h2>
       <p>
         During migrations, cached traffic keeps arriving at the old server for one full TTL window.
         Decommission it only after the propagation checker shows global agreement.
       </p>
-      <h2>The 10-minute recovery checklist</h2>
+      <h2 id="the-10-minute-recovery-checklist">The 10-minute recovery checklist</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li>Run the propagation checker: agreement everywhere? Then DNS is fine, look at the server.</li>
         <li>Disagreement? Wait or re-check the record's correctness; never stack another change on top.</li>
@@ -57,7 +71,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>Recovering? Note the lesson for next time: lower TTL 24h before planned changes.</li>
       </ol>
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/dns-propagation/">DNS propagation explained</a></li>
         <li><a href="/what-is-ttl-in-dns/">TTL explained</a></li>

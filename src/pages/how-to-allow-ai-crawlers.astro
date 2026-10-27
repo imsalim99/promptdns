@@ -16,14 +16,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Allow AI Crawlers</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Allow AI Crawlers</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       If AI answers are becoming your discovery channel, the play is the inverse of blocking: make
       sure nothing in your robots.txt accidentally excludes the bots that fetch for ChatGPT,
       Claude, and Perplexity, then give them a clean map of your site.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#step-1-audit-what-your-robotstxt-actuall">Step 1: Audit what your robots.txt actually says</a></li>
+        <li><a href="#step-2-explicitly-welcome-the-ai-bots-yo">Step 2: Explicitly welcome the AI bots you want</a></li>
+        <li><a href="#step-3-publish-an-llmstxt">Step 3: Publish an llms.txt</a></li>
+        <li><a href="#step-4-keep-the-technical-floor-solid">Step 4: Keep the technical floor solid</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>Step 1: Audit what your robots.txt actually says</h2>
+      <h2 id="step-1-audit-what-your-robotstxt-actuall">Step 1: Audit what your robots.txt actually says</h2>
       <p>
         Most sites that "can't be found in AI answers" have a wildcard
         <code>Disallow: /</code> on a staging template that shipped to production, or a CMS default
@@ -32,7 +44,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         your live rules, including which bots fall through to your wildcard group.
       </p>
 
-      <h2>Step 2: Explicitly welcome the AI bots you want</h2>
+      <h2 id="step-2-explicitly-welcome-the-ai-bots-yo">Step 2: Explicitly welcome the AI bots you want</h2>
       <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: GPTBot
 Allow: /
 
@@ -53,7 +65,7 @@ Disallow: /cart/</pre>
         wildcard group keeps private paths out of every index.
       </p>
 
-      <h2>Step 3: Publish an llms.txt</h2>
+      <h2 id="step-3-publish-an-llmstxt">Step 3: Publish an llms.txt</h2>
       <p>
         Being allowed is table stakes; being understood is the edge. An
         <a href="/what-is-llms-txt/">llms.txt</a> file gives models a curated map of your important
@@ -61,7 +73,7 @@ Disallow: /cart/</pre>
         <a href="/llms-txt-generator/">llms.txt generator</a>.
       </p>
 
-      <h2>Step 4: Keep the technical floor solid</h2>
+      <h2 id="step-4-keep-the-technical-floor-solid">Step 4: Keep the technical floor solid</h2>
       <ul>
         <li>Fast, stable pages: crawlers of every species budget their fetches.</li>
         <li>Structured data on key pages, so entities are unambiguous.</li>
@@ -69,7 +81,7 @@ Disallow: /cart/</pre>
       </ul>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/how-to-block-ai-crawlers/">How to block AI crawlers</a> (the other direction)</li>
         <li><a href="/ai-crawlers-list/">The complete AI crawler list</a></li>

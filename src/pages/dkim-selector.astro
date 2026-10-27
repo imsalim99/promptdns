@@ -13,13 +13,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">DKIM Selectors</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is a DKIM Selector?</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       A DKIM selector is the label that tells receivers <em>which</em> of your public keys to fetch.
       DKIM keys live at <code class="font-mono text-accent-soft">selector._domainkey.yourdomain.com</code>,
       and the selector in that name is chosen by whatever system signed the message.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#why-selectors-exist">Why selectors exist</a></li>
+        <li><a href="#common-selectors-by-provider">Common selectors by provider</a></li>
+        <li><a href="#how-to-find-the-one-actually-in-use">How to find the one actually in use</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>Why selectors exist</h2>
+      <h2 id="why-selectors-exist">Why selectors exist</h2>
       <p>
         One domain usually sends through several systems: Google Workspace, an ESP, a billing
         service. Each publishes its own key, and selectors keep them from colliding:
@@ -29,7 +40,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         zero-downtime key rotation: publish the new selector alongside the old, switch signing,
         then retire the old one.
       </p>
-      <h2>Common selectors by provider</h2>
+      <h2 id="common-selectors-by-provider">Common selectors by provider</h2>
       <div class="overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
           <thead><tr><th>Provider</th><th>Selector(s)</th></tr></thead>
@@ -43,14 +54,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </tbody>
         </table>
       </div>
-      <h2>How to find the one actually in use</h2>
+      <h2 id="how-to-find-the-one-actually-in-use">How to find the one actually in use</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li>Send yourself a test message and open <em>show original / view source</em>.</li>
         <li>Find the <code>DKIM-Signature</code> header and read its <code>s=</code> tag: that is the selector.</li>
         <li>Plug domain + selector into the <a href="/dkim-record-checker/">DKIM checker</a> to verify the key resolves and its strength.</li>
       </ol>
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/dkim/">DKIM explained</a></li>
         <li><a href="/how-to-add-dkim-record/">How to add a DKIM record</a></li>

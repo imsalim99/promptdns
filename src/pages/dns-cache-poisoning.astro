@@ -72,19 +72,32 @@ const faqSchema = {
       <span class="text-ink-dim">DNS Cache Poisoning</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Cache Poisoning Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS cache poisoning injects a forged answer into a resolver's cache. Until the TTL expires, every user of that resolver receives the attacker's IP instead of yours: no warning, no error, just the wrong destination.</p>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">DNS cache poisoning injects a forged answer into a resolver's cache. Until the TTL expires, every user of that resolver receives the attacker's IP instead of yours: no warning, no error, just the wrong destination.</p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-the-attack-works">How the attack works</a></li>
+        <li><a href="#the-kaminsky-vulnerability-2008">The Kaminsky vulnerability (2008)</a></li>
+        <li><a href="#the-defenses-ranked">The defenses, ranked</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#dns-security-cluster">DNS Security Cluster</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="resolution" caption="The resolution path that cache poisoning targets" />
 
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How the attack works</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-the-attack-works">How the attack works</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li>The attacker triggers a lookup for target.com at a vulnerable resolver.</li><li>Before the authoritative server answers, the attacker floods the resolver with forged responses.</li><li>If a forged response matches the query (correct transaction ID, source port, and question), the resolver accepts and caches it.</li><li>Every subsequent user of that resolver gets the attacker’s IP for target.com until the TTL expires.</li></ol>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The Kaminsky vulnerability (2008)</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-kaminsky-vulnerability-2008">The Kaminsky vulnerability (2008)</h2>
       <p>Dan Kaminsky demonstrated that by querying random subdomains (a1.target.com, a2.target.com...) an attacker could generate enough guessing attempts to reliably poison the parent domain’s cache. The industry response was source port randomization (16 extra bits of entropy) and the acceleration of DNSSEC deployment.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The defenses, ranked</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-defenses-ranked">The defenses, ranked</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li><strong class="text-ink">DNSSEC:</strong> cryptographically signs answers, making forgery detectable regardless of guessing.</li><li><strong class="text-ink">Source port randomization:</strong> makes blind spoofing exponentially harder (already standard).</li><li><strong class="text-ink">0x20 encoding:</strong> randomizes query case for additional entropy.</li><li><strong class="text-ink">DoH/DoT:</strong> encrypts queries, preventing on-path injection entirely.</li></ol>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can cache poisoning happen over HTTPS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not to the DNS resolution itself if you use DoH/DoT. But the resolved connection then depends on TLS for its own protection: both layers together are the full defense.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I know if my resolver has been poisoned?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare answers across multiple resolvers with the propagation checker. A single resolver returning a different IP for the same domain is a red flag.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my DNS provider protect against poisoning?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Major providers (Cloudflare, Google, Route 53) implement port randomization and DNSSEC validation. Self-hosted BIND servers need explicit configuration.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between poisoning and hijacking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Poisoning targets the resolver’s cache (temporary, until TTL). Hijacking changes the authoritative data (persists until fixed). Both redirect traffic.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I prevent someone from poisoning my domain specifically?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNSSEC is the only complete answer: it makes your zone’s answers cryptographically verifiable so forgeries are rejected.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is cache poisoning still a threat in 2026?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Less so against major providers, but self-hosted DNS, IoT devices, and legacy resolvers remain vulnerable. DNSSEC is the belt-and-suspenders answer.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS Security Cluster</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="dns-security-cluster">DNS Security Cluster</h2>
       <p class="text-sm text-ink-dim">Every attack type and its defense, cross-referenced:</p>
       <ul class="mt-3 grid gap-2">
 <li><a href="/dns-hijacking/" class="text-accent hover:text-accent-soft">DNS Hijacking</a></li>
@@ -94,7 +107,7 @@ const faqSchema = {
 <li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNSSEC: the cryptographic defense</a></li>
       </ul>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/dns-hijacking/" class="text-accent hover:text-accent-soft">DNS hijacking →</a></li><li><a href="/doh-vs-dot/" class="text-accent hover:text-accent-soft">DoH vs DoT →</a></li></ul>
     </div>
   </div>

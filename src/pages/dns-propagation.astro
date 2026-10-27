@@ -21,15 +21,28 @@ const faq = {
       <span class="text-ink-dim">DNS Propagation</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Propagation</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       "Propagation" is the gap between <em>you</em> seeing a DNS change and <em>the whole internet</em>
       seeing it. It exists because DNS is aggressively cached, and the cache lifetimes are set by you.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#why-it-isnt-instant">Why it isn't instant</a></li>
+        <li><a href="#typical-timelines">Typical timelines</a></li>
+        <li><a href="#do-it-right-the-migration-checklist">Do it right: the migration checklist</a></li>
+        <li><a href="#check-propagation-right-now">Check propagation right now</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <Diagram name="propagation" caption="Propagation is the TTL window: caches worldwide serve old answers until each expires" />
 
     <div class="rich-text mt-8">
-      <h2>Why it isn't instant</h2>
+      <h2 id="why-it-isnt-instant">Why it isn't instant</h2>
       <p>
         When you change a record, the authoritative server answers correctly immediately. But thousands
         of resolvers worldwide still hold the old answer in cache, and each keeps it until its
@@ -37,7 +50,7 @@ const faq = {
         cache that stored the previous value.
       </p>
 
-      <h2>Typical timelines</h2>
+      <h2 id="typical-timelines">Typical timelines</h2>
       <ul>
         <li><strong>New record (no old value)</strong>, minutes; caches had nothing to hold.</li>
         <li><strong>Changed record, TTL 300</strong>, usually under 10 minutes everywhere.</li>
@@ -45,7 +58,7 @@ const faq = {
         <li><strong>Nameserver (NS) changes</strong>, up to 48 hours: registrars and TLD registries cache delegation independently of your TTL.</li>
       </ul>
 
-      <h2>Do it right: the migration checklist</h2>
+      <h2 id="do-it-right-the-migration-checklist">Do it right: the migration checklist</h2>
       <ul>
         <li><strong>24+ hours before:</strong> lower TTL to 300 on the records you'll change.</li>
         <li><strong>During:</strong> keep the old server running; make the DNS change.</li>
@@ -53,7 +66,7 @@ const faq = {
         <li><strong>Later:</strong> raise TTLs back up (fewer queries, faster answers).</li>
       </ul>
 
-      <h2>Check propagation right now</h2>
+      <h2 id="check-propagation-right-now">Check propagation right now</h2>
       <p>
         The <a href="/dns-propagation-checker/">checker</a> queries your record across independent
         public resolvers. When they all return the same answer, and it's your new one, propagation
@@ -62,12 +75,12 @@ const faq = {
 
       
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">How long does DNS propagation take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Most changes propagate in 1 to 24 hours, governed by the old record’s TTL. Nameserver changes can take up to 48 hours because registries cache delegation.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Can I speed up DNS propagation?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, before the change: lower your TTL to 300 seconds at least 24 hours ahead. After the change there is nothing to speed up, caches expire on their own schedule.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Why do I still see the old site?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A cache between you and the authoritative server still holds the old record. Flush your local OS and browser caches first; if it persists elsewhere, wait out the TTL.</p></details>
-      </div>      <h2>Related</h2>
+      </div>      <h2 id="related">Related</h2>
       <ul>
         <li><a href="/what-is-ttl-in-dns/">TTL explained</a></li>
         <li><a href="/site-down-after-dns-change/">Site down after a DNS change?</a></li>

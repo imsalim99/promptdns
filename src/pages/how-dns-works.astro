@@ -23,10 +23,21 @@ const steps = [
       <span class="text-ink-dim">How DNS Works</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How DNS Works</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       Typing a URL and getting a page feels instant. Behind it, a question travels through up to four
       layers of the internet and comes back, usually in under 50 ms. Here is the whole journey.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-two-kinds-of-dns-servers">The two kinds of DNS servers</a></li>
+        <li><a href="#ttl-why-answers-stick-around">TTL: why answers stick around</a></li>
+        <li><a href="#what-can-break-at-each-step">What can break at each step</a></li>
+        <li><a href="#keep-going">Keep going</a></li>
+      </ul>
+    </nav>
 
     <Diagram name="resolution" caption="The DNS resolution path: your question travels through resolver, root/TLD, and authoritative servers, with caching at every hop" />
 
@@ -43,7 +54,7 @@ const steps = [
     </div>
 
     <div class="rich-text mt-12">
-      <h2>The two kinds of DNS servers</h2>
+      <h2 id="the-two-kinds-of-dns-servers">The two kinds of DNS servers</h2>
       <p>
         <strong>Recursive resolvers</strong> do the asking, they walk the tree on your behalf and cache
         answers. <strong>Authoritative servers</strong> do the answering, they hold the actual records
@@ -52,7 +63,7 @@ const steps = [
         asking several independent resolvers the same question and comparing their cached answers.
       </p>
 
-      <h2>TTL: why answers stick around</h2>
+      <h2 id="ttl-why-answers-stick-around">TTL: why answers stick around</h2>
       <p>
         Every record carries a <strong>time-to-live</strong>, the number of seconds a resolver may
         keep serving the cached answer. A 3600-second TTL means a change can take up to an hour to
@@ -60,7 +71,7 @@ const steps = [
         also why <a href="/dns-propagation/">propagation</a> isn't instant.
       </p>
 
-      <h2>What can break at each step</h2>
+      <h2 id="what-can-break-at-each-step">What can break at each step</h2>
       <ul>
         <li><strong>Cache stale</strong> → old IP served; fix: wait out the TTL or <a href="/flush-dns-cache/">flush your local cache</a>.</li>
         <li><strong>Delegation broken</strong> → registry NS records don't match your zone; check with a record lookup on the NS type.</li>
@@ -68,7 +79,7 @@ const steps = [
         <li><strong>Resolver failure</strong> → SERVFAIL; try another resolver in our <a href="/dns-speed-test/">speed test</a>.</li>
       </ul>
 
-      <h2>Keep going</h2>
+      <h2 id="keep-going">Keep going</h2>
       <ul>
         <li><a href="/what-is-dns/">What is DNS?</a>, the foundations</li>
         <li><a href="/dns-records/">DNS record types</a>, the full reference</li>

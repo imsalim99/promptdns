@@ -45,15 +45,26 @@ const faqSchema = {
       <span class="text-ink-dim">NAT Explained</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">NAT Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Network Address Translation is the trick that let the internet survive IPv4 exhaustion: your router rewrites addresses so an entire household shares one public IP, and somehow everything still works.</p>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Network Address Translation is the trick that let the internet survive IPv4 exhaustion: your router rewrites addresses so an entire household shares one public IP, and somehow everything still works.</p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#what-nat-breaks-and-why">What NAT breaks and why</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it works</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-it-works">How it works</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">A device inside sends a packet out; the router replaces its private source address (192.168.1.x) with the public IP and records the connection in a translation table.</li><li class="leading-relaxed">Replies come back to the public IP; the router matches them to the table entry and forwards to the original device.</li><li class="leading-relaxed">Unsolicited inbound packets with no table entry are dropped: that is why NAT is accidental firewall protection, and why hosting behind it needs port forwarding.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">What NAT breaks and why</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="what-nat-breaks-and-why">What NAT breaks and why</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Inbound hosting: nothing can reach your devices until you forward ports.</li><li class="leading-relaxed">End-to-end applications: VoIP, P2P, and some games need NAT traversal (STUN/TURN).</li><li class="leading-relaxed">Mail sending: consumer NAT space is blocklisted by policy (that is what Spamhaus PBL tracks), so mail must relay through a smarthost.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does NAT protect me from hackers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It blocks unsolicited inbound connections, which is real protection, but it is not a firewall you configure: outbound threats and phishing pass freely.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does IPv6 remove NAT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Every device gets a globally routable address, so translation is unnecessary; the same protection comes from proper firewalls.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is CGNAT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Carrier-grade NAT: your ISP applies the same trick to whole neighborhoods, stacking another layer. It breaks port forwarding entirely and puts hundreds of users behind one address.</p></details></div>
-<h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/my-ip/" class="text-accent hover:text-accent-soft">What Is My IP →</a></li><li><a href="/ipv4-vs-ipv6/" class="text-accent hover:text-accent-soft">IPv4 vs IPv6 →</a></li><li><a href="/public-vs-private-ip/" class="text-accent hover:text-accent-soft">Public vs private IP →</a></li></ul>
     </div>
   </div>

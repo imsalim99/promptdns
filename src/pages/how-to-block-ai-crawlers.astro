@@ -16,14 +16,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">Block AI Crawlers</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Block AI Crawlers</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       Keeping AI systems off your content is a three-layer decision: robots.txt for the polite ones,
       WAF rules for the ones that misbehave, and legal/technical walls for everything else. Here is
       each layer, exactly.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#layer-1-robotstxt-works-for-compliant-bo">Layer 1: robots.txt (works for compliant bots)</a></li>
+        <li><a href="#layer-2-waf-and-network-rules-for-bots-t">Layer 2: WAF and network rules (for bots that ignore robots.txt)</a></li>
+        <li><a href="#layer-3-authentication-and-paywalls">Layer 3: authentication and paywalls</a></li>
+        <li><a href="#before-you-block-everything">Before you block everything</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>Layer 1: robots.txt (works for compliant bots)</h2>
+      <h2 id="layer-1-robotstxt-works-for-compliant-bo">Layer 1: robots.txt (works for compliant bots)</h2>
       <p>Drop this block into your robots.txt to refuse the major AI training crawlers:</p>
       <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: GPTBot
 Disallow: /
@@ -57,7 +69,7 @@ Disallow: /</pre>
         <a href="/ai-crawler-checker/">AI Crawler Checker</a> after saving.
       </p>
 
-      <h2>Layer 2: WAF and network rules (for bots that ignore robots.txt)</h2>
+      <h2 id="layer-2-waf-and-network-rules-for-bots-t">Layer 2: WAF and network rules (for bots that ignore robots.txt)</h2>
       <p>
         robots.txt is a convention, not a fence. Bots with poor compliance reputations (Bytespider
         historically among them) may fetch anyway. Cloudflare customers can enable managed AI-bot
@@ -66,14 +78,14 @@ Disallow: /</pre>
         actually enforces.
       </p>
 
-      <h2>Layer 3: authentication and paywalls</h2>
+      <h2 id="layer-3-authentication-and-paywalls">Layer 3: authentication and paywalls</h2>
       <p>
         Content behind a login is not crawled, period. If your model is subscription content, the
         reliable block is authentication plus rate limiting, with robots rules as the courtesy layer
         on top.
       </p>
 
-      <h2>Before you block everything</h2>
+      <h2 id="before-you-block-everything">Before you block everything</h2>
       <ul>
         <li>Blocking training crawlers does not remove you from search-style answers unless you also block their search bots (OAI-SearchBot, PerplexityBot).</li>
         <li>Aggressive wildcard Disallow rules often take out legitimate crawlers with them; test changes with the <a href="/robots-txt-checker/">robots.txt checker</a>.</li>
@@ -81,7 +93,7 @@ Disallow: /</pre>
       </ul>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/how-to-allow-ai-crawlers/">How to allow AI crawlers</a> (the other direction)</li>
         <li><a href="/ai-crawlers-list/">The complete list of AI crawlers</a></li>

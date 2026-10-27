@@ -363,3 +363,26 @@ body {
     animation: none;
   }
 }
+
+/* AnswerBlock (spec section 3.4): the highlighted definition block, first in main */
+.pd-answer {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--color-accent) 7%, transparent);
+}
+.pd-answer > p { margin-top: 0; }
+.pd-answer + p { margin-top: 1rem; }
+
+/* TocRail (spec section 3.4): on-this-page nav under the AnswerBlock */
+.pd-toc {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--color-panel) 60%, transparent);
+}
+.pd-toc ul { margin-top: 0.5rem; display: grid; gap: 0.25rem; }
+.pd-toc a { color: var(--color-ink-dim); font-size: 0.9rem; }
+.pd-toc a:hover { color: var(--color-accent); }

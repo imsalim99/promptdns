@@ -21,15 +21,29 @@ const faq = {
       <span class="text-ink-dim">What Is DNSSEC</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNSSEC?</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       DNSSEC (DNS Security Extensions) adds cryptographic signatures to DNS answers, so a resolver
       can prove the answer it received is the one your zone actually published. Without it, DNS is
       trusted on vibes: whoever answers first wins.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-threat-it-stops">The threat it stops</a></li>
+        <li><a href="#how-the-chain-of-trust-works">How the chain of trust works</a></li>
+        <li><a href="#what-dnssec-does-not-do">What DNSSEC does not do</a></li>
+        <li><a href="#enable-it-safely">Enable it safely</a></li>
+        <li><a href="#check-your-domain-right-now">Check your domain right now</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="dnssec-chain" caption="The DNSSEC chain of trust: root to TLD to your domain" />
 
     <div class="rich-text mt-8">
-      <h2>The threat it stops</h2>
+      <h2 id="the-threat-it-stops">The threat it stops</h2>
       <p>
         Classic DNS responses are unauthenticated plaintext. An attacker positioned on the network, or
         one who has poisoned a resolver's cache, can forge an answer that points your domain at their
@@ -38,7 +52,7 @@ const faq = {
         so validating resolvers reject it instead of serving it.
       </p>
 
-      <h2>How the chain of trust works</h2>
+      <h2 id="how-the-chain-of-trust-works">How the chain of trust works</h2>
       <p>
         Your zone signs its records with private keys and publishes the public halves as
         <a href="/dnskey-record/">DNSKEY records</a>. Self-published keys prove nothing on their own,
@@ -49,14 +63,14 @@ const faq = {
         rather than partial ones.
       </p>
 
-      <h2>What DNSSEC does not do</h2>
+      <h2 id="what-dnssec-does-not-do">What DNSSEC does not do</h2>
       <ul>
         <li>It does not encrypt queries; observers still see domains being resolved. Encryption is <a href="/doh-vs-dot/">DoH/DoT</a>.</li>
         <li>It does not stop DDoS attacks against your nameservers.</li>
         <li>It authenticates answers, not the content those answers lead to; TLS still does that job.</li>
       </ul>
 
-      <h2>Enable it safely</h2>
+      <h2 id="enable-it-safely">Enable it safely</h2>
       <ol class="list-decimal space-y-1.5 pl-5">
         <li>Turn on DNSSEC at your DNS host (a toggle on Cloudflare and Route 53).</li>
         <li>Copy the DS record it shows you to your registrar, all four fields exactly.</li>
@@ -64,7 +78,7 @@ const faq = {
         <li>Let your provider handle key rotation. If rotating manually: publish the new key's DS, wait, then retire the old key. Never the reverse order.</li>
       </ol>
 
-      <h2>Check your domain right now</h2>
+      <h2 id="check-your-domain-right-now">Check your domain right now</h2>
       <p>
         Run the homepage <a href="/">security scanner</a>: the DNSSEC check looks for your DS record and
         reports whether the zone is signed, alongside SPF, DKIM, DMARC, and AI readiness.
@@ -72,12 +86,12 @@ const faq = {
 
       
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DNSSEC protect against?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNSSEC protects against tampered DNS answers: cache poisoning and on-path spoofing that redirect users to attacker-controlled servers. It does not encrypt DNS queries; that is DoH or DoT.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Should I enable DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes if your DNS host and registrar integrate it cleanly (Cloudflare, Route 53, and major registrars do). The risk window is key rotation handled out of order.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Why does DNSSEC break my whole domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Validating resolvers must refuse answers that fail verification. A stale DS record after key rotation breaks the chain of trust, so the entire domain returns SERVFAIL.</p></details>
-      </div>      <h2>Related</h2>
+      </div>      <h2 id="related">Related</h2>
       <ul>
         <li><a href="/ds-record/">DS records</a> and <a href="/dnskey-record/">DNSKEY records</a></li>
         <li><a href="/enable-dnssec-cloudflare/">Enable DNSSEC in Cloudflare</a></li>

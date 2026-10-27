@@ -71,17 +71,30 @@ const faqSchema = {
       <span class="text-ink-dim">DNS Tunneling</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Tunneling: Data Exfiltration Through Port 53</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">DNS tunneling encodes arbitrary data inside DNS queries and responses. Because almost every network allows DNS traffic to pass, it becomes a covert channel for data exfiltration, command-and-control communication, and firewall bypass.</p>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">DNS tunneling encodes arbitrary data inside DNS queries and responses. Because almost every network allows DNS traffic to pass, it becomes a covert channel for data exfiltration, command-and-control communication, and firewall bypass.</p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#detection-signals">Detection signals</a></li>
+        <li><a href="#prevention">Prevention</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#dns-security-cluster">DNS Security Cluster</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How it works</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-it-works">How it works</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li>The attacker controls the authoritative nameserver for a domain (like tunnel.attacker.com).</li><li>Malware on the victim’s network encodes data into subdomain queries: <code>cGFzc3dvcmQ=.tunnel.attacker.com</code>.</li><li>The query travels through the local DNS resolver to the attacker’s nameserver.</li><li>The attacker’s server decodes the data and sends instructions back in TXT record responses.</li></ol><p>Each query can carry ~180 bytes of payload. At 10 queries per second, that’s ~1.8 KB/s: enough for credentials, keys, and documents over time.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Detection signals</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="detection-signals">Detection signals</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li>Unusually high DNS query volume to a single domain.</li><li>Long, random-looking subdomains (base32/hex encoded data).</li><li>DNS TXT record queries from workstations (rare in normal traffic).</li><li>Queries for NXDOMAIN names at an unusually high rate.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Prevention</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="prevention">Prevention</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li>Monitor DNS query patterns for anomalies (volume, entropy, unique domain count).</li><li>Restrict which DNS servers internal devices can use (force your resolver, block outbound port 53).</li><li>Block or alert on TXT queries from non-DNS-infrastructure hosts.</li><li>Use DNS-layer security tools (Cisco Umbrella, Infoblox) that detect tunneling patterns.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNS tunneling the same as DNS hijacking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Hijacking redirects traffic; tunneling exfiltrates data through legitimate-looking DNS queries. Both abuse the protocol.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can HTTPS prevent DNS tunneling?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: tunneling uses DNS queries themselves (port 53 or DoH), not the HTTP connection. Even DoH can carry tunneling if the attacker controls the resolver.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How much data can be exfiltrated?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">At realistic query rates without triggering alerts: kilobytes per minute, megabytes per hour. Enough for credentials and source code over time.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What should I monitor?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS query volume per client, entropy of queried names, NXDOMAIN rate, and TXT query frequency. Spikes indicate tunneling.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my DNS provider detect tunneling?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Some managed providers offer DNS-layer threat detection as an add-on. Self-hosted DNS requires dedicated monitoring.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNS tunneling used in real attacks?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: documented in advanced persistent threat (APT) campaigns and by malware families for command-and-control channels.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS Security Cluster</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="dns-security-cluster">DNS Security Cluster</h2>
       <p class="text-sm text-ink-dim">Every attack type and its defense, cross-referenced:</p>
       <ul class="mt-3 grid gap-2">
 <li><a href="/dns-hijacking/" class="text-accent hover:text-accent-soft">DNS Hijacking</a></li>
@@ -91,7 +104,7 @@ const faqSchema = {
 <li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNSSEC: the cryptographic defense</a></li>
       </ul>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNS security →</a></li><li><a href="/how-dns-works/" class="text-accent hover:text-accent-soft">How DNS works →</a></li><li><a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup →</a></li></ul>
     </div>
   </div>

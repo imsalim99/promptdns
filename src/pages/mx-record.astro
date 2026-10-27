@@ -20,15 +20,28 @@ const faq = {
       <span class="text-ink-dim">MX Record</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MX Record: Mail Exchange Records Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       The MX record answers one question for your domain: <strong class="text-ink">when someone sends
       mail to you@yourdomain.com, which server receives it?</strong> Get it wrong and email silently
       bounces, or worse, disappears.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-an-mx-record-looks-like">What an MX record looks like</a></li>
+        <li><a href="#the-three-rules-people-break">The three rules people break</a></li>
+        <li><a href="#how-to-check-your-mx-records">How to check your MX records</a></li>
+        <li><a href="#common-symptoms-of-mx-problems">Common symptoms of MX problems</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="authtrio" caption="How SPF, DKIM, and DMARC work together on every message" />
 
     <div class="rich-text mt-8">
-      <h2>What an MX record looks like</h2>
+      <h2 id="what-an-mx-record-looks-like">What an MX record looks like</h2>
       <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">example.com.  3600  IN  MX  10  mail1.example.com.
 example.com.  3600  IN  MX  20  mail2.example.com.</pre>
       <p>
@@ -38,14 +51,14 @@ example.com.  3600  IN  MX  20  mail2.example.com.</pre>
         Equal priorities spread load across hosts.
       </p>
 
-      <h2>The three rules people break</h2>
+      <h2 id="the-three-rules-people-break">The three rules people break</h2>
       <ul>
         <li><strong>MX must point to a name, not an IP.</strong> <code>MX 10 192.0.2.1</code> is invalid, point it at a hostname that has an A record.</li>
         <li><strong>MX must not point at a CNAME.</strong> Many providers reject it (RFC 2181 §10.3).</li>
         <li><strong>The target must resolve.</strong> A dangling mail host means bounced mail. Verify the target's A record after any migration.</li>
       </ul>
 
-      <h2>How to check your MX records</h2>
+      <h2 id="how-to-check-your-mx-records">How to check your MX records</h2>
       <p>
         Use the <a href="/dns-record-lookup/">DNS record lookup</a> with MX selected, you'll see every
         record with its priority, straight from a public resolver. To see whether your new MX values
@@ -53,7 +66,7 @@ example.com.  3600  IN  MX  20  mail2.example.com.</pre>
         <a href="/dns-propagation-checker/">propagation checker</a>.
       </p>
 
-      <h2>Common symptoms of MX problems</h2>
+      <h2 id="common-symptoms-of-mx-problems">Common symptoms of MX problems</h2>
       <ul>
         <li>Incoming mail bounces with "no MX records" or "host not found", records missing or misspelled.</li>
         <li>Mail goes to the old server after a migration, old MX cached; lower your TTL before migrating.</li>
@@ -62,12 +75,12 @@ example.com.  3600  IN  MX  20  mail2.example.com.</pre>
 
       
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What is an MX record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A mail exchange (MX) record tells sending mail servers which host accepts email for your domain, and in what order to try them (the priority number).</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What MX priority means?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Lower numbers are tried first. 10 mail.example.com and 20 backup.example.com means: deliver to the priority-10 host; only use 20 if 10 is unreachable.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Can I point MX at a CNAME?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, MX records must point to a hostname that resolves to an A/AAAA record, never directly at another CNAME or an IP address.</p></details>
-      </div>      <h2>Related</h2>
+      </div>      <h2 id="related">Related</h2>
       <ul>
         <li><a href="/mx-record-not-working/">MX record not working? Diagnosis</a></li>
         <li><a href="/spf-record/">SPF records</a>, who may <em>send</em> as you (MX handles receiving)</li>

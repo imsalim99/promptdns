@@ -18,15 +18,27 @@ import ToolPanel from '../components/ToolPanel.astro';
       <span class="text-ink-dim">SPF Lookup Limit</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Lookup Limit Auditor: Count DNS-Querying Mechanisms</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       SPF evaluation is deliberately capped: receivers will follow at most <strong class="text-ink">10 DNS
       lookups</strong> per record. Cross that line and your SPF doesn't get stricter, it stops working
       entirely, returning <code class="font-mono text-accent-soft">permerror</code>.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-counts-as-a-lookup">What counts as a lookup</a></li>
+        <li><a href="#why-the-limit-exists">Why the limit exists</a></li>
+        <li><a href="#the-three-fixes">The three fixes</a></li>
+        <li><a href="#check-where-you-stand">Check where you stand</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="spf-eval" caption="SPF evaluation: first match wins, lookup counting" />
 
     <div class="rich-text mt-8">
-      <h2>What counts as a lookup</h2>
+      <h2 id="what-counts-as-a-lookup">What counts as a lookup</h2>
       <ul>
         <li><code>include:</code> each one, and each nested include inside it</li>
         <li><code>a</code> and <code>mx</code> mechanisms (with or without a domain)</li>
@@ -39,28 +51,28 @@ import ToolPanel from '../components/ToolPanel.astro';
         helpdesk, a CRM, and a billing system and you can hit 10 before noticing.
       </p>
 
-      <h2>Why the limit exists</h2>
+      <h2 id="why-the-limit-exists">Why the limit exists</h2>
       <p>
         Every lookup is a DNS query a receiver must make, per message, before it can even score your
         mail. Without a cap, a single crafted record could turn every inbound email into a DNS
         amplification attack. The cap is a DoS protection, and it's enforced strictly.
       </p>
 
-      <h2>The three fixes</h2>
+      <h2 id="the-three-fixes">The three fixes</h2>
       <ul>
         <li><strong>Remove dead includes.</strong> Every service you stopped using is still spending lookups. Audit first.</li>
         <li><strong>Flatten.</strong> Replace includes with their IP ranges: zero lookups, at the cost of tracking upstream changes. Our <a href="/spf-flattener/">free flattener</a> does this automatically.</li>
         <li><strong>Use SPF on fewer subdomains</strong> and keep separate records per sending domain instead of one mega-record.</li>
       </ul>
 
-      <h2>Check where you stand</h2>
+      <h2 id="check-where-you-stand">Check where you stand</h2>
       <p>
         The <a href="/spf-record-checker/">SPF checker</a> counts your lookups with a live meter. If
         you're above 8, flatten before the next SaaS you add tips you over.
       </p>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/spf-record/">SPF: the complete guide</a></li>
         <li><a href="/spf-flattener/">SPF Flattener (free)</a></li>

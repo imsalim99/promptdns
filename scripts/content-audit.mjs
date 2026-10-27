@@ -100,7 +100,17 @@ for (const file of walk(DIST)) {
 }
 
 console.log(`pages scanned:        ${pages}`);
+let answers = 0, tocs = 0, figures = 0;
+for (const file of walk(DIST)) {
+  const html = readFileSync(file, 'utf8');
+  if (html.includes('data-vs="answer"')) answers += 1;
+  if (html.includes('pd-toc')) tocs += 1;
+  if (html.includes('data-vs="figure"')) figures += 1;
+}
 console.log(`tool pages:           ${tools} (centerpiece hooks: ${toolsWithCenterpiece}, example states: ${toolsWithExample})`);
+console.log(`answer blocks:        ${answers}`);
+console.log(`toc rails:            ${tocs}`);
+console.log(`figure hooks:         ${figures}`);
 console.log(`em/en dash pages:     ${dashPages}`);
 console.log(`empty tbody:          ${emptyTbody}`);
 console.log(`boilerplate FAQ:      ${boilerplate}`);

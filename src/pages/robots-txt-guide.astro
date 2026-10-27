@@ -13,13 +13,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">robots.txt Guide</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">robots.txt: The Complete Guide</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       robots.txt is the first file crawlers request on every site: a plain-text rulebook saying which
       user-agents may fetch which paths. It cannot force anything, but every major search and AI
       crawler respects it, which makes it the single highest-leverage file in technical SEO.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#anatomy">Anatomy</a></li>
+        <li><a href="#the-rules-behind-the-rules">The rules behind the rules</a></li>
+        <li><a href="#mistakes-that-cost-real-traffic">Mistakes that cost real traffic</a></li>
+        <li><a href="#check-yours">Check yours</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>Anatomy</h2>
+      <h2 id="anatomy">Anatomy</h2>
       <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Googlebot
 Disallow: /admin/
 Allow: /admin/public/
@@ -35,7 +47,7 @@ Sitemap: https://example.com/sitemap.xml</pre>
         path prefix; an empty value disallows nothing. <code>Allow</code> carves exceptions inside
         disallowed trees. <code>Sitemap</code> lines can appear anywhere and should.
       </p>
-      <h2>The rules behind the rules</h2>
+      <h2 id="the-rules-behind-the-rules">The rules behind the rules</h2>
       <ul>
         <li>It lives at the root, exactly <code>/robots.txt</code>, one per host, served as text/plain.</li>
         <li>Most-specific group wins: a named bot ignores the wildcard group entirely.</li>
@@ -43,21 +55,21 @@ Sitemap: https://example.com/sitemap.xml</pre>
         <li>Case matters for paths, not for directives.</li>
         <li>Some crawlers stop reading after 500 KB.</li>
       </ul>
-      <h2>Mistakes that cost real traffic</h2>
+      <h2 id="mistakes-that-cost-real-traffic">Mistakes that cost real traffic</h2>
       <ul>
         <li><code>Disallow: /</code> shipped from staging: the classic site-wide deindex.</li>
         <li>Blocking CSS/JS paths that pages need to render, degrading how search engines see the page.</li>
         <li>Expecting robots.txt to hide content: it only prevents crawling, not indexing of linked URLs; use noindex or auth for that.</li>
         <li>AI-era oversight: wildcard blocks written years ago now exclude GPTBot, ClaudeBot, and PerplexityBot too.</li>
       </ul>
-      <h2>Check yours</h2>
+      <h2 id="check-yours">Check yours</h2>
       <p>
         The <a href="/robots-txt-checker/">robots.txt checker</a> validates syntax line by line and
         shows AI-bot verdicts; the <a href="/ai-crawler-checker/">AI crawler checker</a> goes deeper
         per bot.
       </p>
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/ai-crawlers-list/">The complete AI crawler list</a></li>
         <li><a href="/how-to-block-ai-crawlers/">Blocking AI crawlers</a></li>

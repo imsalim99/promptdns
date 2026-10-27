@@ -11,15 +11,27 @@ const updated = '2026-10-24';
   <div class="mx-auto max-w-3xl px-4 py-16">
     <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Methodology</p>
     <h1 class="font-display mt-3 text-4xl font-bold tracking-tight text-ink">How our tools get their answers.</h1>
-    <p class="mt-4 text-lg text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg text-ink-dim">
       Every check on PromptDNS runs in your browser, queries public DNS resolvers, and follows
       the published standards. This page documents exactly what that means - including what the
       tools cannot see - so you can judge the results yourself.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#where-the-dns-answers-come-from">Where the DNS answers come from</a></li>
+        <li><a href="#what-the-parsers-follow">What the parsers follow</a></li>
+        <li><a href="#how-the-domain-score-is-computed">How the domain score is computed</a></li>
+        <li><a href="#known-limitations">Known limitations</a></li>
+        <li><a href="#corrections">Corrections</a></li>
+      </ul>
+    </nav>
     <p class="mt-3 text-xs text-ink-faint">Last updated {updated}</p>
 
     <div class="rich-text mt-10">
-      <h2>Where the DNS answers come from</h2>
+      <h2 id="where-the-dns-answers-come-from">Where the DNS answers come from</h2>
       <p>
         PromptDNS tools query DNS-over-HTTPS (DoH) endpoints operated by public resolvers:
         Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), and AliDNS (223.5.5.5). The queries are
@@ -33,7 +45,7 @@ const updated = '2026-10-24';
         resolvers apply their own caching, so a very recent DNS change may not be visible yet.
       </p>
 
-      <h2>What the parsers follow</h2>
+      <h2 id="what-the-parsers-follow">What the parsers follow</h2>
       <ul>
         <li><strong>SPF</strong> is parsed per <a href="https://www.rfc-editor.org/rfc/rfc7208" rel="noopener" target="_blank">RFC 7208</a>. The checker counts the DNS-querying mechanisms in your published record (<code>include:</code>, <code>a</code>, <code>mx</code>, <code>ptr</code>, <code>exists</code>, and <code>redirect=</code>) against the limit of 10 in §4.6.4. It inspects the record as published; it does not recursively expand nested includes, and it does not evaluate a sent message - that is receiver-side behaviour we cannot observe from a record.</li>
         <li><strong>DMARC</strong> is parsed per <a href="https://www.rfc-editor.org/rfc/rfc7489" rel="noopener" target="_blank">RFC 7489</a>: policy (<code>p=</code>), subdomain policy, aggregate/forensic reporting addresses, alignment mode, and <code>pct</code>.</li>
@@ -42,7 +54,7 @@ const updated = '2026-10-24';
         <li><strong>Blacklist checks</strong> query public DNSBL zones directly from your browser for the IP or domain you enter. Being listed on a zone we don't query is invisible to us; we list which zones each check covers.</li>
       </ul>
 
-      <h2>How the domain score is computed</h2>
+      <h2 id="how-the-domain-score-is-computed">How the domain score is computed</h2>
       <p>
         The homepage scanner runs seven checks and produces a weighted score. Each check earns a
         portion of its weight:
@@ -68,7 +80,7 @@ const updated = '2026-10-24';
         about the DNS state the checks can observe.
       </p>
 
-      <h2>Known limitations</h2>
+      <h2 id="known-limitations">Known limitations</h2>
       <ul>
         <li>Lookups run from your browser, so geo-specific answers (GeoDNS, split-horizon) reflect the resolvers' vantage points, not every region.</li>
         <li>Record checkers inspect published DNS only. They do not send test messages, so they cannot tell you how a specific receiver will score your mail.</li>
@@ -76,7 +88,7 @@ const updated = '2026-10-24';
         <li>Anything time-sensitive (propagation, TTL) is a snapshot, not a guarantee about future resolver state.</li>
       </ul>
 
-      <h2>Corrections</h2>
+      <h2 id="corrections">Corrections</h2>
       <p>
         If a result looks wrong, tell us the domain, the record type, and what you expected at
         <a href="mailto:bugs@promptdns.com" class="text-accent">bugs@promptdns.com</a>. Notable

@@ -14,14 +14,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">TTL Explained</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS TTL Explained</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       TTL, time-to-live, is the number of seconds a resolver may keep serving your cached answer
       before asking again. It is the single dial that trades <strong class="text-ink">speed of
       change</strong> against <strong class="text-ink">speed of resolution</strong>.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#recommended-values">Recommended values</a></li>
+        <li><a href="#the-migration-mistake-everyone-makes">The migration mistake everyone makes</a></li>
+        <li><a href="#check-your-ttls">Check your TTLs</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
 
     <div class="rich-text mt-8">
-      <h2>How it works</h2>
+      <h2 id="how-it-works">How it works</h2>
       <p>
         When a resolver fetches <code>example.com A 203.0.113.10</code> with TTL 3600, it will answer
         that value from cache for the next hour without contacting your nameserver. Change the record
@@ -29,7 +41,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <a href="/dns-propagation/">propagation</a>, and TTL is its clock.
       </p>
 
-      <h2>Recommended values</h2>
+      <h2 id="recommended-values">Recommended values</h2>
       <ul>
         <li><strong>Stable records</strong> (a site you never move): 3600 (1 hour) to 86400 (1 day). Fewer queries, faster answers.</li>
         <li><strong>Normal operations:</strong> 3600 is the sensible default most providers ship.</li>
@@ -37,7 +49,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><strong>Never:</strong> TTL 0. It disables caching and hammers your nameservers for no benefit.</li>
       </ul>
 
-      <h2>The migration mistake everyone makes</h2>
+      <h2 id="the-migration-mistake-everyone-makes">The migration mistake everyone makes</h2>
       <p>
         Changing a record while its old TTL is 86400 means up to a day of mixed traffic hitting the
         old server. The fix is ordering: lower the TTL first, wait out the old value, then change the
@@ -45,14 +57,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         agree, then restore the TTL.
       </p>
 
-      <h2>Check your TTLs</h2>
+      <h2 id="check-your-ttls">Check your TTLs</h2>
       <p>
         The <a href="/dns-record-lookup/">record lookup</a> shows the TTL of every answer, live. If
         your records still show 300 from a migration you did months ago, raise them.
       </p>
 
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/dns-propagation/">DNS propagation explained</a></li>
         <li><a href="/how-dns-works/">How DNS works</a></li>

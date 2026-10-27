@@ -62,19 +62,31 @@ const faqSchema = {
       <span class="text-ink-dim">Let's Encrypt</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Let’s Encrypt: Free Certificates</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">Let's Encrypt is a free, automated certificate authority that made HTTPS universal. Certificates last 90 days by design and renew automatically via the ACME protocol: the cost of TLS dropped to zero, and the excuse to skip it vanished with it.</p>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Let's Encrypt is a free, automated certificate authority that made HTTPS universal. Certificates last 90 days by design and renew automatically via the ACME protocol: the cost of TLS dropped to zero, and the excuse to skip it vanished with it.</p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-acme-works">How ACME works</a></li>
+        <li><a href="#the-paths">The paths</a></li>
+        <li><a href="#the-rate-limits-that-matter">The rate limits that matter</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <Diagram name="authtrio" caption="The authentication stack complementing TLS" />
 
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">How ACME works</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-acme-works">How ACME works</h2>
       <ol class="list-decimal space-y-1.5 pl-5"><li>An ACME client on your server (certbot, acme.sh, or your host’s built-in integration) requests a certificate for your domain.</li><li>Let’s Encrypt challenges control: HTTP-01 (a file at a known URL) or DNS-01 (a TXT record).</li><li>Verified: the certificate issues, valid 90 days.</li><li>The client renews automatically at 60 days; the cycle never stops.</li></ol>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The paths</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-paths">The paths</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li><strong class="text-ink">Managed hosting:</strong> TLS is a toggle (Cloudflare, Vercel, Netlify, Railway all run ACME for you).</li><li><strong class="text-ink">Your own server:</strong> certbot with the Nginx/Apache plugin handles issuance and renewal end to end.</li><li><strong class="text-ink">DNS-01 challenge:</strong> for wildcard certificates (*.domain) or when port 80 is blocked: requires DNS API access for automated TXT records.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">The rate limits that matter</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-rate-limits-that-matter">The rate limits that matter</h2>
       <p>50 certificates per registered domain per week, 5 duplicate certificates per week, 5 failed validations per hour per account. Most deployments never touch these; massive automation occasionally does.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why 90 days?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Short-lived certificates limit damage from key compromise and force automation, which is the entire point.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I get a wildcard from Let's Encrypt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, via the DNS-01 challenge with an API-connected DNS provider.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if renewal fails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Browsers block the expired site outright. Certbot emails at 20 days remaining; monitor expiry like any other certificate.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do subdomains need separate certificates?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: one certificate covers listed SANs (www, api, etc.) or use a wildcard via DNS-01.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is Let's Encrypt trusted everywhere?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: its root ISRG Root X1 is trusted by all major browsers and platforms; very old systems needed the cross-sign, which has since been retired.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Related</h2>
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
       <ul class="mt-3 grid gap-2"><li><a href="/ssl-tls/" class="text-accent hover:text-accent-soft">SSL/TLS hub →</a></li><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/https-vs-dnssec/" class="text-accent hover:text-accent-soft">HTTPS vs DNSSEC →</a></li></ul>
     </div>
   </div>

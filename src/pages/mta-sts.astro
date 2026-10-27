@@ -13,13 +13,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <span class="text-ink-dim">MTA-STS</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MTA-STS: Enforced TLS for Inbound Mail</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
       STARTTLS upgrades an SMTP connection to TLS <em>if both sides agree</em>, which invites
       downgrade attacks: strip the handshake and mail flows in plaintext. MTA-STS closes that by
       publishing a DNS policy that says: my mail servers demand valid TLS, always.
     </p>
+    </div>
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#the-record">The record</a></li>
+        <li><a href="#tls-rpt-the-reports-that-make-it-managea">TLS-RPT: the reports that make it manageable</a></li>
+        <li><a href="#who-needs-it">Who needs it</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
     <div class="rich-text mt-8">
-      <h2>How it works</h2>
+      <h2 id="how-it-works">How it works</h2>
       <p>
         Two pieces. First, a TXT record at <code>_mta-sts.yourdomain.com</code> announcing that a
         policy exists and its version. Second, the policy itself served over HTTPS at
@@ -28,26 +40,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         non-TLS delivery). Sending servers fetch the policy, verify the certificate, and only
         deliver over trustworthy TLS.
       </p>
-      <h2>The record</h2>
+      <h2 id="the-record">The record</h2>
       <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">_mta-sts.example.com.  IN  TXT  "v=STSv1; id=2026082201"</pre>
       <p>
         The <code>id</code> changes to push policy updates. Keep a valid HTTPS cert on the policy
         host; an unreachable policy host weakens the whole mechanism.
       </p>
-      <h2>TLS-RPT: the reports that make it manageable</h2>
+      <h2 id="tls-rpt-the-reports-that-make-it-managea">TLS-RPT: the reports that make it manageable</h2>
       <p>
         Its companion record (<code>_smtp._tls</code>) tells providers where to email delivery
         failures: which senders could not do TLS, which certificates failed. Roll out in testing
         mode with reports for a few weeks, then enforce. Our homepage scanner checks both records.
       </p>
-      <h2>Who needs it</h2>
+      <h2 id="who-needs-it">Who needs it</h2>
       <ul>
         <li>Anyone receiving sensitive mail: finance, healthcare, legal.</li>
         <li>Compliance frameworks that name transport encryption.</li>
         <li>Organizations completing the full authentication stack: SPF, DKIM, <a href="/dmarc/">DMARC</a>, MTA-STS.</li>
       </ul>
       
-<h2>Related</h2>
+<h2 id="related">Related</h2>
       <ul>
         <li><a href="/bimi/">BIMI</a></li>
         <li><a href="/email-authentication/">Email authentication hub</a></li>
