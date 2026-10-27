@@ -84,7 +84,14 @@ const crumbSchema = toolEntry
 // Article schema for content pages (guides) that do not provide their own.
 // Organization author per the owner byline decision (standby, 2026-10-24).
 const hasArticle = schema.some((s) => s['@type'] === 'Article');
-const articleSchema = !toolEntry && !noindex && !hasArticle && path !== '/' && !path.startsWith('/app')
+// Marketing, commercial, and app pages are not articles.
+const NON_ARTICLE_PATHS = new Set([
+  '/how-it-works/', '/pricing/', '/changelog/', '/careers/', '/press/', '/editorial-policy/',
+  '/dmarc-monitoring/', '/dns-monitoring/', '/early-access/', '/support/', '/about/', '/contact/',
+  '/privacy/', '/terms/', '/refund-policy/', '/subprocessors/', '/security/', '/dpa/',
+  '/acceptable-use/', '/login/', '/tools/', '/dns-providers/',
+]);
+const articleSchema = !toolEntry && !noindex && !hasArticle && path !== '/' && !path.startsWith('/app') && !NON_ARTICLE_PATHS.has(path)
   ? {
       '@context': 'https://schema.org',
       '@type': 'Article',
@@ -112,7 +119,7 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
-    <meta property="og:type" content={toolEntry ? 'website' : 'article'} />
+    <meta property="og:type" content={toolEntry || !articleSchema ? 'website' : 'article'} />
     <meta property="og:site_name" content="PromptDNS" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
