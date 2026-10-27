@@ -12,7 +12,7 @@ import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomains
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark } from './dmarc-ingest';
 import { handleOverview } from './overview';
-import { handleDmarcSeed, handleDmarcTest } from './dev-tools';
+import { handleDmarcSeed } from './dev-tools';
 
 interface Env {
   DB?: D1Database;

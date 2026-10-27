@@ -21,20 +21,23 @@ import type { Env } from './index';
 
 const parser = new XMLParser({ ignoreAttributes: true });
 
-const xmlsFromAttachment = (filename: string, contentType: string, content: Uint8Array): string[] => {
+const xmlsFromAttachment = (filename: string, mimeType: string, content: Uint8Array | ArrayBuffer): string[] => {
   const lower = filename.toLowerCase();
+  const mime = (mimeType ?? '').toLowerCase();
+  // postal-mime 4.x hands over ArrayBuffer (or string); fflate needs Uint8Array
+  const bytes = content instanceof Uint8Array ? content : new Uint8Array(content);
   try {
-    if (lower.endsWith('.gz') || lower.endsWith('.gzip') || contentType === 'application/gzip') {
-      return [new TextDecoder().decode(gunzipSync(content))];
+    if (lower.endsWith('.gz') || lower.endsWith('.gzip') || mime === 'application/gzip' || mime === 'application/x-gzip') {
+      return [new TextDecoder().decode(gunzipSync(bytes))];
     }
-    if (lower.endsWith('.zip') || contentType === 'application/zip') {
-      const files = unzipSync(content);
+    if (lower.endsWith('.zip') || mime === 'application/zip') {
+      const files = unzipSync(bytes);
       return Object.keys(files)
         .filter((n) => n.toLowerCase().endsWith('.xml'))
         .map((n) => new TextDecoder().decode(files[n]));
     }
-    if (lower.endsWith('.xml') || contentType.includes('xml')) {
-      return [new TextDecoder().decode(content)];
+    if (lower.endsWith('.xml') || mime.includes('xml')) {
+      return [new TextDecoder().decode(bytes)];
     }
   } catch {
     return [];
@@ -142,8 +145,9 @@ export async function handleDmarcEmail(message: ForwardableEmailMessage, env: En
   console.log('[DMARC] MIME parsed, attachments:', (parsed.attachments ?? []).length, 'subjects:', parsed.subject);
   let xmls: string[] = [];
   for (const att of parsed.attachments ?? []) {
-    console.log('[DMARC] attachment:', att.filename, 'type:', att.type, 'size:', att.content?.length);
-    xmls.push(...xmlsFromAttachment(att.filename ?? '', att.type ?? '', att.content));
+    const bytes = att.content as Uint8Array | ArrayBuffer;
+    console.log('[DMARC] attachment:', att.filename, 'mime:', att.mimeType, 'size:', bytes?.byteLength ?? bytes?.length);
+    xmls.push(...xmlsFromAttachment(att.filename ?? '', att.mimeType ?? '', bytes));
   }
   console.log('[DMARC] XMLs extracted:', xmls.length);
   if (!xmls.length) {
