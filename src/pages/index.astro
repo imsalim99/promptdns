@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroCanvas from '../components/HeroCanvas.astro';
 import DomainScanner from '../components/DomainScanner.astro';
 import { TOOL_CATEGORIES, TOTAL_TOOLS } from '../data/tools';
 
@@ -102,7 +101,38 @@ const ticker = [
       <div class="aura aura-3 left-1/3 bottom-0"></div>
       <div class="aura aura-4 -left-20 bottom-10"></div>
     </div>
-    <HeroCanvas />
+    <div class="absolute inset-0" aria-hidden="true">
+      <svg class="h-full w-full" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <pattern id="hero-dots" width="26" height="26" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.1" fill="#22d3ee" opacity="0.07" />
+          </pattern>
+          <radialGradient id="hero-glow-c" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.10" />
+            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="hero-glow-v" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.09" />
+            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="1440" height="800" fill="url(#hero-dots)" />
+        <ellipse cx="1020" cy="240" rx="430" ry="330" fill="url(#hero-glow-c)" />
+        <ellipse cx="240" cy="620" rx="380" ry="300" fill="url(#hero-glow-v)" />
+        <g fill="none" stroke="#22d3ee" stroke-width="1.2">
+          <path d="M980 190 C1040 160 1130 175 1150 240 C1170 305 1080 350 990 340 C900 330 880 265 920 225 C940 205 960 200 980 190 Z" opacity="0.16" />
+          <path d="M940 150 C1030 105 1180 125 1210 230 C1240 335 1110 410 970 395 C830 380 790 285 850 210 C880 175 910 160 940 150 Z" opacity="0.11" />
+          <path d="M890 105 C1010 45 1240 70 1285 220 C1330 370 1150 475 950 455 C750 435 690 305 775 190 C815 140 855 115 890 105 Z" opacity="0.08" />
+          <path d="M830 55 C990 -15 1305 10 1365 210 C1425 410 1195 545 930 520 C665 495 585 325 700 165 C750 100 790 70 830 55 Z" opacity="0.05" />
+          <path d="M180 560 C260 510 400 520 430 610 C460 700 340 760 220 745 C100 730 70 640 110 590 C130 565 155 570 180 560 Z" opacity="0.10" />
+          <path d="M130 520 C240 445 450 455 490 585 C530 715 360 815 180 795 C0 775 -45 655 30 550 C65 505 100 528 130 520 Z" opacity="0.06" />
+        </g>
+        <g fill="none" stroke="#8b5cf6" stroke-width="1.2">
+          <path d="M260 120 C330 80 430 95 450 165 C470 235 380 285 290 272 C200 259 175 195 215 150 C232 132 246 126 260 120 Z" opacity="0.09" />
+          <path d="M215 75 C315 15 475 35 505 150 C535 265 410 350 255 332 C100 314 55 225 110 135 C140 95 180 85 215 75 Z" opacity="0.05" />
+        </g>
+      </svg>
+    </div>
     <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas/10 via-transparent to-canvas"></div>
 
     <div class="relative mx-auto max-w-5xl px-4 pb-14 pt-10 text-center lg:pt-14">
