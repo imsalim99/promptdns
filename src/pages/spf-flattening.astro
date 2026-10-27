@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="SPF Flattening: Replace Include Chains with IP Addresses Under the 10-Lookup Limit"
+  description="SPF flattening: replace include: chains with direct IP addresses to stay under the 10-lookup limit. Free flattener tool."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Flattening</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Flattening</h1>
+    <p class="mt-4 text-lg text-ink-dim">SPF flattening: replace include: chains with direct ip4: addresses to stay under the 10-DNS-lookup limit. Free flattener tool.</p>
+
+    <!-- Visual Centerpiece: Comparison Matrix -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'></th><th class='whitespace-nowrap'>Flattened SPF</th><th class='whitespace-nowrap'>Include-based SPF</th></tr></thead><tbody><tr><td class='pd-mono'>DNS lookups</td><td>0 (all ip4: addresses)</td><td>1 per include: mechanism</td></tr><tr><td class='pd-mono'>10-lookup limit</td><td>Never exceeded</td><td>Can be exceeded</td></tr><tr><td class='pd-mono'>Maintenance</td><td>High: IPs change without notice</td><td>Low: provider manages their own IPs</td></tr><tr><td class='pd-mono'>Risk</td><td>Stale IP list if provider rotates</td><td>Permerror if too many includes</td></tr><tr><td class='pd-mono'>Best for</td><td>Static infrastructure, 1-2 providers</td><td>Dynamic cloud providers</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>SPF flattening is the process of replacing include: mechanisms in a v=spf1 record with the resolved IP addresses (ip4: and ip6:) of those includes' mail servers.</p><p class='mt-3'>The flattening process queries each included domain's SPF record, extracts the IP addresses, and rewrites the parent record to reference those IPs directly.</p><p class='mt-3'>The primary risk of SPF flattening is staleness: if a provider rotates their sending IPs without notice, the flattened record references dead IPs and legitimate mail is not authorized.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">I stopped recommending blind flattening after watching a client's Salesforce IP rotation break their flattened SPF record overnight. The safer pattern: move transactional and marketing streams to dedicated subdomains so each gets a fresh 10-lookup quota, and only flatten if you have automated DNS monitoring.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does our free flattener monitor for IP changes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, the flattener is a one-time tool. For continuous monitoring, use our monitoring service which alerts you when your SPF record changes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I flatten a record with more than 10 includes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. The flattener resolves all includes recursively and outputs a single record with direct IP addresses. The result will have 0 DNS lookups.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

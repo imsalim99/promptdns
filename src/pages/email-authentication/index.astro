@@ -61,6 +61,70 @@ const sections = [
       ))}
     </div>
 
+    <!-- Deep guides: mechanism syntax, policies, reports, and the newer protocols -->
+    <div class="mt-16">
+      <div class="flex flex-wrap items-center gap-4 border-b border-line pb-4">
+        <span class="h-9 w-1.5 rounded-full bg-gradient-to-b from-accent to-violet" aria-hidden="true"></span>
+        <div class="flex-1">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Deep guides</h2>
+          <p class="mt-0.5 text-sm text-ink-faint">Mechanism syntax, policies, reports, and the protocols beyond DMARC</p>
+        </div>
+      </div>
+
+      {(
+        [
+          ['SPF', [
+            ['/spf-mechanisms-explained/', 'SPF mechanisms explained'],
+            ['/spf-record-examples/', 'SPF record examples'],
+            ['/how-to-create-spf-record/', 'How to create an SPF record'],
+            ['/spf-flattening/', 'SPF flattening'],
+            ['/spf-temperror/', 'SPF TempError'],
+            ['/spf-record-too-long/', 'SPF record too long'],
+            ['/spf-vs-dkim/', 'SPF vs DKIM'],
+            ['/spf-vs-dmarc/', 'SPF vs DMARC'],
+          ]],
+          ['DKIM', [
+            ['/how-dkim-works/', 'How DKIM works'],
+            ['/dkim-key-length/', 'DKIM key length'],
+            ['/dkim-not-signing/', 'DKIM not signing'],
+            ['/dkim-vs-dmarc/', 'DKIM vs DMARC'],
+            ['/multiple-dkim-selectors/', 'Multiple DKIM selectors'],
+            ['/dkim-canonicalization/', 'DKIM canonicalization'],
+          ]],
+          ['DMARC', [
+            ['/dmarc-record-syntax/', 'DMARC record syntax'],
+            ['/dmarc-policies/', 'DMARC policies'],
+            ['/dmarc-aggregate-reports/', 'DMARC aggregate reports'],
+            ['/dmarc-forensic-reports/', 'DMARC forensic reports'],
+            ['/how-to-create-dmarc-record/', 'How to create a DMARC record'],
+            ['/dmarc-enforcement-roadmap/', 'DMARC enforcement roadmap'],
+            ['/dmarc-pct-tag/', 'DMARC pct tag'],
+            ['/dmarc-subdomain-policy/', 'DMARC subdomain policy'],
+            ['/dmarc-vs-spf-vs-dkim/', 'DMARC vs SPF vs DKIM'],
+          ]],
+          ['Beyond DMARC', [
+            ['/bimi-record/', 'BIMI record'],
+            ['/bimi-vmc/', 'BIMI VMC certificate'],
+            ['/mta-sts-record/', 'MTA-STS record'],
+            ['/tls-rpt/', 'TLS-RPT'],
+            ['/tls-rpt-record/', 'TLS-RPT record'],
+            ['/arc-seal-explained/', 'ARC seal explained'],
+          ]],
+        ] as [string, [string, string][]][]
+      ).map(([label, links]) => (
+        <div class="mt-6">
+          <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{label}</p>
+          <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {links.map(([href, name]) => (
+              <a href={href} class="rounded-lg border border-line bg-panel/60 px-4 py-2.5 text-sm text-ink-dim transition-all hover:border-accent/40 hover:text-accent">
+                {name}
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
     <!-- Per-service setup matrix -->
     <div class="mt-16">
       <div class="flex flex-wrap items-center gap-4 border-b border-line pb-4">

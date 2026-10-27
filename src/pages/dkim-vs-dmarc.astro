@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DKIM vs DMARC: What Each Protocol Does and Why You Need Both Together"
+  description="DKIM vs DMARC: DKIM signs messages cryptographically, DMARC sets the policy and reports failures. They work together."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DKIM vs DMARC</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM vs DMARC</h1>
+    <p class="mt-4 text-lg text-ink-dim">DKIM vs DMARC: DKIM signs messages cryptographically, DMARC sets the policy and reports failures. They work together.</p>
+
+    <!-- Visual Centerpiece: Comparison Matrix -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'></th><th class='whitespace-nowrap'>DKIM</th><th class='whitespace-nowrap'>DMARC</th></tr></thead><tbody><tr><td class='pd-mono'>RFC</td><td>6376</td><td>7489</td></tr><tr><td class='pd-mono'>What it does</td><td>Cryptographically signs message content</td><td>Sets policy for handling authentication failures</td></tr><tr><td class='pd-mono'>DNS record location</td><td>selector._domainkey.domain.com</td><td>_dmarc.domain.com</td></tr><tr><td class='pd-mono'>Stops spoofing?</td><td>Only if the attacker lacks the private key</td><td>Yes, when aligned with SPF or DKIM</td></tr><tr><td class='pd-mono'>Provides reports?</td><td>No</td><td>Yes: aggregate reports via rua=, forensic via ruf=</td></tr><tr><td class='pd-mono'>Works alone?</td><td>Yes (but no enforcement)</td><td>No (requires SPF or DKIM to pass first)</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>DKIM and DMARC are complementary email authentication protocols: DKIM (RFC 6376) provides cryptographic proof of message integrity, while DMARC (RFC 7489) defines what receiving servers should do when authentication fails and sends reports back to the domain owner.</p><p class='mt-3'>DMARC builds on DKIM by checking whether the DKIM-signing domain (d= tag) aligns with the visible From header domain, adding an enforcement and reporting layer on top of cryptographic authentication.</p><p class='mt-3'>DKIM without DMARC provides no enforcement mechanism: a spoofed email that lacks a valid DKIM signature is not rejected because there is no policy telling the receiver what to do.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The most common misconfiguration I see is domains with perfect DKIM setup but DMARC still at p=none forever. p=none means monitoring only: spoofed mail is still delivered. The roadmap is: collect reports at p=none, verify all senders pass, then move to p=quarantine and p=reject.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have DMARC without DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, DMARC can work with SPF alone. But DKIM provides forward-safe authentication that SPF cannot, so using both is strongly recommended.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DMARC replace DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DMARC is a policy layer that builds on DKIM and SPF. Without DKIM or SPF passing, DMARC has nothing to enforce.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

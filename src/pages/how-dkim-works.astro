@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="How DKIM Works: Cryptographic Email Signing Explained (RFC 6376)"
+  description="How DKIM works: the signing process, public-private key pairs, selector lookup and cryptographic verification. RFC 6376."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">How DKIM Works</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How DKIM Works</h1>
+    <p class="mt-4 text-lg text-ink-dim">How DKIM works: the signing process, public-private key pairs, selector lookup, and cryptographic verification. RFC 6376.</p>
+
+    <!-- Visual Centerpiece: Step-by-Step Guide -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Step</th><th class='whitespace-nowrap'>What happens</th></tr></thead><tbody><tr><td class='pd-mono'>1</td><td>Sending server generates a cryptographic hash of the message body and selected headers using its private key</td></tr><tr><td class='pd-mono'>2</td><td>The hash is added as a DKIM-Signature header with the selector (s=), domain (d=), and algorithm (a=)</td></tr><tr><td class='pd-mono'>3</td><td>Receiving server queries DNS at selector._domainkey.domain.com to fetch the public key</td></tr><tr><td class='pd-mono'>4</td><td>Receiving server verifies the hash using the public key: if it matches, DKIM passes</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>DKIM (DomainKeys Identified Mail) is an email authentication protocol defined in RFC 6376 that uses asymmetric cryptography to prove that a message was sent by an authorized server and was not modified in transit.</p><p class='mt-3'>The sending server signs selected headers and the message body with a private key, and the receiving server verifies the signature using the public key published in DNS at selector._domainkey.domain.com.</p><p class='mt-3'>DKIM survives email forwarding because the cryptographic signature is embedded in the message headers and travels with the message regardless of the forwarding server's IP address.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The DKIM failure mode that catches most teams off guard is key rotation: the provider generates a new key but the old DNS record is not removed, so two keys exist simultaneously. Our DKIM checker only queries the selector in the DKIM-Signature header, so both keys can coexist safely during rotation.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can DKIM prevent email spoofing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, if the private key is kept secret. A spoofed message cannot produce a valid DKIM signature because the attacker does not have the private key.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if the DKIM private key is leaked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Anyone with the private key can sign messages as your domain. Rotate the key immediately: generate a new pair, publish the new public key, and delete the old DNS record.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DKIM encrypt the email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DKIM only signs (authenticates) the message. For encryption, use S/MIME or PGP. DKIM proves authenticity, not confidentiality.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

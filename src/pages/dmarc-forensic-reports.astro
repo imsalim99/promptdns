@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DMARC Forensic Reports (RUF): Failure Samples with Full Message Content Explained"
+  description="DMARC forensic reports (RUF): failure samples with full message content. Why most providers do not send them."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Forensic Reports</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Forensic Reports</h1>
+    <p class="mt-4 text-lg text-ink-dim">DMARC forensic reports (RUF): failure samples with full message content. Why most providers do not send them.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'></th><th class='whitespace-nowrap'>Aggregate (rua)</th><th class='whitespace-nowrap'>Forensic (ruf)</th></tr></thead><tbody><tr><td class='pd-mono'>Content</td><td>Statistical summary (counts, IPs, results)</td><td>Full message sample including body and headers</td></tr><tr><td class='pd-mono'>Privacy</td><td>No message content, safe for GDPR</td><td>Contains user email content, privacy concerns</td></tr><tr><td class='pd-mono'>Frequency</td><td>Daily</td><td>Real-time (per failure)</td></tr><tr><td class='pd-mono'>Provider support</td><td>Gmail, Microsoft, Yahoo all send</td><td>Almost none send (privacy regulations)</td></tr><tr><td class='pd-mono'>Volume</td><td>One report per provider per day</td><td>One email per failure event</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>A DMARC forensic report (ruf) is a real-time notification containing a sample of an individual message that failed DMARC evaluation, including the full message headers and often the body content.</p><p class='mt-3'>Almost no major mailbox provider sends forensic reports due to privacy concerns: forwarding the content of a user's email to a third party (the domain owner) may violate privacy regulations such as GDPR.</p><p class='mt-3'>The absence of forensic reports means domain owners must rely on aggregate reports (rua) for all DMARC monitoring, which provide statistical data but not individual message samples.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">Do not configure ruf= expecting to receive failure samples: Gmail, Microsoft, and Yahoo do not send them. If you need message-level failure data, use a DMARC report processor that can parse aggregate reports and correlate source IPs with your known sending infrastructure.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I include ruf= in my DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You can include it, but do not expect reports from major providers. Some smaller providers or enterprise systems may send them.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is there a privacy-safe alternative to ruf?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Aggregate reports (rua) provide the same source IP and authentication data without exposing message content. This is the privacy-safe standard.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

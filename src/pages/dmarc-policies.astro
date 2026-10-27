@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DMARC Policies: p=none vs p=quarantine vs p=reject Explained"
+  description="DMARC policies explained: p=none (monitor), p=quarantine (spam), p=reject (bounce). When to advance each step."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Policies</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Policies</h1>
+    <p class="mt-4 text-lg text-ink-dim">DMARC policies explained: p=none (monitor), p=quarantine (spam), p=reject (bounce). When to advance each.</p>
+
+    <!-- Visual Centerpiece: Comparison Matrix -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Policy</th><th class='whitespace-nowrap'>What happens to failing mail</th><th class='whitespace-nowrap'>Score impact</th><th class='whitespace-nowrap'>Risk</th></tr></thead><tbody><tr><td class='pd-mono'>p=none</td><td>Delivered normally (monitor only)</td><td>10/25</td><td>Spoofed mail still delivered</td></tr><tr><td class='pd-mono'>p=quarantine</td><td>Delivered to spam folder</td><td>20/25</td><td>Legitimate mail may go to spam if not passing</td></tr><tr><td class='pd-mono'>p=reject</td><td>Bounced (not delivered)</td><td>25/25</td><td>Legitimate mail bounced if not passing</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>DMARC policies define what receiving mail servers should do with messages that fail SPF and DKIM alignment: p=none delivers normally (monitoring only), p=quarantine delivers to the spam folder, and p=reject bounces the message.</p><p class='mt-3'>The pct= tag controls what percentage of failing mail receives the policy, enabling gradual rollout (e.g., pct=25 means only 25% of failing messages are quarantined while the rest are delivered).</p><p class='mt-3'>Advancing from p=none to p=quarantine to p=reject should only happen after aggregate reports confirm that every legitimate sending source passes SPF or DKIM alignment, to avoid bouncing your own email.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The fastest safe path to p=reject: start at p=none with rua= reporting, run for 2 weeks to identify all sources, fix any legitimate senders that fail, then jump directly to p=reject with pct=100. Skipping quarantine is safe if your aggregate reports show 100% pass rate for all known sources.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I go directly from p=none to p=reject?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, if your aggregate reports show 100% pass rate for all legitimate sources. The quarantine step is a safety net, not a requirement.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does pct= do in practice?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">pct=25 with p=quarantine means only 25% of failing messages are quarantined; the other 75% are delivered normally. Increase gradually as confidence grows.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

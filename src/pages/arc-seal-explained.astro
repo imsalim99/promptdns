@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="ARC Seal Explained: How Authenticated Received Chain Preserves Email Authentication on Forwarding"
+  description="ARC seal explained: how Authenticated Received Chain preserves SPF and DKIM results when email is forwarded. RFC 8617."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">ARC Seal Explained</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ARC Seal Explained</h1>
+    <p class="mt-4 text-lg text-ink-dim">ARC seal explained: how Authenticated Received Chain preserves SPF and DKIM results when email is forwarded. RFC 8617.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Scenario</th><th class='whitespace-nowrap'>Without ARC</th><th class='whitespace-nowrap'>With ARC</th></tr></thead><tbody><tr><td class='pd-mono'>Direct delivery</td><td>SPF + DKIM pass normally</td><td>Same</td></tr><tr><td class='pd-mono'>Forwarded via mailing list</td><td>SPF fails (new IP), DKIM may break (body modified)</td><td>ARC seal preserves the original authentication results</td></tr><tr><td class='pd-mono'>Forwarded via auto-forwarder</td><td>SPF fails (new IP)</td><td>ARC seal maintains the authentication chain</td></tr><tr><td class='pd-mono'>Gmail treatment</td><td>May show as unauthenticated</td><td>Accepts ARC-sealed original results</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>ARC (Authenticated Received Chain) is an email authentication protocol defined in RFC 8617 that preserves the original SPF and DKIM authentication results when a message passes through intermediate servers (such as mailing lists or forwarding services) that modify the message.</p><p class='mt-3'>Each intermediate server that handles the message adds an ARC-Authentication-Results header and an ARC-Message-Signature header, creating a chain of custody that the final receiver can evaluate.</p><p class='mt-3'>ARC addresses the fundamental limitation of SPF and DKIM: both break when an intermediate server modifies the message or sends from a different IP, which is common with mailing lists and forwarding services.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">ARC adoption is growing but not universal: Gmail and Microsoft support it, but many smaller providers do not evaluate ARC chains yet. If your emails fail SPF after forwarding, ARC is the emerging solution but traditional fixes (subdomain separation, SRS) are still more widely effective.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does ARC replace SPF and DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. ARC preserves the original SPF and DKIM results through intermediary servers. The underlying authentication must still pass at the first hop.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to deploy ARC on my mail server?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if your server is an intermediate hop (mailing list, forwarder). End-user mail servers do not need ARC; they evaluate it if present.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

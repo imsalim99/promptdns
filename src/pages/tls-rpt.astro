@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="TLS-RPT: SMTP TLS Reporting for Email Delivery Failure Diagnostics (RFC 8460)"
+  description="TLS-RPT explained: SMTP TLS reporting via DNS TXT record. Daily JSON reports of TLS connection failures. RFC 8460."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">TLS-RPT</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">TLS-RPT</h1>
+    <p class="mt-4 text-lg text-ink-dim">TLS-RPT explained: SMTP TLS reporting via DNS TXT record. Daily JSON reports of TLS failures. RFC 8460.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Field</th><th class='whitespace-nowrap'>Details</th></tr></thead><tbody><tr><td class='pd-mono'>DNS record location</td><td>_smtp._tls.domain.com TXT</td></tr><tr><td class='pd-mono'>Record value</td><td>v=TLSRPTv1; rua=mailto:tls-reports@domain.com</td></tr><tr><td class='pd-mono'>Report format</td><td>JSON (daily summary of TLS connection results)</td></tr><tr><td class='pd-mono'>Report senders</td><td>Gmail, Microsoft, and other supporting providers</td></tr><tr><td class='pd-mono'>Companion protocol</td><td>MTA-STS (RFC 8460) for TLS enforcement</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>TLS-RPT (SMTP TLS Reporting) is a mechanism defined in RFC 8460 that allows receiving mail servers to send daily JSON reports to the sending domain about TLS connection success and failure rates.</p><p class='mt-3'>The DNS TXT record at _smtp._tls.domain.com contains the reporting address (rua=) where providers deliver these daily JSON summary reports.</p><p class='mt-3'>TLS-RPT is designed to work alongside MTA-STS (RFC 8460) to provide visibility into TLS deployment issues: MTA-STS enforces TLS while TLS-RPT reports on what happened.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">TLS-RPT costs nothing to deploy (one DNS record) and provides invaluable visibility into whether your email is actually being transmitted over TLS. It is a prerequisite for MTA-STS deployment.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need MTA-STS to use TLS-RPT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. TLS-RPT works independently and reports TLS connection outcomes whether or not MTA-STS is deployed.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What do the TLS-RPT JSON reports contain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Daily summaries: total successful TLS connections, total failures, and failure details (certificate errors, handshake failures, etc.).</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DKIM Key Length: 1024 vs 2048-bit RSA Keys and Why 1024 Is Weak"
+  description="DKIM key length explained: 1024-bit vs 2048-bit RSA keys, why 1024 is weak, and how to check your key size."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DKIM Key Length</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Key Length</h1>
+    <p class="mt-4 text-lg text-ink-dim">DKIM key length explained: 1024 vs 2048-bit RSA keys, why 1024 is considered weak, and how to check your key size.</p>
+
+    <!-- Visual Centerpiece: Comparison Matrix -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'></th><th class='whitespace-nowrap'>1024-bit RSA</th><th class='whitespace-nowrap'>2048-bit RSA</th></tr></thead><tbody><tr><td class='pd-mono'>Security</td><td>Weak: factorable with modern hardware</td><td>Strong: no known practical attacks</td></tr><tr><td class='pd-mono'>Receiver acceptance</td><td>Rejected by Gmail and some providers</td><td>Accepted by all major providers</td></tr><tr><td class='pd-mono'>DNS record size</td><td>~180 characters (fits in one TXT string)</td><td>~380 characters (may need two TXT strings)</td></tr><tr><td class='pd-mono'>Recommendation</td><td>Upgrade immediately</td><td>Current standard</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>A DKIM key length of 1024 bits is considered weak because modern factoring algorithms can potentially break RSA keys of this size, exposing the private signing key.</p><p class='mt-3'>RFC 6376 does not mandate a minimum key size, but major mailbox providers including Gmail enforce a practical minimum of 1024 bits and recommend 2048 bits for new deployments.</p><p class='mt-3'>A 2048-bit RSA key produces a public key of approximately 380 base64-encoded characters, which may require splitting across two DNS TXT strings due to the 255-character per-string limit.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">I have seen 1024-bit keys in production on enterprise domains that were set up years ago and never rotated. The fix is straightforward: generate a new 2048-bit key in your email provider's settings, publish it under a new selector, verify it, and then delete the old record.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check my DKIM key length?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use our DKIM Record Checker: it estimates the key size from the published public key material and flags keys under 2048 bits.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use ed25519 instead of RSA for DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, RFC 8463 defines Ed25519 for DKIM. It produces shorter keys and is faster, but not all receivers support it yet. RSA 2048 is the safest choice.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

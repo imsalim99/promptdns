@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="SPF Record Too Long: Fix the 255-Character TXT String Limit and 10-Lookup Limit"
+  description="SPF record too long: fix the 255-character TXT string limit and the 10-DNS-lookup limit. Split records and flatten includes."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Record Too Long</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Too Long</h1>
+    <p class="mt-4 text-lg text-ink-dim">SPF record too long: fix the 255-character TXT string limit and the 10-DNS-lookup limit. Split and flatten.</p>
+
+    <!-- Visual Centerpiece: Step-by-Step Guide -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Problem</th><th class='whitespace-nowrap'>Fix</th></tr></thead><tbody><tr><td class='pd-mono'>Record exceeds 255 characters</td><td>Split into multiple TXT strings (quoted segments concatenated by the resolver)</td></tr><tr><td class='pd-mono'>More than 10 DNS lookups</td><td>Remove unused include: mechanisms, or flatten to direct IP addresses</td></tr><tr><td class='pd-mono'>Both problems at once</td><td>Flatten first (reduces lookups to 0), then check length; split if still over 255 chars</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>A long SPF record is a v=spf1 TXT record that exceeds the 255-character per-string limit of DNS TXT records or contains more than 10 DNS-querying mechanisms.</p><p class='mt-3'>DNS TXT records are limited to 255 characters per string, but multiple strings can be concatenated by the resolver to form a single logical record.</p><p class='mt-3'>The 10-DNS-lookup limit in RFC 7208 is a separate constraint from the character limit: flattening resolves the lookup issue but may worsen the character count.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">When a client's SPF record hits both limits simultaneously, the cleanest fix is always to audit which email services are actually in use (from DMARC reports), remove dead includes, and then re-evaluate. Half the time, 3-4 stale includes can be deleted.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I split a long SPF record across multiple TXT strings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Break the record at mechanism boundaries into 255-character chunks, each wrapped in double quotes. DNS resolvers automatically concatenate them. Most DNS providers handle this automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does the 255-character limit apply to the total record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It applies to each individual character-string within the TXT record. Multiple strings are concatenated. The practical limit is around 450-512 characters for most resolvers.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

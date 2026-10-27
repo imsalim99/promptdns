@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="How to Create an SPF Record: Step-by-Step Guide for Any DNS Provider"
+  description="How to create an SPF record: step by step for Cloudflare, Namecheap, GoDaddy. Build correct v=spf1 TXT records."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">How to Create an SPF Record</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Create an SPF Record</h1>
+    <p class="mt-4 text-lg text-ink-dim">How to create an SPF record: step-by-step for Cloudflare, Namecheap, GoDaddy and any DNS provider. Build correct v=spf1 TXT records.</p>
+
+    <!-- Visual Centerpiece: Step-by-Step Guide -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Step</th><th class='whitespace-nowrap'>Action</th></tr></thead><tbody><tr><td class='pd-mono'>1</td><td>Identify all services that send email as your domain (Google Workspace, SendGrid, CRM, etc.)</td></tr><tr><td class='pd-mono'>2</td><td>Find each provider's include: mechanism from their documentation</td></tr><tr><td class='pd-mono'>3</td><td>Build the record: v=spf1 include:provider1.com include:provider2.com ~all</td></tr><tr><td class='pd-mono'>4</td><td>Add as a TXT record at your DNS provider with name @ (root)</td></tr><tr><td class='pd-mono'>5</td><td>Validate with our free SPF checker and monitor for changes</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>An SPF record is created by adding a TXT record at the root of your domain that starts with v=spf1 and lists all authorized sending sources using mechanisms from RFC 7208.</p><p class='mt-3'>The record is evaluated by receiving mail transfer agents during the SMTP handshake to verify that the connecting IP is authorized.</p><p class='mt-3'>The total number of DNS-querying mechanisms is capped at 10, so combining multiple email services requires careful include: management.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">I always tell clients to start with v=spf1 include:provider.com ~all (softfail) and only switch to -all after confirming via DMARC reports that every legitimate source passes. The moment you set -all without checking, you risk bouncing your own invoice emails.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for an SPF record to take effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS record propagates within minutes on Cloudflare (TTL Auto). Full propagation across all resolvers can take up to 24-48 hours depending on the TTL.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have multiple SPF records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. RFC 7208 requires exactly one v=spf1 record. Multiple records cause a permerror. Merge all senders into a single record.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I exceed the 10-lookup limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Receivers will return a permerror and ignore your SPF policy entirely. Remove unused include: mechanisms or use our SPF flattener.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

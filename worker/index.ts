@@ -12,7 +12,7 @@ import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomains
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark } from './dmarc-ingest';
 import { handleOverview } from './overview';
-import { handleDmarcSeed } from './dev-tools';
+import { handleDmarcSeed, handleDmarcTest } from './dev-tools';
 
 interface Env {
   DB?: D1Database;
@@ -44,6 +44,7 @@ export default {
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
+    if (path === '/api/dev/dmarc-test') return handleDmarcTest(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);

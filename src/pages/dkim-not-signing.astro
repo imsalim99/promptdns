@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DKIM Not Signing: Why Your Emails Have No DKIM-Signature Header and How to Fix It"
+  description="DKIM not signing: why your emails have no DKIM-Signature header. Causes: provider not enabled, key mismatch, selector error."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DKIM Not Signing</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Not Signing</h1>
+    <p class="mt-4 text-lg text-ink-dim">DKIM not signing: why your emails have no DKIM-Signature header and how to fix each cause.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Cause</th><th class='whitespace-nowrap'>Fix</th></tr></thead><tbody><tr><td class='pd-mono'>DKIM not enabled in the email provider</td><td>Enable DKIM signing in your provider's admin panel (Google Workspace, Microsoft 365, etc.)</td></tr><tr><td class='pd-mono'>DNS record not published</td><td>Add the TXT record at selector._domainkey.yourdomain.com with the public key</td></tr><tr><td class='pd-mono'>DNS record propagated yet</td><td>Wait for DNS propagation (usually minutes on Cloudflare, up to 48h on some providers)</td></tr><tr><td class='pd-mono'>Wrong selector in the DKIM-Signature header</td><td>Check the s= field in the header matches your DNS record name</td></tr><tr><td class='pd-mono'>Key rotated but old DNS record still active</td><td>Update the DNS TXT record with the new public key</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>DKIM not signing means the sending email server did not add a DKIM-Signature header to the outgoing message, so the receiving server cannot verify the message's authenticity.</p><p class='mt-3'>The most common cause is that DKIM signing has not been enabled in the email provider's admin panel, or the DNS TXT record containing the public key has not been published.</p><p class='mt-3'>A missing DKIM signature weakens DMARC alignment because DMARC requires either SPF or DKIM to pass; without DKIM, only SPF can provide the authentication signal.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">When a client says 'DKIM is not working', the first thing I check is whether the email actually has a DKIM-Signature header. If it does not, the problem is always in the provider's sending configuration, never in DNS. DNS problems cause DKIM verification failures, not missing signatures.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check if my emails are DKIM signed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send yourself an email, open it, and view the original message (Gmail: Show original). Look for a DKIM-Signature header. Our email header analyzer parses this automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does every email need to be DKIM signed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">All email from your domain should be DKIM signed for DMARC alignment. Unsigned email relies solely on SPF, which breaks on forwarding.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

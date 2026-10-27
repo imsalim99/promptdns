@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="SPF Record Examples: Real v=spf1 Records for Google, Microsoft, SendGrid"
+  description="SPF record examples: real v=spf1 records for Google Workspace, Microsoft 365, SendGrid, Mailchimp. Copy-paste ready."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF Record Examples</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Examples</h1>
+    <p class="mt-4 text-lg text-ink-dim">Real v=spf1 SPF record examples for Google Workspace, Microsoft 365, SendGrid, Mailchimp and Zoho. Copy-paste ready.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Provider</th><th class='whitespace-nowrap'>SPF Record (v=spf1 ...)</th></tr></thead><tbody><tr><td class='pd-mono'>Google Workspace</td><td>v=spf1 include:_spf.google.com ~all</td></tr><tr><td class='pd-mono'>Microsoft 365</td><td>v=spf1 include:spf.protection.outlook.com -all</td></tr><tr><td class='pd-mono'>SendGrid</td><td>v=spf1 include:sendgrid.net ~all</td></tr><tr><td class='pd-mono'>Mailchimp</td><td>v=spf1 include:servers.mcsv.net ~all</td></tr><tr><td class='pd-mono'>Zoho Mail</td><td>v=spf1 include:zohomail.com ~all</td></tr><tr><td class='pd-mono'>Amazon SES</td><td>v=spf1 include:amazonses.com ~all</td></tr><tr><td class='pd-mono'>Cloudflare Email Routing</td><td>v=spf1 include:_spf.mx.cloudflare.net ~all</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>An SPF record is a DNS TXT record that starts with v=spf1 and lists authorized sending sources using mechanisms defined in RFC 7208.</p><p class='mt-3'>Each mechanism is evaluated left to right during the SMTP MAIL FROM handshake, and the first match determines the authorization result.</p><p class='mt-3'>The record must be published as a single TXT record at the root of the domain, with a maximum of 10 DNS-querying mechanisms.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">When auditing client domains, I almost always find that the SPF record was set up correctly initially but then someone added a second email service without merging the include: mechanisms. The result is two v=spf1 records (permerror) or one record with 12+ lookups. Always check with a validator after adding any new email service.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I combine multiple email providers in one SPF record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. Add each provider's include: mechanism to the same v=spf1 record. Watch the 10-DNS-lookup limit when combining multiple providers.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use ~all or -all at the end?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">~all (softfail) is safer while setting up. Switch to -all (hardfail) once you are confident every legitimate sender is listed.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if my provider is not in these examples?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Check your provider's documentation for their include: domain. Add it as an include: mechanism in your existing v=spf1 record.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="DMARC Record Syntax: Every Tag Explained (v, p, rua, ruf, sp, pct, adkim, aspf)"
+  description="DMARC record syntax: every tag explained. v, p, rua, ruf, sp, pct, adkim, aspf. Build correct v=DMARC1 records."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DMARC Record Syntax</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record Syntax</h1>
+    <p class="mt-4 text-lg text-ink-dim">DMARC record syntax: every tag explained. v=DMARC1, p=, rua=, ruf=, sp=, pct=, adkim=, aspf=. RFC 7489.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Tag</th><th class='whitespace-nowrap'>Required</th><th class='whitespace-nowrap'>Values</th><th class='whitespace-nowrap'>What it does</th></tr></thead><tbody><tr><td class='pd-mono'>v</td><td>Yes</td><td>DMARC1</td><td>Protocol version (must be first tag)</td></tr><tr><td class='pd-mono'>p</td><td>Yes</td><td>none / quarantine / reject</td><td>Policy for the domain: what to do with failing mail</td></tr><tr><td class='pd-mono'>rua</td><td>No</td><td>mailto:address</td><td>Where to send aggregate reports (daily XML)</td></tr><tr><td class='pd-mono'>ruf</td><td>No</td><td>mailto:address</td><td>Where to send forensic reports (failure samples)</td></tr><tr><td class='pd-mono'>sp</td><td>No</td><td>none / quarantine / reject</td><td>Policy for subdomains (inherits p= if absent)</td></tr><tr><td class='pd-mono'>pct</td><td>No</td><td>0-100 (default 100)</td><td>Percentage of failing mail that receives the policy</td></tr><tr><td class='pd-mono'>adkim</td><td>No</td><td>r (relaxed) / s (strict)</td><td>DKIM alignment mode (default relaxed)</td></tr><tr><td class='pd-mono'>aspf</td><td>No</td><td>r (relaxed) / s (strict)</td><td>SPF alignment mode (default relaxed)</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>A DMARC record is a DNS TXT record published at _dmarc.domain.com that starts with v=DMARC1 and defines the policy, reporting, and alignment settings for email authentication, as specified in RFC 7489.</p><p class='mt-3'>The p= tag is the only mandatory policy tag (after v=) and tells receiving servers what to do with mail that fails both SPF and DKIM alignment: none (deliver anyway), quarantine (send to spam), or reject (bounce).</p><p class='mt-3'>The rua= tag specifies the email address where mailbox providers send daily aggregate reports containing every source IP, message volume, and SPF/DKIM evaluation result for the domain.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The most common DMARC syntax error I see: using a semicolon after the last tag (causing a parsing warning), or forgetting that rua= requires the mailto: prefix. Always end the record without a trailing semicolon and always include mailto: before the reporting address.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the order of DMARC tags important?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only v=DMARC1 must be first. The other tags can appear in any order, separated by semicolons.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I omit the p= tag?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The record is invalid and receivers ignore DMARC entirely. p= is mandatory.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use a URL instead of mailto: for rua=?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, but mailto: is the most widely supported. HTTPS URIs (https://) are also allowed by RFC 7489 but less commonly implemented by mailbox providers.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="SPF TempError: Temporary DNS Error During SPF Evaluation (RFC 7208)"
+  description="SPF TempError explained: temporary DNS failure during SPF evaluation. Causes, diagnosis and fixes. RFC 7208."
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SPF TempError</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF TempError</h1>
+    <p class="mt-4 text-lg text-ink-dim">SPF TempError explained: what causes temporary DNS failures during SPF evaluation and how to diagnose them. RFC 7208.</p>
+
+    <!-- Visual Centerpiece: Reference Table -->
+    <section class="not-prose my-8" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class='pdns-table' style='width:100%'><thead><tr><th class='whitespace-nowrap'>Cause</th><th class='whitespace-nowrap'>Likelihood</th><th class='whitespace-nowrap'>Fix</th></tr></thead><tbody><tr><td class='pd-mono'>Authoritative nameserver timeout</td><td>Common</td><td>Check nameserver health with our delegation checker</td></tr><tr><td class='pd-mono'>DNS resolver overload</td><td>Transient</td><td>Retry after a few minutes; the error is temporary by definition</td></tr><tr><td class='pd-mono'>DNSSEC validation failure</td><td>Rare</td><td>Check DS records with our DNSSEC checker</td></tr><tr><td class='pd-mono'>Network partition between resolver and authoritative NS</td><td>Rare</td><td>Use our propagation checker to identify affected resolvers</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- Factual Content (3-Sentence Rule) -->
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Technical details</h2>
+      <p class='mt-3'>An SPF TempError (temporary error) is a transient DNS resolution failure defined in RFC 7208 Section 2.6.2 that occurs when a DNS query during SPF evaluation times out or returns a SERVFAIL.</p><p class='mt-3'>Unlike PermError, TempError is retryable: receiving mail transfer agents are expected to accept the message and retry SPF evaluation later, though some MTA implementations treat TempError as a softfail.</p><p class='mt-3'>The most common cause of SPF TempError is an authoritative nameserver that is slow, overloaded, or unreachable from the receiver's DNS resolver.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">TempError is almost always a nameserver infrastructure problem, not an SPF record problem. If you see TempError in your DMARC reports, check your nameserver health first before touching the SPF record itself.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does TempError cause email to bounce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not immediately. RFC 7208 says receivers should accept mail on TempError and retry later. However, some implementations treat it as a softfail, which may affect deliverability.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is TempError different from PermError?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TempError is a temporary DNS failure (retryable). PermError is a permanent evaluation error (the record itself is broken). PermError means the record needs fixing; TempError means the DNS infrastructure needs checking.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Check your domain with our free tools:
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dkim-record-checker/" class="text-accent hover:text-accent-soft">DKIM checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
