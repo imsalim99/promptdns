@@ -3,38 +3,42 @@
  * Shared Visual Semantics Centerpiece Tool Panel.
  * Implements Google Centerpiece Annotation & Document-Aware Layout Ranking:
  * - Prominent above-the-fold visual bounding box for layout tree evaluation
- * - Visual semantic attribute badges (100% Free, No Sign Up, Client-Side, DoH)
+ * - Visual semantic attribute badges from src/data/tool-attributes.ts (evidence-backed)
  * - 1-Click Instant Test Presets for NavBoost click engagement
- * - Pre-rendered diagnostic scope so the panel never renders as an empty box
+ * - data-vs hooks so scripts/content-audit.mjs can verify coverage
  */
+import { TOOL_ATTRIBUTES, TOOL_PRESETS, DEFAULT_ATTRIBUTES, DEFAULT_PRESETS } from '../data/tool-attributes';
+
 interface Props {
-  /** Pills shown under the badge bar. Pass [] to hide (textarea/file tools). */
-  presets?: string[];
-  /** Second badge: how the tool runs. Keep truthful per tool. */
+  /** Optional badge/preset overrides; the data file is the default source of truth. */
   secondaryBadge?: string;
+  presets?: string[];
 }
-const DEFAULT_PRESETS = ['cloudflare.com', 'google.com', 'github.com'];
-const { presets = DEFAULT_PRESETS, secondaryBadge = 'DNS-over-HTTPS' } = Astro.props;
+const { secondaryBadge, presets: presetProp } = Astro.props;
+
+const slug = Astro.url.pathname.replace(/^\/+|\/+$/g, '');
+const badges = TOOL_ATTRIBUTES[slug] ?? DEFAULT_ATTRIBUTES;
+const presets = presetProp ?? TOOL_PRESETS[slug] ?? DEFAULT_PRESETS;
 ---
-<section class="not-prose relative my-6" aria-label="Interactive DNS Tool">
+<section class="not-prose relative my-6" aria-label="Interactive DNS Tool" data-vs="centerpiece">
   <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
     <!-- Visual Semantic Attribute Bar -->
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes">
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes" data-vs="attributes">
       <div class="flex flex-wrap items-center gap-2">
         <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
           <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
-          100% Free · No Sign Up
+          {badges[0].label}
         </span>
         <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">
-          ⚡ Instant Live Query
+          {badges[1].label}
         </span>
         <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">
-          🛡️ Client-Side · Zero Logs
+          {badges[2].label}
         </span>
       </div>
       <div class="flex items-center gap-2 text-ink-faint">
         <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
-        <span class="font-mono text-[11px]">{secondaryBadge}</span>
+        <span class="font-mono text-[11px]">{secondaryBadge ?? badges[3]?.label}</span>
       </div>
     </div>
 
