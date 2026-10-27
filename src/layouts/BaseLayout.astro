@@ -3,8 +3,12 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { TOOL_CATEGORIES } from '../data/tools';
 import '../styles/global.css';
+import { isHeld } from '../data/publish-queue';
 
 interface Props {
+  /** Visible breadcrumb trail as [name, href?] pairs; emits BreadcrumbList JSON-LD. */
+  breadcrumb?: [string, string?][];
+  publishOn?: string;
   title: string;
   description: string;
   /** Optional JSON-LD objects appended to <head> */
@@ -15,7 +19,7 @@ interface Props {
   chrome?: boolean;
 }
 
-const { title, description, schema = [], noindex = false, chrome = true } = Astro.props;
+const { title, description, schema = [], noindex = false, chrome = true, breadcrumb } = Astro.props;
 const fullTitle = `${title} | PromptDNS`;
 
 // Self-referencing canonical: every page declares its one true URL so variant
@@ -106,7 +110,25 @@ const articleSchema = !toolEntry && !noindex && !hasArticle && path !== '/' && !
     }
   : null;
 
-const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...(articleSchema ? [articleSchema] : []), ...schema];
+const held = isHeld(path);
+
+// BreadcrumbList from the visible trail prop (guides); skipped when the page
+// already emits its own. Mirrors the visible breadcrumb, never invents one.
+const hasCrumbSchema = schema.some((s) => s['@type'] === 'BreadcrumbList');
+const trailSchema = breadcrumb && !hasCrumbSchema
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumb.map(([name, href], i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name,
+        ...(href ? { item: SITE + href } : {}),
+      })),
+    }
+  : null;
+
+const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...(trailSchema ? [trailSchema] : []), ...(articleSchema ? [articleSchema] : []), ...schema];
 ---
 <!doctype html>
 <html lang="en">
@@ -120,7 +142,7 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {(noindex || held) && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:type" content={toolEntry || !articleSchema ? 'website' : 'article'} />
     <meta property="og:site_name" content="PromptDNS" />
     <meta property="og:title" content={fullTitle} />

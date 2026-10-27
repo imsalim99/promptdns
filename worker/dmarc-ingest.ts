@@ -106,7 +106,6 @@ export function parseAggregateXml(xml: string): DmarcAggregate | null {
 async function storeReport(db: D1Database, agg: DmarcAggregate): Promise<boolean> {
   const normalizedDomain = agg.domain.replace(/\.+$/, '').toLowerCase();
   const domainRows = await db.prepare('SELECT id FROM domains WHERE domain = ?1').bind(normalizedDomain).all<{ id: number }>();
-  console.log('[DMARC] storeReport: looking up domain:', normalizedDomain, 'found:', (domainRows.results ?? []).length, 'rows');
   let stored = false;
   for (const row of domainRows.results ?? []) {
     const ins = await db
@@ -137,33 +136,25 @@ export async function handleDmarcEmail(message: ForwardableEmailMessage, env: En
     return;
   }
   if (!message.to.toLowerCase().startsWith('reports@')) {
-    console.log('[DMARC] not reports@, skipping:', message.to);
     return;
   }
-  console.log('[DMARC] parsing MIME...');
   const parsed = await PostalMime.parse(message.raw);
-  console.log('[DMARC] MIME parsed, attachments:', (parsed.attachments ?? []).length, 'subjects:', parsed.subject);
   let xmls: string[] = [];
   for (const att of parsed.attachments ?? []) {
     const bytes = att.content as Uint8Array | ArrayBuffer;
-    console.log('[DMARC] attachment:', att.filename, 'mime:', att.mimeType, 'size:', bytes?.byteLength ?? bytes?.length);
     xmls.push(...xmlsFromAttachment(att.filename ?? '', att.mimeType ?? '', bytes));
   }
   console.log('[DMARC] XMLs extracted:', xmls.length);
   if (!xmls.length) {
-    console.log('[DMARC] no XML found, accepting and dropping');
     return;
   }
   for (const xml of xmls) {
-    console.log('[DMARC] parsing XML, length:', xml.length);
     const agg = parseAggregateXml(xml);
-    console.log('[DMARC] parsed:', agg ? `domain=${agg.domain} org=${agg.org} records=${agg.records.length}` : 'PARSE FAILED');
     if (agg) {
       const stored = await storeReport(env.DB, agg);
       console.log('[DMARC] stored:', stored);
     }
   }
-  console.log('[DMARC] processing complete');
 }
 
 function json(data: unknown, status = 200): Response {

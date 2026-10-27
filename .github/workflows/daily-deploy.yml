@@ -1,0 +1,26 @@
+# Drip-release scheduler (spec section 9): rebuilds and deploys once a day so
+# pages in src/data/publish-queue.js flip to public automatically on their
+# publishOn date. Also runs the content audit as the deploy gate.
+name: daily-deploy
+on:
+  schedule:
+    - cron: '37 5 * * *' # 05:37 UTC daily
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/content-audit.mjs
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
