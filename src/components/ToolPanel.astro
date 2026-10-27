@@ -7,6 +7,14 @@
  * - 1-Click Instant Test Presets for NavBoost click engagement
  * - Pre-rendered diagnostic scope so the panel never renders as an empty box
  */
+interface Props {
+  /** Pills shown under the badge bar. Pass [] to hide (textarea/file tools). */
+  presets?: string[];
+  /** Second badge: how the tool runs. Keep truthful per tool. */
+  secondaryBadge?: string;
+}
+const DEFAULT_PRESETS = ['cloudflare.com', 'google.com', 'github.com'];
+const { presets = DEFAULT_PRESETS, secondaryBadge = 'DNS-over-HTTPS' } = Astro.props;
 ---
 <section class="not-prose relative my-6" aria-label="Interactive DNS Tool">
   <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
@@ -26,20 +34,22 @@
       </div>
       <div class="flex items-center gap-2 text-ink-faint">
         <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
-        <span class="font-mono text-[11px]">DNS-over-HTTPS</span>
+        <span class="font-mono text-[11px]">{secondaryBadge}</span>
       </div>
     </div>
 
+    <!-- 1-Click Instant Test Presets (NavBoost engagement), above the input so they stay visible after results render -->
+    {presets.length > 0 && (
+      <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Instant test domains">
+        <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+        {presets.map((preset) => (
+          <button type="button" data-preset-domain={preset} class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">{preset}</button>
+        ))}
+      </div>
+    )}
+
     <!-- Centerpiece Functional Body -->
     <slot />
-
-    <!-- 1-Click Instant Test Presets (NavBoost engagement) -->
-    <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line/40 pt-3" aria-label="Instant test domains">
-      <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
-      <button type="button" data-preset-domain="cloudflare.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
-      <button type="button" data-preset-domain="google.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">google.com</button>
-      <button type="button" data-preset-domain="github.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">github.com</button>
-    </div>
   </div>
 </section>
 

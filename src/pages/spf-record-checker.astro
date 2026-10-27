@@ -95,10 +95,18 @@ const faqSchema = {
         <p class="mt-2 text-xs text-ink-faint">SPF allows a maximum of 10 DNS lookup terms in evaluation. This count reflects the terms in this record only; nested <code>include:</code> domains may consume additional lookups during actual mail evaluation.</p>
       </div>
 
-      <div id="spf-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+      <p id="spf-sample-note" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above to read its real SPF policy.
+      </p>
+      <div id="spf-results" class="mt-2 overflow-x-auto rounded-lg border border-line/60">
         <table class="pdns-table">
           <thead><tr><th>Term</th><th>Type</th><th>Explanation</th></tr></thead>
-          <tbody id="spf-tbody"></tbody>
+          <tbody id="spf-tbody">
+            <tr><td class="font-mono text-xs text-accent-soft">v=spf1</td><td>version</td><td class="text-sm text-ink-dim">Declares this TXT record as an SPF policy (RFC 7208)</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">include:_spf.example.com</td><td>include</td><td class="text-sm text-ink-dim">Delegates authorization to the SPF record at _spf.example.com (1 lookup)</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">ip4:93.184.216.0/24</td><td>ip4</td><td class="text-sm text-ink-dim">Authorizes that IPv4 range to send mail for the domain</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">~all</td><td>all (softfail)</td><td class="text-sm text-ink-dim">Unauthorized senders are marked but not rejected</td></tr>
+          </tbody>
         </table>
     </div>
 
@@ -181,6 +189,7 @@ const faqSchema = {
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     setStatus('bg-panel-2 text-accent border border-line', `Fetching TXT records for ${domain}…`);
     [lookupBox, resultsEl, scopeEl].forEach((el) => el.classList.add('hidden'));
+    document.getElementById('spf-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 

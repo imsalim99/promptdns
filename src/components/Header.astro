@@ -54,26 +54,50 @@ const learnMenu = [
     </button>
   </div>
 
-  <!-- Mobile drawer: lightweight links only (full tool list lives at /tools/) -->
-  <div id="mobile-menu" class="hidden border-t border-line/60 bg-canvas px-4 py-4 lg:hidden">
-    <nav class="grid gap-1 text-sm" aria-label="Mobile">
-      <a href="/tools/" class="rounded-md px-2 py-2 font-medium text-ink-dim hover:text-accent">All {TOTAL_TOOLS} tools</a>
-      {learnMenu.map(([title, , href]) => (
-        <a href={href} class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">{title}</a>
-      ))}
-      <p class="px-2 pt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Company</p>
-      <a href="/how-it-works/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">How it works</a>
-      <a href="/pricing/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">Pricing</a>
-      <a href="/about/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">About</a>
-      <a href="/contact/" class="rounded-md px-2 py-2 text-ink-dim hover:text-accent">Contact</a>
-    </nav>
-  </div>
+  <!-- Mobile drawer: lightweight links only (full tool list lives at /tools/).
+       Content is populated on first toggle so the duplicate link tokens never
+       sit above the H1 in the server-rendered HTML. -->
+  <div id="mobile-menu" class="hidden border-t border-line/60 bg-canvas px-4 py-4 lg:hidden" data-total-tools={TOTAL_TOOLS}></div>
 </header>
 
 <script>
   const btn = document.getElementById('mobile-menu-btn')!;
   const menu = document.getElementById('mobile-menu')!;
+  // Drawer links are populated on first toggle: the same links also render in
+  // the desktop Learn dropdown, and duplicating them in SSR HTML puts repeated
+  // tokens above every page's H1.
+  const MOBILE_LINKS: [string, string][] = [
+    ['/tools/', 'All tools'],
+    ['/dns/', 'DNS Guide'],
+    ['/email-authentication/', 'Email Authentication'],
+    ['/email-deliverability/', 'Email Deliverability'],
+    ['/dns-providers/', 'Provider Guides'],
+    ['/ip-and-networking/', 'IP & Networking'],
+    ['/ssl-tls/', 'SSL/TLS Guides'],
+    ['/ai-web-infrastructure/', 'AI Web Infrastructure'],
+    ['/how-it-works/', 'How it works'],
+    ['/pricing/', 'Pricing'],
+    ['/about/', 'About'],
+    ['/contact/', 'Contact'],
+  ];
+  let filled = false;
   btn.addEventListener('click', () => {
+    if (!filled) {
+      filled = true;
+      const nav = document.createElement('nav');
+      nav.className = 'grid gap-1 text-sm';
+      nav.setAttribute('aria-label', 'Mobile');
+      MOBILE_LINKS.forEach(([href, label], i) => {
+        const a = document.createElement('a');
+        a.href = href;
+        a.textContent = label.replace('All tools', `All ${menu.getAttribute('data-total-tools') ?? '56'} tools`);
+        a.className = i === 0
+          ? 'rounded-md px-2 py-2 font-medium text-ink-dim hover:text-accent'
+          : 'rounded-md px-2 py-2 text-ink-dim hover:text-accent';
+        nav.appendChild(a);
+      });
+      menu.appendChild(nav);
+    }
     const open = menu.classList.toggle('hidden') === false;
     btn.setAttribute('aria-expanded', String(open));
   });

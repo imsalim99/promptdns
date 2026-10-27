@@ -92,10 +92,17 @@ const faqSchema = {
         </div>
       </div>
 
-      <div id="dmarc-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+      <p id="dmarc-sample-note" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above to read its real DMARC policy.
+      </p>
+      <div id="dmarc-results" class="mt-2 overflow-x-auto rounded-lg border border-line/60">
         <table class="pdns-table">
           <thead><tr><th>Tag</th><th>Value</th><th>Meaning</th></tr></thead>
-          <tbody id="dmarc-tbody"></tbody>
+          <tbody id="dmarc-tbody">
+            <tr><td class="font-mono text-xs text-accent-soft">v</td><td class="font-mono text-xs">DMARC1</td><td class="text-sm text-ink-dim">Protocol version, must be DMARC1</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">p</td><td class="font-mono text-xs">none</td><td class="text-sm text-ink-dim">Monitor only: failing mail is delivered, nothing is rejected</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">rua</td><td class="font-mono text-xs">mailto:dmarc@example.com</td><td class="text-sm text-ink-dim">Daily aggregate reports are sent to this address</td></tr>
+          </tbody>
         </table>
     </div>
 
@@ -171,6 +178,7 @@ const faqSchema = {
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     [gradeBox, resultsEl].forEach((el) => el.classList.add('hidden'));
+    document.getElementById('dmarc-sample-note')?.classList.add('hidden');
     setStatus('bg-panel-2 text-accent border border-line', `Looking up _dmarc.${domain}…`);
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 

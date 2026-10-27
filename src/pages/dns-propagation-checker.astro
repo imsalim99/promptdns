@@ -80,11 +80,30 @@ const faqSchema = {
     <article class="rich-text mt-14 max-w-none">
       <h2>How this DNS checker works</h2>
       <p>
-        Every DNS lookup on this page runs in your browser using DNS-over-HTTPS (DoH) against
-        independent public resolvers: Cloudflare, Google, and AliDNS. Each resolver keeps its own
-        cache, so comparing their answers tells you whether your new record has spread, or whether
-        some networks are still serving the old value.
+        The checker fires parallel DNS-over-HTTPS queries and compares the answer sets side by side.
+        What it is really measuring is the <strong>cache hierarchy</strong>: your visitors' ISP resolvers,
+        the public resolvers, and the authoritative nameserver each hold a copy of your record for
+        exactly its TTL. Mismatched answers are not an error, they are a live map of which caches have
+        refreshed and which still serve the old value from before the SOA serial was incremented.
       </p>
+      <p>
+        How long that map keeps changing depends on the record type. Typical windows after a TTL-aware
+        change:
+      </p>
+      <div class="not-prose my-4 overflow-x-auto rounded-lg border border-line/60">
+        <table class="pdns-table">
+          <thead>
+            <tr><th>Record type</th><th>Typical window</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">A / AAAA</td><td>Minutes to a few hours</td><td>Short TTLs are common; answers are direct IPs</td></tr>
+            <tr><td class="font-medium text-ink">CNAME</td><td>Minutes to hours</td><td>Chained lookup: the alias resolves through its target</td></tr>
+            <tr><td class="font-medium text-ink">MX / TXT</td><td>Up to the record TTL</td><td>Mail exchangers and verifiers cache aggressively</td></tr>
+            <tr><td class="font-medium text-ink">NS</td><td>Up to 48 hours</td><td>Delegation changes touch the parent zone, which caches longest</td></tr>
+            <tr><td class="font-medium text-ink">DS / DNSKEY</td><td>Up to 24 to 48 hours</td><td>Validators hold DNSSEC delegation data through the full TTL</td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2>What "propagated" means here</h2>
       <p>
