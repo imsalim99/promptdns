@@ -44,7 +44,6 @@ export default {
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
-    if (path === '/api/dev/dmarc-test') return handleDmarcTest(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);
