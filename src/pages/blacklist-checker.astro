@@ -93,10 +93,16 @@ const faqSchema = {
 
       <div id="bl-summary" class="mt-4 hidden grid gap-3 sm:grid-cols-3"></div>
 
-      <div id="bl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+            <p id="bl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above for live results.
+      </p>
+<div id="bl-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
         <table class="pdns-table">
           <thead><tr><th>Blocklist</th><th>Scope</th><th>Result</th><th>Detail</th></tr></thead>
-          <tbody id="bl-tbody"></tbody>
+          <tbody id="bl-tbody">
+            <tr><td class="font-medium text-ink">Spamhaus SBL</td><td>Email spam</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr>
+            <tr><td class="font-medium text-ink">Barracuda</td><td>Email spam</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr>
+            <tr><td class="font-medium text-ink">SORBS</td><td>Spam / dynamic IPs</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Not listed</span></td><td class="text-sm text-ink-dim">No listing found</td></tr></tbody>
         </table>
     </div>
 
@@ -161,6 +167,7 @@ const faqSchema = {
     if (!domain.includes('.') && !ip) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a domain or an IP.'); return; }
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
+    document.getElementById('bl-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     [summaryEl, resultsEl].forEach((el) => el.classList.add('hidden'));
     const rows: { list: string; zone: string; note: string; status: string; detail: string; scope: string }[] = [];

@@ -22,8 +22,11 @@ import ResultCard from '../components/ResultCard.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check DNSSEC</button>
   </form>
   <div id="ds-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ds-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody id="ds-tbody"></tbody></table>
+        <p id="ds-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above for live results.
+      </p>
+<div id="ds-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody id="ds-tbody"><tr><td class="font-medium text-ink">DS record at parent (.com)</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Present</span></td></tr><tr><td class="font-medium text-ink">DNSKEY algorithm</td><td class="text-sm text-ink-dim">RSASHA256, 2048-bit</td></tr><tr><td class="font-medium text-ink">Chain of trust</td><td><span class="inline-flex rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">Valid</span></td></tr></tbody></table>
   </div>
   <ResultCard tool="dnssec-checker" />
 </ToolPanel>
@@ -71,6 +74,7 @@ import ResultCard from '../components/ResultCard.astro';
     const ksk = keys.find(k => k.data.includes(' 257 '));
     const algo = ds.answers[0]?.data.split(/\s+/)[1];
     const ALGOS: Record<string, string> = { '8': 'RSA/SHA-256', '13': 'ECDSA P-256', '15': 'Ed25519' };
+    document.getElementById('ds-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     const rows: [string, string][] = [
       ['DS record (chain of trust)', dsOk ? `Present, algorithm ${algo} (${ALGOS[algo] ?? 'other'})` : 'Missing: the zone may be signed but the parent does not vouch for it'],

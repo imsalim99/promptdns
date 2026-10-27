@@ -22,8 +22,11 @@ import ResultCard from '../components/ResultCard.astro';
     <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TTLs</button>
   </form>
   <div id="ttl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="ttl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
-    <table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody id="ttl-tbody"></tbody></table>
+        <p id="ttl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above for live results.
+      </p>
+<div id="ttl-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
+    <table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody id="ttl-tbody"><tr><td>A</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>93.184.216.34</code></td></tr><tr><td>NS</td><td class="font-mono text-xs text-ink-dim">86400</td><td><code>a.iana-servers.net</code></td></tr><tr><td>TXT</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>"v=spf1 -all"</code></td></tr></tbody></table>
   </div>
   <ResultCard tool="ttl-checker" />
 </ToolPanel>
@@ -87,6 +90,7 @@ import ResultCard from '../components/ResultCard.astro';
       emit('pass', `${rows.length} records found. Lowest TTL: ${min}s.`,
         [{ code: 'TTL_FAST', detail: `Lowest TTL: ${min}s` }], domain);
     }
+    document.getElementById('ttl-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const r of rows.sort((a, b) => a.ttl - b.ttl)) {
       tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${r.t}</td><td class="font-mono text-xs ${r.ttl > 3600 ? 'text-warn' : 'text-ink'}">${r.ttl}s</td><td><code>${r.v.replace(/</g, '&lt;').slice(0, 60)}</code></td></tr>`);

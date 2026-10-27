@@ -64,10 +64,16 @@ const faqSchema = {
 
       <div id="rl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
 
-      <div id="rl-results" class="mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+            <p id="rl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample diagnostic for <code>example.com</code>. Enter any domain above for live results.
+      </p>
+<div id="rl-results" class="mt-6 overflow-x-auto rounded-lg border border-line/60">
         <table class="pdns-table">
           <thead><tr><th>Name</th><th>TTL</th><th>Type</th><th>Value</th></tr></thead>
-          <tbody id="rl-tbody"></tbody>
+          <tbody id="rl-tbody">
+            <tr><td class="font-medium text-ink">example.com</td><td class="font-mono text-xs text-ink-dim">86400</td><td>NS</td><td><code>a.iana-servers.net</code></td></tr>
+            <tr><td class="font-medium text-ink">example.com</td><td class="font-mono text-xs text-ink-dim">3600</td><td>A</td><td><code>93.184.216.34</code></td></tr>
+            <tr><td class="font-medium text-ink">example.com</td><td class="font-mono text-xs text-ink-dim">3600</td><td>TXT</td><td><code>"v=spf1 -all"</code></td></tr></tbody>
         </table>
       </div>
 
@@ -130,6 +136,7 @@ const faqSchema = {
     }
 
     setStatus('bg-pass/10 text-pass border border-pass/30', `${res.answers.length} ${typeSel.value} record${res.answers.length > 1 ? 's' : ''} found (via ${res.resolver}, ${res.ms} ms).`);
+    document.getElementById('rl-sample-note')?.classList.add('hidden');
     tbody.innerHTML = '';
     for (const a of res.answers) {
       tbody.insertAdjacentHTML('beforeend', `<tr>
