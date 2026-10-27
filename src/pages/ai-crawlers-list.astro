@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SpecCard from '../components/SpecCard.astro';
 const bots = [
   ['GPTBot', 'OpenAI', 'Training data for OpenAI models (GPT).', 'Blocked by default? No; opt-out via robots or OpenAI\u2019s control page.'],
   ['OAI-SearchBot', 'OpenAI', 'Search results inside ChatGPT Search.', 'Separate from GPTBot; blocking it removes you from ChatGPT answers.'],
@@ -54,6 +55,18 @@ const bots = [
     </div>
 
     <div class="rich-text mt-10">
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Crawler spec cards</h2>
+      <p class="mt-1 text-sm text-ink-faint">The seven most consequential crawlers, with how to verify each one and what evidence backs each claim.</p>
+      <div class="mt-3 grid gap-3 lg:grid-cols-2">
+        <SpecCard name="GPTBot" operator="OpenAI" token="GPTBot" purpose="Training data for GPT models" robots="Honors Disallow: GPTBot" verify="Reverse DNS resolves to *.openai.com" evidence="Documented" verified="2026-10-28" href="/how-to-block-ai-crawlers/" />
+        <SpecCard name="OAI-SearchBot" operator="OpenAI" token="OAI-SearchBot" purpose="ChatGPT Search results" robots="Honors robots.txt" verify="Reverse DNS resolves to *.openai.com" evidence="Documented" verified="2026-10-28" />
+        <SpecCard name="ClaudeBot" operator="Anthropic" token="ClaudeBot" purpose="Training and retrieval for Claude" robots="Honors Disallow: ClaudeBot" verify="Reverse DNS resolves to *.anthropic.com" evidence="Documented" verified="2026-10-28" href="/how-to-block-ai-crawlers/" />
+        <SpecCard name="Google-Extended" operator="Google" token="Google-Extended (control, not a separate crawler)" purpose="Gemini and Vertex training via Googlebot fetches" robots="Honors Disallow: Google-Extended" verify="No separate UA: Googlebot fetches, the token controls training use" evidence="Documented" verified="2026-10-28" />
+        <SpecCard name="PerplexityBot" operator="Perplexity" token="PerplexityBot" purpose="Search index and answer engine" robots="Honors robots.txt" verify="Reverse DNS resolves to *.perplexity.ai" evidence="Documented" verified="2026-10-28" />
+        <SpecCard name="CCBot" operator="Common Crawl" token="CCBot" purpose="Open web crawl dataset used by many AI labs" robots="Honors Disallow: CCBot" verify="Reverse DNS resolves to *.commoncrawl.org" evidence="Documented" verified="2026-10-28" />
+        <SpecCard name="Bytespider" operator="ByteDance" token="Bytespider" purpose="Data collection behind TikTok's AI stack" robots="Reported to sometimes ignore robots.txt" verify="Reverse DNS is inconsistent; block at the WAF by IP range if strict" evidence="Reported" verified="2026-10-28" />
+      </div>
+
       <h2>The decision, not the default</h2>
       <p>
         There is no universally correct allow/block stance. Allowing AI crawlers puts your content

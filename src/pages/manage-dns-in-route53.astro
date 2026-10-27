@@ -22,7 +22,8 @@ const data = {
   ]
  ],
  "quirk": "Route 53 hosted zones cost about $0.50/month each (plus query charges) - the only DNS host in our playbook that bills for hosting. Also: NS and SOA records are managed records; don't delete them.",
- "faqs": [
+  "fieldMap": { "name": "Record name", "value": "Value", "ttl": "Default 300 s", "apex": "Same name as the hosted zone", "note": "Route 53 uses hosted zones and Alias records point at AWS resources without a TTL of their own." },
+"faqs": [
   [
    "Why is Route 53 paid when others are free?",
    "It's an AWS infrastructure service with SLAs and global anycast; pricing is per zone and per query, integrated into your AWS bill."
