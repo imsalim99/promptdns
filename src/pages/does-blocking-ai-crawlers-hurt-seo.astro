@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/does-blocking-ai-crawlers-hurt-seo/');
+---
+<BaseLayout
+  title="Does Blocking AI Crawlers Hurt SEO? What Actually Changes | PromptDNS"
+  description="Blocking AI crawlers: what changes for Google rankings, ChatGPT citations, and AI Overviews, and what does not. Per-crawler facts."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Does Blocking AI Crawlers Hurt SEO?"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Does Blocking AI Crawlers Hurt SEO?</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Does Blocking AI Crawlers Hurt SEO?</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Blocking AI crawlers does not hurt your Google Search rankings. Googlebot and Google-Extended are separate systems: ranking uses Googlebot, and the AI-training token changes nothing about indexing or position. What blocking does change is visibility in AI answers, because each AI vendor's crawler feeds its own product, and a blocked crawler means a missing citation.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Decision table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>C</th><th>o</th><th>n</th><th>s</th><th>e</th><th>q</th><th>u</th><th>e</th><th>n</th><th>c</th><th>e</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Block training crawlers only (GPTBot, ClaudeBot, CCBot)</td><td class="text-sm text-ink-dim">Content stays out of model training; search and AI Overview presence unchanged</td></tr><tr><td class="font-medium text-ink">Block search crawlers (OAI-SearchBot, PerplexityBot)</td><td class="text-sm text-ink-dim">Removes you from those AI answer engines; rankings unchanged</td></tr><tr><td class="font-medium text-ink">Block Google-Extended</td><td class="text-sm text-ink-dim">Gemini and Vertex training opt-out; Search and AI Overviews unchanged</td></tr><tr><td class="font-medium text-ink">Block everything including Googlebot</td><td class="text-sm text-ink-dim">Also removes you from Google Search: this is not an AI decision anymore</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>What blocking does not change</h2>
+      <p class="mt-3">Your Google rankings, indexing, and Core Web Vitals are unaffected. Google has stated that blocking Google-Extended has no effect on Search ranking or AI Overviews.</p>
+      <p class="mt-3">Your traffic from traditional search stays the same. None of the major AI crawler rules touch ranking signals.</p>
+      <p class="mt-3">Your ability to rank in AI Overviews stays intact, because AI Overviews are generated from search results, not from third-party crawler access.</p>
+      <h2>What blocking does change</h2>
+      <p class="mt-3">ChatGPT Search citations disappear if OAI-SearchBot is blocked, because that crawler builds the index ChatGPT cites from.</p>
+      <p class="mt-3">Perplexity answers drop your pages if PerplexityBot is disallowed, usually within days because its index rebuilds often.</p>
+      <p class="mt-3">Future model training loses your content where the vendor honors robots.txt, such as GPTBot and ClaudeBot. Note that Common Crawl datasets already published are not retroactive.</p>
+      <h2>The decision framework</h2>
+      <p class="mt-3">Decide per crawler, not with a single block-all rule: allow the search crawlers whose citations you want, and decide training access separately.</p>
+      <p class="mt-3">Publishers with paywalled or proprietary content usually block training crawlers and allow search crawlers. Sites competing for AI-answer visibility do the opposite.</p>
+      <p class="mt-3">Whatever you choose, verify from your logs: reverse DNS on the fetching IP confirms a crawler is genuine before you react to it.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The question behind the question is usually about AI citations as a traffic source. Our position after watching these tools evolve: treat AI answer visibility like a new referral channel, decide it per vendor, and re-visit the decision quarterly, because each vendor's product boundaries keep moving.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does robots.txt blocking affect my Google ranking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. robots.txt controls crawling, not ranking. Blocking AI training tokens has no documented effect on Search position.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will I lose AI Overviews visibility if I block AI crawlers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. AI Overviews come from Google Search results. Google-Extended does not control them.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I allow some AI crawlers and block others?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, and it is the recommended approach: each vendor publishes a separate user-agent token with its own rules.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>,
+        <a href="/does-blocking-ai-crawlers-hurt-seo/" class="text-accent hover:text-accent-soft">does blocking AI crawlers hurt SEO</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

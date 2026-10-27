@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/gptbot-vs-claudebot/');
+---
+<BaseLayout
+  title="GPTBot vs ClaudeBot: OpenAI and Anthropic Training Crawlers Compared | PromptDNS"
+  description="GPTBot vs ClaudeBot: how OpenAI and Anthropic training crawlers differ in defaults, verification, opt-out, and what blocking each one changes."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["GPTBot vs ClaudeBot: Training Crawlers Compared"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">GPTBot vs ClaudeBot: Training Crawlers Compared</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">GPTBot vs ClaudeBot: Training Crawlers Compared</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">GPTBot and ClaudeBot are the training crawlers of OpenAI and Anthropic, and they differ in one important default: GPTBot crawls unless you disallow it, while both honor a Disallow rule once present. Both verify by reverse DNS into their operator's address space, and both are separate from their vendors' search crawlers. Blocking either removes your content from that vendor's future training data without touching the other vendor or any search engine.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Decision table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>G</th><th>P</th><th>T</th><th>B</th><th>o</th><th>t</th><th> </th><th>(</th><th>O</th><th>p</th><th>e</th><th>n</th><th>A</th><th>I</th><th>)</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">C</td></tr><tr><td class="font-medium text-ink">l</td></tr><tr><td class="font-medium text-ink">a</td></tr><tr><td class="font-medium text-ink">u</td></tr><tr><td class="font-medium text-ink">d</td></tr><tr><td class="font-medium text-ink">e</td></tr><tr><td class="font-medium text-ink">B</td></tr><tr><td class="font-medium text-ink">o</td></tr><tr><td class="font-medium text-ink">t</td></tr><tr><td class="font-medium text-ink"> </td></tr><tr><td class="font-medium text-ink">(</td></tr><tr><td class="font-medium text-ink">A</td></tr><tr><td class="font-medium text-ink">n</td></tr><tr><td class="font-medium text-ink">t</td></tr><tr><td class="font-medium text-ink">h</td></tr><tr><td class="font-medium text-ink">r</td></tr><tr><td class="font-medium text-ink">o</td></tr><tr><td class="font-medium text-ink">p</td></tr><tr><td class="font-medium text-ink">i</td></tr><tr><td class="font-medium text-ink">c</td></tr><tr><td class="font-medium text-ink">)</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>The one default that matters</h2>
+      <p class="mt-3">GPTBot crawls by default: sites are included in training data unless robots.txt says otherwise.</p>
+      <p class="mt-3">ClaudeBot also crawls by default, so for both vendors the opt-out is the action that requires a decision.</p>
+      <p class="mt-3">Neither vendor needs permission to crawl; robots.txt is the only switch.</p>
+      <h2>Tokens beyond the training crawler</h2>
+      <p class="mt-3">OpenAI runs GPTBot for training and OAI-SearchBot for ChatGPT Search, with separate rules.</p>
+      <p class="mt-3">Anthropic runs ClaudeBot for training and retrieval, plus Claude-User for user-initiated fetches and Claude-SearchBot for search, each with its own rule.</p>
+      <p class="mt-3">This separation means you can, for example, refuse training while remaining answerable when a user of the product asks about your pages.</p>
+      <h2>Verification and enforcement</h2>
+      <p class="mt-3">Both verify by reverse DNS: GPTBot into the OpenAI space, ClaudeBot into the Anthropic space.</p>
+      <p class="mt-3">Both honor robots.txt, so the Disallow rule is reliable enforcement; neither needs edge blocking under documented behavior.</p>
+      <p class="mt-3">Check your own exposure with the AI crawler checker before deciding.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">When a client asks which training crawler to block first, the honest answer is that the question is backwards: both are compliant and easy to opt out of, so the hard decisions are Perplexity and Bytespider, where behavior is newer and enforcement is edge-level. GPTBot and ClaudeBot are the easy, reversible switches.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I block both GPTBot and ClaudeBot?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if your content policy excludes AI training. Both are compliant and reversible, so the decision is low-risk either way.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking GPTBot affect Claude or vice versa?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Each rule is vendor-specific and independent.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which other tokens should I know about?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">OAI-SearchBot and ChatGPT-User for OpenAI products, and Claude-SearchBot and Claude-User for Anthropic products, each with separate robots.txt rules.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>,
+        <a href="/does-blocking-ai-crawlers-hurt-seo/" class="text-accent hover:text-accent-soft">does blocking AI crawlers hurt SEO</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

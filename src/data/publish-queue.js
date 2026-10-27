@@ -18,6 +18,10 @@ export const PUBLISH_QUEUE = {
   '/oai-searchbot/': '2026-11-12',
   '/ccbot/': '2026-11-14',
   '/bytespider/': '2026-11-17',
+  '/does-blocking-ai-crawlers-hurt-seo/': '2026-11-19',
+  '/ai-crawler-verification/': '2026-11-21',
+  '/block-ai-crawlers-cloudflare/': '2026-11-24',
+  '/gptbot-vs-claudebot/': '2026-11-26',
 };
 
 /** True when the given path is held back from indexing on the given date. */
