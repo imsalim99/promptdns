@@ -101,7 +101,9 @@ export function parseAggregateXml(xml: string): DmarcAggregate | null {
 }
 
 async function storeReport(db: D1Database, agg: DmarcAggregate): Promise<boolean> {
-  const domainRows = await db.prepare('SELECT id FROM domains WHERE domain = ?1').bind(agg.domain).all<{ id: number }>();
+  const normalizedDomain = agg.domain.replace(/\.+$/, '').toLowerCase();
+  const domainRows = await db.prepare('SELECT id FROM domains WHERE domain = ?1').bind(normalizedDomain).all<{ id: number }>();
+  console.log('[DMARC] storeReport: looking up domain:', normalizedDomain, 'found:', (domainRows.results ?? []).length, 'rows');
   let stored = false;
   for (const row of domainRows.results ?? []) {
     const ins = await db
@@ -125,23 +127,39 @@ async function storeReport(db: D1Database, agg: DmarcAggregate): Promise<boolean
 }
 
 export async function handleDmarcEmail(message: ForwardableEmailMessage, env: Env): Promise<void> {
+  console.log('[DMARC] email handler invoked, to:', message.to);
   if (!env.DB) {
+    console.error('[DMARC] DB not configured');
     message.setRejectReason('Storage not configured');
     return;
   }
   if (!message.to.toLowerCase().startsWith('reports@')) {
-    return; // only the reporting inbox; other mail is not ours to process
+    console.log('[DMARC] not reports@, skipping:', message.to);
+    return;
   }
+  console.log('[DMARC] parsing MIME...');
   const parsed = await PostalMime.parse(message.raw);
+  console.log('[DMARC] MIME parsed, attachments:', (parsed.attachments ?? []).length, 'subjects:', parsed.subject);
   let xmls: string[] = [];
   for (const att of parsed.attachments ?? []) {
+    console.log('[DMARC] attachment:', att.filename, 'type:', att.type, 'size:', att.content?.length);
     xmls.push(...xmlsFromAttachment(att.filename ?? '', att.type ?? '', att.content));
   }
-  if (!xmls.length) return; // human mail or unparsable attachment: accept and drop
-  for (const xml of xmls) {
-    const agg = parseAggregateXml(xml);
-    if (agg) await storeReport(env.DB, agg);
+  console.log('[DMARC] XMLs extracted:', xmls.length);
+  if (!xmls.length) {
+    console.log('[DMARC] no XML found, accepting and dropping');
+    return;
   }
+  for (const xml of xmls) {
+    console.log('[DMARC] parsing XML, length:', xml.length);
+    const agg = parseAggregateXml(xml);
+    console.log('[DMARC] parsed:', agg ? `domain=${agg.domain} org=${agg.org} records=${agg.records.length}` : 'PARSE FAILED');
+    if (agg) {
+      const stored = await storeReport(env.DB, agg);
+      console.log('[DMARC] stored:', stored);
+    }
+  }
+  console.log('[DMARC] processing complete');
 }
 
 function json(data: unknown, status = 200): Response {
