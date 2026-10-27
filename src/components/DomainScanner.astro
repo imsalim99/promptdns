@@ -7,6 +7,27 @@
 import { RECORD_TYPES } from '../lib/doh';
 ---
 <div id="domain-scanner" class="relative">
+  <!-- Attribute badges + 1-click presets (visual semantics, homepage centerpiece) -->
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-2" aria-label="Tool attributes" data-vs="attributes">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+        <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+        100% Free · No Sign Up
+      </span>
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">⚡ 7-Check Security Audit</span>
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">🛡️ Client-Side · Zero Logs</span>
+    </div>
+    <div class="flex items-center gap-2 text-ink-faint">
+      <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
+      <span class="font-mono text-[11px]">DNS-over-HTTPS + HTTP fetches</span>
+    </div>
+  </div>
+  <div class="mb-3 flex flex-wrap items-center gap-2" aria-label="Instant test domains">
+    <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+    <button type="button" data-preset-domain="cloudflare.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
+    <button type="button" data-preset-domain="github.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">github.com</button>
+    <button type="button" data-preset-domain="openai.com" class="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">openai.com</button>
+  </div>
   <!-- Scan input -->
   <form id="scan-form" class="glass flex flex-col gap-2 rounded-xl p-2 shadow-[0_0_80px_-20px_rgba(34,211,238,0.35)] transition-shadow focus-within:shadow-[0_0_90px_-15px_rgba(34,211,238,0.55)] sm:flex-row">
     <div class="flex flex-1 items-center gap-2 px-3">
@@ -45,7 +66,10 @@ import { RECORD_TYPES } from '../lib/doh';
   </div>
 
   <!-- Results -->
-  <div id="scan-results" class="mt-8 hidden">
+  <p id="scan-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+    Sample report for <code>example.com</code>: strong email authentication, DNSSEC not yet enabled. Enter any domain above for a live audit.
+  </p>
+  <div id="scan-results" class="pd-results mt-2" aria-live="polite">
     <div class="flex flex-col items-center gap-8 md:flex-row md:items-start">
       <!-- Score gauge -->
       <div class="relative shrink-0 text-center">
@@ -54,7 +78,7 @@ import { RECORD_TYPES } from '../lib/doh';
           <circle
             id="gauge-arc"
             cx="60" cy="60" r="52" fill="none" stroke="url(#gauge-grad)" stroke-width="10"
-            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="32.7"
             transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1)"
           />
           <defs>
@@ -64,7 +88,7 @@ import { RECORD_TYPES } from '../lib/doh';
           </defs>
         </svg>
         <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span id="gauge-score" class="font-display text-5xl font-bold tabular-nums">0</span>
+          <span id="gauge-score" class="font-display text-5xl font-bold tabular-nums">90</span>
           <span class="text-xs uppercase tracking-widest text-ink-faint">Score</span>
         </div>
       </div>
@@ -72,17 +96,17 @@ import { RECORD_TYPES } from '../lib/doh';
       <!-- Domain + grade -->
       <div class="flex-1 text-center md:text-left">
         <p class="font-mono text-sm text-ink-faint">Security report for</p>
-        <p id="scan-domain-out" class="font-display text-2xl font-bold break-all"></p>
-        <p class="mt-2 text-sm leading-relaxed text-ink-dim" id="scan-verdict"></p>
+        <p id="scan-domain-out" class="font-display text-2xl font-bold break-all">example.com</p>
+        <p class="mt-2 text-sm leading-relaxed text-ink-dim" id="scan-verdict">Mail authentication is fully enforced and all records resolve consistently. The one gap: DNSSEC is not enabled, so the zone is not cryptographically signed.</p>
         <div class="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
-          <span id="scan-grade" class="rounded-md border border-line bg-panel px-3 py-1 font-mono text-xs"></span>
+          <span id="scan-grade" class="rounded-md border border-line bg-panel px-3 py-1 font-mono text-xs">Grade A- · 90/100</span>
           <span class="rounded-md border border-line bg-panel px-3 py-1 font-mono text-xs text-ink-dim">checked live via DNS-over-HTTPS</span>
         </div>
       </div>
     </div>
 
     <!-- Check cards -->
-    <div id="scan-cards" class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <div id="scan-cards" class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> Website DNS</span><span class="font-mono text-xs text-ink-dim">15/15</span></div><p class="mt-1 font-mono text-xs text-accent">A 93.184.216.34</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Resolves on all resolvers.</p></div><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> Nameservers</span><span class="font-mono text-xs text-ink-dim">5/5</span></div><p class="mt-1 font-mono text-xs text-accent">a.iana-servers.net + 1</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Authoritative and consistent.</p></div><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> MX</span><span class="font-mono text-xs text-ink-dim">10/10</span></div><p class="mt-1 font-mono text-xs text-accent">0 example.com</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Mail path declared.</p></div><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> SPF</span><span class="font-mono text-xs text-ink-dim">20/20</span></div><p class="mt-1 font-mono text-xs text-accent">v=spf1 -all</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Valid, 0 of 10 lookups used.</p></div><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> DMARC</span><span class="font-mono text-xs text-ink-dim">25/25</span></div><p class="mt-1 font-mono text-xs text-accent">p=reject, rua set</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Full enforcement with reporting.</p></div><div class="rounded-xl border border-pass/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-pass">✔</span> DKIM</span><span class="font-mono text-xs text-ink-dim">15/15</span></div><p class="mt-1 font-mono text-xs text-accent">2048-bit RSA key</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Selector published and strong.</p></div><div class="rounded-xl border border-warn/30 bg-panel/70 p-4"><div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold"><span class="text-warn">▲</span> DNSSEC</span><span class="font-mono text-xs text-ink-dim">0/10</span></div><p class="mt-1 font-mono text-xs text-accent">No DS record at parent</p><p class="mt-2 text-xs leading-relaxed text-ink-dim">Enable DNSSEC to sign the zone.</p></div></div>
 
     <div class="mt-6 flex flex-wrap items-center gap-4">
       <a id="scan-monitor-cta" href="/early-access/" class="btn-cta btn-shimmer hidden px-5 py-2.5 text-sm">Monitor this score</a>
@@ -94,6 +118,15 @@ import { RECORD_TYPES } from '../lib/doh';
 
 <script>
   import { scanDomain } from '../lib/scan';
+
+  document.addEventListener('click', (e) => {
+    const pill = (e.target as HTMLElement).closest('[data-preset-domain]') as HTMLElement | null;
+    if (!pill) return;
+    const input = document.getElementById('scan-domain') as HTMLInputElement;
+    const form = document.getElementById('scan-form') as HTMLFormElement;
+    input.value = pill.getAttribute('data-preset-domain') ?? '';
+    form.requestSubmit();
+  });
 
   const form = document.getElementById('scan-form') as HTMLFormElement;
   const input = document.getElementById('scan-domain') as HTMLInputElement;
@@ -126,6 +159,7 @@ import { RECORD_TYPES } from '../lib/doh';
     btn.disabled = true;
     btn.textContent = 'Scanning…';
     results.classList.add('hidden');
+    document.getElementById('scan-sample-note')?.classList.add('hidden');
     progress.classList.remove('hidden');
 
     const report = await scanDomain(domain, (i, label) => {

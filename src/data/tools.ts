@@ -34,6 +34,18 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ],
   },
   {
+    id: 'ai', cat: 'AI & Web Infrastructure', note: 'The layer AI systems read',
+    tools: [
+      { name: 'AI Crawler Checker', href: '/ai-crawler-checker/', desc: 'Audit your robots.txt against 12 AI crawlers, GPTBot to PerplexityBot, and see exactly who\u2019s allowed or blocked.' },
+      { name: 'robots.txt Checker', href: '/robots-txt-checker/', desc: 'Validate robots.txt line by line: syntax errors, unknown directives, and AI-bot verdicts.' },
+      { name: 'llms.txt Generator', href: '/llms-txt-generator/', desc: 'Build a valid llms.txt, the markdown map that tells language models what your site is.' },
+      { name: 'AI Readiness Checker', href: '/ai-readiness-checker/', desc: 'One score for machine-readability: DNS, DNSSEC, email auth, AI crawler access, and llms.txt.' },
+      { name: 'AI Log Analyzer', href: '/ai-log-analyzer/', desc: 'Upload access logs and see which AI bots visit, how often, and what they fetch. Parsed locally.' },
+      { name: 'Schema Validator', href: '/schema-validator/', desc: 'Fetch any page, extract its JSON-LD blocks, and validate the data machines depend on.' },
+      { name: 'agents.txt Checker', href: '/agents-txt-checker/', desc: 'Verify the emerging agents.txt rules file for AI agents on any domain.' },
+    ],
+  },
+  {
     id: 'email', cat: 'Email Authentication', note: 'SPF, DKIM, DMARC, blocklists, and deliverability',
     tools: [
       { name: 'SPF Record Checker', href: '/spf-record-checker/', desc: 'Validate your SPF term by term: syntax errors, the all qualifier, and exactly how many of your 10 DNS lookups you\u2019re spending.' },
@@ -67,18 +79,6 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
       { name: 'IPv6 Converter', href: '/ipv4-to-ipv6-converter/', desc: 'Convert any IPv4 address to its IPv6-mapped, full, and 6to4 forms, computed locally.' },
       { name: 'Punycode Converter', href: '/punycode-converter/', desc: 'Translate internationalized domains between Unicode and xn-- ASCII form, both directions.' },
       { name: 'DNS Leak Test', href: '/dns-leak-test/', desc: 'Detect which DNS resolvers actually handle your queries, and whether your VPN\u2019s resolver leaks.' },
-    ],
-  },
-  {
-    id: 'ai', cat: 'AI & Web Infrastructure', note: 'The layer AI systems read',
-    tools: [
-      { name: 'AI Crawler Checker', href: '/ai-crawler-checker/', desc: 'Audit your robots.txt against 12 AI crawlers, GPTBot to PerplexityBot, and see exactly who\u2019s allowed or blocked.' },
-      { name: 'robots.txt Checker', href: '/robots-txt-checker/', desc: 'Validate robots.txt line by line: syntax errors, unknown directives, and AI-bot verdicts.' },
-      { name: 'llms.txt Generator', href: '/llms-txt-generator/', desc: 'Build a valid llms.txt, the markdown map that tells language models what your site is.' },
-      { name: 'AI Readiness Checker', href: '/ai-readiness-checker/', desc: 'One score for machine-readability: DNS, DNSSEC, email auth, AI crawler access, and llms.txt.' },
-      { name: 'AI Log Analyzer', href: '/ai-log-analyzer/', desc: 'Upload access logs and see which AI bots visit, how often, and what they fetch. Parsed locally.' },
-      { name: 'Schema Validator', href: '/schema-validator/', desc: 'Fetch any page, extract its JSON-LD blocks, and validate the data machines depend on.' },
-      { name: 'agents.txt Checker', href: '/agents-txt-checker/', desc: 'Verify the emerging agents.txt rules file for AI agents on any domain.' },
     ],
   },
 ];

@@ -64,9 +64,19 @@ const faqSchema = {
 
       <div id="rt-ai" class="mt-4 hidden grid gap-2"></div>
 
-      <div id="rt-raw-wrap" class="mt-6 hidden">
+      <p id="rt-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Sample robots.txt for <code>example.com</code>. Enter any site above to read and validate the real file.
+      </p>
+      <div id="rt-raw-wrap" class="mt-2">
         <p class="mb-2 text-sm font-semibold text-ink">robots.txt content</p>
-        <pre id="rt-raw" class="max-h-96 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-ink-dim"></pre>
+        <pre id="rt-raw" class="max-h-96 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-ink-dim">User-agent: *
+Disallow: /private/
+Disallow: /tmp/
+
+User-agent: GPTBot
+Disallow: /
+
+Sitemap: https://example.com/sitemap.xml</pre>
       </div>
     </ToolPanel>
 
@@ -125,6 +135,7 @@ const faqSchema = {
       return;
     }
     const txt = res.text;
+    document.getElementById('rt-sample-note')?.classList.add('hidden');
     rawEl.textContent = txt.length > 100000 ? txt.slice(0, 100000) + '\n… (truncated for display)' : txt;
     rawWrap.classList.remove('hidden');
 

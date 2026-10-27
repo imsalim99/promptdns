@@ -81,7 +81,25 @@ const crumbSchema = toolEntry
     }
   : null;
 
-const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...schema];
+// Article schema for content pages (guides) that do not provide their own.
+// Organization author per the owner byline decision (standby, 2026-10-24).
+const hasArticle = schema.some((s) => s['@type'] === 'Article');
+const articleSchema = !toolEntry && !noindex && !hasArticle && path !== '/' && !path.startsWith('/app')
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: title,
+      description,
+      inLanguage: 'en',
+      author: { '@type': 'Organization', name: 'PromptDNS', url: SITE + '/' },
+      publisher: { '@type': 'Organization', name: 'PromptDNS', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/favicon.svg' } },
+      datePublished: '2026-10-28',
+      dateModified: '2026-10-28',
+      mainEntityOfPage: canonicalUrl,
+    }
+  : null;
+
+const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...(articleSchema ? [articleSchema] : []), ...schema];
 ---
 <!doctype html>
 <html lang="en">
@@ -94,6 +112,19 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:type" content={toolEntry ? 'website' : 'article'} />
+    <meta property="og:site_name" content="PromptDNS" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={SITE + '/og-default.png'} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PromptDNS: free DNS and email authentication tools" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={SITE + '/og-default.png'} />
     {allSchema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body class="flex min-h-screen flex-col">
