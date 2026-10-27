@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/dns-server-not-responding/');
+---
+<BaseLayout
+  title="DNS Server Not Responding: 7 Fixes That Work, in Order | PromptDNS"
+  description="DNS server not responding on Windows: fix it in order, from flushing the DNS cache and switching resolvers to router and driver checks. With verification steps."
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Server Not Responding"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Server Not Responding</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Server Not Responding: How to Fix It on Windows, Router and Browser</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">The "DNS server not responding" error means your device reached the network but got no answer from the DNS resolver it asked. The fix sequence is always the same: flush the local cache, switch to a known-good public resolver, rule out the router, then check firewall and driver settings. Most cases are solved by the first two steps, and you can verify every step with a live DNS lookup rather than guessing.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Fix table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>A</th><th>c</th><th>t</th><th>i</th><th>o</th><th>n</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">1. Flush the DNS cache</td><td class="text-sm text-ink-dim">Windows: ipconfig /flushdns in an elevated prompt. macOS: sudo dscacheutil -flushcache. Then retry the site.</td></tr><tr><td class="font-medium text-ink">2. Switch resolver</td><td class="text-sm text-ink-dim">Set your adapter DNS to Cloudflare 1.1.1.1 and 8.8.8.8 manually, overriding the router-provided resolver.</td></tr><tr><td class="font-medium text-ink">3. Restart and re-test the router</td><td class="text-sm text-ink-dim">Power-cycle the router, then test on another device on the same network to isolate device vs router.</td></tr><tr><td class="font-medium text-ink">4. Disable other adapters and VPNs</td><td class="text-sm text-ink-dim">VPN and virtual adapters can capture DNS traffic. Disable them and retest to rule out interference.</td></tr><tr><td class="font-medium text-ink">5. Check firewall and antivirus DNS filtering</td><td class="text-sm text-ink-dim">Some security suites intercept DNS. Pause the filter and retest.</td></tr><tr><td class="font-medium text-ink">6. Update the network driver</td><td class="text-sm text-ink-dim">An outdated Wi-Fi or Ethernet driver is a documented cause on Windows.</td></tr><tr><td class="font-medium text-ink">7. Verify the fix</td><td class="text-sm text-ink-dim">Confirm resolution works end to end with the DNS record lookup and check resolver agreement with the propagation checker.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>What the error actually means</h2>
+      <p class="mt-3">The message reports a transport-level failure: your device sent a DNS query and received no usable answer.</p>
+      <p class="mt-3">It is different from NXDOMAIN, where the DNS answered correctly and said the name does not exist. Here the conversation itself failed.</p>
+      <p class="mt-3">That distinction drives the fix order: cache and resolver changes come first because they are the most common and the cheapest to try.</p>
+      <h2>Verifying the fix</h2>
+      <p class="mt-3">After switching resolvers, do not trust the browser alone: query a record directly to confirm the new resolver answers.</p>
+      <p class="mt-3">Our propagation checker shows Cloudflare, Google, and AliDNS side by side, so you can see whether your new resolver agrees with the rest of the world.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The fastest isolation question is: does another device on the same network resolve? If yes, the problem is local to the machine and the flush-and-switch sequence almost always wins. If no, skip straight to the router, because no amount of Windows settings will fix a dead resolver upstream.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is "DNS server not responding" a problem with my ISP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Often yes: the resolver your router hands out may be down. Switching your device to a public resolver routes around it instantly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will flushing DNS lose my settings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Flushing only clears cached answers; network settings, passwords, and history are untouched.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does only one website show the error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Then the resolver answered but that domain failed: check the domain itself with a record lookup before changing any settings.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify with our free tools:
+        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
+        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
+        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

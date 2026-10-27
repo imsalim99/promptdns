@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/dns-probe-finished-nxdomain/');
+---
+<BaseLayout
+  title="DNS Probe Finished NxDomain: Meaning and 6 Fixes for Chrome | PromptDNS"
+  description="DNS probe finished nxdomain explained: what NXDOMAIN means, why Chrome shows it, and 6 fixes in order, from DNS cache flushes to resolver changes."
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Probe Finished NxDomain"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS Probe Finished NxDomain</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Probe Finished NxDomain: What It Means and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">"DNS probe finished nxdomain" is Chrome reporting that a DNS lookup returned NXDOMAIN: the resolver answered correctly but said the domain does not exist. The causes are a mistyped or expired domain, a stale negative cache entry on your device, or a filtering resolver blocking the name. The fixes follow that order: verify the domain is real, flush your caches, then change the resolver you are using.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Fix table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>A</th><th>c</th><th>t</th><th>i</th><th>o</th><th>n</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">1. Confirm the domain exists</td><td class="text-sm text-ink-dim">Look the domain up with a record lookup: if it has an A record, the problem is local; if every resolver says NXDOMAIN, the domain is gone or mistyped.</td></tr><tr><td class="font-medium text-ink">2. Flush the DNS cache</td><td class="text-sm text-ink-dim">Chrome has its own cache: chrome://net-internals/#dns then Clear host cache. Flush the OS cache too.</td></tr><tr><td class="font-medium text-ink">3. Clear the sockets</td><td class="text-sm text-ink-dim">chrome://net-internals/#sockets, Flush socket pools: stale connections keep serving the failed lookup.</td></tr><tr><td class="font-medium text-ink">4. Switch resolver</td><td class="text-sm text-ink-dim">Move from a filtering resolver (ISP, corporate, or a VPN) to a neutral public resolver and retest.</td></tr><tr><td class="font-medium text-ink">5. Check the hosts file</td><td class="text-sm text-ink-dim">A leftover entry in the hosts file forces NXDOMAIN for real domains. Remove stale lines.</td></tr><tr><td class="font-medium text-ink">6. Verify worldwide</td><td class="text-sm text-ink-dim">If our propagation checker shows NXDOMAIN everywhere, the domain itself has a problem, not your device.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>What NXDOMAIN means</h2>
+      <p class="mt-3">NXDOMAIN is a legitimate DNS answer code: the name you asked for does not exist in the eyes of the resolver that replied.</p>
+      <p class="mt-3">Chrome adds its own wording around it, which is why the error looks scarier than the underlying fact.</p>
+      <p class="mt-3">There are two flavors: the domain really is gone (expired, mistyped, or deleted), or your local environment is wrongly saying so because of caching or filtering.</p>
+      <h2>The negative-cache subtlety</h2>
+      <p class="mt-3">Resolvers cache negative answers too, for the TTL in the SOA record, so a domain that was just re-registered or fixed can still show NXDOMAIN locally.</p>
+      <p class="mt-3">That is why flushing the Chrome cache and the OS cache is step two, and why the propagation checker is the referee: it queries fresh, unfiltered resolvers.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The most common real-world case I see is a filtering resolver: office networks and VPNs answer NXDOMAIN for domains they block, and Chrome relays it verbatim. Before touching anything, open the propagation checker: if other resolvers answer fine, your resolver is filtering you, and no amount of cache flushing will change a policy.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is NXDOMAIN the same as the site being down?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. A site can be down with valid DNS. NXDOMAIN means the name itself did not resolve to anything.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does only Chrome show this error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The lookup failure affects every browser, but Chrome has its own DNS cache and error wording, so it is the place you notice it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a VPN cause NXDOMAIN?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: many VPN tunnels route DNS to a resolver that filters or fails for some domains. Disconnect and retest to confirm.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify with our free tools:
+        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
+        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
+        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

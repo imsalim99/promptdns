@@ -22,6 +22,11 @@ export const PUBLISH_QUEUE = {
   '/ai-crawler-verification/': '2026-11-21',
   '/block-ai-crawlers-cloudflare/': '2026-11-24',
   '/gptbot-vs-claudebot/': '2026-11-26',
+  '/dns-server-not-responding/': '2026-11-28',
+  '/dns-probe-finished-nxdomain/': '2026-12-01',
+  '/err-name-not-resolved/': '2026-12-03',
+  '/registrar-vs-dns-hosting/': '2026-12-05',
+  '/check-spf-dkim-dmarc-dig/': '2026-12-08',
 };
 
 /** True when the given path is held back from indexing on the given date. */

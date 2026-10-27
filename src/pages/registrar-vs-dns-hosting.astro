@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/registrar-vs-dns-hosting/');
+---
+<BaseLayout
+  title="Registrar vs DNS Hosting: Where Your Domain Actually Lives | PromptDNS"
+  description="Registrar vs DNS hosting explained: what each one controls, where records actually live, what changing nameservers does, and the gotcha that breaks sites."
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Registrar vs DNS Hosting"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Registrar vs DNS Hosting</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Registrar vs DNS Hosting: Who Controls What</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">A registrar is where you bought the domain and where delegation is set: it decides which nameservers the world asks. DNS hosting is where your records actually live: the service that answers the queries. They are often the same company, but they are two different jobs, and knowing which one holds the problem is half of every DNS troubleshooting session.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Fix table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>R</th><th>e</th><th>g</th><th>i</th><th>s</th><th>t</th><th>r</th><th>a</th><th>r</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">D</td></tr><tr><td class="font-medium text-ink">N</td></tr><tr><td class="font-medium text-ink">S</td></tr><tr><td class="font-medium text-ink"> </td></tr><tr><td class="font-medium text-ink">h</td></tr><tr><td class="font-medium text-ink">o</td></tr><tr><td class="font-medium text-ink">s</td></tr><tr><td class="font-medium text-ink">t</td></tr><tr><td class="font-medium text-ink">i</td></tr><tr><td class="font-medium text-ink">n</td></tr><tr><td class="font-medium text-ink">g</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>The delegation chain in one paragraph</h2>
+      <p class="mt-3">When a resolver looks up your domain, it asks the root servers, which point to the .com registry, which reads the delegation your registrar published, and only then queries your DNS host.</p>
+      <p class="mt-3">That chain is why a nameserver change at the registrar can take up to 48 hours: the parent zone caches the old answer for its TTL.</p>
+      <p class="mt-3">It is also why editing a record at your DNS host is fast: no delegation changes, just the record itself and its TTL.</p>
+      <h2>The gotcha that breaks sites</h2>
+      <p class="mt-3">The most expensive mistake is editing records at a registrar panel that is no longer authoritative, because the nameservers were moved to another provider during a migration.</p>
+      <p class="mt-3">Symptom: the panel shows your records, everything looks right, and nothing changes in the real world.</p>
+      <p class="mt-3">Check where delegation points first with a nameserver lookup, then edit only at the authoritative host.</p>
+      <h2>Split or combined, both are normal</h2>
+      <p class="mt-3"> registrar + separate DNS host (Cloudflare DNS on a GoDaddy domain) is common and healthy.</p>
+      <p class="mt-3">Combined works too, as long as you know which panel is authoritative: our provider playbooks show the menu path for each.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">Half of the 'I changed my DNS and nothing happened' tickets start here: the person edited the registrar's placeholder panel instead of the authoritative host. Make the delegation check a reflex: nameserver lookup first, record edit second. It turns a two-day mystery into a two-minute diagnosis.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need DNS hosting at my registrar?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Point delegation at any DNS host you like; many registrars also sell hosting, but it is optional.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I change nameservers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Delegation moves to the new host, so its records become the ones the world sees, with a propagation window up to 48 hours for NS.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I edit my records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">At the authoritative DNS host, the one your nameservers point to. Verify with a nameserver lookup before editing.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify with our free tools:
+        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
+        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
+        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

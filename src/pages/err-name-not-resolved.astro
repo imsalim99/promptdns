@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/err-name-not-resolved/');
+---
+<BaseLayout
+  title="err_name_not_resolved: Meaning and Fixes for Chrome and Android | PromptDNS"
+  description="err_name_not_resolved explained: the Chrome and Android DNS resolution failure, its causes and fixes, from DNS cache and private DNS to resolver changes."
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["err_name_not_resolved"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">err_name_not_resolved</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">err_name_not_resolved: What It Means and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">err_name_not_resolved is the Chromium error for a failed DNS lookup: the browser asked for the domain's address and got no valid answer. It is the same failure Windows calls "DNS server not responding" or NXDOMAIN, seen from the browser side. The fixes mirror those cases: flush caches, check Android private DNS, then change the resolver.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Fix table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>A</th><th>c</th><th>t</th><th>i</th><th>o</th><th>n</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">1. Confirm the domain resolves</td><td class="text-sm text-ink-dim">Look the domain up with a record lookup: if records exist everywhere, the problem is on your device or network.</td></tr><tr><td class="font-medium text-ink">2. Clear Chrome DNS cache and sockets</td><td class="text-sm text-ink-dim">chrome://net-internals/#dns and #sockets, then clear both and reload.</td></tr><tr><td class="font-medium text-ink">3. Check Android private DNS</td><td class="text-sm text-ink-dim">Android Private DNS (DNS over TLS) misconfigurations cause exactly this error. Set it to a working hostname or turn it off.</td></tr><tr><td class="font-medium text-ink">4. Switch resolver</td><td class="text-sm text-ink-dim">Set the device or router DNS to a known-good public resolver and retest on the same network.</td></tr><tr><td class="font-medium text-ink">5. Flush the OS cache</td><td class="text-sm text-ink-dim">Android: toggle airplane mode or reboot, which resets the DNS cache. Windows: ipconfig /flushdns.</td></tr><tr><td class="font-medium text-ink">6. Verify with fresh resolvers</td><td class="text-sm text-ink-dim">Use the propagation checker to confirm the domain resolves on independent resolvers before blaming your device.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>One error, three platforms</h2>
+      <p class="mt-3">Chromium reports failed lookups as err_name_not_resolved on Chrome desktop, Chrome on Android, and Edge alike.</p>
+      <p class="mt-3">The underlying causes match the platform equivalents: stale caches, a failing resolver, or a DNS-over-TLS misconfiguration on Android.</p>
+      <p class="mt-3">Android private DNS is the special case worth checking first on phones: a typo in the TLS hostname produces this error for every site.</p>
+      <h2>Ruling out the domain itself</h2>
+      <p class="mt-3">Before fixing your device, confirm the domain resolves globally with fresh resolvers.</p>
+      <p class="mt-3">If every independent resolver returns NXDOMAIN, the domain has expired or its records were removed, and no device setting will fix it.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">On Android phones this error is dominated by Private DNS misconfigurations: users set a hostname like one.one.one.one and then switch providers, leaving a TLS hostname that no longer resolves. Checking that single setting fixes most mobile cases in under a minute.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is err_name_not_resolved a Chrome bug?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It is Chromium accurately reporting that a DNS lookup failed. The fix is on the network or device side.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my phone show it but not my laptop?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different devices use different resolvers and caches. Android Private DNS or carrier filtering commonly diverges from your laptop.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a VPN fix it or cause it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Both: a VPN can route around a broken ISP resolver, or its own DNS can fail. Test with the tunnel off and on.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify with our free tools:
+        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
+        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
+        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

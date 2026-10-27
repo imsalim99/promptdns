@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/check-spf-dkim-dmarc-dig/');
+---
+<BaseLayout
+  title="Check SPF, DKIM and DMARC with dig: Exact Commands and How to Read Them | PromptDNS"
+  description="Check SPF, DKIM and DMARC from the command line with dig: exact commands for each record, how to read the output, and what fail and pass look like."
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Check SPF, DKIM and DMARC with dig"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Check SPF, DKIM and DMARC with dig</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Check SPF, DKIM and DMARC with dig: The Command-Line Trio</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">The three email authentication records are one dig command each: SPF at the root TXT, DKIM at selector._domainkey, and DMARC at _dmarc. Reading them is pattern matching: SPF must start v=spf1 and stay under 10 lookups, DKIM must carry a non-empty p= key, and DMARC must carry a p= policy. The commands below are the same checks our tools run, so the browser route and the terminal route always agree.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Fix table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>C</th><th>o</th><th>m</th><th>m</th><th>a</th><th>n</th><th>d</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">SPF</td><td class="text-sm text-ink-dim">dig example.com TXT +short</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">dig default._domainkey.example.com TXT +short</td></tr><tr><td class="font-medium text-ink">DMARC</td><td class="text-sm text-ink-dim">dig _dmarc.example.com TXT +short</td></tr><tr><td class="font-medium text-ink">All three live</td><td class="text-sm text-ink-dim">dig example.com TXT +short, then the two subdomain lookups above</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>Reading the SPF answer</h2>
+      <p class="mt-3">A healthy SPF starts with v=spf1 and ends with an all mechanism, usually ~all or -all.</p>
+      <p class="mt-3">Count the DNS-querying terms: every include, a, mx, exists, and redirect consumes one of the 10 allowed lookups (RFC 7208).</p>
+      <p class="mt-3">Two v=spf1 records on the same name is a permerror: receivers stop evaluating entirely.</p>
+      <h2>Reading the DKIM answer</h2>
+      <p class="mt-3">A healthy DKIM record has v=DKIM1, a k= field (rsa is standard), and a long p= value with the public key.</p>
+      <p class="mt-3">An empty p=, like v=DKIM1; p=, means the key was revoked or never published: mail signed with that selector will fail.</p>
+      <p class="mt-3">The selector matters: mail signed with s=20230601 must be checked at 20230601._domainkey, not at default._domainkey.</p>
+      <h2>Reading the DMARC answer</h2>
+      <p class="mt-3">A valid record starts v=DMARC1 and must carry a p= tag: none, quarantine, or reject.</p>
+      <p class="mt-3">A rua= address means aggregate reports arrive daily; enforcement without rua is flying blind.</p>
+      <p class="mt-3">No record at _dmarc is itself the finding: the domain has no DMARC policy at all.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The terminal route is the fastest way to sanity-check what our tools show you, and the fastest way to embarrass a vendor: ask them for the selector and the dmarc address, run three dig commands, and you know in ten seconds whether their setup exists. Just remember dig answers from one resolver: our checkers query three and show you the disagreement.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which selector does my DKIM use?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Read the DKIM-Signature header of a real message you sent: the s= value is the selector. Common defaults are default, google, selector1, and selector2.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does dig show my record but mail still fails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">dig proves publication, not alignment: DMARC also needs the From domain to align with the SPF or DKIM domain. Check alignment with the DMARC checker.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does +short hide anything important?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It trims DNS noise, not data. Drop +short when debugging to see TTLs and record types in full.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify with our free tools:
+        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
+        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
+        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
