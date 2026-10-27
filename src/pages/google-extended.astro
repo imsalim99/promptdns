@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SpecCard from '../components/SpecCard.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/google-extended/');
+---
+<BaseLayout
+  title="Google-Extended: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
+  description="Google-Extended explained: what Google's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Google-Extended"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Google-Extended</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Google-Extended: User-Agent, robots.txt Rules and How to Verify It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Google-Extended is a product control that tells Google not to use your site's content for training Gemini and Vertex AI models. It is not a separate crawler: Googlebot does the fetching, and the Google-Extended token governs whether those fetches may feed model training. Blocking it does not affect Google Search ranking or AI Overviews.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
+      <SpecCard
+        name="Google-Extended"
+        operator="Google"
+        token="a control token, not a separate crawler"
+        purpose="Gemini and Vertex training via Googlebot fetches"
+        robots="honors Disallow: Google-Extended"
+        verify="No separate user-agent: Googlebot does the fetching, the token controls training use"
+        evidence="Documented"
+        verified="2026-10-28"
+        href="/ai-crawlers-list/"
+      />
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>How to block Google-Extended</h2>
+      <p>Add this rule to your robots.txt at the root of your domain:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Google-Extended
+Disallow: /</pre>
+      <p>Blocking Google-Extended controls training use only. It does not remove your site from Google Search, AI Overviews, or Gemini grounding.</p>
+
+      <h2>How to allow Google-Extended</h2>
+      <p>If you want Google-Extended to crawl your site, make sure no rule disallows it. An explicit allow looks like this:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Google-Extended
+Allow: /</pre>
+      <p>Then confirm from the live fetch with the <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>, which reads your published robots.txt the way a crawler would.</p>
+
+      <h2>How to verify Google-Extended</h2>
+      <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Google-Extended token; a genuine fetch resolves inside Google's address space, and a spoofed one does not.</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+# A genuine Google-Extended fetch resolves to an Google address</pre>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">Google-Extended is the token people most often misunderstand. Blocking it does not hide you from AI Overviews, which is why teams sometimes block it, see no change in AI Overview presence, and conclude robots.txt is broken. It is working exactly as documented: the token controls training, not grounding or search.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking Google-Extended remove me from AI Overviews?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. AI Overviews and Search are unaffected. Google-Extended only controls whether your content trains Gemini and Vertex models.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will blocking Google-Extended hurt my Google rankings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Google documents that the token has no effect on Search ranking or indexing.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I verify Google-Extended visits?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You cannot via user-agent, because Googlebot fetches the pages. The token is a policy signal Google applies to those fetches, not a separate crawler you will see in logs.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/how-to-block-ai-crawlers/" class="text-accent hover:text-accent-soft">how to block AI crawlers</a>,
+        <a href="/how-to-allow-ai-crawlers/" class="text-accent hover:text-accent-soft">how to allow AI crawlers</a>,
+        <a href="/robots-txt-guide/" class="text-accent hover:text-accent-soft">robots.txt guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

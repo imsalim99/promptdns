@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SpecCard from '../components/SpecCard.astro';
+import { isHeld } from '../data/publish-queue.js';
+
+const held = isHeld('/bytespider/');
+---
+<BaseLayout
+  title="Bytespider: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
+  description="Bytespider explained: what ByteDance's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Bytespider"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Bytespider</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Bytespider: User-Agent, robots.txt Rules and How to Verify It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Bytespider is ByteDance's crawler, associated with data collection for TikTok's AI features. It is reported to sometimes ignore robots.txt, so a Disallow rule is advisory rather than reliable. Verification by reverse DNS is inconsistent, which is why strict sites block ByteDance at the firewall level instead.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
+      <SpecCard
+        name="Bytespider"
+        operator="ByteDance"
+        token="Bytespider"
+        purpose="data collection behind TikTok's AI stack"
+        robots="reported to sometimes ignore robots.txt"
+        verify="Reverse DNS is inconsistent; block at the WAF by IP range if strict"
+        evidence="Reported"
+        verified="2026-10-28"
+        href="/ai-crawlers-list/"
+      />
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>How to block Bytespider</h2>
+      <p>Add this rule to your robots.txt at the root of your domain:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Bytespider
+Disallow: /</pre>
+      <p>Because Bytespider reportedly ignores robots.txt at times, WAF-level blocking by autonomous-system number is the only enforcement that holds.</p>
+
+      <h2>How to allow Bytespider</h2>
+      <p>If you want Bytespider to crawl your site, make sure no rule disallows it. An explicit allow looks like this:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Bytespider
+Allow: /</pre>
+      <p>Then confirm from the live fetch with the <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>, which reads your published robots.txt the way a crawler would.</p>
+
+      <h2>How to verify Bytespider</h2>
+      <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Bytespider token; a genuine fetch resolves inside ByteDance's address space, and a spoofed one does not.</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+# A genuine Bytespider fetch resolves to an ByteDance address</pre>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">Bytespider is the reason every robots.txt conversation should end with a WAF question. When a crawler's own documentation is thin and community reports describe robots.txt being ignored, the only enforcement that holds is IP-range blocking at the edge, and Cloudflare's own AI scraper rules do this per autonomous system.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Bytespider honor robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Its behavior is reported to be inconsistent, so treat a Disallow rule as advisory. Verify from your logs rather than assuming.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I actually stop Bytespider?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Block its autonomous system at your WAF or edge provider. Cloudflare, which likely fronts your DNS, offers managed rules for AI scraper blocking by ASN.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I verify a Bytespider visitor?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reverse DNS on its IPs is inconsistent, which is exactly why user-agent verification alone is unreliable for this crawler.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/how-to-block-ai-crawlers/" class="text-accent hover:text-accent-soft">how to block AI crawlers</a>,
+        <a href="/how-to-allow-ai-crawlers/" class="text-accent hover:text-accent-soft">how to allow AI crawlers</a>,
+        <a href="/robots-txt-guide/" class="text-accent hover:text-accent-soft">robots.txt guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
