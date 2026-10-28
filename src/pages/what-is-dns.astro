@@ -1,13 +1,43 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
+
 const faq = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What does DNS stand for?', acceptedAnswer: { '@type': 'Answer', text: 'Domain Name System. It is the internet\u2019s directory that translates human-readable domain names into IP addresses computers use to connect.' } },
-    { '@type': 'Question', name: 'Is DNS the same as a website host?', acceptedAnswer: { '@type': 'Answer', text: 'No. DNS only translates names to addresses and routes mail; the hosting server is where your site actually lives. You can change either independently.' } },
-    { '@type': 'Question', name: 'Who runs DNS?', acceptedAnswer: { '@type': 'Answer', text: 'No single entity. Root servers, TLD registries, registrars, DNS hosting providers, and public resolvers like Cloudflare and Google each operate one layer.' } },
+    {
+      '@type': 'Question',
+      name: 'What does DNS stand for?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'DNS stands for Domain Name System, the hierarchical internet protocol defined in RFC 1034 and RFC 1035 that translates human-readable domain names (such as example.com) into numerical IPv4 and IPv6 addresses required for network routing.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is DNS the same as web hosting?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, DNS and web hosting are separate infrastructure services. DNS stores the zone records that direct traffic to an IP address, while a web host operates the origin server that stores and serves your website files.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Who manages and operates the Domain Name System?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No single entity owns DNS. ICANN and IANA coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does DNS use TCP or UDP port 53?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Standard DNS uses UDP port 53 for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to TCP port 53 when responses are truncated (TC=1) or during AXFR zone transfers.',
+      },
+    },
   ],
 };
 ---
@@ -15,134 +45,240 @@ const faq = {
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/dns/" class="hover:text-accent">DNS Guide</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">What Is DNS</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNS?</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNS? How the Domain Name System Translates Domain Names to IP Addresses</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      DNS, the <strong class="text-ink">Domain Name System</strong>, is the internet's address book.
-      People remember <code>promptdns.com</code>; computers connect to <code>104.21.x.x</code>. DNS is
-      the system that translates between the two, billions of times per day, for every website visit
-      and every email delivery.
-    </p>
+        The Domain Name System (DNS) is <strong class="text-ink">a hierarchical, decentralized internet naming protocol defined in RFC 1034 and RFC 1035 that translates human-readable domain names into numerical IPv4 and IPv6 addresses</strong>. DNS resolution routes web browsers and mail servers to target hosts by executing iterative and recursive queries across 4 server tiers, caching resource records by Time to Live (TTL), and securing lookups via DNSSEC and DNS-over-HTTPS (DoH).
+      </p>
     </div>
 
-    
+    <Diagram name="resolution" caption="The DNS resolution path from browser to website" />
 
-    
-
-    
-
-    
-
-    
-
-    
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-problem-dns-solves">The problem DNS solves</a></li>
-        <li><a href="#a-hierarchy-not-one-computer">A hierarchy, not one computer</a></li>
-        <li><a href="#more-than-websites">More than websites</a></li>
-        <li><a href="#check-it-yourself-right-now">Check it yourself, right now</a></li>
-        <li><a href="#key-facts">Key facts</a></li>
-        <li><a href="#next-steps">Next steps</a></li>
+        <li><a href="#what-are-the-4-dns-servers-involved-in-loading-a-webpage">What are the 4 DNS servers involved in loading a webpage?</a></li>
+        <li><a href="#how-does-a-dns-lookup-work-step-by-step">How does a DNS lookup work step by step?</a></li>
+        <li><a href="#what-is-the-difference-between-an-authoritative-dns-server-and-a-recursive-dns-resolver">Authoritative vs recursive DNS</a></li>
+        <li><a href="#what-are-the-core-dns-protocol-specifications-and-transport-ports">DNS protocol specifications</a></li>
+        <li><a href="#which-dns-record-types-control-web-traffic-email-and-domain-security">Core DNS record types</a></li>
+        <li><a href="#where-does-dns-caching-occur-and-how-does-ttl-control-it">DNS caching layers and TTL</a></li>
+        <li><a href="#what-is-the-difference-between-public-dns-private-dns-and-managed-dns">Public vs private DNS</a></li>
+        <li><a href="#what-are-the-main-dns-security-risks-and-protocol-defenses">DNS security risks and defenses</a></li>
+        <li><a href="#how-did-the-domain-name-system-evolve-from-arpanet-to-rfc-9460">DNS history timeline</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS protocol specification summary</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Protocol attribute</th><th>Technical specification</th><th>Standard / RFC</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Core function</td><td class="text-sm text-ink-dim">Hostname-to-IP resolution, mail routing, cryptographic domain verification</td><td class="text-sm text-ink-dim">RFC 1034 / RFC 1035</td></tr><tr><td class="font-medium text-ink">Default transport</td><td class="text-sm text-ink-dim">UDP port 53 for queries up to 512 bytes; up to 4096 bytes with EDNS0</td><td class="text-sm text-ink-dim">RFC 1035 / RFC 6891</td></tr><tr><td class="font-medium text-ink">Fallback transport</td><td class="text-sm text-ink-dim">TCP port 53 for truncated responses and zone transfers</td><td class="text-sm text-ink-dim">RFC 7766 / RFC 5936</td></tr><tr><td class="font-medium text-ink">Encrypted transports</td><td class="text-sm text-ink-dim">DoH port 443, DoT port 853, DoQ over QUIC</td><td class="text-sm text-ink-dim">RFC 8484 / RFC 7858 / RFC 9250</td></tr><tr><td class="font-medium text-ink">Name length limits</td><td class="text-sm text-ink-dim">63 characters per label, 253 characters total</td><td class="text-sm text-ink-dim">RFC 1035</td></tr><tr><td class="font-medium text-ink">Response codes</td><td class="text-sm text-ink-dim">NOERROR (0), FORMERR (1), SERVFAIL (2), NXDOMAIN (3), REFUSED (5)</td><td class="text-sm text-ink-dim">RFC 6895</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Core DNS record types and what each controls</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Type</th><th>Code</th><th>What it maps</th><th>Used for</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">A</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Hostname to IPv4 address</td><td class="text-sm text-ink-dim">Websites</td></tr><tr><td class="font-medium text-ink">AAAA</td><td class="text-sm text-ink-dim">28</td><td class="text-sm text-ink-dim">Hostname to IPv6 address</td><td class="text-sm text-ink-dim">Websites on IPv6</td></tr><tr><td class="font-medium text-ink">CNAME</td><td class="text-sm text-ink-dim">5</td><td class="text-sm text-ink-dim">Alias to another hostname</td><td class="text-sm text-ink-dim">Subdomain shortcuts</td></tr><tr><td class="font-medium text-ink">MX</td><td class="text-sm text-ink-dim">15</td><td class="text-sm text-ink-dim">Domain to mail server with priority</td><td class="text-sm text-ink-dim">Email routing</td></tr><tr><td class="font-medium text-ink">TXT</td><td class="text-sm text-ink-dim">16</td><td class="text-sm text-ink-dim">Free-form text</td><td class="text-sm text-ink-dim">SPF, DKIM, DMARC, site verification</td></tr><tr><td class="font-medium text-ink">NS</td><td class="text-sm text-ink-dim">2</td><td class="text-sm text-ink-dim">Domain to authoritative nameservers</td><td class="text-sm text-ink-dim">Delegation</td></tr><tr><td class="font-medium text-ink">SOA</td><td class="text-sm text-ink-dim">6</td><td class="text-sm text-ink-dim">Zone authority and timing values</td><td class="text-sm text-ink-dim">Zone management</td></tr><tr><td class="font-medium text-ink">PTR</td><td class="text-sm text-ink-dim">12</td><td class="text-sm text-ink-dim">IP address back to hostname</td><td class="text-sm text-ink-dim">Reverse DNS</td></tr><tr><td class="font-medium text-ink">CAA</td><td class="text-sm text-ink-dim">257</td><td class="text-sm text-ink-dim">Allowed certificate authorities</td><td class="text-sm text-ink-dim">TLS issuance control</td></tr><tr><td class="font-medium text-ink">DS / DNSKEY</td><td class="text-sm text-ink-dim">43 / 48</td><td class="text-sm text-ink-dim">Delegation and zone signing keys</td><td class="text-sm text-ink-dim">DNSSEC</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS history timeline</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Year</th><th>Milestone</th><th>Engineering change</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1971-1982</td><td class="text-sm text-ink-dim">HOSTS.TXT at SRI NIC</td><td class="text-sm text-ink-dim">One flat file mapped every host on the ARPANET</td></tr><tr><td class="font-medium text-ink">1983</td><td class="text-sm text-ink-dim">RFC 882 / RFC 883</td><td class="text-sm text-ink-dim">Paul Mockapetris designs the distributed Domain Name System</td></tr><tr><td class="font-medium text-ink">1987</td><td class="text-sm text-ink-dim">RFC 1034 / RFC 1035</td><td class="text-sm text-ink-dim">Modern DNS: record types, caching, hierarchy standardized</td></tr><tr><td class="font-medium text-ink">1998</td><td class="text-sm text-ink-dim">RFC 2308 + ICANN</td><td class="text-sm text-ink-dim">Negative caching defined; internet governance formalized</td></tr><tr><td class="font-medium text-ink">2005</td><td class="text-sm text-ink-dim">RFC 4033-4035</td><td class="text-sm text-ink-dim">DNSSEC adds cryptographic signing to the hierarchy</td></tr><tr><td class="font-medium text-ink">2014-2015</td><td class="text-sm text-ink-dim">RFC 7208 / RFC 7489</td><td class="text-sm text-ink-dim">SPF and DMARC standardize DNS-based email authentication</td></tr><tr><td class="font-medium text-ink">2018</td><td class="text-sm text-ink-dim">RFC 8484</td><td class="text-sm text-ink-dim">DNS-over-HTTPS encrypts queries inside browser-native traffic</td></tr><tr><td class="font-medium text-ink">2023</td><td class="text-sm text-ink-dim">RFC 9460</td><td class="text-sm text-ink-dim">SVCB and HTTPS records enable service binding</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <Diagram name="resolution" caption="The DNS resolution path from browser to website" />
-
     <div class="rich-text mt-8">
-      <h2 id="the-problem-dns-solves">The problem DNS solves</h2>
+      <h2 id="what-are-the-4-dns-servers-involved-in-loading-a-webpage">What Are the 4 DNS Servers Involved in Loading a Webpage?</h2>
       <p>
-        Every device on the internet is reachable by an IP address. IPv4 addresses look like
-        <code>192.0.2.1</code>; IPv6 addresses look like <code>2606:4700::1111</code>. Humans are
-        terrible at remembering numbers and great at remembering names, so in 1983, Paul Mockapetris
-        designed a global, distributed database that maps names to numbers. Forty-plus years later,
-        the same basic design runs the entire internet.
+        There are <strong class="text-ink">4 DNS server types</strong> involved in resolving an uncached domain name: <strong class="text-ink">the DNS recursive resolver, the root nameserver, the Top-Level Domain (TLD) nameserver, and the authoritative nameserver</strong>.
+      </p>
+      <p>
+        An uncached DNS lookup queries 4 server roles in sequential order:
+      </p>
+      <ol>
+        <li><strong>DNS Recursive Resolver (DNS Recursor):</strong> Operates as the initial contact point for client devices, accepting recursive queries from operating system stub resolvers and querying upstream servers. Public recursors include Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), and AliDNS (223.5.5.5).</li>
+        <li><strong>Root Nameserver (.):</strong> Sits at the apex of the DNS hierarchy and serves the DNS root zone. IANA coordinates 13 logical root server identities (a.root-servers.net through m.root-servers.net) distributed across hundreds of global Anycast server locations.</li>
+        <li><strong>Top-Level Domain (TLD) Nameserver:</strong> Manages the registry database for specific domain extensions, including generic TLDs (.com, .org, .net) and country-code TLDs (.uk, .de, .jp). The TLD nameserver returns the authoritative nameserver delegation records for the requested domain.</li>
+        <li><strong>Authoritative Nameserver:</strong> Holds the definitive DNS zone file configured by the domain owner with all resource records (such as A, AAAA, MX, and TXT). Authoritative nameservers operate as Primary (Master) servers or Secondary (Slave) servers synchronized through zone transfers (AXFR or IXFR).</li>
+      </ol>
+      <p>
+        Anycast routing distributes query volume across multiple geographic server instances sharing identical IP addresses, preventing single-point failures across the root, TLD, and authoritative server tiers.
       </p>
 
-      <h2 id="a-hierarchy-not-one-computer">A hierarchy, not one computer</h2>
-      <p>DNS is a tree with four levels involved in every lookup:</p>
-      <ul>
-        <li><strong>Root servers</strong>, 13 logical names (hundreds of machines worldwide) that know where TLD servers live.</li>
-        <li><strong>TLD servers</strong>, responsible for each top-level domain (<code>.com</code>, <code>.org</code>, <code>.dev</code>).</li>
-        <li><strong>Authoritative nameservers</strong>, your domain's actual DNS host, holding the zone with all its records.</li>
-        <li><strong>Recursive resolvers</strong>, the "librarians" (like Cloudflare 1.1.1.1 or Google 8.8.8.8) that walk the tree on your behalf and cache the answers.</li>
-      </ul>
-
-      <h2 id="more-than-websites">More than websites</h2>
+      <h2 id="how-does-a-dns-lookup-work-step-by-step">How Does a DNS Lookup Work Step by Step?</h2>
       <p>
-        DNS doesn't just point domains at servers. Records decide <strong>where your email goes</strong>
-        (MX), <strong>who may send as your domain</strong> (SPF, DKIM, DMARC), <strong>which certificate
-        authorities may issue your TLS certificates</strong> (CAA), and whether your zone's answers are
-        cryptographically signed (DNSSEC). When any of these break, the symptom is rarely "DNS error",
-        it's a site that won't load, or mail that lands in spam.
+        To resolve a domain name into an IP address, an uncached DNS lookup executes <strong class="text-ink">8 sequential query and response steps between the client browser and the authoritative nameserver</strong>.
+      </p>
+      <p>
+        A cold DNS lookup executes 8 sequential resolution steps:
+      </p>
+      <ol>
+        <li><strong>Transmit</strong> the hostname request from the web browser to the operating system stub resolver, which checks local memory before forwarding the query across the network.</li>
+        <li><strong>Query</strong> a DNS root nameserver (.) from the recursive resolver when the requested domain does not exist in local recursor memory.</li>
+        <li><strong>Return</strong> an authoritative referral from the root nameserver containing the IP addresses (glue records) of the Top-Level Domain (.com) nameservers.</li>
+        <li><strong>Send</strong> an iterative query from the recursive resolver to the assigned .com TLD nameserver.</li>
+        <li><strong>Respond</strong> from the .com TLD nameserver with the nameserver (NS) records assigned to the requested domain.</li>
+        <li><strong>Forward</strong> the query from the recursive resolver to the authoritative nameserver specified in the TLD referral.</li>
+        <li><strong>Retrieve</strong> the target address record (such as IPv4 93.184.216.34 or IPv6 2606:2800:220:1:248:1893:25c8:1946) from the authoritative zone file, along with its configured Time to Live (TTL) value.</li>
+        <li><strong>Deliver</strong> the resolved IP address from the recursive resolver to the client web browser and cache the record for the duration of the TTL.</li>
+      </ol>
+      <p>
+        When a hostname points to a canonical alias via a CNAME record, the recursive resolver restarts the resolution sequence for the canonical target domain before returning the final IP address. For an interactive step-by-step trace of resolution packets across global networks, review the <a href="/how-dns-works/">How DNS Works</a> guide or verify resolver consensus with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
       </p>
 
-      <h2 id="check-it-yourself-right-now">Check it yourself, right now</h2>
+      <h2 id="what-is-the-difference-between-an-authoritative-dns-server-and-a-recursive-dns-resolver">What Is the Difference Between an Authoritative DNS Server and a Recursive DNS Resolver?</h2>
       <p>
-        The fastest way to understand DNS is to watch it work. Run any domain through our
-        <a href="/dns-record-lookup/">DNS record lookup</a> to see exactly what the system returns,
-        or the <a href="/dns-propagation-checker/">propagation checker</a> to see how different
-        resolvers answer for the same name.
+        An authoritative DNS server differs from a recursive DNS resolver in <strong class="text-ink">3 primary architectural dimensions: pipeline position, data ownership, and query handling behavior</strong>.
+      </p>
+      <p>
+        Recursive resolvers stand at the beginning of the DNS pipeline between the client device and upstream nameservers. Recursive resolvers do not own zone files; recursive resolvers store temporary cached copies bounded by TTL and query other servers on behalf of clients. In contrast, authoritative nameservers sit at the end of the pipeline. Authoritative nameservers store the definitive zone files configured by domain administrators and answer queries exclusively for the specific domains delegated to them.
       </p>
 
-      <h2 id="key-facts">Key facts</h2>
+      <h3 id="what-are-the-3-types-of-dns-queries">What Are the 3 Types of DNS Queries?</h3>
+      <p>
+        There are <strong class="text-ink">3 types of DNS queries</strong> executed during resolution: <strong class="text-ink">recursive queries, iterative queries, and non-recursive queries</strong>.
+      </p>
       <ul>
-        <li>Created in 1983 (RFC 882/883), standardized as RFC 1034/1035 in 1987.</li>
-        <li>Runs on UDP/TCP port 53 classically; encrypted as DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) today.</li>
-        <li>Caching with TTLs is why changes "propagate" rather than appearing instantly.</li>
+        <li><strong>Recursive Query:</strong> The client stub resolver queries a recursive resolver with the Recursion Desired (RD=1) bit set in the DNS header. The recursive resolver must return either the requested resource record or an explicit error response (such as NXDOMAIN or SERVFAIL).</li>
+        <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. If the queried nameserver does not hold the exact record, the nameserver returns an authoritative referral pointing to nameservers lower in the DNS tree.</li>
+        <li><strong>Non-Recursive Query:</strong> The resolver answers the query immediately without contacting upstream servers, either because the requested record already resides in local cache or because the queried server holds authoritative data for the zone.</li>
       </ul>
 
-      <h2 id="next-steps">Next steps</h2>
-      <ul>
-        <li><a href="/how-dns-works/">How DNS works, the resolution walkthrough</a></li>
-        <li><a href="/dns-records/">Every DNS record type explained</a></li>
-        <li><a href="/dns-propagation/">DNS propagation, why changes take time</a></li>
-        <li><a href="/dns-error-messages/">DNS error messages decoded</a></li>
-        <li><a href="/dns-hijacking/">DNS hijacking: attacks and defenses</a></li>
-      </ul>
+      <h2 id="what-are-the-core-dns-protocol-specifications-and-transport-ports">What Are the Core DNS Protocol Specifications and Transport Ports?</h2>
+      <p>
+        The DNS protocol operates over <strong class="text-ink">UDP and TCP port 53 for standard unencrypted queries and ports 443 and 853 for encrypted transport protocols</strong>. The table below defines the core DNS protocol specifications by transport port, packet size limit, domain length constraint, and response code (RCODE) standard.
+      </p>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Protocol attribute</th><th>Technical specification</th><th>Standard / RFC</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Core function</td><td class="text-sm text-ink-dim">Hostname-to-IP resolution, mail routing, cryptographic domain verification</td><td class="text-sm text-ink-dim">RFC 1034 / RFC 1035</td></tr>
+              <tr><td class="font-medium text-ink">Default transport</td><td class="text-sm text-ink-dim">UDP port 53 for queries up to 512 bytes; up to 4096 bytes with EDNS0</td><td class="text-sm text-ink-dim">RFC 1035 / RFC 6891</td></tr>
+              <tr><td class="font-medium text-ink">Fallback transport</td><td class="text-sm text-ink-dim">TCP port 53 for truncated responses and zone transfers</td><td class="text-sm text-ink-dim">RFC 7766 / RFC 5936</td></tr>
+              <tr><td class="font-medium text-ink">Encrypted transports</td><td class="text-sm text-ink-dim">DoH port 443, DoT port 853, DoQ over QUIC</td><td class="text-sm text-ink-dim">RFC 8484 / RFC 7858 / RFC 9250</td></tr>
+              <tr><td class="font-medium text-ink">Name length limits</td><td class="text-sm text-ink-dim">63 characters per label, 253 characters total</td><td class="text-sm text-ink-dim">RFC 1035</td></tr>
+              <tr><td class="font-medium text-ink">Response codes</td><td class="text-sm text-ink-dim">NOERROR (0), FORMERR (1), SERVFAIL (2), NXDOMAIN (3), REFUSED (5)</td><td class="text-sm text-ink-dim">RFC 6895</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p>
+        Standard DNS relies on connectionless UDP port 53 for low-latency single-packet queries up to 512 bytes, which EDNS0 (RFC 6891) extends up to 4,096 bytes to support DNSSEC signatures. When a DNS response exceeds the negotiated UDP buffer size, the server sets the Truncated (TC=1) bit in the header, prompting the resolver to re-issue the query over TCP port 53 (RFC 7766). Full zone transfers between authoritative servers (AXFR under RFC 5936) operate exclusively over TCP port 53 to guarantee reliable transmission. Modern network environments increasingly deploy encrypted transports to prevent eavesdropping, detailed in the <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a> technical comparison.
+      </p>
 
+      <h2 id="which-dns-record-types-control-web-traffic-email-and-domain-security">Which DNS Record Types Control Web Traffic, Email, and Domain Security?</h2>
+      <p>
+        A DNS zone file contains <strong class="text-ink">resource records (RRs) identified by numeric IANA type codes that direct web traffic, route SMTP email, and publish cryptographic keys</strong>. The table below lists the 10 primary DNS record types with their decimal type codes, RFC specifications, functions, and live lookup tools.
+      </p>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Type</th><th>Code</th><th>What it maps</th><th>Used for</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">A</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Hostname to IPv4 address</td><td class="text-sm text-ink-dim">Websites</td></tr>
+              <tr><td class="font-medium text-ink">AAAA</td><td class="text-sm text-ink-dim">28</td><td class="text-sm text-ink-dim">Hostname to IPv6 address</td><td class="text-sm text-ink-dim">Websites on IPv6</td></tr>
+              <tr><td class="font-medium text-ink">CNAME</td><td class="text-sm text-ink-dim">5</td><td class="text-sm text-ink-dim">Alias to another hostname</td><td class="text-sm text-ink-dim">Subdomain shortcuts</td></tr>
+              <tr><td class="font-medium text-ink">MX</td><td class="text-sm text-ink-dim">15</td><td class="text-sm text-ink-dim">Domain to mail server with priority</td><td class="text-sm text-ink-dim">Email routing</td></tr>
+              <tr><td class="font-medium text-ink">TXT</td><td class="text-sm text-ink-dim">16</td><td class="text-sm text-ink-dim">Free-form text</td><td class="text-sm text-ink-dim">SPF, DKIM, DMARC, site verification</td></tr>
+              <tr><td class="font-medium text-ink">NS</td><td class="text-sm text-ink-dim">2</td><td class="text-sm text-ink-dim">Domain to authoritative nameservers</td><td class="text-sm text-ink-dim">Delegation</td></tr>
+              <tr><td class="font-medium text-ink">SOA</td><td class="text-sm text-ink-dim">6</td><td class="text-sm text-ink-dim">Zone authority and timing values</td><td class="text-sm text-ink-dim">Zone management</td></tr>
+              <tr><td class="font-medium text-ink">PTR</td><td class="text-sm text-ink-dim">12</td><td class="text-sm text-ink-dim">IP address back to hostname</td><td class="text-sm text-ink-dim">Reverse DNS</td></tr>
+              <tr><td class="font-medium text-ink">CAA</td><td class="text-sm text-ink-dim">257</td><td class="text-sm text-ink-dim">Allowed certificate authorities</td><td class="text-sm text-ink-dim">TLS issuance control</td></tr>
+              <tr><td class="font-medium text-ink">DS / DNSKEY</td><td class="text-sm text-ink-dim">43 / 48</td><td class="text-sm text-ink-dim">Delegation and zone signing keys</td><td class="text-sm text-ink-dim">DNSSEC</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p>
+        Every valid DNS zone file begins with 2 mandatory administrative records: an SOA (Start of Authority, Type 6) record declaring zone serial numbers and refresh timers, and at least 2 NS (Nameserver, Type 2) records establishing zone delegation. Specialized records configure auxiliary services, including MX records with numeric priorities for mail routing, TXT records for email authentication frameworks, and CAA records for TLS issuance authorization. Domain administrators can inspect the complete catalog of records and syntax rules in the <a href="/dns-records/">DNS Record Types</a> documentation or test live zone configuration using the <a href="/a-record/">A Record</a>, <a href="/mx-record/">MX Record</a>, and <a href="/txt-record/">TXT Record</a> guides.
+      </p>
+
+      <h2 id="where-does-dns-caching-occur-and-how-does-ttl-control-it">Where Does DNS Caching Occur and How Does TTL Control It?</h2>
+      <p>
+        DNS caching occurs across <strong class="text-ink">3 primary resolution layers: the web browser cache, the operating system stub resolver cache, and the recursive resolver cache</strong>, for a duration governed by the record's Time to Live (TTL) in seconds.
+      </p>
+      <p>
+        Web browsers check local memory first to minimize network round trips. In Chromium browsers, administrators can view cached hostnames, IP mappings, and expiration times at <code>chrome://net-internals/#dns</code>. When a browser cache misses or a non-browser application issues a lookup, the request reaches the OS stub resolver. The stub resolver consults the local hosts file and system DNS cache before sending packets onto the network. Administrators can clear cached local records by following the <a href="/flush-dns-cache/">How to Flush DNS Cache</a> reference.
+      </p>
+      <p>
+        Public and ISP recursive resolvers cache answers for the full TTL duration declared by authoritative servers. When a recursive resolver holds cached NS delegation records for a TLD (.com) or domain (example.com), the recursor bypasses root and TLD nameservers completely on subsequent lookups, querying the authoritative nameserver directly.
+      </p>
+      <p>
+        Positive DNS responses remain in cache according to the record's TTL (commonly 300 to 86,400 seconds). Non-existent domain responses (NXDOMAIN, RCODE 3) undergo negative caching under RFC 2308, where resolvers cache the negative result for the duration declared in the authoritative SOA record's MINIMUM field. Domain owners adjusting cache lifetimes can consult the <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a> guide and verify global caching convergence across resolvers with the <a href="/dns-propagation/">DNS Propagation</a> reference.
+      </p>
+
+      <h2 id="what-is-the-difference-between-public-dns-private-dns-and-managed-dns">What Is the Difference Between Public DNS, Private DNS, and Managed DNS?</h2>
+      <p>
+        Public DNS resolves <strong class="text-ink">publicly routable internet domains through open recursive resolvers</strong>, whereas private DNS resolves <strong class="text-ink">internal corporate hostnames within restricted local networks or virtual private clouds (VPCs)</strong>.
+      </p>
+      <p>
+        Public DNS resolvers, including Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), and Quad9 (9.9.9.9), serve open recursive resolution to any internet device. Encrypted transport over public resolvers (such as DNS-over-HTTPS) encrypts queries in transit, but does not convert a public domain into a private zone.
+      </p>
+      <p>
+        Private DNS networks manage internal naming spaces within private subnets (RFC 1918 addresses such as 10.0.0.0/8 and 192.168.0.0/16) or internal namespaces (.internal). External internet resolvers cannot query or resolve private DNS records.
+      </p>
+      <p>
+        Split-Horizon DNS serves different DNS answers for the identical domain name based on the source IP address of the querying client. Internal office devices receive private intranet IP addresses, while external internet users receive public gateway IP addresses. Dynamic DNS (DDNS, RFC 2136) automatically updates address records when an Internet Service Provider (ISP) rotates a dynamic WAN IP address, maintaining connectivity for self-hosted infrastructure.
+      </p>
+
+      <h2 id="what-are-the-main-dns-security-risks-and-protocol-defenses">What Are the Main DNS Security Risks and Protocol Defenses?</h2>
+      <p>
+        There are <strong class="text-ink">4 primary DNS attack vectors: DNS cache poisoning, DNS amplification DDoS, DNS tunneling, and subdomain takeover</strong>, because the original 1987 DNS specification (RFC 1035) transmitted queries in unauthenticated plaintext.
+      </p>
+      <p>
+        DNS vulnerabilities threaten domain availability and traffic integrity through 4 distinct attack mechanics:
+      </p>
+      <ul>
+        <li><strong>DNS cache poisoning (DNS spoofing):</strong> Injects forged IP addresses into recursive resolver caches, redirecting legitimate users to malicious servers.</li>
+        <li><strong>DNS amplification DDoS:</strong> Exploits open recursive resolvers using spoofed UDP requests to reflect high-volume traffic toward a target victim.</li>
+        <li><strong>DNS tunneling:</strong> Encodes non-DNS payload data inside TXT or subdomain queries, bypassing firewalls and exfiltrating data through port 53.</li>
+        <li><strong>Subdomain takeover:</strong> Occurs when a domain maintains a dangling CNAME record pointing to a decommissioned third-party cloud service that an attacker re-registers.</li>
+      </ul>
+      <p>
+        Protocol defenses mitigate these vulnerabilities across 4 core architectural layers:
+      </p>
+      <ol>
+        <li><strong>DNSSEC (RFC 4033, RFC 4034, RFC 4035):</strong> Creates an unbroken cryptographic chain of trust using RRSIG, DNSKEY, and DS records, guaranteeing data integrity. Review implementation requirements in the <a href="/what-is-dnssec/">What Is DNSSEC</a> guide.</li>
+        <li><strong>Encrypted Transport Protocols (DoH and DoT):</strong> Protect client-to-resolver traffic from local network interception and ISP eavesdropping.</li>
+        <li><strong>Email Authentication Protocols (SPF, DKIM, and DMARC):</strong> Publish sender validation policies in DNS TXT records to prevent domain spoofing, explained in the <a href="/email-authentication/">Email Authentication</a> reference.</li>
+        <li><strong>Registrar Locks, Multi-Factor Authentication, and Continuous Monitoring:</strong> Prevent unauthorized nameserver changes, detailed in the <a href="/dns-security/">DNS Security</a> and <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> guides.</li>
+      </ol>
+
+      <h2 id="how-did-the-domain-name-system-evolve-from-arpanet-to-rfc-9460">How Did the Domain Name System Evolve From ARPANET to RFC 9460?</h2>
+      <p>
+        Computer scientist <strong class="text-ink">Paul Mockapetris invented the Domain Name System in November 1983 at the University of Southern California (USC) Information Sciences Institute</strong> to replace ARPANET's centralized HOSTS.TXT file. The table below traces the chronological evolution of DNS from 1971 to modern encrypted and service-binding standards.
+      </p>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Year</th><th>Milestone</th><th>Engineering change</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">1971-1982</td><td class="text-sm text-ink-dim">HOSTS.TXT at SRI NIC</td><td class="text-sm text-ink-dim">One flat file mapped every host on the ARPANET</td></tr>
+              <tr><td class="font-medium text-ink">1983</td><td class="text-sm text-ink-dim">RFC 882 / RFC 883</td><td class="text-sm text-ink-dim">Paul Mockapetris designs the distributed Domain Name System</td></tr>
+              <tr><td class="font-medium text-ink">1987</td><td class="text-sm text-ink-dim">RFC 1034 / RFC 1035</td><td class="text-sm text-ink-dim">Modern DNS: record types, caching, hierarchy standardized</td></tr>
+              <tr><td class="font-medium text-ink">1998</td><td class="text-sm text-ink-dim">RFC 2308 + ICANN</td><td class="text-sm text-ink-dim">Negative caching defined; internet governance formalized</td></tr>
+              <tr><td class="font-medium text-ink">2005</td><td class="text-sm text-ink-dim">RFC 4033-4035</td><td class="text-sm text-ink-dim">DNSSEC adds cryptographic signing to the hierarchy</td></tr>
+              <tr><td class="font-medium text-ink">2014-2015</td><td class="text-sm text-ink-dim">RFC 7208 / RFC 7489</td><td class="text-sm text-ink-dim">SPF and DMARC standardize DNS-based email authentication</td></tr>
+              <tr><td class="font-medium text-ink">2018</td><td class="text-sm text-ink-dim">RFC 8484</td><td class="text-sm text-ink-dim">DNS-over-HTTPS encrypts queries inside browser-native traffic</td></tr>
+              <tr><td class="font-medium text-ink">2023</td><td class="text-sm text-ink-dim">RFC 9460</td><td class="text-sm text-ink-dim">SVCB and HTTPS records enable service binding</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p>
+        Between 1971 and 1982, SRI International maintained a single flat text file named HOSTS.TXT that every ARPANET computer downloaded via FTP. As network membership grew exponentially, centralized file distribution generated unsustainable bandwidth bottlenecks and name collision errors. Paul Mockapetris resolved these scaling limits in 1983 by introducing RFC 882 and RFC 883, which standardized a distributed, tree-structured namespace managed by local zone authorities. In November 1987, RFC 1034 and RFC 1035 established the modern Domain Name System architecture, separating authoritative nameserver roles from recursive resolver caching. In 1998, global domain namespace coordination transferred from Jon Postel at IANA to the Internet Corporation for Assigned Names and Numbers (ICANN). Today, the Domain Name System translates domain names to IP addresses for billions of connected devices, maintaining internet reliability through recursive resolver caching, authoritative nameserver delegation, and cryptographic DNS records.
+      </p>
     </div>
-  
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DNS stand for?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Domain Name System. It is the internet’s directory that translates human-readable domain names into IP addresses computers use to connect.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Is DNS the same as a website host?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DNS only translates names to addresses and routes mail; the hosting server is where your site actually lives. You can change either independently.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Who runs DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No single entity. Root servers, TLD registries, registrars, DNS hosting providers, and public resolvers like Cloudflare and Google each operate one layer.</p></details>
-      </div></div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does DNS stand for?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS stands for <strong>Domain Name System</strong>, the hierarchical internet protocol defined in RFC 1034 and RFC 1035 that translates human-readable domain names (such as example.com) into numerical IPv4 and IPv6 addresses required for network routing.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNS the same as web hosting?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, DNS and web hosting are <strong>separate infrastructure services</strong>. DNS stores the zone records that direct traffic to an IP address, while a web host operates the origin server that stores and serves your website files.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who manages and operates the Domain Name System?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No single entity owns DNS. <strong>ICANN and IANA</strong> coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNS use TCP or UDP port 53?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Standard DNS uses <strong>UDP port 53</strong> for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to <strong>TCP port 53</strong> when responses are truncated (TC=1) or during AXFR zone transfers.</p>
+      </details>
+    </div>
+  </div>
 </BaseLayout>
