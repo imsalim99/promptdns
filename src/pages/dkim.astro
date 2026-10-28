@@ -1,117 +1,255 @@
 ---
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Does DKIM encrypt email?", "acceptedAnswer": { '@type': 'Answer', "text": "No. DKIM signs the message so receivers can verify it was not altered. Encryption of the transport is a separate TLS mechanism." } },
-    {'@type': 'Question', 'name': "What happens if my DKIM key is revoked?", "acceptedAnswer": { '@type': 'Answer', "text": "Mail signed with that selector fails verification. That is why rotation publishes the new selector first and retires the old one only after signing moves." } },
-    {'@type': 'Question', 'name': "Can I have multiple DKIM records?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, under different selectors. Each selector is its own DNS name, and mail carries the selector it was signed with." } }
-  ],
-};
-
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How many DKIM records can a domain have?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A domain can publish an unlimited number of DKIM records because each service or key pair lives under its own unique selector subdomain (<selector>._domainkey.example.com), avoiding any single-record or 10-lookup limit.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: "How do I find my domain's DKIM selector?",
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Send a test email from your mail service, view the raw message source ("Show Original" in Gmail), and locate the s= tag inside the DKIM-Signature header, or paste the headers into the Email Header Analyzer.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Should I use a 1024-bit or 2048-bit DKIM key?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains, as recommended by RFC 8301. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why does Cloudflare break my DKIM CNAME record if proxied?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Enabling Cloudflare\'s HTTP proxy (Orange Cloud) on a _domainkey CNAME record rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to DNS Only (Grey Cloud).',
+      },
+    },
+  ],
+};
 ---
-<BaseLayout schema={[faqSchema]} title="DKIM Explained: DomainKeys Identified Mail" description="DKIM explained: how cryptographic signatures prove your email wasn't forged, how selectors and keys work, and how to set DKIM up."  
- breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DKIM"]]}>
+<BaseLayout
+  title="DKIM Explained: How Cryptographic Email Signing, Selectors, and Public Keys Work"
+  description="DKIM explained: RFC 6376 cryptographic email signing, DKIM-Signature headers, DNS selector lookup, 1024 vs 2048-bit RSA keys, and DMARC alignment."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DKIM"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DKIM</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Explained</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Explained: How Cryptographic Email Signing, Selectors, and Public Keys Work</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      SPF lists <em>who may send</em>. DKIM proves <em>the mail itself is intact</em>: every message
-      is cryptographically signed with a private key, and receivers verify the signature against the
-      public key you publish in DNS.
-    </p>
+        DomainKeys Identified Mail (DKIM) is <strong class="text-ink">an asymmetric cryptographic email authentication protocol defined in RFC 6376 that attaches a digital signature header to outbound messages so receiving servers can verify domain origin and message integrity</strong>. Sending mail servers sign selected headers and the body hash with a private key (<code>DKIM-Signature</code>), while receiving servers retrieve the matching public key from a DNS TXT record at <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code> to validate the signature and satisfy DMARC alignment.
+      </p>
     </div>
 
-    
+    <Diagram name="dkim-signing" caption="How DKIM signing and verification work" />
 
-    
-
-    
-
-    
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#how-it-works-end-to-end">How it works, end to end</a></li>
-        <li><a href="#selectors-one-domain-many-keys">Selectors: one domain, many keys</a></li>
-        <li><a href="#key-strength-matters">Key strength matters</a></li>
-        <li><a href="#dkim-the-rest">DKIM + the rest</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#how-does-dkim-signing-and-verification-work-step-by-step">How DKIM signing and verification work step by step</a></li>
+        <li><a href="#what-is-the-difference-between-a-dkim-signature-header-and-a-dkim-dns-record">DKIM-Signature header vs DKIM DNS record</a></li>
+        <li><a href="#what-is-a-dkim-selector-s-and-why-do-domains-use-multiple-selectors">DKIM selectors and multiple keys</a></li>
+        <li><a href="#which-dkim-key-length-should-you-use-1024-bit-vs-2048-bit-rsa-vs-ed25519">DKIM key length: 1024-bit vs 2048-bit RSA vs Ed25519</a></li>
+        <li><a href="#what-is-dkim-canonicalization-c-relaxed-relaxed-vs-simple-simple">DKIM canonicalization (relaxed vs simple)</a></li>
+        <li><a href="#why-does-dkim-survive-email-forwarding-and-how-does-it-power-dmarc-alignment">Why DKIM survives email forwarding</a></li>
+        <li><a href="#how-do-you-set-up-and-verify-dkim-for-your-domain-4-steps">Set up and verify DKIM (4 steps)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM email header tags vs DNS record tags</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Location</th><th>Tag</th><th>Meaning</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">v=1</td><td class="text-sm text-ink-dim">DKIM signature version</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">a=rsa-sha256</td><td class="text-sm text-ink-dim">Signing algorithm</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">d=example.com</td><td class="text-sm text-ink-dim">Signing domain (the d= tag)</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">s=selector1</td><td class="text-sm text-ink-dim">Selector used for the DNS lookup</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">bh=</td><td class="text-sm text-ink-dim">Body hash</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">b=</td><td class="text-sm text-ink-dim">Signature data</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">v=DKIM1</td><td class="text-sm text-ink-dim">Record version</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">k=rsa</td><td class="text-sm text-ink-dim">Key type</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">p=</td><td class="text-sm text-ink-dim">Public key material (empty p= means revoked)</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">t=y</td><td class="text-sm text-ink-dim">Testing mode flag</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM key strength comparison</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">512-bit RSA</td><td class="text-sm text-ink-dim">Insecure</td><td class="text-sm text-ink-dim">Rejected by major receivers</td></tr><tr><td class="font-medium text-ink">1024-bit RSA</td><td class="text-sm text-ink-dim">Legacy minimum</td><td class="text-sm text-ink-dim">Increasingly weak; migrate</td></tr><tr><td class="font-medium text-ink">2048-bit RSA</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">May need two TXT strings for the key material</td></tr><tr><td class="font-medium text-ink">Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Modern alternative</td><td class="text-sm text-ink-dim">Shorter keys, faster signing; receiver support still maturing</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <Diagram name="dkim-signing" caption="How DKIM signing and verification work" />
-
     <div class="rich-text mt-8">
-      <h2 id="how-it-works-end-to-end">How it works, end to end</h2>
-      <ul>
-        <li>Your sending server generates a key pair. The <strong>private key</strong> stays on the server; the <strong>public key</strong> goes into DNS at <code>selector._domainkey.yourdomain.com</code>.</li>
-        <li>Each outgoing message gets a <code>DKIM-Signature</code> header covering the important headers and body, tagged with the selector used.</li>
-        <li>The receiver's mail server fetches that public key from DNS and verifies the signature. Valid = the mail genuinely came from your domain and wasn't modified in transit.</li>
-      </ul>
-
-      <h2 id="selectors-one-domain-many-keys">Selectors: one domain, many keys</h2>
+      <h2 id="how-does-dkim-signing-and-verification-work-step-by-step">How Does DKIM Signing and Verification Work Step by Step?</h2>
       <p>
-        The selector is the label in the DNS name (<code>google._domainkey…</code>,
-        <code>k1._domainkey…</code>, <code>s1._domainkey…</code>). It lets every service you send
-        through publish its own key without collisions, which is also why you must tell any checker
-        <em>which</em> selector to look up. Use the <a href="/dkim-record-checker/">DKIM checker</a>
-        with the selector your provider documents.
+        DKIM authentication operates across <strong class="text-ink">7 sequential cryptographic steps split between the outbound sending mail server (Steps 1 to 3) and the inbound receiving mail server (Steps 4 to 7)</strong>.
+      </p>
+      <p>
+        Mail transfer agents sign and verify messages through 7 sequential technical operations:
+      </p>
+      <ol>
+        <li><strong>Canonicalize</strong> the outbound email body and selected headers (From, To, Subject, Date, Message-ID) on the sending Mail Transfer Agent (MTA) using the normalization rule specified in <code>c=</code> (such as <code>relaxed/relaxed</code>).</li>
+        <li><strong>Compute</strong> a SHA-256 cryptographic hash of the normalized message body (<code>bh=</code>) and sign the selected headers plus the <code>DKIM-Signature</code> header fields using the domain's private RSA or Ed25519 key to generate the digital signature (<code>b=</code>).</li>
+        <li><strong>Prepend</strong> the completed <code>DKIM-Signature</code> header (for example, <code>v=1; a=rsa-sha256; d=example.com; s=selector1; bh=...; b=...</code>) to the message and transmit the email over SMTP.</li>
+        <li><strong>Extract</strong> the signing domain (<code>d=example.com</code>) and the selector (<code>s=selector1</code>) from the incoming <code>DKIM-Signature</code> header at the receiving mail server.</li>
+        <li><strong>Query</strong> the authoritative DNS servers for the TXT resource record located at <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code> (for example, <code>selector1._domainkey.example.com</code>) to retrieve the sender's public key (<code>p=</code>).</li>
+        <li><strong>Decrypt</strong> the header signature (<code>b=</code>) using the public key and recalculate the SHA-256 hashes of the received headers and message body locally.</li>
+        <li><strong>Record</strong> <code>dkim=pass</code> in the <code>Authentication-Results</code> header if both the decrypted header hash and the recalculated body hash (<code>bh=</code>) match byte-for-byte, or return <code>dkim=fail</code> if any signed header or body text was altered in transit.</li>
+      </ol>
+      <p>
+        The asymmetric cryptographic architecture of DKIM establishes message integrity and authenticity without relying on centralized certificate authorities. Administrators can inspect signature execution in <a href="/how-dkim-works/">How DKIM Works</a>, test public keys with the <a href="/dkim-record-checker/">DKIM Record Checker</a>, or dissect raw authentication chains in the <a href="/email-header-analyzer/">Email Header Analyzer</a>.
       </p>
 
-      <h2 id="key-strength-matters">Key strength matters</h2>
+      <h2 id="what-is-the-difference-between-a-dkim-signature-header-and-a-dkim-dns-record">What Is the Difference Between a DKIM-Signature Header and a DKIM DNS Record?</h2>
       <p>
-        1024-bit RSA keys are considered weak today; some receivers refuse them outright. 2048-bit is
-        the standard recommendation (ed25519 is the modern alternative). Rotating keys is normal,
-        publish the new selector before retiring the old one so in-flight mail still verifies.
+        DKIM splits its tag-value syntax across <strong class="text-ink">2 separate locations: the DKIM-Signature header attached to every email (v=1) and the public key TXT record published once in DNS (v=DKIM1)</strong>. The table below compares the core tags found in the email header against the tags published in the DNS zone.
       </p>
 
-      <h2 id="dkim-the-rest">DKIM + the rest</h2>
-      <p>
-        DKIM passes are one of the two inputs <a href="/dmarc/">DMARC</a> evaluates (SPF is the other).
-        Gmail and Yahoo's sender requirements make both effectively mandatory for bulk mail. Check
-        your whole stack at once, SPF, DKIM, DMARC, DNSSEC, in the
-        <a href="/">homepage security scanner</a>.
-      </p>
-
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/how-to-add-dkim-record/">How to add a DKIM record</a></li>
-        <li><a href="/dkim-selector/">What is a DKIM selector?</a></li>
-        <li><a href="/spf-record/">SPF explained</a> · <a href="/dmarc/">DMARC explained</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DKIM encrypt email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DKIM signs the message so receivers can verify it was not altered. Encryption of the transport is a separate TLS mechanism.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my DKIM key is revoked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Mail signed with that selector fails verification. That is why rotation publishes the new selector first and retires the old one only after signing moves.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have multiple DKIM records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, under different selectors. Each selector is its own DNS name, and mail carries the selector it was signed with.</p></details></div>
+      <div class="not-prose my-4 space-y-3">
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">DKIM-Signature Header Example (Inside Message Headers):</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+  d=example.com; s=google; t=1761680000;
+  h=from:to:subject:date:message-id;
+  bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
+  b=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...</code></pre>
+        </div>
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">DKIM Public Key DNS TXT Record Example (Published in DNS):</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>google._domainkey.example.com. 3600 IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."</code></pre>
+        </div>
       </div>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Location</th><th>Tag</th><th>Meaning</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">v=1</td><td class="text-sm text-ink-dim">DKIM signature version</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">a=rsa-sha256</td><td class="text-sm text-ink-dim">Signing algorithm</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">d=example.com</td><td class="text-sm text-ink-dim">Signing domain (the d= tag)</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">s=selector1</td><td class="text-sm text-ink-dim">Selector used for the DNS lookup</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">bh=</td><td class="text-sm text-ink-dim">Body hash</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">b=</td><td class="text-sm text-ink-dim">Signature data</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">v=DKIM1</td><td class="text-sm text-ink-dim">Record version</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">k=rsa</td><td class="text-sm text-ink-dim">Key type</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">p=</td><td class="text-sm text-ink-dim">Public key material (empty p= means revoked)</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">t=y</td><td class="text-sm text-ink-dim">Testing mode flag</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        RFC 6376 establishes distinct parsing rules across these two artifacts: in the message header, the <code>v=1</code> tag is mandatory, whereas in the DNS TXT record, <code>v=DKIM1</code> is optional because <code>p=</code> serves as the only mandatory DNS tag. Publishing a DNS TXT record with an empty public key tag (such as <code>v=DKIM1; p=</code>) constitutes the official RFC 6376 Section 3.6.1 revocation method, signaling to receiving mail servers that the private key is decommissioned and any future signatures under that selector must fail. Step-by-step DNS record creation is covered in <a href="/how-to-add-dkim-record/">How to Add a DKIM Record</a>.
+      </p>
+
+      <h2 id="what-is-a-dkim-selector-s-and-why-do-domains-use-multiple-selectors">What Is a DKIM Selector (s=) and Why Do Domains Use Multiple Selectors?</h2>
+      <p>
+        A DKIM selector (s=) is <strong class="text-ink">a prefix label prepended to ._domainkey.&lt;domain&gt; that allows a single domain to publish multiple independent public keys in DNS simultaneously</strong>.
+      </p>
+      <p>
+        Unlike an <a href="/spf-record/">SPF Record</a> that merges all authorized sending IPs into a single root TXT record subject to a 10-DNS-lookup limit, DKIM segregates every outbound mail stream under an isolated DNS namespace. An organization utilizing Google Workspace for corporate mail, SendGrid for transactional receipts, and Mailchimp for newsletters generates independent public-private key pairs for each provider. Each service signs messages with its own private key and references its dedicated selector in the <code>s=</code> tag, allowing administrators to add, rotate, or revoke keys for one provider without disrupting other sending streams.
+      </p>
+      <p>
+        Because DNS does not permit wildcard enumeration of <code>_domainkey</code> subdomains, verifying a domain's DKIM public key requires querying the exact selector string. The table below lists the default DKIM selector names and DNS record types used by 8 major email providers.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Email Service Provider (ESP)</th><th>Default Selector Name(s) (s=)</th><th>DNS Record Type</th><th>Full Lookup Hostname Example</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Google Workspace</td><td class="text-sm text-ink-dim"><code>google</code> (or custom prefix)</td><td class="text-sm text-ink-dim">TXT (2048-bit RSA)</td><td class="font-mono text-xs text-ink-dim">google._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Microsoft 365 (Exchange Online)</td><td class="text-sm text-ink-dim"><code>selector1</code>, <code>selector2</code></td><td class="text-sm text-ink-dim">CNAME (rotation pair)</td><td class="font-mono text-xs text-ink-dim">selector1._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">SendGrid (Twilio)</td><td class="text-sm text-ink-dim"><code>s1</code>, <code>s2</code></td><td class="text-sm text-ink-dim">CNAME (Automated Security)</td><td class="font-mono text-xs text-ink-dim">s1._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Mailchimp (Intuit)</td><td class="text-sm text-ink-dim"><code>k2</code>, <code>k3</code></td><td class="text-sm text-ink-dim">CNAME</td><td class="font-mono text-xs text-ink-dim">k2._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Amazon SES</td><td class="text-sm text-ink-dim">3 generated 32-character tokens</td><td class="text-sm text-ink-dim">CNAME (EasyDKIM)</td><td class="font-mono text-xs text-ink-dim">&lt;token&gt;._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Resend</td><td class="text-sm text-ink-dim"><code>resend</code></td><td class="text-sm text-ink-dim">TXT (RSA public key)</td><td class="font-mono text-xs text-ink-dim">resend._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Postmark</td><td class="text-sm text-ink-dim"><code>&lt;YYYYMMDD&gt;pm</code> (date-stamped)</td><td class="text-sm text-ink-dim">TXT</td><td class="font-mono text-xs text-ink-dim">20261028pm._domainkey.example.com</td></tr>
+              <tr><td class="font-medium text-ink">Klaviyo</td><td class="text-sm text-ink-dim"><code>kl</code>, <code>kl2</code></td><td class="text-sm text-ink-dim">CNAME</td><td class="font-mono text-xs text-ink-dim">kl._domainkey.example.com</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Identifying an active selector requires inspecting outgoing message headers: administrators send a test message to an external account, open Show Original or View Message Source, and locate the <code>s=</code> tag within the <code>DKIM-Signature</code> header. Additional guidance on selector discovery and multi-vendor management is available in <a href="/dkim-selector/">What Is a DKIM Selector and How to Find Yours</a> and <a href="/multiple-dkim-selectors/">Multiple DKIM Selectors</a>.
+      </p>
+
+      <h2 id="which-dkim-key-length-should-you-use-1024-bit-vs-2048-bit-rsa-vs-ed25519">Which DKIM Key Length Should You Use? (1024-Bit vs 2048-Bit RSA vs Ed25519)</h2>
+      <p>
+        RFC 8301 requires <strong class="text-ink">a minimum DKIM RSA key length of 1024 bits and recommends 2048-bit RSA or Ed25519 (RFC 8463) keys</strong> while permanently revoking 512-bit keys and the SHA-1 hash algorithm (rsa-sha1). The table below compares the 4 DKIM cryptographic key options by bit length, security status, and DNS TXT string behavior.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">512-bit RSA</td><td class="text-sm text-ink-dim">Insecure</td><td class="text-sm text-ink-dim">Rejected by major receivers</td></tr><tr><td class="font-medium text-ink">1024-bit RSA</td><td class="text-sm text-ink-dim">Legacy minimum</td><td class="text-sm text-ink-dim">Increasingly weak; migrate</td></tr><tr><td class="font-medium text-ink">2048-bit RSA</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">May need two TXT strings for the key material</td></tr><tr><td class="font-medium text-ink">Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Modern alternative</td><td class="text-sm text-ink-dim">Shorter keys, faster signing; receiver support still maturing</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Deploying 2048-bit RSA keys requires accommodating the 255-character DNS TXT string limit defined in RFC 1035 Section 3.3.14. Because a 2048-bit Base64-encoded public key contains approximately 392 characters, the key string exceeds a single DNS text chunk. Authoritative DNS providers split the payload into two contiguous quoted strings (for example, <code>"v=DKIM1; k=rsa; p=MIIBIj..." "...DAQAB"</code>), which resolvers concatenate without spaces during signature verification. Key length trade-offs and browser-based key generation are detailed in <a href="/dkim-key-length/">DKIM Key Length</a> and the <a href="/dkim-record-generator/">DKIM Record Generator</a>.
+      </p>
+
+      <h2 id="what-is-dkim-canonicalization-c-relaxed-relaxed-vs-simple-simple">What Is DKIM Canonicalization (c=relaxed/relaxed vs simple/simple)?</h2>
+      <p>
+        DKIM canonicalization (c=header/body, defined in RFC 6376 Section 3.4) is <strong class="text-ink">the pre-hashing normalization algorithm that determines whether minor whitespace or header formatting changes in transit invalidate a DKIM signature</strong>.
+      </p>
+      <p>
+        Mail Transfer Agents, security appliances, and intermediary relays regularly modify message formatting during delivery by folding long headers, adjusting tab spacing, or appending blank lines. Canonicalization defines how sending MTAs prepare headers and body text before hashing, and how receiving MTAs reconstruct them before cryptographic verification.
+      </p>
+      <p>
+        RFC 6376 standardizes 2 canonicalization algorithms configured independently for headers and body content:
+      </p>
+      <ul>
+        <li><strong>simple Canonicalization (c=simple/simple):</strong> Tolerates zero modification to whitespace, line wraps, or empty lines. If an intermediary mail gateway normalizes a header name or appends a trailing carriage return, the decrypted signature fails to match the recalculated hash, returning an erroneous <code>dkim=fail</code> result.</li>
+        <li><strong>relaxed Canonicalization (c=relaxed/relaxed):</strong> Converts header field names to lowercase, unfolds line wraps, collapses multiple whitespace characters into a single space, and ignores trailing blank lines in the message body. Relaxed canonicalization functions as the production industry standard because legitimate transport formatting does not break signature integrity.</li>
+      </ul>
+      <p>
+        Standard production deployments configure <code>c=relaxed/relaxed</code> on all outbound mail streams to minimize false verification failures. Deep canonicalization algorithms and troubleshooting steps are detailed in <a href="/dkim-canonicalization/">DKIM Canonicalization</a> and <a href="/dkim-not-signing/">DKIM Failing? Diagnosis and Fixes</a>.
+      </p>
+
+      <h2 id="why-does-dkim-survive-email-forwarding-and-how-does-it-power-dmarc-alignment">Why Does DKIM Survive Email Forwarding (And How Does It Power DMARC Alignment)?</h2>
+      <p>
+        DKIM survives email forwarding because <strong class="text-ink">its cryptographic signature (DKIM-Signature) is bound to the message headers and body rather than the connecting server's IP address</strong>, allowing DMARC to pass via DKIM alignment (adkim) even when forwarding breaks SPF.
+      </p>
+      <p>
+        Automated mailbox forwarding (such as routing a corporate email to personal webmail) breaks SPF authentication because the intermediate relay retransmits the message from an unauthorized IP address while retaining the original envelope Return-Path. Because the <code>DKIM-Signature</code> header travels inside the message payload, destination mail servers verify the cryptographic signature using the sender's public key in DNS. If the signing domain in <code>d=</code> matches the domain in the visible <code>From:</code> header, the message passes <a href="/dmarc/">DMARC</a> through DKIM alignment (<code>adkim</code>), ensuring uninterrupted inbox delivery as explained in <a href="/spf-vs-dkim/">SPF vs DKIM</a> and <a href="/dkim-vs-dmarc/">DKIM vs DMARC</a>.
+      </p>
+      <p>
+        The portability of cryptographic signatures creates a specific threat known as a DKIM Replay Attack: an attacker captures a legitimate email signed by a domain, preserves the intact <code>DKIM-Signature</code>, and retransmits the message through botnets to millions of recipients. Mail systems neutralize replay attacks through 3 operational safeguards: oversigning sensitive headers (such as <code>h=From:To:Subject:Date:Message-ID</code>) so attackers cannot alter recipients or subjects without breaking the hash, setting explicit signature expiration timestamps (<code>x=</code>), and executing regular key rotation every 6 to 12 months using alternating selectors.
+      </p>
+
+      <h2 id="how-do-you-set-up-and-verify-dkim-for-your-domain-4-steps">How Do You Set Up and Verify DKIM for Your Domain? (4 Steps)</h2>
+      <p>
+        To deploy and verify DKIM authentication for your domain, complete <strong class="text-ink">4 sequential key generation, DNS publication, signing activation, and verification steps</strong>.
+      </p>
+      <p>
+        Configuring production DKIM follows 4 sequential stages:
+      </p>
+      <ol>
+        <li><strong>Generate</strong> a 2048-bit RSA (or Ed25519) key pair and selector label inside your Email Service Provider's administration portal (or generate custom keys using the <a href="/dkim-record-generator/">DKIM Record Generator</a> for on-premise mail servers).</li>
+        <li><strong>Publish</strong> the public key as a DNS TXT record (starting with <code>v=DKIM1; k=rsa; p=...</code>) or configure the provider's delegated CNAME records at <code>&lt;selector&gt;._domainkey.&lt;yourdomain&gt;</code> (ensuring proxy services such as Cloudflare Orange Cloud remain set to DNS Only / Grey Cloud on DKIM CNAME entries).</li>
+        <li><strong>Enable</strong> outbound DKIM signing within your mail provider dashboard once the DNS records propagate globally.</li>
+        <li><strong>Verify</strong> the published public key, selector configuration, and cryptographic validity using the <a href="/dkim-record-checker/">DKIM Record Checker</a> or by executing terminal queries with <code>dig +short TXT &lt;selector&gt;._domainkey.example.com</code>, as described in <a href="/check-spf-dkim-dmarc-dig/">Check SPF, DKIM and DMARC with dig</a>.</li>
+      </ol>
+      <p>
+        Maintaining high email deliverability and protecting domain reputation in modern mail ecosystems relies on DomainKeys Identified Mail (DKIM) signatures, isolated selector namespaces, 2048-bit RSA public keys, and strict DMARC alignment. Domain administrators can verify live public keys, test selector records, and inspect outbound message headers across all sending providers with the <a href="/dkim-record-checker/">DKIM Record Checker</a>.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many DKIM records can a domain have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A domain can publish <strong>an unlimited number of DKIM records</strong> because each service or key pair lives under its own unique selector subdomain (&lt;selector&gt;._domainkey.example.com), avoiding any single-record or 10-lookup limit.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find my domain's DKIM selector?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Send a test email from your mail service, view the raw message source ("Show Original" in Gmail), and locate the <strong>s= tag inside the DKIM-Signature header</strong>, or paste the headers into the Email Header Analyzer.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use a 1024-bit or 2048-bit DKIM key?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a <strong>2048-bit RSA key</strong> (or Ed25519 where supported) for all production domains, as recommended by RFC 8301. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does Cloudflare break my DKIM CNAME record if proxied?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enabling Cloudflare's HTTP proxy (Orange Cloud) on a <strong>_domainkey CNAME record</strong> rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to <strong>DNS Only (Grey Cloud)</strong>.</p>
+      </details>
+    </div>
+  </div>
 </BaseLayout>
