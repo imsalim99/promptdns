@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SpecCard from '../components/SpecCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [{"@type": "Question", "name": "Who uses Cohere models?", "acceptedAnswer": {"@type": "Answer", "text": "Cohere sells enterprise language models to Oracle, Salesforce, and other B2B platforms, so your content may reach enterprise users through their products."}}, {"@type": "Question", "name": "How do I verify cohere-ai?", "acceptedAnswer": {"@type": "Answer", "text": "Reverse DNS on the fetching IP should resolve to a Cohere address."}}],
+};
+---
+<BaseLayout
+  title="Cohere-ai: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
+  description="Cohere-ai explained: what Cohere's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Cohere-ai"]]}
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Cohere-ai</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">AI crawler</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Cohere-ai: User-Agent, robots.txt Rules and How to Verify It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Cohere-ai is Cohere's web crawler that collects training and retrieval data for its enterprise language models. It honors robots.txt, and Disallow: cohere-ai keeps your content out of Cohere's corpus. Genuine fetches resolve to Cohere addresses, which is how you verify them.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Crawler specification">
+      <SpecCard
+        name="Cohere-ai"
+        operator="Cohere"
+        token="cohere-ai"
+        purpose="Training data for Command and RAG models"
+        robots="honors Disallow: cohere-ai"
+        verify="Reverse DNS resolves to *.cohere.com"
+        evidence="Documented"
+        verified="2026-10-28"
+        href="/ai-crawlers-list/"
+      />
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>How to block Cohere-ai</h2>
+      <p>Add this rule to your robots.txt at the root of your domain:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: cohere-ai
+Disallow: /</pre>
+      <p>Cohere provides enterprise RAG and embedding models; blocking the crawler removes your content from their training and retrieval corpus.</p>
+
+      <h2>How to allow Cohere-ai</h2>
+      <p>Allowing cohere-ai makes your content available to enterprise RAG systems built on Cohere.</p>
+
+      <h2>How to verify Cohere-ai</h2>
+      <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Cohere-ai token; a genuine fetch resolves inside Cohere's address space, and a spoofed one does not.</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+# A genuine Cohere-ai fetch resolves to an Cohere address</pre>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The Cohere-ai decision is per vendor and reversible: robots.txt is a one-line edit, and the verification method tells you within seconds whether a visit was genuine. Revisit the decision quarterly as each vendor's product boundaries keep moving.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who uses Cohere models?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Cohere sells enterprise language models to Oracle, Salesforce, and other B2B platforms, so your content may reach enterprise users through their products.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I verify cohere-ai?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reverse DNS on the fetching IP should resolve to a Cohere address.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>,
+        <a href="/robots-txt-guide/" class="text-accent hover:text-accent-soft">robots.txt guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

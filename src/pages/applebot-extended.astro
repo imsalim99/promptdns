@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SpecCard from '../components/SpecCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [{"@type": "Question", "name": "Does blocking Applebot-Extended affect my Apple search ranking?", "acceptedAnswer": {"@type": "Answer", "text": "No. Applebot (search) and Applebot-Extended (training) are separate crawlers with separate rules. Blocking the training token leaves search untouched."}}, {"@type": "Question", "name": "How is Applebot-Extended different from Applebot?", "acceptedAnswer": {"@type": "Answer", "text": "Applebot powers Siri, Spotlight, and Safari suggestions. Applebot-Extended collects data for Apple Intelligence training. They are separate crawlers with separate robots.txt rules."}}, {"@type": "Question", "name": "How do I verify Applebot-Extended?", "acceptedAnswer": {"@type": "Answer", "text": "Reverse DNS on the fetching IP should resolve to an Apple address. Spoofed tokens will not resolve into the apple.com space."}}],
+};
+---
+<BaseLayout
+  title="Applebot-Extended: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
+  description="Applebot-Extended explained: what Apple's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
+  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Applebot-Extended"]]}
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Applebot-Extended</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">AI crawler</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Applebot-Extended: User-Agent, robots.txt Rules and How to Verify It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Applebot-Extended is Apple's AI training crawler, separate from the Applebot search crawler that powers Siri and Safari suggestions. It honors robots.txt, and Disallow: Applebot-Extended opts your content out of Apple Intelligence training without affecting search visibility. Genuine Applebot-Extended fetches resolve to Apple addresses, which is how you verify them.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Crawler specification">
+      <SpecCard
+        name="Applebot-Extended"
+        operator="Apple"
+        token="Applebot-Extended"
+        purpose="AI training for Apple Intelligence (separate from Applebot search)"
+        robots="honors Disallow: Applebot-Extended"
+        verify="Reverse DNS resolves to *.apple.com"
+        evidence="Documented"
+        verified="2026-10-28"
+        href="/ai-crawlers-list/"
+      />
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>How to block Applebot-Extended</h2>
+      <p>Add this rule to your robots.txt at the root of your domain:</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Applebot-Extended
+Disallow: /</pre>
+      <p>Blocking Applebot-Extended opts out of Apple Intelligence training without removing your site from Siri, Spotlight, or Safari search, which use the regular Applebot crawler.</p>
+
+      <h2>How to allow Applebot-Extended</h2>
+      <p>Blocking Applebot-Extended keeps your site in Apple Search results: the two crawlers are fully independent.</p>
+
+      <h2>How to verify Applebot-Extended</h2>
+      <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Applebot-Extended token; a genuine fetch resolves inside Apple's address space, and a spoofed one does not.</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+# A genuine Applebot-Extended fetch resolves to an Apple address</pre>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The Applebot-Extended decision is per vendor and reversible: robots.txt is a one-line edit, and the verification method tells you within seconds whether a visit was genuine. Revisit the decision quarterly as each vendor's product boundaries keep moving.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking Applebot-Extended affect my Apple search ranking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Applebot (search) and Applebot-Extended (training) are separate crawlers with separate rules. Blocking the training token leaves search untouched.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is Applebot-Extended different from Applebot?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Applebot powers Siri, Spotlight, and Safari suggestions. Applebot-Extended collects data for Apple Intelligence training. They are separate crawlers with separate robots.txt rules.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I verify Applebot-Extended?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reverse DNS on the fetching IP should resolve to an Apple address. Spoofed tokens will not resolve into the apple.com space.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Related:
+        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
+        <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>,
+        <a href="/robots-txt-guide/" class="text-accent hover:text-accent-soft">robots.txt guide</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

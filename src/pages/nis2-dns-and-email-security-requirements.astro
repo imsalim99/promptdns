@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does NIS2 apply to UK organizations?", "acceptedAnswer": {"@type": "Answer", "text": "No, NIS2 is an EU directive. UK entities doing business with EU essential entities may still face supply-chain expectations from their EU customers."}}, {"@type": "Question", "name": "Is DNSSEC required by NIS2?", "acceptedAnswer": {"@type": "Answer", "text": "Not by name. Article 21 asks for cryptography and network security, and DNSSEC is the recognized control for DNS integrity. Assessors expect it for essential entities."}}, {"@type": "Question", "name": "What is the deadline for NIS2 compliance?", "acceptedAnswer": {"@type": "Answer", "text": "Member states transposed NIS2 into national law by October 17, 2024. Entities must comply with their national transposition from that date."}}]};
+---
+<BaseLayout
+  title="NIS2 Directive: DNS and Email Security Requirements for EU Essential Entities | PromptDNS"
+  description="NIS2 Directive DNS and email security requirements mapped to DNSSEC, DMARC enforcement, MTA-STS and registry locks, with a verification checklist for EU entities."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["NIS2 Directive: DNS and Email Security Requirements for Essential Entities"]]}
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">NIS2 Directive: DNS and Email Security Requirements for Essential Entities</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Compliance</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">NIS2 Directive: DNS and Email Security Requirements for Essential Entities</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">The NIS2 Directive (EU 2022/2555), effective October 2024, requires essential and important entities across 18 sectors to manage cybersecurity risk, including the DNS and email infrastructure their services depend on. Article 21 asks for supply-chain security, network security, and cryptography, which in DNS terms maps to DNSSEC signing, enforced DMARC, MTA-STS transport encryption, and registry locks on delegation. Member states had until October 2024 to transpose the directive into national law, with penalties reaching 10 million euros or 2 percent of global turnover for essential entities.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Compliance requirements">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">NIS2 Article 21 mapped to DNS and email controls</p>
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>NIS2 requirement</th><th>What it asks for</th><th>DNS / email control</th><th>Verify with</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Article 21(2)(c): Supply chain security</td><td class="text-sm text-ink-dim">Vendor and service provider risk managed</td><td class="text-sm text-ink-dim">DMARC aggregate reports on every third-party sender</td><td class="text-sm text-ink-dim">DMARC checker</td></tr><tr><td class="font-medium text-ink">Article 21(2)(d): Network security</td><td class="text-sm text-ink-dim">Network infrastructure protected</td><td class="text-sm text-ink-dim">DNSSEC signing, registry lock on delegation</td><td class="text-sm text-ink-dim">DNSSEC checker</td></tr><tr><td class="font-medium text-ink">Article 21(2)(g): Cryptography</td><td class="text-sm text-ink-dim">Encryption where appropriate</td><td class="text-sm text-ink-dim">MTA-STS enforcement for mail transport, DoH/DoT for resolution</td><td class="text-sm text-ink-dim">MTA-STS checker</td></tr><tr><td class="font-medium text-ink">Article 23: Incident reporting</td><td class="text-sm text-ink-dim">Incidents reported within 24 hours</td><td class="text-sm text-ink-dim">Continuous DNS and email authentication monitoring</td><td class="text-sm text-ink-dim">DNS monitoring</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>Which entities are in scope</h2>
+      <p class="mt-3">Essential entities: energy, transport, banking, financial market infrastructure, health, drinking water, waste water, digital infrastructure, public administration, space.</p>
+      <p class="mt-3">Important entities: postal services, waste management, chemicals, food, manufacturing, digital providers, research.</p>
+      <p class="mt-3">Essential entities face 10 million euros or 2 percent of turnover in penalties; important entities face 7 million or 1.4 percent. Management bodies carry personal liability for compliance failures.</p>
+      <h2>The DNS-specific conversation</h2>
+      <p class="mt-3">NIS2 does not mandate DNSSEC by name, but its cryptography and network-security requirements are best satisfied by DNSSEC-signed zones with monitored chain-of-trust.</p>
+      <p class="mt-3">Registry locks (registrar-level changes requiring explicit approval) satisfy the delegation-protection expectation for essential entities.</p>
+      <p class="mt-3">Enforced DMARC satisfies the email-security expectation, and aggregate reports provide the incident-detection evidence Article 23 expects.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">NIS2 is the first EU directive that makes management bodies personally liable for cybersecurity failures. That liability is what moves DNS and email authentication from an IT best practice to a board-level compliance item. The entities that pass their first NIS2 audit will be the ones whose DNS was already monitored, signed, and enforced before the assessor asked.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does NIS2 apply to UK organizations?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, NIS2 is an EU directive. UK entities doing business with EU essential entities may still face supply-chain expectations from their EU customers.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DNSSEC required by NIS2?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not by name. Article 21 asks for cryptography and network security, and DNSSEC is the recognized control for DNS integrity. Assessors expect it for essential entities.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the deadline for NIS2 compliance?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Member states transposed NIS2 into national law by October 17, 2024. Entities must comply with their national transposition from that date.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify your compliance:
+        <a href="/" class="text-accent hover:text-accent-soft">homepage security scanner</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dnssec-checker/" class="text-accent hover:text-accent-soft">DNSSEC checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

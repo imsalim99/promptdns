@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does PCI-DSS 4.0 require DMARC by name?", "acceptedAnswer": {"@type": "Answer", "text": "No, it requires protection against phishing and spoofed email. DMARC enforcement is the recognized best practice that satisfies those requirements, and assessors expect it."}}, {"@type": "Question", "name": "What happens if I fail a PCI-DSS assessment?", "acceptedAnswer": {"@type": "Answer", "text": "Fines, increased transaction fees, or loss of card-processing ability. For service providers, loss of PCI-DSS certification can end the contract."}}, {"@type": "Question", "name": "Do subdomains need their own DMARC records?", "acceptedAnswer": {"@type": "Answer", "text": "Not if the organizational domain has sp=reject or sp=quarantine. Subdomains inherit the organizational policy unless they publish their own."}}]};
+---
+<BaseLayout
+  title="PCI-DSS 4.0 and DMARC: Email Authentication Requirements for Payment Entities | PromptDNS"
+  description="PCI-DSS 4.0 email authentication: how DMARC, SPF, DKIM and DNSSEC map to the payment-card security standard, with a compliance verification checklist."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["PCI-DSS 4.0 and Email Authentication: DMARC Requirements for Payment Entities"]]}
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">PCI-DSS 4.0 and Email Authentication: DMARC Requirements for Payment Entities</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Compliance</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">PCI-DSS 4.0 and Email Authentication: DMARC Requirements for Payment Entities</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">PCI-DSS 4.0, the Payment Card Industry Data Security Standard effective March 2025, requires organizations that handle cardholder data to protect against phishing and email-based attacks. While the standard does not mandate DMARC by name, its anti-phishing and spoofing-protection requirements (mapped across requirements 5, 6, and 12) are best satisfied by SPF, DKIM, and enforced DMARC on every sending domain. Assessors increasingly expect enforced DMARC (p=quarantine or p=reject) as evidence of the email-security controls the standard describes.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Compliance requirements">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">PCI-DSS 4.0 requirements mapped to DNS controls</p>
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>PCI-DSS requirement</th><th>What it asks for</th><th>DNS control that satisfies it</th><th>Verify with</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Requirement 5: Anti-malware</td><td class="text-sm text-ink-dim">Protection against phishing mechanisms</td><td class="text-sm text-ink-dim">DMARC enforcement prevents spoofed mail from reaching employees</td><td class="text-sm text-ink-dim">DMARC checker</td></tr><tr><td class="font-medium text-ink">Requirement 6: Secure development</td><td class="text-sm text-ink-dim">Public-facing web applications protected</td><td class="text-sm text-ink-dim">DNSSEC signing and CAA pinning prevent DNS-level attacks</td><td class="text-sm text-ink-dim">DNSSEC checker</td></tr><tr><td class="font-medium text-ink">Requirement 12: Information security policy</td><td class="text-sm text-ink-dim">Organization-wide security policies including email security</td><td class="text-sm text-ink-dim">SPF, DKIM, and enforced DMARC on every sending domain</td><td class="text-sm text-ink-dim">SPF, DKIM checkers</td></tr><tr><td class="font-medium text-ink">Requirement 4: Transmission encryption</td><td class="text-sm text-ink-dim">Cardholder data encrypted in transit</td><td class="text-sm text-ink-dim">TLS on mail transport (MTA-STS enforcement)</td><td class="text-sm text-ink-dim">MTA-STS checker</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>Which entities are in scope</h2>
+      <p class="mt-3">Any organization that stores, processes, or transmits cardholder data: merchants, payment processors, service providers, and any third party with access to the cardholder data environment.</p>
+      <p class="mt-3">The standard applies globally, enforced through contracts with card brands and acquirers, not through government regulation. Non-compliance risks fines, increased transaction fees, or loss of card-processing ability.</p>
+      <p class="mt-3">PCI-DSS 4.0 became the enforced version on March 31, 2025, replacing 3.2.1. The updated version emphasizes authentication, phishing defenses, and automated compliance monitoring.</p>
+      <h2>The assessor conversation</h2>
+      <p class="mt-3">PCI-DSS assessors (QSAs) ask for evidence that email-based attacks are mitigated. Enforced DMARC (p=reject) with aggregate reporting is the strongest evidence.</p>
+      <p class="mt-3">A domain at p=none with no reporting is a finding; a domain at p=reject with monitored sources is a control. The difference is visible in the DNS in seconds.</p>
+      <p class="mt-3">Subdomains used for payment pages or cardholder-data systems should have their own DMARC records or inherit an enforcing sp= policy from the organizational domain.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The compliance conversation changes when you can show an assessor your DMARC aggregate reports: not just that the policy is enforced, but that you know every source sending as your domain and have verified each one. That evidence comes from monitored aggregate reports, which is exactly what continuous DMARC monitoring provides for the early-access product.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does PCI-DSS 4.0 require DMARC by name?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, it requires protection against phishing and spoofed email. DMARC enforcement is the recognized best practice that satisfies those requirements, and assessors expect it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I fail a PCI-DSS assessment?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Fines, increased transaction fees, or loss of card-processing ability. For service providers, loss of PCI-DSS certification can end the contract.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do subdomains need their own DMARC records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not if the organizational domain has sp=reject or sp=quarantine. Subdomains inherit the organizational policy unless they publish their own.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify your compliance:
+        <a href="/" class="text-accent hover:text-accent-soft">homepage security scanner</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dnssec-checker/" class="text-accent hover:text-accent-soft">DNSSEC checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does the 5,000-per-day threshold count across multiple ESPs?", "acceptedAnswer": {"@type": "Answer", "text": "Yes: the count is all messages to Gmail or Yahoo addresses from your domain, summed across every ESP and in-house server."}}, {"@type": "Question", "name": "What happens if I stay below 5,000 per day?", "acceptedAnswer": {"@type": "Answer", "text": "The authentication requirements (SPF, DKIM, DMARC) still apply to all senders. The stricter bulk rules (one-click unsubscribe, spam rate monitoring) kick in at the threshold."}}, {"@type": "Question", "name": "Does Outlook or Apple have similar requirements?", "acceptedAnswer": {"@type": "Answer", "text": "Microsoft announced similar authentication requirements for Outlook.com and Microsoft 365 in 2025. The direction across all major providers is the same: authenticated or blocked."}}]};
+---
+<BaseLayout
+  title="Gmail and Yahoo Bulk Sender Requirements: SPF, DKIM, DMARC and Beyond | PromptDNS"
+  description="The complete Gmail and Yahoo bulk sender requirements checklist: SPF, DKIM, DMARC enforcement, one-click unsubscribe, spam rate limits, and PTR, with verification tools for each."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["Gmail and Yahoo Bulk Sender Requirements: The Complete 2024 Checklist"]]}
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Gmail and Yahoo Bulk Sender Requirements: The Complete 2024 Checklist</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Compliance</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Gmail and Yahoo Bulk Sender Requirements: The Complete 2024 Checklist</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">Gmail and Yahoo's February 2024 sender requirements define the authentication and reputation rules for any domain sending 5,000 or more messages per day to their users. The mandates cover five areas: SPF, DKIM, and DMARC authentication, one-click unsubscribe (RFC 8058), spam-complaint rate below 0.3 percent in Postmaster Tools, valid forward and reverse DNS (PTR matching A), and TLS encryption in transit. Domains that miss these requirements see 550 rejections, spam-folder placement, or outright suspension of bulk sending privileges.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Compliance requirements">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">The complete requirements checklist</p>
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Requirement</th><th>Mandatory configuration</th><th>Threshold / standard</th><th>Verify with</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">SPF</td><td class="text-sm text-ink-dim">v=spf1 record covering every sending IP</td><td class="text-sm text-ink-dim">One record, under 10 lookups (RFC 7208)</td><td class="text-sm text-ink-dim">SPF checker</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">At least 1024-bit key, 2048-bit recommended</td><td class="text-sm text-ink-dim">Valid selector, aligned d= domain</td><td class="text-sm text-ink-dim">DKIM checker</td></tr><tr><td class="font-medium text-ink">DMARC</td><td class="text-sm text-ink-dim">v=DMARC1 with p=none minimum and rua reporting</td><td class="text-sm text-ink-dim">Alignment required: spf or dkim must pass and match From</td><td class="text-sm text-ink-dim">DMARC checker</td></tr><tr><td class="font-medium text-ink">One-click unsubscribe</td><td class="text-sm text-ink-dim">List-Unsubscribe-Post: List-Unsubscribe=One-Click header (RFC 8058)</td><td class="text-sm text-ink-dim">Required for all commercial bulk mail</td><td class="text-sm text-ink-dim">Header analyzer</td></tr><tr><td class="font-medium text-ink">Spam rate</td><td class="text-sm text-ink-dim">Under 0.3 percent in Google Postmaster Tools</td><td class="text-sm text-ink-dim">0.1 percent recommended; 0.3 percent triggers enforcement</td><td class="text-sm text-ink-dim">Postmaster Tools</td></tr><tr><td class="font-medium text-ink">Forward and reverse DNS</td><td class="text-sm text-ink-dim">PTR record matching the sending hostname (FCrDNS)</td><td class="text-sm text-ink-dim">Valid PTR per RFC 1912</td><td class="text-sm text-ink-dim">PTR lookup</td></tr><tr><td class="font-medium text-ink">TLS in transit</td><td class="text-sm text-ink-dim">Valid certificate on the receiving MX</td><td class="text-sm text-ink-dim">STARTTLS offered and negotiated</td><td class="text-sm text-ink-dim">SMTP tester</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      
+      <h2>Who these requirements apply to</h2>
+      <p class="mt-3">The threshold is 5,000 messages per day to Gmail or Yahoo addresses, counted across all your sending infrastructure. A single ESP sending 3,000 and a CRM sending 2,000 together cross the line.</p>
+      <p class="mt-3">The requirements apply to all senders at a minimum level (SPF or DKIM plus DMARC), with the stricter enforcement tier reserved for bulk senders.</p>
+      <p class="mt-3">Both providers announced the same core set in October 2023 with a February 2024 enforcement date, making this a de facto industry standard rather than a vendor-specific rule.</p>
+      <h2>What happens when you miss a requirement</h2>
+      <p class="mt-3">Gmail returns 550 5.7.26 for authentication failures and 421 4.7.0 for rate-limiting on non-compliant bulk senders.</p>
+      <p class="mt-3">Yahoo bounces with 554 or defers with 421, and both providers move non-compliant mail to spam before hard-blocking.</p>
+      <p class="mt-3">The enforcement is gradual: first spam placement, then rejection of a percentage of mail, then full blocking. Each stage is visible in Postmaster Tools.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The one-click unsubscribe header catches more teams off guard than the authentication requirements: it must be a header, not a footer link, and it must work without a login page. RFC 8058 compliance is what separates the bulk senders who survive February 2024 from those who see their mail bounce with a 550-5.7.26 flow-up.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does the 5,000-per-day threshold count across multiple ESPs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the count is all messages to Gmail or Yahoo addresses from your domain, summed across every ESP and in-house server.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I stay below 5,000 per day?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The authentication requirements (SPF, DKIM, DMARC) still apply to all senders. The stricter bulk rules (one-click unsubscribe, spam rate monitoring) kick in at the threshold.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Outlook or Apple have similar requirements?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Microsoft announced similar authentication requirements for Outlook.com and Microsoft 365 in 2025. The direction across all major providers is the same: authenticated or blocked.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Verify your compliance:
+        <a href="/" class="text-accent hover:text-accent-soft">homepage security scanner</a>,
+        <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>,
+        <a href="/dnssec-checker/" class="text-accent hover:text-accent-soft">DNSSEC checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
