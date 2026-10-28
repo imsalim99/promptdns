@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does robots.txt blocking affect my Google ranking?", "acceptedAnswer": { '@type': 'Answer', "text": "No. robots.txt controls crawling, not ranking. Blocking AI training tokens has no documented effect on Search position." } },
+    {'@type': 'Question', 'name': "Will I lose AI Overviews visibility if I block AI crawlers?", "acceptedAnswer": { '@type': 'Answer', "text": "No. AI Overviews come from Google Search results. Google-Extended does not control them." } },
+    {'@type': 'Question', 'name': "Can I allow some AI crawlers and block others?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, and it is the recommended approach: each vendor publishes a separate user-agent token with its own rules." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/does-blocking-ai-crawlers-hurt-seo/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Does Blocking AI Crawlers Hurt SEO? What Actually Changes | PromptDNS"
   description="Blocking AI crawlers: what changes for Google rankings, ChatGPT citations, and AI Overviews, and what does not. Per-crawler facts."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Does Blocking AI Crawlers Hurt SEO?"]]}

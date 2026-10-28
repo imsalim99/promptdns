@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does blocking Google-Extended remove me from AI Overviews?", "acceptedAnswer": { '@type': 'Answer', "text": "No. AI Overviews and Search are unaffected. Google-Extended only controls whether your content trains Gemini and Vertex models." } },
+    {'@type': 'Question', 'name': "Will blocking Google-Extended hurt my Google rankings?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Google documents that the token has no effect on Search ranking or indexing." } },
+    {'@type': 'Question', 'name': "How do I verify Google-Extended visits?", "acceptedAnswer": { '@type': 'Answer', "text": "You cannot via user-agent, because Googlebot fetches the pages. The token is a policy signal Google applies to those fetches, not a separate crawler you will see in logs." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/google-extended/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Google-Extended: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="Google-Extended explained: what Google's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Google-Extended"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/google-extended/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Google-Extended is a product control that tells Google not to use your site's content for training Gemini and Vertex AI models. It is not a separate crawler: Googlebot does the fetching, and the Google-Extended token governs whether those fetches may feed model training. Blocking it does not affect Google Search ranking or AI Overviews.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Google-Extended quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">Google</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">Gemini and Vertex training control</td></tr><tr><td class="font-medium text-ink">Opt-out</td><td class="text-sm text-ink-dim">Disallow: Google-Extended</td></tr><tr><td class="font-medium text-ink">Note</td><td class="text-sm text-ink-dim">Not a crawler: no fetches to verify in logs</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify Google-Extended</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Google-Extended token; a genuine fetch resolves inside Google's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine Google-Extended fetch resolves to an Google address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

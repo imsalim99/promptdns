@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "How do I stop Claude from using my content for training?", "acceptedAnswer": { '@type': 'Answer', "text": "Add User-agent: ClaudeBot with Disallow: / to robots.txt. Anthropic documents that ClaudeBot honors the rule." } },
+    {'@type': 'Question', 'name': "What is the difference between ClaudeBot and Claude-User?", "acceptedAnswer": { '@type': 'Answer', "text": "ClaudeBot crawls for training and retrieval. Claude-User fetches a page only when a Claude user asks about it directly. They are separate tokens with separate rules." } },
+    {'@type': 'Question', 'name': "How do I verify a ClaudeBot visitor?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS on the fetching IP should resolve to an Anthropic address. If it does not, the visitor is spoofing the token." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/claudebot/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="ClaudeBot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="ClaudeBot explained: what Anthropic's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["ClaudeBot"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/claudebot/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">ClaudeBot is Anthropic's crawler that collects training data and retrieves pages for Claude. It honors robots.txt, and Disallow: ClaudeBot keeps it out. Genuine ClaudeBot fetches resolve to Anthropic-hosted addresses, which is how you verify them.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">ClaudeBot quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">Anthropic</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">Training and retrieval for Claude</td></tr><tr><td class="font-medium text-ink">Opt-out</td><td class="text-sm text-ink-dim">Disallow: ClaudeBot</td></tr><tr><td class="font-medium text-ink">Verification</td><td class="text-sm text-ink-dim">Reverse DNS to *.anthropic.com</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify ClaudeBot</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the ClaudeBot token; a genuine fetch resolves inside Anthropic's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine ClaudeBot fetch resolves to an Anthropic address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

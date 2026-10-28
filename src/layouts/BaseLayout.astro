@@ -20,7 +20,7 @@ interface Props {
 }
 
 const { title, description, schema = [], noindex = false, chrome = true, breadcrumb } = Astro.props;
-const fullTitle = `${title} | PromptDNS`;
+const fullTitle = title.endsWith(' | PromptDNS') ? title : `${title} | PromptDNS`;
 
 // Self-referencing canonical: every page declares its one true URL so variant
 // hosts (www, pages.dev) and slash forms can never be treated as duplicates.

@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Why is reverse DNS better than the user-agent string?", "acceptedAnswer": { '@type': 'Answer', "text": "User-agent strings are trivial to spoof; a reverse DNS lookup ties the visitor to infrastructure the operator actually controls." } },
+    {'@type': 'Question', 'name': "What is FCrDNS?", "acceptedAnswer": { '@type': 'Answer', "text": "Forward-confirmed reverse DNS: the PTR hostname is resolved back to an IP and must match the original visitor. It closes the loop on hostname spoofing." } },
+    {'@type': 'Question', 'name': "Do any AI crawlers publish IP ranges?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, OpenAI publishes its ranges. Others are verified by reverse DNS on the documented domain." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/ai-crawler-verification/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="AI Crawler Verification: Reverse DNS Checks for GPTBot, ClaudeBot and More | PromptDNS"
   description="Verify AI crawler visitors with reverse DNS: the dig method for GPTBot, ClaudeBot, PerplexityBot and CCBot, and why spoofed tokens fail it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["AI Crawler Verification: Confirm a Crawler Is Genuine with Reverse DNS"]]}

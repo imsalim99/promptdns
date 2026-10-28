@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "How do I appear in ChatGPT Search?", "acceptedAnswer": { '@type': 'Answer', "text": "Allow OAI-SearchBot in robots.txt. Blocking it keeps your site out of ChatGPT Search results." } },
+    {'@type': 'Question', 'name': "Is OAI-SearchBot the same as GPTBot?", "acceptedAnswer": { '@type': 'Answer', "text": "No. GPTBot collects training data; OAI-SearchBot indexes for ChatGPT Search. They are separate crawlers with separate rules." } },
+    {'@type': 'Question', 'name': "How do I verify OAI-SearchBot?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS on the fetching IP should resolve to an OpenAI address, same as GPTBot." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/oai-searchbot/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="OAI-SearchBot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="OAI-SearchBot explained: what OpenAI's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["OAI-SearchBot"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/oai-searchbot/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">OAI-SearchBot is OpenAI's crawler that indexes the web for ChatGPT Search. It honors robots.txt, and sites that block it do not appear in ChatGPT Search results. Its fetches resolve to OpenAI-hosted addresses, which is how you verify them.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">OAI-SearchBot quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">OpenAI</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">ChatGPT Search index</td></tr><tr><td class="font-medium text-ink">Opt-out</td><td class="text-sm text-ink-dim">Disallow: OAI-SearchBot</td></tr><tr><td class="font-medium text-ink">Verification</td><td class="text-sm text-ink-dim">Reverse DNS to *.openai.com</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify OAI-SearchBot</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the OAI-SearchBot token; a genuine fetch resolves inside OpenAI's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine OAI-SearchBot fetch resolves to an OpenAI address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

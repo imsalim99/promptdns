@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does Cloudflare block AI crawlers by default?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The AI scraper blocking control is opt-in per zone. Enable it in the dashboard security settings." } },
+    {'@type': 'Question', 'name': "Will WAF blocking affect Googlebot?", "acceptedAnswer": { '@type': 'Answer', "text": "Not if you scope the rules correctly: match the AI crawler tokens or their ASNs, never all bot traffic." } },
+    {'@type': 'Question', 'name': "Is WAF blocking free on Cloudflare?", "acceptedAnswer": { '@type': 'Answer', "text": "The managed AI scraper control and basic custom rules are available on free plans; advanced rules depend on your plan tier." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/block-ai-crawlers-cloudflare/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Block AI Crawlers with Cloudflare: WAF and ASN Rules for Tokens That Ignore robots.txt | PromptDNS"
   description="Block AI crawlers at the Cloudflare edge: WAF custom rules, managed AI scraper blocking, and ASN rules for crawlers that ignore robots.txt."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Block AI Crawlers with Cloudflare: WAF Rules That Actually Hold"]]}

@@ -2,6 +2,16 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  'headline': "Amazonbot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS",
+  'description': "Amazonbot explained: what Amazon's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it.",
+  'author': { '@type': 'Organization', 'name': 'PromptDNS', 'url': 'https://promptdns.com/' },
+  'datePublished': '2026-10-28',
+  'dateModified': '2026-10-28',
+};
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -12,7 +22,7 @@ const faqSchema = {
   title="Amazonbot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="Amazonbot explained: what Amazon's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Amazonbot"]]}
-  schema={[faqSchema]}
+  schema={[articleSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -49,10 +59,14 @@ Disallow: /</pre>
 
       <h2>How to allow Amazonbot</h2>
       <p>Allowing Amazonbot can improve visibility in Alexa answers and Amazon-related AI features.</p>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft mt-3">
+User-agent: amazonbot
+Allow: /
+</pre>
 
       <h2>How to verify Amazonbot</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Amazonbot token; a genuine fetch resolves inside Amazon's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine Amazonbot fetch resolves to an Amazon address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

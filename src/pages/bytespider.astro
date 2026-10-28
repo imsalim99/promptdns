@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does Bytespider honor robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "Its behavior is reported to be inconsistent, so treat a Disallow rule as advisory. Verify from your logs rather than assuming." } },
+    {'@type': 'Question', 'name': "How do I actually stop Bytespider?", "acceptedAnswer": { '@type': 'Answer', "text": "Block its autonomous system at your WAF or edge provider. Cloudflare, which likely fronts your DNS, offers managed rules for AI scraper blocking by ASN." } },
+    {'@type': 'Question', 'name': "How do I verify a Bytespider visitor?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS on its IPs is inconsistent, which is exactly why user-agent verification alone is unreliable for this crawler." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/bytespider/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Bytespider: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="Bytespider explained: what ByteDance's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Bytespider"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/bytespider/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Bytespider is ByteDance's crawler, associated with data collection for TikTok's AI features. It is reported to sometimes ignore robots.txt, so a Disallow rule is advisory rather than reliable. Verification by reverse DNS is inconsistent, which is why strict sites block ByteDance at the firewall level instead.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Bytespider quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">ByteDance</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">Data collection for TikTok AI</td></tr><tr><td class="font-medium text-ink">Compliance</td><td class="text-sm text-ink-dim">Reported inconsistent</td></tr><tr><td class="font-medium text-ink">Enforcement</td><td class="text-sm text-ink-dim">Edge-level ASN blocking</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify Bytespider</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the Bytespider token; a genuine fetch resolves inside ByteDance's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine Bytespider fetch resolves to an ByteDance address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

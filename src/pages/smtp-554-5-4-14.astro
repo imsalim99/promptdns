@@ -51,7 +51,7 @@ const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEn
       </section>
 
       <h2>Step-by-step fixes</h2>
-      <ol class="mt-3 grid gap-3">
+      <ol class="mt-3 grid gap-3 list-none">
         <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">1</span><span class="text-ink-dim">Read the Received headers bottom-up: each server appends a hop, and the loop repeats once you pass the point where routing went wrong.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">2</span><span class="text-ink-dim">Identify the pair of servers trading the message: the same two hostnames appearing twice is the loop.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">3</span><span class="text-ink-dim">Fix at the boundary you control: the outbound connector address space, the forwarding rule, or the MX record.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">4</span><span class="text-ink-dim">Verify by sending a fresh message and confirming the Received chain terminates at your real mailbox host.</span></li>
       </ol>
 

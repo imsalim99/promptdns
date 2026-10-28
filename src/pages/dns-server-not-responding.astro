@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Is \"DNS server not responding\" a problem with my ISP?", "acceptedAnswer": { '@type': 'Answer', "text": "Often yes: the resolver your router hands out may be down. Switching your device to a public resolver routes around it instantly." } },
+    {'@type': 'Question', 'name': "Will flushing DNS lose my settings?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Flushing only clears cached answers; network settings, passwords, and history are untouched." } },
+    {'@type': 'Question', 'name': "Why does only one website show the error?", "acceptedAnswer": { '@type': 'Answer', "text": "Then the resolver answered but that domain failed: check the domain itself with a record lookup before changing any settings." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/dns-server-not-responding/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="DNS Server Not Responding: 7 Fixes That Work, in Order | PromptDNS"
   description="DNS server not responding on Windows: fix it in order, from flushing the DNS cache and switching resolvers to router and driver checks. With verification steps."
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Server Not Responding"]]}

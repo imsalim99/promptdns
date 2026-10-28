@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "How do I remove my site from Perplexity?", "acceptedAnswer": { '@type': 'Answer', "text": "Add User-agent: PerplexityBot with Disallow: / to robots.txt. Perplexity documents that the crawler honors it." } },
+    {'@type': 'Question', 'name': "What is Perplexity-User?", "acceptedAnswer": { '@type': 'Answer', "text": "A separate Perplexity token for real-time fetches a user triggers. It has its own robots.txt rule, so you can allow answers from your pages on request without allowing crawling." } },
+    {'@type': 'Question', 'name': "How do I verify PerplexityBot?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS on the fetching IP should resolve to a Perplexity address. Anything else claiming the token is spoofed." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/perplexitybot/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="PerplexityBot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="PerplexityBot explained: what Perplexity's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["PerplexityBot"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/perplexitybot/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">PerplexityBot is Perplexity's crawler that builds the search index behind its answer engine. It honors robots.txt, and Disallow: PerplexityBot keeps your pages out of Perplexity answers. Genuine PerplexityBot fetches resolve to Perplexity-hosted addresses, which is how you verify them.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">PerplexityBot quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">Perplexity</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">Search index and answers</td></tr><tr><td class="font-medium text-ink">Opt-out</td><td class="text-sm text-ink-dim">Disallow: PerplexityBot</td></tr><tr><td class="font-medium text-ink">Verification</td><td class="text-sm text-ink-dim">Reverse DNS to *.perplexity.ai</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify PerplexityBot</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the PerplexityBot token; a genuine fetch resolves inside Perplexity's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine PerplexityBot fetch resolves to an Perplexity address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

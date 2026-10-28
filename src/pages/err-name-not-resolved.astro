@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Is err_name_not_resolved a Chrome bug?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is Chromium accurately reporting that a DNS lookup failed. The fix is on the network or device side." } },
+    {'@type': 'Question', 'name': "Why does my phone show it but not my laptop?", "acceptedAnswer": { '@type': 'Answer', "text": "Different devices use different resolvers and caches. Android Private DNS or carrier filtering commonly diverges from your laptop." } },
+    {'@type': 'Question', 'name': "Does a VPN fix it or cause it?", "acceptedAnswer": { '@type': 'Answer', "text": "Both: a VPN can route around a broken ISP resolver, or its own DNS can fail. Test with the tunnel off and on." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/err-name-not-resolved/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="err_name_not_resolved: Meaning and Fixes for Chrome and Android | PromptDNS"
   description="err_name_not_resolved explained: the Chrome and Android DNS resolution failure, its causes and fixes, from DNS cache and private DNS to resolver changes."
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["err_name_not_resolved"]]}

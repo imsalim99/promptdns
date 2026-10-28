@@ -1,4 +1,14 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does blocking CCBot remove my site from existing datasets?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It only prevents future crawls. Previously published Common Crawl snapshots are not retroactively edited." } },
+    {'@type': 'Question', 'name': "Why block CCBot if I already allow AI search bots?", "acceptedAnswer": { '@type': 'Answer', "text": "Common Crawl is a raw dataset license-free to anyone, including model trainers you have never heard of. Some publishers allow search crawlers but refuse blanket dataset inclusion." } },
+    {'@type': 'Question', 'name': "How do I verify CCBot?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS on the fetching IP should resolve to a Common Crawl address." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SpecCard from '../components/SpecCard.astro';
 import { isHeld } from '../data/publish-queue.js';
@@ -6,6 +16,7 @@ import { isHeld } from '../data/publish-queue.js';
 const held = isHeld('/ccbot/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="CCBot: User-Agent, robots.txt Rules and How to Verify It | PromptDNS"
   description="CCBot explained: what Common Crawl's crawler does, its user-agent token, robots.txt behavior, how to verify it, and how to block or allow it."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["CCBot"]]}
@@ -20,16 +31,6 @@ const held = isHeld('/ccbot/');
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">CCBot is the Common Crawl Foundation's crawler that builds a public web crawl dataset reused by many AI labs and researchers. It honors robots.txt, and Disallow: CCBot excludes your site from future crawl runs. Its fetches resolve to Common Crawl addresses, which is how you verify them.</p>
     </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">CCBot quick reference</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Operator</td><td class="text-sm text-ink-dim">Common Crawl</td></tr><tr><td class="font-medium text-ink">Purpose</td><td class="text-sm text-ink-dim">Open crawl dataset</td></tr><tr><td class="font-medium text-ink">Opt-out</td><td class="text-sm text-ink-dim">Disallow: CCBot (not retroactive)</td></tr><tr><td class="font-medium text-ink">Verification</td><td class="text-sm text-ink-dim">Reverse DNS to *.commoncrawl.org</td></tr></tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="not-prose my-8" aria-label="Crawler specification" data-vs="speccard-wrap">
       <SpecCard
@@ -60,7 +61,7 @@ Allow: /</pre>
 
       <h2>How to verify CCBot</h2>
       <p>The reliable check is reverse DNS on the fetching IP address. Run the lookup below against any visitor claiming the CCBot token; a genuine fetch resolves inside Common Crawl's address space, and a spoofed one does not.</p>
-      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x <fetching-ip>
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">dig +short -x 203.0.113.5  # e.g. for fetching-ip>
 # A genuine CCBot fetch resolves to an Common Crawl address</pre>
 
       <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">

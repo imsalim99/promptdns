@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Should I block both GPTBot and ClaudeBot?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if your content policy excludes AI training. Both are compliant and reversible, so the decision is low-risk either way." } },
+    {'@type': 'Question', 'name': "Does blocking GPTBot affect Claude or vice versa?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Each rule is vendor-specific and independent." } },
+    {'@type': 'Question', 'name': "Which other tokens should I know about?", "acceptedAnswer": { '@type': 'Answer', "text": "OAI-SearchBot and ChatGPT-User for OpenAI products, and Claude-SearchBot and Claude-User for Anthropic products, each with separate robots.txt rules." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/gptbot-vs-claudebot/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="GPTBot vs ClaudeBot: OpenAI and Anthropic Training Crawlers Compared | PromptDNS"
   description="GPTBot vs ClaudeBot: how OpenAI and Anthropic training crawlers differ in defaults, verification, opt-out, and what blocking each one changes."
   breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["GPTBot vs ClaudeBot: Training Crawlers Compared"]]}

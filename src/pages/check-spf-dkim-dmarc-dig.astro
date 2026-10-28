@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Which selector does my DKIM use?", "acceptedAnswer": { '@type': 'Answer', "text": "Read the DKIM-Signature header of a real message you sent: the s= value is the selector. Common defaults are default, google, selector1, and selector2." } },
+    {'@type': 'Question', 'name': "Why does dig show my record but mail still fails?", "acceptedAnswer": { '@type': 'Answer', "text": "dig proves publication, not alignment: DMARC also needs the From domain to align with the SPF or DKIM domain. Check alignment with the DMARC checker." } },
+    {'@type': 'Question', 'name': "Does +short hide anything important?", "acceptedAnswer": { '@type': 'Answer', "text": "It trims DNS noise, not data. Drop +short when debugging to see TTLs and record types in full." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/check-spf-dkim-dmarc-dig/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Check SPF, DKIM and DMARC with dig: Exact Commands and How to Read Them | PromptDNS"
   description="Check SPF, DKIM and DMARC from the command line with dig: exact commands for each record, how to read the output, and what fail and pass look like."
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Check SPF, DKIM and DMARC with dig"]]}
@@ -23,7 +34,7 @@ const held = isHeld('/check-spf-dkim-dmarc-dig/');
     <section class="not-prose my-8" aria-label="Fix table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
         <table class="pdns-table" style="width:100%">
-          <thead><tr><th>C</th><th>o</th><th>m</th><th>m</th><th>a</th><th>n</th><th>d</th></tr></thead>
+          <thead><tr><th>Record</th><th>Command</th></tr></thead>
           <tbody><tr><td class="font-medium text-ink">SPF</td><td class="text-sm text-ink-dim">dig example.com TXT +short</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">dig default._domainkey.example.com TXT +short</td></tr><tr><td class="font-medium text-ink">DMARC</td><td class="text-sm text-ink-dim">dig _dmarc.example.com TXT +short</td></tr><tr><td class="font-medium text-ink">All three live</td><td class="text-sm text-ink-dim">dig example.com TXT +short, then the two subdomain lookups above</td></tr></tbody>
         </table>
       </div>

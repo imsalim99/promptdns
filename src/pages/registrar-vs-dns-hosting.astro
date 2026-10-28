@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Do I need DNS hosting at my registrar?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Point delegation at any DNS host you like; many registrars also sell hosting, but it is optional." } },
+    {'@type': 'Question', 'name': "What happens if I change nameservers?", "acceptedAnswer": { '@type': 'Answer', "text": "Delegation moves to the new host, so its records become the ones the world sees, with a propagation window up to 48 hours for NS." } },
+    {'@type': 'Question', 'name': "Where do I edit my records?", "acceptedAnswer": { '@type': 'Answer', "text": "At the authoritative DNS host, the one your nameservers point to. Verify with a nameserver lookup before editing." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/registrar-vs-dns-hosting/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="Registrar vs DNS Hosting: Where Your Domain Actually Lives | PromptDNS"
   description="Registrar vs DNS hosting explained: what each one controls, where records actually live, what changing nameservers does, and the gotcha that breaks sites."
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Registrar vs DNS Hosting"]]}

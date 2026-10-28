@@ -1,10 +1,21 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "Is NXDOMAIN the same as the site being down?", "acceptedAnswer": { '@type': 'Answer', "text": "No. A site can be down with valid DNS. NXDOMAIN means the name itself did not resolve to anything." } },
+    {'@type': 'Question', 'name': "Why does only Chrome show this error?", "acceptedAnswer": { '@type': 'Answer', "text": "The lookup failure affects every browser, but Chrome has its own DNS cache and error wording, so it is the place you notice it." } },
+    {'@type': 'Question', 'name': "Can a VPN cause NXDOMAIN?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: many VPN tunnels route DNS to a resolver that filters or fails for some domains. Disconnect and retest to confirm." } }
+  ],
+};
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { isHeld } from '../data/publish-queue.js';
 
 const held = isHeld('/dns-probe-finished-nxdomain/');
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="DNS Probe Finished NxDomain: Meaning and 6 Fixes for Chrome | PromptDNS"
   description="DNS probe finished nxdomain explained: what NXDOMAIN means, why Chrome shows it, and 6 fixes in order, from DNS cache flushes to resolver changes."
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Probe Finished NxDomain"]]}
