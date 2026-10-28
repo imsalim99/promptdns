@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 554 5.4.14 mean my message is lost?", "acceptedAnswer": {"@type": "Answer", "text": "Yes for that copy: the hop limit exists to stop infinite loops, and the message is not delivered. Fix the loop and send fresh."}}, {"@type": "Question", "name": "Why does only one recipient trigger 5.4.14?", "acceptedAnswer": {"@type": "Answer", "text": "The loop is in that recipient’s routing: their forwarding or connector path. Other recipients on different paths never hit it."}}, {"@type": "Question", "name": "Can DNS changes cause 5.4.14?", "acceptedAnswer": {"@type": "Answer", "text": "Indirectly: an MX edit that points a domain back at a filter routing to itself creates the loop. Check the MX record after any change."}}]};
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="SMTP Error 554 5.4.14: Mail Loop Detected, Explained and Fixed | PromptDNS"
   description="SMTP 554 5.4.14 explained: hop count exceeded, the mail loop error. The four causes from connector loops to forwarding rules, and how to trace the Received chain."
   breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 554 5.4.14"]]}

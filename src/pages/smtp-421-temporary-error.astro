@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is 421 the same as my email being blocked?", "acceptedAnswer": {"@type": "Answer", "text": "No. 421 is a temporary refusal: the message is not accepted yet and the sender is expected to retry. Blocks use 5xx codes."}}, {"@type": "Question", "name": "How long should my server keep retrying a 421?", "acceptedAnswer": {"@type": "Answer", "text": "RFC 5321 expects retries for days; typical queues age messages 3 to 5 days. If every retry returns 421 for that long, contact the receiving admin."}}, {"@type": "Question", "name": "Does 421 mean my IP is on a blacklist?", "acceptedAnswer": {"@type": "Answer", "text": "Not by itself: 421 is throttling or unavailability. A blocklist rejection uses 550 5.7.1 with the list named in the text."}}]};
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="SMTP Error 421: Service Not Available, Throttling Explained and Fixed | PromptDNS"
   description="SMTP 421 explained: the transient service-unavailable code. Rate limiting, greylisting and TLS negotiation causes, and why retrying with backoff is the fix."
   breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 421"]]}

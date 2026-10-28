@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 550 5.7.26 mean my domain is blacklisted?", "acceptedAnswer": {"@type": "Answer", "text": "No. This code is pure DMARC enforcement: the fix is authentication and alignment, not delisting. Blacklist issues usually return 550 5.7.1 instead."}}, {"@type": "Question", "name": "How long after fixing DNS does 5.7.26 stop?", "acceptedAnswer": {"@type": "Answer", "text": "Once the corrected records have propagated and your sender signs mail with the new values, the next message is evaluated fresh. Retrying the old queued message unchanged still bounces."}}, {"@type": "Question", "name": "Can the recipient whitelist me past 5.7.26?", "acceptedAnswer": {"@type": "Answer", "text": "No. Gmail applies DMARC policy domain-wide; there is no per-recipient bypass. The only fix is passing authentication on the sending side."}}]};
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="SMTP Error 550 5.7.26: DMARC Rejection Explained and Fixed | PromptDNS"
   description="SMTP 550 5.7.26 explained: Gmail DMARC rejection for unauthenticated mail. The 5 root causes, the exact fixes for SPF, DKIM and DMARC, and how to verify."
   breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 550 5.7.26"]]}

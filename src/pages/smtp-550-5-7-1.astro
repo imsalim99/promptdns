@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 550 5.7.1 mean my domain is blacklisted?", "acceptedAnswer": {"@type": "Answer", "text": "Often the IP, not the domain: the bounce text names the blocklist. Run the blacklist checker on your sending IP to see every list at once."}}, {"@type": "Question", "name": "How do I stop 5.7.1 from recurring?", "acceptedAnswer": {"@type": "Answer", "text": "Fix the named cause and keep the sending behavior clean: authenticated, warmed, low-complaint volume. Repeat listings mean the source is still active."}}, {"@type": "Question", "name": "Can the recipient whitelist my address?", "acceptedAnswer": {"@type": "Answer", "text": "Yes: recipient-side allowlists bypass most 5.7.1 policy rejections. That works for a known partner, not for a campaign."}}]};
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="SMTP Error 550 5.7.1: Delivery Not Authorized, Explained and Fixed | PromptDNS"
   description="SMTP 550 5.7.1 explained: delivery not authorized. The causes from blacklists to missing PTR, relay denial and strict SPF, with the fix for each."
   breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 550 5.7.1"]]}
