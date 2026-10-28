@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 ---
-<BaseLayout title="SPF Record: The Complete Guide" description="SPF records explained: syntax, mechanisms, qualifiers, the 10-DNS-lookup limit, and how to fix broken SPF records."  
+<BaseLayout schema={[faqSchema]} title="SPF Record: The Complete Guide" description="SPF records explained: syntax, mechanisms, qualifiers, the 10-DNS-lookup limit, and how to fix broken SPF records."  
  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SPF Records"]]}>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
@@ -51,15 +51,7 @@ import Diagram from '../components/Diagram.astro';
       </div>
     </section>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF mechanism lookup cost matrix</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Mechanism</th><th>Syntax example</th><th>DNS lookups consumed</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr><tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr><tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr><tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr><tr><td class="font-medium text-ink">ip4 / ip6</td><td class="text-sm text-ink-dim">ip4:192.0.2.0/24</td><td class="text-sm text-ink-dim">0</td></tr><tr><td class="font-medium text-ink">all</td><td class="text-sm text-ink-dim">~all or -all</td><td class="text-sm text-ink-dim">0</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    
 
     <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 SPF evaluation results (RFC 7208 section 2.6)</h2>
     <section class="not-prose my-4" aria-label="Reference table">

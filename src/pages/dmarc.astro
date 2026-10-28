@@ -7,7 +7,7 @@ const faq = {
   mainEntity: [
     { '@type': 'Question', name: 'What does DMARC do?', acceptedAnswer: { '@type': 'Answer', text: 'DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.' } },
     { '@type': 'Question', name: 'What is a good DMARC policy?', acceptedAnswer: { '@type': 'Answer', text: 'Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.' } },
-    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading reinforce.' } },
+    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.' } },
   ],
 };
 ---
@@ -49,15 +49,7 @@ const faq = {
         </table>
       </div>
     </section>
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Complete DMARC tag reference (RFC 7489)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Tag</th><th>Required</th><th>Default if omitted</th><th>Purpose</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">v</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (must be first)</td><td class="text-sm text-ink-dim">Protocol version, value DMARC1</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (record invalid without it)</td><td class="text-sm text-ink-dim">Policy: none, quarantine, or reject</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No aggregate reports</td><td class="text-sm text-ink-dim">Where daily aggregate reports are sent</td></tr><tr><td class="font-medium text-ink">ruf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No forensic reports</td><td class="text-sm text-ink-dim">Where failure samples are sent (rarely honored)</td></tr><tr><td class="font-medium text-ink">sp</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">Inherits p</td><td class="text-sm text-ink-dim">Separate policy for subdomains</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">100</td><td class="text-sm text-ink-dim">Percentage of failing mail that receives the policy</td></tr><tr><td class="font-medium text-ink">adkim</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">DKIM alignment mode</td></tr><tr><td class="font-medium text-ink">aspf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">SPF alignment mode</td></tr><tr><td class="font-medium text-ink">fo</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Forensic report trigger options</td></tr><tr><td class="font-medium text-ink">rf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">afrf</td><td class="text-sm text-ink-dim">Forensic report format</td></tr><tr><td class="font-medium text-ink">ri</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">86400 seconds</td><td class="text-sm text-ink-dim">Aggregate report interval</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -112,7 +104,7 @@ const faq = {
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DMARC do?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.</p></details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What is a good DMARC policy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Where does a DMARC record live?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading reinforce.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Where does a DMARC record live?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.</p></details>
       </div>      <h2 id="related">Related</h2>
       <ul>
         <li><a href="/spf-record/">SPF explained</a> · <a href="/dkim/">DKIM explained</a></li>
