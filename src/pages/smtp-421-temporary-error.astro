@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is 421 the same as my email being blocked?", "acceptedAnswer": {"@type": "Answer", "text": "No. 421 is a temporary refusal: the message is not accepted yet and the sender is expected to retry. Blocks use 5xx codes."}}, {"@type": "Question", "name": "How long should my server keep retrying a 421?", "acceptedAnswer": {"@type": "Answer", "text": "RFC 5321 expects retries for days; typical queues age messages 3 to 5 days. If every retry returns 421 for that long, contact the receiving admin."}}, {"@type": "Question", "name": "Does 421 mean my IP is on a blacklist?", "acceptedAnswer": {"@type": "Answer", "text": "Not by itself: 421 is throttling or unavailability. A blocklist rejection uses 550 5.7.1 with the list named in the text."}}]};
+---
+<BaseLayout
+  title="SMTP Error 421: Service Not Available, Throttling Explained and Fixed | PromptDNS"
+  description="SMTP 421 explained: the transient service-unavailable code. Rate limiting, greylisting and TLS negotiation causes, and why retrying with backoff is the fix."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 421"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SMTP 421</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">temporary error</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Error 421: Meaning, Causes, and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">SMTP error 421 is a transient failure code (RFC 5321: service not available, closing transmission channel) telling the sending server the receiving mail service cannot take the message right now. The triggers are throttling during volume spikes, greylisting on unfamiliar sending IPs, concurrent connection limits, and TLS negotiation failures. Unlike a 5xx code, 421 means retry: RFC 5321 expects the sending server to try again with backoff, and most attempts succeed once the receiver's conditions clear.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Raw bounce transcript">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">Raw bounce transcript</p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">421 4.7.0 Try again later, closing connection
+421-4.7.28 The IP address sending this message does not have a
+421-4.7.28 PTR record setup, or the DNS lookup failed... Try again later</pre>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Code segment breakdown</h2>
+      <section class="not-prose my-4" aria-label="Code segments">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Segment</th><th>Field</th><th>Detail</th></tr></thead>
+            <tbody><tr><td class="font-mono text-xs text-accent-soft">421</td><td class="text-sm text-ink-dim">Class</td><td class="text-sm text-ink-dim">Transient: retry with backoff</td></tr><tr><td class="font-mono text-xs text-accent-soft">4.7.0</td><td class="text-sm text-ink-dim">Enhanced status</td><td class="text-sm text-ink-dim">Security/policy step 7: throttling or policy hold</td></tr><tr><td class="font-mono text-xs text-accent-soft">Try again later</td><td class="text-sm text-ink-dim">Receiver instruction</td><td class="text-sm text-ink-dim">The message is not lost; the channel closed</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Root causes ranked by frequency</h2>
+      <section class="not-prose my-4" aria-label="Root causes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Cause</th><th>Evidence in the results</th><th>Fix</th><th>Verify with</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Rate limiting</td><td class="text-sm text-ink-dim">Sudden volume spike from one IP or domain</td><td class="text-sm text-ink-dim">Slow the sending rate; volume that grew gradually rarely trips this</td><td class="text-sm text-ink-dim">SMTP tester</td></tr><tr><td class="font-medium text-ink">Greylisting</td><td class="text-sm text-ink-dim">New sending IP unfamiliar to the receiver</td><td class="text-sm text-ink-dim">Retry after the greylist window (minutes); the retry is accepted</td><td class="text-sm text-ink-dim">SMTP tester</td></tr><tr><td class="font-medium text-ink">Suspicious-activity hold</td><td class="text-sm text-ink-dim">Gmail-style throttling after pattern changes</td><td class="text-sm text-ink-dim">Keep the retry schedule; fix authentication while waiting</td><td class="text-sm text-ink-dim">Blacklist checker</td></tr><tr><td class="font-medium text-ink">TLS negotiation failure</td><td class="text-sm text-ink-dim">Certificate or STARTTLS problems on the receiving MX</td><td class="text-sm text-ink-dim">Fix the certificate chain on the receiving host</td><td class="text-sm text-ink-dim">SMTP tester</td></tr><tr><td class="font-medium text-ink">Concurrent connection limit</td><td class="text-sm text-ink-dim">Too many simultaneous connections from one IP</td><td class="text-sm text-ink-dim">Reduce parallel connections; queue the rest</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Step-by-step fixes</h2>
+      <ol class="mt-3 grid gap-3">
+        <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">1</span><span class="text-ink-dim">Retry with exponential backoff: 15 minutes, then 30, then hourly. RFC 5321 expects senders to keep trying 4xx responses for days.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">2</span><span class="text-ink-dim">If throttling repeats: reduce the sending rate. 421 on a volume spike is the receiver protecting itself.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">3</span><span class="text-ink-dim">If greylisting: a single retry after the window clears it permanently for that sender-receiver pair.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">4</span><span class="text-ink-dim">Check authentication while waiting: 421 plus authentication gaps often escalates to a 550 once the hold clears.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">5</span><span class="text-ink-dim">Verify the queue is aging properly: messages should retry for days, not expire in hours.</span></li>
+      </ol>
+
+      <h2>Production edge cases when debugging 421</h2>
+      <p class="mt-3">The 421 that fools teams most: a greylisting deferral on a brand-new sending IP looks like a hard failure in a dashboard that collapses codes, and someone rewrites working SPF in response. Read the class digit before touching anything: 4xx is the receiver asking for patience, 5xx is the receiver refusing. They demand opposite responses.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The discipline 421 tests is patience: every team eventually rewrites a working configuration in response to a 421 spike, and the fix that helps is almost always slowing down, not changing records. Watch the class digit, and let the retry schedule do what RFC 5321 designed it to do.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">SMTP 421 vs related bounce codes</h2>
+      <section class="not-prose my-4" aria-label="Related codes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Code</th><th>Class</th><th>Primary layer</th><th>Typical trigger</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">421 4.7.0</td><td class="text-sm text-ink-dim">Transient</td><td class="text-sm text-ink-dim">Throttling</td><td class="text-sm text-ink-dim">Volume spike or greylisting, retry succeeds</td></tr><tr><td class="font-medium text-ink">550 5.7.26</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">DMARC authentication policy</td><td class="text-sm text-ink-dim">Unauthenticated mail</td></tr><tr><td class="font-medium text-ink">550 5.7.1</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Blocklist / relay / SPF policy</td><td class="text-sm text-ink-dim">Listed IP or relay denial</td></tr><tr><td class="font-medium text-ink">554 5.4.14</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Routing</td><td class="text-sm text-ink-dim">Hop count exceeded by a loop</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is 421 the same as my email being blocked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. 421 is a temporary refusal: the message is not accepted yet and the sender is expected to retry. Blocks use 5xx codes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long should my server keep retrying a 421?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">RFC 5321 expects retries for days; typical queues age messages 3 to 5 days. If every retry returns 421 for that long, contact the receiving admin.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does 421 mean my IP is on a blacklist?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not by itself: 421 is throttling or unavailability. A blocklist rejection uses 550 5.7.1 with the list named in the text.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Diagnose with our free tools:
+        <a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">email header analyzer</a>,
+        <a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">blacklist checker</a>,
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

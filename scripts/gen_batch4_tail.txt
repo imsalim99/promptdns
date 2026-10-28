@@ -1,0 +1,138 @@
+count = 0
+NL = chr(10)
+for pg in PAGES:
+    slug = pg['slug']
+    out = OUT / f'{slug}.astro'
+    seg_rows = ''
+    for row in pg['seg_table'][2]:
+        cells = ''.join(
+            f'<td class="font-mono text-xs text-accent-soft">{c}</td>' if i == 0 else f'<td class="text-sm text-ink-dim">{c}</td>'
+            for i, c in enumerate(row)
+        )
+        seg_rows += f'<tr>{cells}</tr>'
+    cause_rows = ''
+    for row in pg['causes'][2]:
+        cells = ''.join(
+            f'<td class="font-medium text-ink">{c}</td>' if i == 0 else f'<td class="text-sm text-ink-dim">{c}</td>'
+            for i, c in enumerate(row)
+        )
+        cause_rows += f'<tr>{cells}</tr>'
+    fix_items = ''
+    for i, f in enumerate(pg['fixes']):
+        fix_items += f'<li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">{i + 1}</span><span class="text-ink-dim">{f}</span></li>'
+    faq_items = ''
+    for q, a in pg['faqs']:
+        faq_items += (
+            '<details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">'
+            f'<summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">{q}'
+            '<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>'
+            f'<p class="mt-3 text-sm leading-relaxed text-ink-dim">{a}</p></details>'
+        )
+    comp_heading, comp_headers, comp_rows = COMPANION[slug]
+    comp_th = ''.join(f'<th>{h}</th>' for h in comp_headers)
+    comp_trs = ''
+    for row in comp_rows:
+        cells = ''.join(
+            f'<td class="font-medium text-ink">{c}</td>' if i == 0 else f'<td class="text-sm text-ink-dim">{c}</td>'
+            for i, c in enumerate(row)
+        )
+        comp_trs += f'<tr>{cells}</tr>'
+    faq_schema_json = json.dumps({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
+        {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': a}} for q, a in pg['faqs']
+    ]}, ensure_ascii=False)
+    faq_const = 'const faqSchema = ' + faq_schema_json + ';'
+
+    html = NL.join([
+        '---',
+        'import BaseLayout from \'../layouts/BaseLayout.astro\';',
+        faq_const,
+        '---',
+        '<BaseLayout',
+        '  title="' + pg['title'] + ' | PromptDNS"',
+        '  description="' + pg['description'] + '"',
+        '  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP ' + pg['code'] + '"]]}',
+        '>',
+        '  <div class="mx-auto max-w-4xl px-4 py-12">',
+        '    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">',
+        '      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>',
+        '      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>',
+        '      <span class="text-ink-dim">SMTP ' + pg['code'] + '</span>',
+        '    </nav>',
+        '    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">' + pg['cls'] + ' error</p>',
+        '    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">' + pg['h1'] + '</h1>',
+        '    <div class="pd-answer" data-vs="answer">',
+        '      <p class="text-lg leading-relaxed text-ink-dim">' + pg['answer'] + '</p>',
+        '    </div>',
+        '',
+        '    <section class="not-prose my-8" aria-label="Raw bounce transcript">',
+        '      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7">',
+        '        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">Raw bounce transcript</p>',
+        '        <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">' + pg['transcript'] + '</pre>',
+        '      </div>',
+        '    </section>',
+        '',
+        '    <article class="rich-text mt-10 max-w-none">',
+        '      <h2>' + pg['seg_table'][0] + '</h2>',
+        '      <section class="not-prose my-4" aria-label="Code segments">',
+        '        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">',
+        '          <table class="pdns-table" style="width:100%">',
+        '            <thead><tr>' + ''.join('<th>' + h + '</th>' for h in pg['seg_table'][1]) + '</tr></thead>',
+        '            <tbody>' + seg_rows + '</tbody>',
+        '          </table>',
+        '        </div>',
+        '      </section>',
+        '',
+        '      <h2>' + pg['causes'][0] + '</h2>',
+        '      <section class="not-prose my-4" aria-label="Root causes">',
+        '        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">',
+        '          <table class="pdns-table" style="width:100%">',
+        '            <thead><tr>' + ''.join('<th>' + h + '</th>' for h in pg['causes'][1]) + '</tr></thead>',
+        '            <tbody>' + cause_rows + '</tbody>',
+        '          </table>',
+        '        </div>',
+        '      </section>',
+        '',
+        '      <h2>Step-by-step fixes</h2>',
+        '      <ol class="mt-3 grid gap-3">',
+        '        ' + fix_items,
+        '      </ol>',
+        '',
+        '      <h2>Production edge cases when debugging ' + pg['code'] + '</h2>',
+        '      <p class="mt-3">' + pg['edge'] + '</p>',
+        '',
+        '      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">',
+        '        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>',
+        '        <p class="text-sm leading-relaxed text-ink-dim italic">' + FIELD_NOTES[slug] + '</p>',
+        '      </aside>',
+        '',
+        '      <h2 class="font-display mt-10 text-xl font-semibold text-ink">' + COMPANION[slug][0] + '</h2>',
+        '      <section class="not-prose my-4" aria-label="Related codes">',
+        '        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">',
+        '          <table class="pdns-table" style="width:100%">',
+        '            <thead><tr>' + ''.join('<th>' + h + '</th>' for h in COMPANION[slug][1]) + '</tr></thead>',
+        '            <tbody>' + comp_trs + '</tbody>',
+        '          </table>',
+        '        </div>',
+        '      </section>',
+        '',
+        '      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>',
+        '      <div class="mt-3 grid gap-3">',
+        '        ' + faq_items,
+        '      </div>',
+        '',
+        '      <p class="mt-8 text-xs text-ink-faint">',
+        '        Diagnose with our free tools:',
+        '        <a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">email header analyzer</a>,',
+        '        <a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">blacklist checker</a>,',
+        '        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>.',
+        '      </p>',
+        '    </article>',
+        '  </div>',
+        '</BaseLayout>',
+        '',
+    ])
+    out.write_text(html, encoding='utf-8')
+    count += 1
+    print(f'Generated: {slug}')
+
+print(f'{count} SMTP error pages generated')

@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 550 5.7.1 mean my domain is blacklisted?", "acceptedAnswer": {"@type": "Answer", "text": "Often the IP, not the domain: the bounce text names the blocklist. Run the blacklist checker on your sending IP to see every list at once."}}, {"@type": "Question", "name": "How do I stop 5.7.1 from recurring?", "acceptedAnswer": {"@type": "Answer", "text": "Fix the named cause and keep the sending behavior clean: authenticated, warmed, low-complaint volume. Repeat listings mean the source is still active."}}, {"@type": "Question", "name": "Can the recipient whitelist my address?", "acceptedAnswer": {"@type": "Answer", "text": "Yes: recipient-side allowlists bypass most 5.7.1 policy rejections. That works for a known partner, not for a campaign."}}]};
+---
+<BaseLayout
+  title="SMTP Error 550 5.7.1: Delivery Not Authorized, Explained and Fixed | PromptDNS"
+  description="SMTP 550 5.7.1 explained: delivery not authorized. The causes from blacklists to missing PTR, relay denial and strict SPF, with the fix for each."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 550 5.7.1"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SMTP 550 5.7.1</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">permanent error</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Error 550 5.7.1: Meaning, Causes, and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">SMTP error 550 5.7.1 is a permanent rejection code (RFC 3463 enhanced status: delivery not authorized) that the receiving server returns when policy forbids accepting your message. The triggers span four layers: your sending IP sits on a blocklist, your reverse DNS fails forward-confirmation, your server attempted relay it is not permitted, or the recipient's SPF policy hard-failed you. Each cause has a different fix, so the first step is reading the full text after the code: the receiving server names its reason.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Raw bounce transcript">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">Raw bounce transcript</p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">550 5.7.1 Service unavailable; Client host [203.0.113.9] blocked
+550 5.7.1 using Spamhaus. To request removal from the list see
+550 5.7.1 https://www.spamhaus.org/query/ip/203.0.113.9</pre>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Code segment breakdown</h2>
+      <section class="not-prose my-4" aria-label="Code segments">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Segment</th><th>Field</th><th>Detail</th></tr></thead>
+            <tbody><tr><td class="font-mono text-xs text-accent-soft">550</td><td class="text-sm text-ink-dim">Class</td><td class="text-sm text-ink-dim">Permanent failure</td></tr><tr><td class="font-mono text-xs text-accent-soft">5.7.1</td><td class="text-sm text-ink-dim">Enhanced status</td><td class="text-sm text-ink-dim">Delivery not authorized by policy</td></tr><tr><td class="font-mono text-xs text-accent-soft">blocked using Spamhaus</td><td class="text-sm text-ink-dim">Named cause</td><td class="text-sm text-ink-dim">The sending IP is on a DNS blocklist</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Root causes ranked by frequency</h2>
+      <section class="not-prose my-4" aria-label="Root causes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Cause</th><th>Evidence in the results</th><th>Fix</th><th>Verify with</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Sending IP on a DNS blocklist</td><td class="text-sm text-ink-dim">Spamhaus, Barracuda, SpamCop</td><td class="text-sm text-ink-dim">Delist after fixing the sending behavior</td><td class="text-sm text-ink-dim">Blacklist checker</td></tr><tr><td class="font-medium text-ink">Missing or generic PTR record</td><td class="text-sm text-ink-dim">Forward-confirmed reverse DNS fails</td><td class="text-sm text-ink-dim">Ask the IP owner to publish a PTR matching your hostname</td><td class="text-sm text-ink-dim">PTR record lookup</td></tr><tr><td class="font-medium text-ink">Relay access denied</td><td class="text-sm text-ink-dim">Your server tried to send through an MX that does not relay for you</td><td class="text-sm text-ink-dim">Authenticate or correct the outbound MX configuration</td><td class="text-sm text-ink-dim">SMTP tester</td></tr><tr><td class="font-medium text-ink">Strict SPF hardfail</td><td class="text-sm text-ink-dim">Sending IP is not in the recipient-visible SPF record</td><td class="text-sm text-ink-dim">Add the include or IP, or soften to ~all during diagnosis</td><td class="text-sm text-ink-dim">SPF record checker</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Step-by-step fixes</h2>
+      <ol class="mt-3 grid gap-3">
+        <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">1</span><span class="text-ink-dim">Read the full bounce text: the blocklist or policy is usually named after the code.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">2</span><span class="text-ink-dim">If named: delist at the named service after fixing the sending behavior that caused the listing.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">3</span><span class="text-ink-dim">If PTR is the cause: request a reverse DNS record from your hosting provider matching the mail hostname.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">4</span><span class="text-ink-dim">If relay denied: your outbound path targets the wrong server; authenticate with the relay or fix the MX.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">5</span><span class="text-ink-dim">If strict SPF: add the sending IP or include to the record, then verify with the SPF checker.</span></li>
+      </ol>
+
+      <h2>Production edge cases when debugging 550 5.7.1</h2>
+      <p class="mt-3">Two edge cases cause repeat 5.7.1 pain: shared sending infrastructure, where one neighbor’s bad behavior lists the whole pool and your only real fix is a dedicated IP, and forwarding chains, where a recipient’s own forwarder re-sends from an IP you cannot influence. In the forwarding case the receiving admin must allowlist the forwarder, because no change on your side controls their hop.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The 5.7.1 bounce text is the most informative error in email: the receiving server names its exact reason, unlike the vague 421. Teams that keep a log of the named causes per bounce see patterns within a week, usually one compromised account or one misconfigured newsletter stack.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">SMTP 550 5.7.1 vs related bounce codes</h2>
+      <section class="not-prose my-4" aria-label="Related codes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Code</th><th>Class</th><th>Primary layer</th><th>Typical trigger</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">550 5.7.1</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Blocklist / relay / SPF policy</td><td class="text-sm text-ink-dim">Listed IP, bad PTR, relay denial</td></tr><tr><td class="font-medium text-ink">550 5.7.26</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">DMARC authentication policy</td><td class="text-sm text-ink-dim">Unauthenticated mail to an enforcing domain</td></tr><tr><td class="font-medium text-ink">554 5.4.14</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Routing</td><td class="text-sm text-ink-dim">Hop count exceeded by a loop</td></tr><tr><td class="font-medium text-ink">421 4.7.0</td><td class="text-sm text-ink-dim">Transient</td><td class="text-sm text-ink-dim">Throttling</td><td class="text-sm text-ink-dim">Volume spike, retry succeeds</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does 550 5.7.1 mean my domain is blacklisted?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Often the IP, not the domain: the bounce text names the blocklist. Run the blacklist checker on your sending IP to see every list at once.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I stop 5.7.1 from recurring?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Fix the named cause and keep the sending behavior clean: authenticated, warmed, low-complaint volume. Repeat listings mean the source is still active.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can the recipient whitelist my address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: recipient-side allowlists bypass most 5.7.1 policy rejections. That works for a known partner, not for a campaign.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Diagnose with our free tools:
+        <a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">email header analyzer</a>,
+        <a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">blacklist checker</a>,
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

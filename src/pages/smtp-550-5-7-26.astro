@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 550 5.7.26 mean my domain is blacklisted?", "acceptedAnswer": {"@type": "Answer", "text": "No. This code is pure DMARC enforcement: the fix is authentication and alignment, not delisting. Blacklist issues usually return 550 5.7.1 instead."}}, {"@type": "Question", "name": "How long after fixing DNS does 5.7.26 stop?", "acceptedAnswer": {"@type": "Answer", "text": "Once the corrected records have propagated and your sender signs mail with the new values, the next message is evaluated fresh. Retrying the old queued message unchanged still bounces."}}, {"@type": "Question", "name": "Can the recipient whitelist me past 5.7.26?", "acceptedAnswer": {"@type": "Answer", "text": "No. Gmail applies DMARC policy domain-wide; there is no per-recipient bypass. The only fix is passing authentication on the sending side."}}]};
+---
+<BaseLayout
+  title="SMTP Error 550 5.7.26: DMARC Rejection Explained and Fixed | PromptDNS"
+  description="SMTP 550 5.7.26 explained: Gmail DMARC rejection for unauthenticated mail. The 5 root causes, the exact fixes for SPF, DKIM and DMARC, and how to verify."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 550 5.7.26"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SMTP 550 5.7.26</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">permanent error</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Error 550 5.7.26: Meaning, Causes, and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">SMTP error 550 5.7.26 is a permanent rejection code defined by the enhanced status code system (RFC 3463) that Gmail returns when mail claiming your domain fails DMARC: it did not authenticate with SPF or DKIM, or the authentication did not align. Gmail applies it during the end-of-DATA phase when the sender's domain publishes an enforcing DMARC policy, and since 2024 it applies to all bulk senders (5,000+ messages per day to Gmail) under the sender requirements. The fastest way to isolate which mechanism failed is to paste the raw bounce into the email header analyzer and read the Authentication-Results line.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Raw bounce transcript">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">Raw bounce transcript</p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">550-5.7.26 [147-20-228-0.spf.example] This mail has been blocked because
+550-5.7.26 the sender is unauthenticated. Gmail requires all senders
+550-5.7.26 to authenticate with either SPF or DKIM.
+550-5.7.26
+550-5.7.26  Authentication results:
+550-5.7.26  spf=none (sender IP is 203.0.113.9)
+550-5.7.26  dkim=none (message not signed)
+550-5.7.26  dmarc=fail action=reject header.from=example.com</pre>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Code segment breakdown</h2>
+      <section class="not-prose my-4" aria-label="Code segments">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Segment</th><th>Field</th><th>Detail</th></tr></thead>
+            <tbody><tr><td class="font-mono text-xs text-accent-soft">550</td><td class="text-sm text-ink-dim">Class</td><td class="text-sm text-ink-dim">Permanent failure: do not retry the same message unchanged</td></tr><tr><td class="font-mono text-xs text-accent-soft">5.7.26</td><td class="text-sm text-ink-dim">Enhanced status</td><td class="text-sm text-ink-dim">Security/Policy step 7, reason 26: authentication required by policy</td></tr><tr><td class="font-mono text-xs text-accent-soft">header.from=example.com</td><td class="text-sm text-ink-dim">Alignment test</td><td class="text-sm text-ink-dim">The domain DMARC evaluated against</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Root causes ranked by frequency</h2>
+      <section class="not-prose my-4" aria-label="Root causes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Cause</th><th>Evidence in the results</th><th>Fix</th><th>Verify with</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Missing both SPF and DKIM</td><td class="text-sm text-ink-dim">spf=none, dkim=none in the results line</td><td class="text-sm text-ink-dim">Publish an SPF include for your sender and enable DKIM signing</td><td class="text-sm text-ink-dim">SPF and DKIM checkers</td></tr><tr><td class="font-medium text-ink">DMARC enforcing with an alignment mismatch</td><td class="text-sm text-ink-dim">Header From differs from the SPF or DKIM domain</td><td class="text-sm text-ink-dim">Align the Return-Path or DKIM d= domain with the visible From domain</td><td class="text-sm text-ink-dim">DMARC record checker</td></tr><tr><td class="font-medium text-ink">SPF permerror</td><td class="text-sm text-ink-dim">Record over 10 lookups or malformed</td><td class="text-sm text-ink-dim">Rebuild the record; flatten or remove dead includes</td><td class="text-sm text-ink-dim">SPF lookup limit auditor</td></tr><tr><td class="font-medium text-ink">Bulk sender gaps</td><td class="text-sm text-ink-dim">5,000+ messages/day to Gmail without full authentication or one-click unsubscribe</td><td class="text-sm text-ink-dim">Complete the Gmail sender requirements, including List-Unsubscribe-Post</td><td class="text-sm text-ink-dim">Header analyzer</td></tr><tr><td class="font-medium text-ink">Broken DKIM key</td><td class="text-sm text-ink-dim">Selector published with empty or expired key material</td><td class="text-sm text-ink-dim">Regenerate the key in your ESP and republish the selector</td><td class="text-sm text-ink-dim">DKIM checker</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Step-by-step fixes</h2>
+      <ol class="mt-3 grid gap-3">
+        <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">1</span><span class="text-ink-dim">Run the SPF record checker: confirm exactly one v=spf1 record containing the include for every legitimate sender, within the 10-lookup limit.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">2</span><span class="text-ink-dim">Run the DKIM checker on the selector your ESP signs with: the key must be live and at least 1024-bit (2048-bit preferred).</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">3</span><span class="text-ink-dim">Check the DMARC record: if p=reject or p=quarantine is live, every legitimate source must pass alignment first, or lower pct while you fix sources.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">4</span><span class="text-ink-dim">For bulk senders: add List-Unsubscribe-Post (RFC 8058) headers and keep the spam-complaint rate under 0.1 percent.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">5</span><span class="text-ink-dim">Resend only after the header analyzer shows spf=pass and dkim=pass with alignment; a 550 never clears by retrying unchanged.</span></li>
+      </ol>
+
+      <h2>Production edge cases when debugging 550 5.7.26</h2>
+      <p class="mt-3">Two production edge cases cause most 5.7.26 surprises: auto-forwarding, which changes the envelope sender and breaks SPF alignment unless DKIM survives the hop, and ESP migrations, where the old include is removed before the new one is added. Continuous monitoring of the SPF, DKIM, and DMARC records catches the vendor-side drift that starts these bounces before your users report them.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The 5.7.26 that stumps teams is the forwarded-mail case: a recipient forwards your message, the forwarder re-sends it, and DKIM breaks on the modified body while SPF breaks on the new IP. The original sender did nothing wrong, and the fix belongs to the forwarder (SRS or allowlisting). Reading the Authentication-Results line tells you which side owns the failure.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">SMTP 550 5.7.26 vs related bounce codes</h2>
+      <section class="not-prose my-4" aria-label="Related codes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Code</th><th>Class</th><th>Primary layer</th><th>Typical trigger</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">550 5.7.26</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">DMARC authentication policy</td><td class="text-sm text-ink-dim">Unauthenticated mail to an enforcing domain</td></tr><tr><td class="font-medium text-ink">550 5.7.1</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Blocklist / relay / SPF policy</td><td class="text-sm text-ink-dim">Listed IP, bad PTR, relay denial</td></tr><tr><td class="font-medium text-ink">554 5.4.14</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Routing</td><td class="text-sm text-ink-dim">Hop count exceeded by a loop</td></tr><tr><td class="font-medium text-ink">421 4.7.0</td><td class="text-sm text-ink-dim">Transient</td><td class="text-sm text-ink-dim">Throttling</td><td class="text-sm text-ink-dim">Volume spike or greylisting, retry succeeds</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does 550 5.7.26 mean my domain is blacklisted?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. This code is pure DMARC enforcement: the fix is authentication and alignment, not delisting. Blacklist issues usually return 550 5.7.1 instead.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long after fixing DNS does 5.7.26 stop?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Once the corrected records have propagated and your sender signs mail with the new values, the next message is evaluated fresh. Retrying the old queued message unchanged still bounces.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can the recipient whitelist me past 5.7.26?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Gmail applies DMARC policy domain-wide; there is no per-recipient bypass. The only fix is passing authentication on the sending side.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Diagnose with our free tools:
+        <a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">email header analyzer</a>,
+        <a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">blacklist checker</a>,
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>

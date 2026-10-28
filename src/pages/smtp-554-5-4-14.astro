@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const faqSchema = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does 554 5.4.14 mean my message is lost?", "acceptedAnswer": {"@type": "Answer", "text": "Yes for that copy: the hop limit exists to stop infinite loops, and the message is not delivered. Fix the loop and send fresh."}}, {"@type": "Question", "name": "Why does only one recipient trigger 5.4.14?", "acceptedAnswer": {"@type": "Answer", "text": "The loop is in that recipient’s routing: their forwarding or connector path. Other recipients on different paths never hit it."}}, {"@type": "Question", "name": "Can DNS changes cause 5.4.14?", "acceptedAnswer": {"@type": "Answer", "text": "Indirectly: an MX edit that points a domain back at a filter routing to itself creates the loop. Check the MX record after any change."}}]};
+---
+<BaseLayout
+  title="SMTP Error 554 5.4.14: Mail Loop Detected, Explained and Fixed | PromptDNS"
+  description="SMTP 554 5.4.14 explained: hop count exceeded, the mail loop error. The four causes from connector loops to forwarding rules, and how to trace the Received chain."
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SMTP 554 5.4.14"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a> <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SMTP 554 5.4.14</span>
+    </nav>
+    <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">permanent error</p>
+    <h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">SMTP Error 554 5.4.14: Meaning, Causes, and How to Fix It</h1>
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">SMTP error 554 5.4.14 is a permanent rejection (RFC 3463 enhanced status: routing loop detected) returned when the Received header count on a message exceeds the server's hop limit, typically 20 to 30 hops. The message bounced between two or more servers that each believed the next one was the destination: an outbound connector pointing back at the same MX, a forwarding rule that loops to itself, or an MX that resolves to a filter routing back to the sender. The diagnosis is the Received chain itself: paste the headers into the email header analyzer and read the loop directly.</p>
+    </div>
+
+    <section class="not-prose my-8" aria-label="Raw bounce transcript">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">Raw bounce transcript</p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">554 5.4.14 Hop count exceeded - possible mail loop
+550 5.4.14 RESOLVER.POP.InvalidHopCount; message routed through
+550 5.4.14 too many gateways</pre>
+      </div>
+    </section>
+
+    <article class="rich-text mt-10 max-w-none">
+      <h2>Code segment breakdown</h2>
+      <section class="not-prose my-4" aria-label="Code segments">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Segment</th><th>Field</th><th>Detail</th></tr></thead>
+            <tbody><tr><td class="font-mono text-xs text-accent-soft">554</td><td class="text-sm text-ink-dim">Class</td><td class="text-sm text-ink-dim">Permanent failure: no retry</td></tr><tr><td class="font-mono text-xs text-accent-soft">5.4.14</td><td class="text-sm text-ink-dim">Enhanced status</td><td class="text-sm text-ink-dim">Routing loop detected (hop count exceeded)</td></tr><tr><td class="font-mono text-xs text-accent-soft">InvalidHopCount</td><td class="text-sm text-ink-dim">Named cause</td><td class="text-sm text-ink-dim">The Microsoft 365 resolver verdict for looping mail</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Root causes ranked by frequency</h2>
+      <section class="not-prose my-4" aria-label="Root causes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Cause</th><th>Evidence in the results</th><th>Fix</th><th>Verify with</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Connector loop between gateways</td><td class="text-sm text-ink-dim">M365 outbound connector routes back to *.mail.protection.outlook.com</td><td class="text-sm text-ink-dim">Fix the connector address space so mail exits, not re-enters</td><td class="text-sm text-ink-dim">Header analyzer</td></tr><tr><td class="font-medium text-ink">Catch-all forwarding rule</td><td class="text-sm text-ink-dim">A forwarding rule sends back to an alias on the same domain</td><td class="text-sm text-ink-dim">Remove the self-referencing forwarding entry</td><td class="text-sm text-ink-dim">MX record lookup</td></tr><tr><td class="font-medium text-ink">MX points to a filter that points back</td><td class="text-sm text-ink-dim">Spam filter MX chains to the same MX</td><td class="text-sm text-ink-dim">Correct the filter outbound path</td><td class="text-sm text-ink-dim">MX record lookup</td></tr><tr><td class="font-medium text-ink">Excessive legitimate hops</td><td class="text-sm text-ink-dim">Long forwarding chains past the hop limit</td><td class="text-sm text-ink-dim">Shorten the chain or raise the hop limit where you own it</td><td class="text-sm text-ink-dim">Header analyzer</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2>Step-by-step fixes</h2>
+      <ol class="mt-3 grid gap-3">
+        <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">1</span><span class="text-ink-dim">Read the Received headers bottom-up: each server appends a hop, and the loop repeats once you pass the point where routing went wrong.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">2</span><span class="text-ink-dim">Identify the pair of servers trading the message: the same two hostnames appearing twice is the loop.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">3</span><span class="text-ink-dim">Fix at the boundary you control: the outbound connector address space, the forwarding rule, or the MX record.</span></li><li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent/15 font-mono text-xs font-bold text-accent">4</span><span class="text-ink-dim">Verify by sending a fresh message and confirming the Received chain terminates at your real mailbox host.</span></li>
+      </ol>
+
+      <h2>Production edge cases when debugging 554 5.4.14</h2>
+      <p class="mt-3">The nastiest 5.4.14 variant: a user sets auto-forwarding on their mailbox to an external address, and the external address auto-forwards back to an alias on your domain. Each forward adds two hops until the limit trips. No MX change fixes it; the fix is the forwarding rule pair, and the Received chain names both servers so you know exactly which two admins to call.</p>
+
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">The 5.4.14 loop is the one error where the header analyzer is not just helpful but essential: the Received chain is the evidence, and the loop is visible as a repeating hostname pair. No DNS record change fixes a forwarding rule; the fix location is named in the headers.</p>
+      </aside>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">SMTP 554 5.4.14 vs related bounce codes</h2>
+      <section class="not-prose my-4" aria-label="Related codes">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Code</th><th>Class</th><th>Primary layer</th><th>Typical trigger</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">554 5.4.14</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Routing</td><td class="text-sm text-ink-dim">Hop count exceeded by a loop</td></tr><tr><td class="font-medium text-ink">550 5.7.26</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">DMARC authentication policy</td><td class="text-sm text-ink-dim">Unauthenticated mail</td></tr><tr><td class="font-medium text-ink">550 5.7.1</td><td class="text-sm text-ink-dim">Permanent</td><td class="text-sm text-ink-dim">Blocklist / relay / SPF policy</td><td class="text-sm text-ink-dim">Listed IP or relay denial</td></tr><tr><td class="font-medium text-ink">421 4.7.0</td><td class="text-sm text-ink-dim">Transient</td><td class="text-sm text-ink-dim">Throttling</td><td class="text-sm text-ink-dim">Volume spike, retry succeeds</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does 554 5.4.14 mean my message is lost?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes for that copy: the hop limit exists to stop infinite loops, and the message is not delivered. Fix the loop and send fresh.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does only one recipient trigger 5.4.14?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The loop is in that recipient’s routing: their forwarding or connector path. Other recipients on different paths never hit it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can DNS changes cause 5.4.14?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Indirectly: an MX edit that points a domain back at a filter routing to itself creates the loop. Check the MX record after any change.</p></details>
+      </div>
+
+      <p class="mt-8 text-xs text-ink-faint">
+        Diagnose with our free tools:
+        <a href="/email-header-analyzer/" class="text-accent hover:text-accent-soft">email header analyzer</a>,
+        <a href="/blacklist-checker/" class="text-accent hover:text-accent-soft">blacklist checker</a>,
+        <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF checker</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
