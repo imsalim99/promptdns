@@ -45,6 +45,21 @@ const faq = {
       setup, and the DMARC record that ties it together, in the correct order.
     </p>
 
+    <section class="not-prose mt-8" aria-label={`${d.name} authentication specification`} data-vs="speccard">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent mb-3">{d.name} authentication specification</p>
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Record</th><th>Value for {d.name}</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">SPF include</td><td class="font-mono text-xs text-accent-soft">{d.include === 'dashboard' ? 'Assigned in the dashboard' : d.include}</td><td class="text-sm text-ink-dim">Costs one of the 10 allowed DNS lookups</td></tr>
+            <tr><td class="font-medium text-ink">DKIM selector</td><td class="font-mono text-xs text-accent-soft">{d.selector === 'custom' ? 'Displayed after domain authentication' : d.selector}</td><td class="text-sm text-ink-dim">Verify with the DKIM checker after setup</td></tr>
+            <tr><td class="font-medium text-ink">DMARC location</td><td class="font-mono text-xs text-accent-soft">_dmarc.yourdomain.com</td><td class="text-sm text-ink-dim">One record covers every sender, {d.name} included</td></tr>
+            <tr><td class="font-medium text-ink">DNS record types</td><td class="font-mono text-xs text-accent-soft">CNAME and/or TXT as the steps state</td><td class="text-sm text-ink-dim">Keep mail records unproxied (DNS only)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <div class="mt-8 rounded-xl border border-warn/30 bg-warn/10 p-5">
       <p class="text-sm leading-relaxed text-ink-dim"><strong class="text-warn">{d.name} gotcha:</strong> {d.quirk}</p>
     </div>
