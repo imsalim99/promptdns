@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'How often do DMARC reports arrive?', acceptedAnswer: { '@type': 'Answer', text: 'Daily, one XML per provider per day. Gmail, Microsoft, and Yahoo each send their own, so volume scales with the providers your recipients use.' } },
-    { '@type': 'Question', name: 'Why do I get reports from providers I do not use?', acceptedAnswer: { '@type': 'Answer', text: 'The reports cover mail claiming to be your domain anywhere: spoofing attempts, forwarders, and recipients whose mailbox provider is that vendor.' } },
-    { '@type': 'Question', name: 'What should I do with unknown source IPs?', acceptedAnswer: { '@type': 'Answer', text: 'Reverse DNS them first: many are legitimate services you forgot. The ones that fail authentication and are unknown are your spoofing candidates.' } },
+    {'@type': 'Question', 'name': "How often do DMARC reports arrive?", "acceptedAnswer": { '@type': 'Answer', "text": "Daily, one XML per provider per day. Gmail, Microsoft, and Yahoo each send their own, so volume scales with the providers your recipients use." } },
+    {'@type': 'Question', 'name': "Why do I get reports from providers I do not use?", "acceptedAnswer": { '@type': 'Answer', "text": "The reports cover mail claiming to be your domain anywhere: spoofing attempts, forwarders, and recipients whose mailbox provider is that vendor." } },
+    {'@type': 'Question', 'name': "What should I do with unknown source IPs?", "acceptedAnswer": { '@type': 'Answer', "text": "Reverse DNS them first: many are legitimate services you forgot. The ones that fail authentication and are unknown are your spoofing candidates." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -33,6 +33,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       sending mail as your domain, legitimate or not.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DMARC aggregate XML fields that matter</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Field</th><th>Example</th><th>What it tells you</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">source_ip</td><td class="text-sm text-ink-dim">203.0.113.9</td><td class="text-sm text-ink-dim">Who actually sent mail claiming your domain</td></tr><tr><td class="font-medium text-ink">count</td><td class="text-sm text-ink-dim">12</td><td class="text-sm text-ink-dim">Message volume from that source</td></tr><tr><td class="font-medium text-ink">spf / dkim results</td><td class="text-sm text-ink-dim">pass / fail</td><td class="text-sm text-ink-dim">Which protocol carried authentication</td></tr><tr><td class="font-medium text-ink">disposition</td><td class="text-sm text-ink-dim">none / quarantine / reject</td><td class="text-sm text-ink-dim">What the receiver did with the mail</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

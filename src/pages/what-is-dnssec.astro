@@ -28,6 +28,26 @@ const faq = {
       trusted on vibes: whoever answers first wins.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 4 core DNSSEC record types (RFC 4034)</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Record</th><th>Role</th><th>Key detail</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">RRSIG</td><td class="text-sm text-ink-dim">Digital signature over each record set</td><td class="text-sm text-ink-dim">Must be refreshed before signature expiry</td></tr><tr><td class="font-medium text-ink">DNSKEY</td><td class="text-sm text-ink-dim">Zone signing key (flag 256) and key signing key (flag 257)</td><td class="text-sm text-ink-dim">The KSK signs the DNSKEY set</td></tr><tr><td class="font-medium text-ink">DS</td><td class="text-sm text-ink-dim">Hash of the KSK published in the parent zone</td><td class="text-sm text-ink-dim">The chain of trust link at the registrar</td></tr><tr><td class="font-medium text-ink">NSEC / NSEC3</td><td class="text-sm text-ink-dim">Authenticated denial of existence</td><td class="text-sm text-ink-dim">Proves a name genuinely does not exist</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNSSEC validation states in resolvers</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>State</th><th>Meaning</th><th>What you see</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Secure</td><td class="text-sm text-ink-dim">Chain of trust validates to the root</td><td class="text-sm text-ink-dim">AD flag set on the answer</td></tr><tr><td class="font-medium text-ink">Insecure</td><td class="text-sm text-ink-dim">Zone is unsigned; no DS at the parent</td><td class="text-sm text-ink-dim">Normal answer, no AD flag</td></tr><tr><td class="font-medium text-ink">Bogus</td><td class="text-sm text-ink-dim">Broken chain: mismatched DS, expired RRSIG</td><td class="text-sm text-ink-dim">SERVFAIL for the whole zone</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

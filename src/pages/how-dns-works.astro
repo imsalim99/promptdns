@@ -29,6 +29,16 @@ const steps = [
       layers of the internet and comes back, usually in under 50 ms. Here is the whole journey.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 4 servers involved in every DNS lookup</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Server</th><th>Role</th><th>Example</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Recursive resolver</td><td class="text-sm text-ink-dim">Chases the answer across the hierarchy on your behalf</td><td class="text-sm text-ink-dim">Cloudflare 1.1.1.1, Google 8.8.8.8</td></tr><tr><td class="font-medium text-ink">Root nameserver</td><td class="text-sm text-ink-dim">Points to the TLD nameserver for the extension</td><td class="text-sm text-ink-dim">a.root-servers.net through m.root-servers.net</td></tr><tr><td class="font-medium text-ink">TLD nameserver</td><td class="text-sm text-ink-dim">Holds delegation for every domain in its extension</td><td class="text-sm text-ink-dim">Verisign for .com</td></tr><tr><td class="font-medium text-ink">Authoritative nameserver</td><td class="text-sm text-ink-dim">Holds the zone file and returns the final record</td><td class="text-sm text-ink-dim">Your DNS host</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -87,5 +97,7 @@ const steps = [
       </ul>
 
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What are the four servers in a DNS lookup?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The recursive resolver, the root nameserver layer, the TLD nameserver for the extension, and the authoritative nameserver that holds the zone. Each answers with a referral to the next.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNS use TCP or UDP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Both: UDP port 53 for normal queries, TCP port 53 for truncated responses and zone transfers, plus encrypted DoH and DoT transports.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is DNS caching?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Every answer carries a TTL that each layer may cache: the browser, the operating system, and the resolver. Caching is why changes propagate gradually.</p></details></div>
+      </div>
 </BaseLayout>

@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is DNS rebinding still a threat?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, especially against IoT devices and internal services that lack host-header validation. Browsers have improved, but the attack surface persists."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How is this different from DNS spoofing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Spoofing forges answers. Rebinding uses legitimate answers that change over time: the DNS is working correctly, the attack exploits the time gap."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does HTTPS prevent rebinding?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It complicates it (the attacker needs a valid certificate for their domain that rebinding preserves), but does not eliminate the underlying issue for internal HTTP services."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I prevent rebinding on my own devices?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Set your resolver to filter rebind attempts (dnsmasq: stop-dns-rebind). Most modern routers and Pi-hole include this."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why doesn’t the same-origin policy prevent this?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The browser judges origin by domain NAME, not IP. attacker.com resolving to 192.168.1.1 is still attacker.com to the browser."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the DNS TTL requirement for rebinding?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The attacker needs a very low TTL (0 or 1) so the browser re-queries quickly. Legitimate domains should never use TTL 0."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is DNS rebinding still a threat?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, especially against IoT devices and internal services that lack host-header validation. Browsers have improved, but the attack surface persists." } },
+    {'@type': 'Question', 'name': "How is this different from DNS spoofing?", "acceptedAnswer": { '@type': 'Answer', "text": "Spoofing forges answers. Rebinding uses legitimate answers that change over time: the DNS is working correctly, the attack exploits the time gap." } },
+    {'@type': 'Question', 'name': "Does HTTPS prevent rebinding?", "acceptedAnswer": { '@type': 'Answer', "text": "It complicates it (the attacker needs a valid certificate for their domain that rebinding preserves), but does not eliminate the underlying issue for internal HTTP services." } },
+    {'@type': 'Question', 'name': "Can I prevent rebinding on my own devices?", "acceptedAnswer": { '@type': 'Answer', "text": "Set your resolver to filter rebind attempts (dnsmasq: stop-dns-rebind). Most modern routers and Pi-hole include this." } },
+    {'@type': 'Question', 'name': "Why doesn\u2019t the same-origin policy prevent this?", "acceptedAnswer": { '@type': 'Answer', "text": "The browser judges origin by domain NAME, not IP. attacker.com resolving to 192.168.1.1 is still attacker.com to the browser." } },
+    {'@type': 'Question', 'name': "What is the DNS TTL requirement for rebinding?", "acceptedAnswer": { '@type': 'Answer', "text": "The attacker needs a very low TTL (0 or 1) so the browser re-queries quickly. Legitimate domains should never use TTL 0." } }
+  ]
 }
 ---
 <BaseLayout
@@ -74,6 +32,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS rebinding exploits the time gap between DNS resolution and browser security checks. The attacker’s domain first resolves to their own server (to plant malicious JavaScript), then rebinds to an internal IP (to access devices on your network) using the browser’s trust.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS rebinding defenses</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Defense</th><th>Layer</th><th>Notes</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Host header validation</td><td class="text-sm text-ink-dim">Application</td><td class="text-sm text-ink-dim">Reject requests whose Host is not your hostname</td></tr><tr><td class="font-medium text-ink">Split-horizon DNS hygiene</td><td class="text-sm text-ink-dim">Network</td><td class="text-sm text-ink-dim">Keep private answers off public resolvers</td></tr><tr><td class="font-medium text-ink">Browser-side protections</td><td class="text-sm text-ink-dim">Client</td><td class="text-sm text-ink-dim">Modern browsers pin public suffixes</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

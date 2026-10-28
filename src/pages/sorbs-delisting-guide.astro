@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What is SORBS?', acceptedAnswer: { '@type': 'Answer', text: 'The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily.' } },
-    { '@type': 'Question', name: 'How long does SORBS delisting take?', acceptedAnswer: { '@type': 'Answer', text: 'Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus.' } },
-    { '@type': 'Question', name: 'Why was I listed without sending spam?', acceptedAnswer: { '@type': 'Answer', text: 'Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one.' } },
+    {'@type': 'Question', 'name': "What is SORBS?", "acceptedAnswer": { '@type': 'Answer', "text": "The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily." } },
+    {'@type': 'Question', 'name': "How long does SORBS delisting take?", "acceptedAnswer": { '@type': 'Answer', "text": "Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus." } },
+    {'@type': 'Question', 'name': "Why was I listed without sending spam?", "acceptedAnswer": { '@type': 'Answer', "text": "Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -31,6 +31,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       automatic timeout, but requesting removal incorrectly can extend the wait.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SORBS zones</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Zone</th><th>Fix</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">spam</td><td class="text-sm text-ink-dim">Prove closure</td></tr><tr><td class="font-medium text-ink">dul</td><td class="text-sm text-ink-dim">Static relay</td></tr><tr><td class="font-medium text-ink">http</td><td class="text-sm text-ink-dim">Close proxies</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="rich-text mt-8">
       <h2>How SORBS listings behave</h2>
       <ul>

@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How long does Google Workspace authentication take?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "SPF verifies immediately after DNS propagation. DKIM takes effect after you click Start authentication and DNS propagates (minutes to hours)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need to add SPF for each user?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: SPF is published once at the domain level and covers all users on the Google Workspace account."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if I also use another email service?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Add that service’s include to the same SPF record, and set up DKIM separately in that service. Watch the 10-lookup limit as services stack."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does my Gmail still show sent via or sent on behalf of?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "This indicates alignment issues: the From address and the authenticated domain must match. Ensure you’re sending from your own domain, not gmail.com."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use a subdomain for Google Workspace?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, but it’s unusual. Most organizations use the primary domain for email and subdomains for other services."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the default DKIM key length in Google Workspace?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "2048-bit RSA, which is the current standard. Older accounts may have 1024-bit keys: regenerate to upgrade."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How long does Google Workspace authentication take?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF verifies immediately after DNS propagation. DKIM takes effect after you click Start authentication and DNS propagates (minutes to hours)." } },
+    {'@type': 'Question', 'name': "Do I need to add SPF for each user?", "acceptedAnswer": { '@type': 'Answer', "text": "No: SPF is published once at the domain level and covers all users on the Google Workspace account." } },
+    {'@type': 'Question', 'name': "What if I also use another email service?", "acceptedAnswer": { '@type': 'Answer', "text": "Add that service\u2019s include to the same SPF record, and set up DKIM separately in that service. Watch the 10-lookup limit as services stack." } },
+    {'@type': 'Question', 'name': "Why does my Gmail still show sent via or sent on behalf of?", "acceptedAnswer": { '@type': 'Answer', "text": "This indicates alignment issues: the From address and the authenticated domain must match. Ensure you\u2019re sending from your own domain, not gmail.com." } },
+    {'@type': 'Question', 'name': "Can I use a subdomain for Google Workspace?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but it\u2019s unusual. Most organizations use the primary domain for email and subdomains for other services." } },
+    {'@type': 'Question', 'name': "What is the default DKIM key length in Google Workspace?", "acceptedAnswer": { '@type': 'Answer', "text": "2048-bit RSA, which is the current standard. Older accounts may have 1024-bit keys: regenerate to upgrade." } }
+  ]
 }
 ---
 <BaseLayout

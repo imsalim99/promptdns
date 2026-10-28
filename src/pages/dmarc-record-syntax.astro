@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Is the order of DMARC tags important?", "acceptedAnswer": { '@type': 'Answer', "text": "Only v=DMARC1 must be first. The other tags can appear in any order, separated by semicolons." } },
+    {'@type': 'Question', 'name': "What happens if I omit the p= tag?", "acceptedAnswer": { '@type': 'Answer', "text": "The record is invalid and receivers ignore DMARC entirely. p= is mandatory." } },
+    {'@type': 'Question', 'name': "Can I use a URL instead of mailto: for rua=?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but mailto: is the most widely supported. HTTPS URIs (https://) are also allowed by RFC 7489 but less commonly implemented by mailbox providers." } }
+  ],
 };
 
 const breadcrumbs = {

@@ -17,7 +17,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS monitoring is the continuous re-checking of a domain’s records against their last known values, so a vendor-side change or unauthorized edit surfaces in hours instead of after the outage.</p>
-    </div>    <p class="mt-4 max-w-2xl text-lg text-ink-dim">
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Records to monitor</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Record</th><th>Drift meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">A / AAAA</td><td class="text-sm text-ink-dim">Redirected or down</td></tr><tr><td class="font-medium text-ink">MX</td><td class="text-sm text-ink-dim">Mail broken</td></tr><tr><td class="font-medium text-ink">NS</td><td class="text-sm text-ink-dim">Delegation moved</td></tr><tr><td class="font-medium text-ink">Mail auth</td><td class="text-sm text-ink-dim">Degraded</td></tr></tbody>
+        </table>
+      </div>
+    </section>    <p class="mt-4 max-w-2xl text-lg text-ink-dim">
       Wrong MX after a migration. A CNAME deleted by a teammate. SPF quietly broken by a vendor
       change. DNS breaks silently and you find out from users. Monitoring watches your records on
       a schedule and tells you what changed, when, and what it affects.
@@ -70,5 +80,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         Early-access members get the first accounts - <a href="/early-access/" class="text-accent">request access</a>.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does DNS monitoring check?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The records that break sites when they drift: A, AAAA, MX, NS, SPF, DKIM, DMARC, and DNSSEC, re-checked on a fixed schedule against their last known values.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often are domains re-checked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Every 6 hours in the current early-access build, with an email alert when any monitored record changes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens when a record changes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You get an alert with the old and new values, so a vendor-side change or an unauthorized edit surfaces in hours instead of after the outage.</p></details></div>
+      </div>
 </BaseLayout>

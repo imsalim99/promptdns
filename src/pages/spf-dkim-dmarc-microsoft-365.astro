@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Why do I need TWO DKIM CNAME records?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Microsoft uses selector1 and selector2 for zero-downtime key rotation. Both must be published even though only one is active at a time."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "The Enable DKIM button fails. What now?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The CNAME records haven’t propagated yet. Wait 10-15 minutes and retry. Also verify the CNAME values are exactly as Microsoft displayed."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use a subdomain for Microsoft 365 email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, but you’ll need to configure the accepted domain and MX records for that subdomain separately."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need to add SPF for SharePoint or Teams notifications?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "SharePoint and Teams notifications come from Microsoft’s shared infrastructure and don’t need additional SPF. The standard include covers all M365 mail."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if I have a hybrid Exchange setup?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "You need authentication records for both on-premises and M365 sending paths. This is more complex and requires careful planning."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I verify DKIM is actually signing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Send a test email and check the DKIM-Signature header and Authentication-Results for dkim=pass. The DKIM checker confirms the DNS side."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Why do I need TWO DKIM CNAME records?", "acceptedAnswer": { '@type': 'Answer', "text": "Microsoft uses selector1 and selector2 for zero-downtime key rotation. Both must be published even though only one is active at a time." } },
+    {'@type': 'Question', 'name': "The Enable DKIM button fails. What now?", "acceptedAnswer": { '@type': 'Answer', "text": "The CNAME records haven\u2019t propagated yet. Wait 10-15 minutes and retry. Also verify the CNAME values are exactly as Microsoft displayed." } },
+    {'@type': 'Question', 'name': "Can I use a subdomain for Microsoft 365 email?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but you\u2019ll need to configure the accepted domain and MX records for that subdomain separately." } },
+    {'@type': 'Question', 'name': "Do I need to add SPF for SharePoint or Teams notifications?", "acceptedAnswer": { '@type': 'Answer', "text": "SharePoint and Teams notifications come from Microsoft\u2019s shared infrastructure and don\u2019t need additional SPF. The standard include covers all M365 mail." } },
+    {'@type': 'Question', 'name': "What if I have a hybrid Exchange setup?", "acceptedAnswer": { '@type': 'Answer', "text": "You need authentication records for both on-premises and M365 sending paths. This is more complex and requires careful planning." } },
+    {'@type': 'Question', 'name': "How do I verify DKIM is actually signing?", "acceptedAnswer": { '@type': 'Answer', "text": "Send a test email and check the DKIM-Signature header and Authentication-Results for dkim=pass. The DKIM checker confirms the DNS side." } }
+  ]
 }
 ---
 <BaseLayout

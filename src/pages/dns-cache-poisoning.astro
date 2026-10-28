@@ -5,55 +5,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Can cache poisoning happen over HTTPS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not to the DNS resolution itself if you use DoH/DoT. But the resolved connection then depends on TLS for its own protection: both layers together are the full defense."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I know if my resolver has been poisoned?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Compare answers across multiple resolvers with the propagation checker. A single resolver returning a different IP for the same domain is a red flag."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my DNS provider protect against poisoning?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Major providers (Cloudflare, Google, Route 53) implement port randomization and DNSSEC validation. Self-hosted BIND servers need explicit configuration."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the difference between poisoning and hijacking?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Poisoning targets the resolver’s cache (temporary, until TTL). Hijacking changes the authoritative data (persists until fixed). Both redirect traffic."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I prevent someone from poisoning my domain specifically?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNSSEC is the only complete answer: it makes your zone’s answers cryptographically verifiable so forgeries are rejected."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is cache poisoning still a threat in 2026?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Less so against major providers, but self-hosted DNS, IoT devices, and legacy resolvers remain vulnerable. DNSSEC is the belt-and-suspenders answer."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Can cache poisoning happen over HTTPS?", "acceptedAnswer": { '@type': 'Answer', "text": "Not to the DNS resolution itself if you use DoH/DoT. But the resolved connection then depends on TLS for its own protection: both layers together are the full defense." } },
+    {'@type': 'Question', 'name': "How do I know if my resolver has been poisoned?", "acceptedAnswer": { '@type': 'Answer', "text": "Compare answers across multiple resolvers with the propagation checker. A single resolver returning a different IP for the same domain is a red flag." } },
+    {'@type': 'Question', 'name': "Does my DNS provider protect against poisoning?", "acceptedAnswer": { '@type': 'Answer', "text": "Major providers (Cloudflare, Google, Route 53) implement port randomization and DNSSEC validation. Self-hosted BIND servers need explicit configuration." } },
+    {'@type': 'Question', 'name': "What is the difference between poisoning and hijacking?", "acceptedAnswer": { '@type': 'Answer', "text": "Poisoning targets the resolver\u2019s cache (temporary, until TTL). Hijacking changes the authoritative data (persists until fixed). Both redirect traffic." } },
+    {'@type': 'Question', 'name': "Can I prevent someone from poisoning my domain specifically?", "acceptedAnswer": { '@type': 'Answer', "text": "DNSSEC is the only complete answer: it makes your zone\u2019s answers cryptographically verifiable so forgeries are rejected." } },
+    {'@type': 'Question', 'name': "Is cache poisoning still a threat in 2026?", "acceptedAnswer": { '@type': 'Answer', "text": "Less so against major providers, but self-hosted DNS, IoT devices, and legacy resolvers remain vulnerable. DNSSEC is the belt-and-suspenders answer." } }
+  ]
 }
 ---
 <BaseLayout
@@ -75,6 +33,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS cache poisoning injects a forged answer into a resolver's cache. Until the TTL expires, every user of that resolver receives the attacker's IP instead of yours: no warning, no error, just the wrong destination.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Cache poisoning defenses</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Defense</th><th>Layer</th><th>Notes</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">DNSSEC validation</td><td class="text-sm text-ink-dim">Answer integrity</td><td class="text-sm text-ink-dim">Cryptographic proof the answer is authentic</td></tr><tr><td class="font-medium text-ink">Randomized ports and IDs</td><td class="text-sm text-ink-dim">Query matching</td><td class="text-sm text-ink-dim">Raises the bar for forged replies (Kaminsky class)</td></tr><tr><td class="font-medium text-ink">Query minimization</td><td class="text-sm text-ink-dim">Information exposure</td><td class="text-sm text-ink-dim">QNAME minimization per RFC 7816</td></tr><tr><td class="font-medium text-ink">Trusted resolvers</td><td class="text-sm text-ink-dim">Transport</td><td class="text-sm text-ink-dim">DoH or DoT to resolvers that validate</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

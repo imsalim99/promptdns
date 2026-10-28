@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Does HSTS affect SEO?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Google indexes HTTPS preferentially; HSTS signals and enforces commitment. Redirects remain necessary for HTTP requests."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I exclude one subdomain?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not with includeSubDomains active: that flag covers everything. Plan subdomains before enabling it."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is HSTS for cookies?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The same idea applies to cookies (Secure flag): HSTS complements it by forcing the transport itself."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "I set max-age=0 to disable HSTS. Did it work?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "For browsers that saw the header: yes, max-age=0 expires the policy. Preload list removal is separate and slow."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my CDN handle HSTS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Cloudflare and others can inject it; check the response header to confirm what is actually being sent."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Does HSTS affect SEO?", "acceptedAnswer": { '@type': 'Answer', "text": "Google indexes HTTPS preferentially; HSTS signals and enforces commitment. Redirects remain necessary for HTTP requests." } },
+    {'@type': 'Question', 'name': "Can I exclude one subdomain?", "acceptedAnswer": { '@type': 'Answer', "text": "Not with includeSubDomains active: that flag covers everything. Plan subdomains before enabling it." } },
+    {'@type': 'Question', 'name': "What is HSTS for cookies?", "acceptedAnswer": { '@type': 'Answer', "text": "The same idea applies to cookies (Secure flag): HSTS complements it by forcing the transport itself." } },
+    {'@type': 'Question', 'name': "I set max-age=0 to disable HSTS. Did it work?", "acceptedAnswer": { '@type': 'Answer', "text": "For browsers that saw the header: yes, max-age=0 expires the policy. Preload list removal is separate and slow." } },
+    {'@type': 'Question', 'name': "Does my CDN handle HSTS?", "acceptedAnswer": { '@type': 'Answer', "text": "Cloudflare and others can inject it; check the response header to confirm what is actually being sent." } }
+  ]
 }
 ---
 <BaseLayout
@@ -64,6 +29,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">HSTS is one response header that changes your security posture permanently: once a browser sees it for your domain, it refuses to connect over HTTP at all, eliminating downgrade attacks and the "type http:// manually" gap.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">HSTS attributes</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Attribute</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">max-age</td><td class="text-sm text-ink-dim">Enforcement duration</td></tr><tr><td class="font-medium text-ink">includeSubDomains</td><td class="text-sm text-ink-dim">All subdomains</td></tr><tr><td class="font-medium text-ink">preload</td><td class="text-sm text-ink-dim">Preload list</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

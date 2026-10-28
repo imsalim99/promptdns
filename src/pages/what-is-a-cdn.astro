@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Does a CDN host my website?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: it caches and serves copies. Your origin server or hosting remains the source of truth."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why is my origin IP still visible?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Direct connections to historical IPs, subdomains not proxied, or mail records revealing infrastructure. Full origin hiding requires deliberate configuration."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do CDNs work with dynamic content?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: dynamic requests are not cached but still benefit from optimized routes between edge and origin."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is cache poisoning then?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "An attack on the cache itself: tricking the edge into storing attacker-controlled responses. Reputable CDNs defend against it; keep cache keys conservative."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need a CDN with static hosting?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Static hosts on global platforms already behave like CDNs; a second layer is usually redundant."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I purge the cache after deploying?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every CDN has a purge API/dashboard action; versioned asset filenames make most purges unnecessary."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Does a CDN host my website?", "acceptedAnswer": { '@type': 'Answer', "text": "No: it caches and serves copies. Your origin server or hosting remains the source of truth." } },
+    {'@type': 'Question', 'name': "Why is my origin IP still visible?", "acceptedAnswer": { '@type': 'Answer', "text": "Direct connections to historical IPs, subdomains not proxied, or mail records revealing infrastructure. Full origin hiding requires deliberate configuration." } },
+    {'@type': 'Question', 'name': "Do CDNs work with dynamic content?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: dynamic requests are not cached but still benefit from optimized routes between edge and origin." } },
+    {'@type': 'Question', 'name': "What is cache poisoning then?", "acceptedAnswer": { '@type': 'Answer', "text": "An attack on the cache itself: tricking the edge into storing attacker-controlled responses. Reputable CDNs defend against it; keep cache keys conservative." } },
+    {'@type': 'Question', 'name': "Do I need a CDN with static hosting?", "acceptedAnswer": { '@type': 'Answer', "text": "Static hosts on global platforms already behave like CDNs; a second layer is usually redundant." } },
+    {'@type': 'Question', 'name': "How do I purge the cache after deploying?", "acceptedAnswer": { '@type': 'Answer', "text": "Every CDN has a purge API/dashboard action; versioned asset filenames make most purges unnecessary." } }
+  ]
 }
 ---
 <BaseLayout
@@ -72,6 +30,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A Content Delivery Network stores copies of your site at hundreds of global locations (edge nodes) and serves each visitor from the closest one. The result: lower latency, absorbed traffic spikes, and an attack surface that is the CDN's problem instead of yours.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">CDN responsibilities</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Layer</th><th>CDN handles</th><th>Origin keeps</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Static</td><td class="text-sm text-ink-dim">Edge cache</td><td class="text-sm text-ink-dim">Truth</td></tr><tr><td class="font-medium text-ink">Dynamic</td><td class="text-sm text-ink-dim">Routing</td><td class="text-sm text-ink-dim">Compute</td></tr><tr><td class="font-medium text-ink">Protection</td><td class="text-sm text-ink-dim">Absorption</td><td class="text-sm text-ink-dim">Rules</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

@@ -1,15 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
-const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-  {"@type":"Question","name":"Is DNS part of networking?","acceptedAnswer":{"@type":"Answer","text":"DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic."}},
-  {"@type":"Question","name":"Where should a beginner start?","acceptedAnswer":{"@type":"Answer","text":"What is an IP address, then IPv4 vs IPv6, then NAT. Those three reveal most of the rest."}},
-  {"@type":"Question","name":"Do I need this for basic website management?","acceptedAnswer":{"@type":"Answer","text":"Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs."}},
-  {"@type":"Question","name":"What is the difference between NAT and a firewall?","acceptedAnswer":{"@type":"Answer","text":"NAT translates addresses to share one public IP among many devices. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy."}},
-  {"@type":"Question","name":"What is an ASN and why does it matter?","acceptedAnswer":{"@type":"Answer","text":"An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to: an ISP, cloud provider, or enterprise."}},
-  {"@type":"Question","name":"How many private IP ranges are there?","acceptedAnswer":{"@type":"Answer","text":"Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16. These are defined in RFC 1918 and never route on the public internet."}},
-]};
----
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {'@type': 'Question', 'name': "What is the difference between an IP and a port?", "acceptedAnswer": { '@type': 'Answer', "text": "The IP addresses the machine; the port addresses the service on it. DNS finds the address, the port routes to the application." } },
+    {'@type': 'Question', 'name': "Why do some IPs have no PTR record?", "acceptedAnswer": { '@type': 'Answer', "text": "PTR is optional and set by the network owner, not the IP user. Missing PTR is common on residential ranges and hurts mail delivery." } },
+    {'@type': 'Question', 'name': "How do I check who owns an IP?", "acceptedAnswer": { '@type': 'Answer', "text": "ASN and netblock lookups show the operator. Our IP lookup shows ownership, geolocation, and the PTR in one view." } },
+    {'@type': 'Question', 'name': "Is DNS part of networking?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic." } },
+    {'@type': 'Question', 'name': "Where should a beginner start?", "acceptedAnswer": { '@type': 'Answer', "text": "What is an IP address, then IPv4 vs IPv6, then NAT. Those three reveal most of the rest." } },
+    {'@type': 'Question', 'name': "Do I need this for basic website management?", "acceptedAnswer": { '@type': 'Answer', "text": "Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs." } },
+    {'@type': 'Question', 'name': "What is the difference between NAT and a firewall?", "acceptedAnswer": { '@type': 'Answer', "text": "NAT translates addresses to share one public IP. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy." } },
+    {'@type': 'Question', 'name': "What is an ASN and why does it matter?", "acceptedAnswer": { '@type': 'Answer', "text": "An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to." } },
+    {'@type': 'Question', 'name': "How many private IP ranges are there?", "acceptedAnswer": { '@type': 'Answer', "text": "Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, defined in RFC 1918, never routing on the public internet." } }
+  ],
+};---
 <BaseLayout
   title="IP & Networking"
   description="IP and networking guides: IP addresses, NAT, ASNs, ports, CDNs, and the concepts every webmaster eventually needs."
@@ -101,5 +107,7 @@ const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity
         to see your public address, reverse DNS, and network owner.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between an IP and a port?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The IP addresses the machine; the port addresses the service on it. DNS finds the address, the port routes to the application.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do some IPs have no PTR record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">PTR is optional and set by the network owner, not the IP user. Missing PTR is common on residential ranges and hurts mail delivery.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check who owns an IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">ASN and netblock lookups show the operator. Our IP lookup shows ownership, geolocation, and the PTR in one view.</p></details></div>
+      </div>
 </BaseLayout>

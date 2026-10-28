@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is SMTP only for sending?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: SMTP handles outgoing mail and server-to-server relay. Receiving uses IMAP or POP3 on the client side and delivery into the mailbox store on the server side."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why is port 25 blocked on my ISP?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "ISPs block outbound port 25 on consumer lines to stop spam botnets. Use your ISP's smarthost or a provider's submission port instead."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I use 465 or 587?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Either: 465 is implicit TLS from the first byte, 587 starts plaintext and upgrades via STARTTLS. Modern guidance accepts both; 587 is the traditional submission port."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does IMAP need SMTP?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: IMAP only stores and syncs. Sending always rides SMTP."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is Exchange ActiveSync then?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A Microsoft sync protocol that handles mail, calendar, and contacts together; conceptually the IMAP+SMTP replacement in Microsoft ecosystems."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use IMAP without TLS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Technically yes on port 143, but you should never: credentials cross the network in plaintext. Always 993 with TLS."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is SMTP only for sending?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: SMTP handles outgoing mail and server-to-server relay. Receiving uses IMAP or POP3 on the client side and delivery into the mailbox store on the server side." } },
+    {'@type': 'Question', 'name': "Why is port 25 blocked on my ISP?", "acceptedAnswer": { '@type': 'Answer', "text": "ISPs block outbound port 25 on consumer lines to stop spam botnets. Use your ISP's smarthost or a provider's submission port instead." } },
+    {'@type': 'Question', 'name': "Should I use 465 or 587?", "acceptedAnswer": { '@type': 'Answer', "text": "Either: 465 is implicit TLS from the first byte, 587 starts plaintext and upgrades via STARTTLS. Modern guidance accepts both; 587 is the traditional submission port." } },
+    {'@type': 'Question', 'name': "Does IMAP need SMTP?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: IMAP only stores and syncs. Sending always rides SMTP." } },
+    {'@type': 'Question', 'name': "What is Exchange ActiveSync then?", "acceptedAnswer": { '@type': 'Answer', "text": "A Microsoft sync protocol that handles mail, calendar, and contacts together; conceptually the IMAP+SMTP replacement in Microsoft ecosystems." } },
+    {'@type': 'Question', 'name': "Can I use IMAP without TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "Technically yes on port 143, but you should never: credentials cross the network in plaintext. Always 993 with TLS." } }
+  ]
 }
 ---
 <BaseLayout

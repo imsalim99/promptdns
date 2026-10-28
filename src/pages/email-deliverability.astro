@@ -15,55 +15,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the email deliverability section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It's a curated collection of guides and tools focused on email deliverability, organized from fundamentals to advanced configurations."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are all these pages free?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I navigate this section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often is this content updated?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I suggest a topic that's missing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is this content written by experts?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the email deliverability section?", "acceptedAnswer": { '@type': 'Answer', "text": "It&#39;s a curated collection of guides and tools focused on email deliverability, organized from fundamentals to advanced configurations." } },
+    {'@type': 'Question', 'name': "Are all these pages free?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits." } },
+    {'@type': 'Question', 'name': "How do I navigate this section?", "acceptedAnswer": { '@type': 'Answer', "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding." } },
+    {'@type': 'Question', 'name': "How often is this content updated?", "acceptedAnswer": { '@type': 'Answer', "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands." } },
+    {'@type': 'Question', 'name': "Can I suggest a topic that&#39;s missing?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback." } },
+    {'@type': 'Question', 'name': "Is this content written by experts?", "acceptedAnswer": { '@type': 'Answer', "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details." } }
+  ]
 }
 ---
 <BaseLayout
@@ -83,7 +41,17 @@ const faqSchema = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Email deliverability is the measure of whether your mail reaches the inbox instead of spam, driven by authentication (SPF, DKIM, DMARC), sender reputation, and recipient engagement.</p>
-    </div>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Deliverability factors</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Factor</th><th>Impact</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Authentication</td><td class="text-sm text-ink-dim">Foundational</td></tr><tr><td class="font-medium text-ink">Reputation</td><td class="text-sm text-ink-dim">High</td></tr><tr><td class="font-medium text-ink">Engagement</td><td class="text-sm text-ink-dim">Moderate</td></tr></tbody>
+        </table>
+      </div>
+    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
       Deliverability is the discipline of getting mail delivered to the inbox instead of the spam
       folder or a bounce. It rests on four pillars: authentication (proving you are you),
       reputation (earned by behavior), infrastructure (IPs, PTR, TLS), and recipient engagement.
@@ -120,5 +88,7 @@ const faqSchema = {
         Authentication and listings account for most deliverability failures.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      
+      </div>
 </BaseLayout>

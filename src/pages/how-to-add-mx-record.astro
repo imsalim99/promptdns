@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What priority should my MX records use?', acceptedAnswer: { '@type': 'Answer', text: 'Lower numbers are tried first. Use 10 for the primary and 20 or higher for backups; equal priorities split load instead of failing over.' } },
-    { '@type': 'Question', name: 'Can I have multiple MX records?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, and it is the standard resilience pattern: two or three hosts at different priorities.' } },
-    { '@type': 'Question', name: 'How long before MX changes work?', acceptedAnswer: { '@type': 'Answer', text: 'As long as the old record TTL. Lower it to 300 seconds before the change, and the new routing applies within minutes.' } },
+    {'@type': 'Question', 'name': "What priority should my MX records use?", "acceptedAnswer": { '@type': 'Answer', "text": "Lower numbers are tried first. Use 10 for the primary and 20 or higher for backups; equal priorities split load instead of failing over." } },
+    {'@type': 'Question', 'name': "Can I have multiple MX records?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, and it is the standard resilience pattern: two or three hosts at different priorities." } },
+    {'@type': 'Question', 'name': "How long before MX changes work?", "acceptedAnswer": { '@type': 'Answer', "text": "As long as the old record TTL. Lower it to 300 seconds before the change, and the new routing applies within minutes." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -28,6 +28,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       mail provider's instructions; the failure modes are all predictable.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">MX record fields</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Field</th><th>Example value</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Host</td><td class="text-sm text-ink-dim">@</td><td class="text-sm text-ink-dim">Mail for the domain itself</td></tr><tr><td class="font-medium text-ink">Priority</td><td class="text-sm text-ink-dim">10</td><td class="text-sm text-ink-dim">Lower first; higher for backups</td></tr><tr><td class="font-medium text-ink">Target</td><td class="text-sm text-ink-dim">mx1.example.com</td><td class="text-sm text-ink-dim">Hostname with an A/AAAA record, never a CNAME or raw IP</td></tr><tr><td class="font-medium text-ink">TTL</td><td class="text-sm text-ink-dim">3600</td><td class="text-sm text-ink-dim">Receivers cache routing decisions</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

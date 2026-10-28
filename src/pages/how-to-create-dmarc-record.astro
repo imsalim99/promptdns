@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "How long does it take for a DMARC record to take effect?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS propagation is fast (minutes on Cloudflare), but mailbox providers cache the policy. Changes typically take effect within 24-48 hours." } },
+    {'@type': 'Question', 'name': "What if I already have a DMARC record?", "acceptedAnswer": { '@type': 'Answer', "text": "Edit the existing record to update the policy or add rua=. Do not create a second record: only one DMARC record per domain is valid." } },
+    {'@type': 'Question', 'name': "Should I start at p=none or p=quarantine?", "acceptedAnswer": { '@type': 'Answer', "text": "Start at p=none with rua reporting: two weeks of aggregate reports tell you which legitimate senders exist before any enforcement decision." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for a DMARC record to take effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS propagation is fast (minutes on Cloudflare), but mailbox providers cache the policy. Changes typically take effect within 24-48 hours.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I already have a DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Edit the existing record to update the policy or add rua=. Do not create a second record: only one DMARC record per domain is valid.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for a DMARC record to take effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS propagation is fast (minutes on Cloudflare), but mailbox providers cache the policy. Changes typically take effect within 24-48 hours.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I already have a DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Edit the existing record to update the policy or add rua=. Do not create a second record: only one DMARC record per domain is valid.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I start at p=none or p=quarantine?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Start at p=none with rua reporting: two weeks of aggregate reports tell you which legitimate senders exist before any enforcement decision.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

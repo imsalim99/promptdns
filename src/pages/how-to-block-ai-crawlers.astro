@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Will blocking AI crawlers hurt my traffic?', acceptedAnswer: { '@type': 'Answer', text: 'Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty.' } },
-    { '@type': 'Question', name: 'Which AI crawlers ignore robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds.' } },
-    { '@type': 'Question', name: 'Can I block AI crawlers in Cloudflare?', acceptedAnswer: { '@type': 'Answer', text: 'Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read.' } },
+    {'@type': 'Question', 'name': "Will blocking AI crawlers hurt my traffic?", "acceptedAnswer": { '@type': 'Answer', "text": "Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty." } },
+    {'@type': 'Question', 'name': "Which AI crawlers ignore robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds." } },
+    {'@type': 'Question', 'name': "Can I block AI crawlers in Cloudflare?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -33,6 +33,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       each layer, exactly.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Block rules per crawler</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Crawler</th><th>Rule</th><th>Enforcement</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">GPTBot</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Honored</td></tr><tr><td class="font-medium text-ink">ClaudeBot</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Honored</td></tr><tr><td class="font-medium text-ink">Google-Extended</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Controls training only</td></tr><tr><td class="font-medium text-ink">Bytespider</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Reported unreliable; use edge rules</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

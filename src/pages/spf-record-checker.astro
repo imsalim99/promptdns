@@ -7,55 +7,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What does 'too many DNS lookups' mean in SPF?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=). Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain. See the permerror guide."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can a domain have two SPF records?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. RFC 7208 requires exactly one v=spf1 record per domain; multiple records cause evaluation to end in permerror regardless of what they say. Merge all senders into a single record."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should SPF end in ~all or -all?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "With DMARC enforcing policy, ~all (softfail) is the common safe default. Move to -all (hard fail) only once every legitimate sender is listed, or unlisted senders get rejected."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does SPF pass here but fail in Gmail headers?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "This checker inspects the published record only. Real evaluation depends on the sending server's IP, envelope-from alignment, and forwarding hops. Send a test message and read its Authentication-Results header for the verdict that matters."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I fix an SPF record over the lookup limit?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Remove include: entries for services you no longer use and re-check. Avoid automatic flattening unless you monitor the result: flattened IP lists go stale when providers change infrastructure."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my domain sent to a server when I use this checker?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What does 'too many DNS lookups' mean in SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=). Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain. See the permerror guide ." } },
+    {'@type': 'Question', 'name': "Can a domain have two SPF records?", "acceptedAnswer": { '@type': 'Answer', "text": "No. RFC 7208 requires exactly one v=spf1 record per domain; multiple records cause evaluation to end in permerror regardless of what they say. Merge all senders into a single record." } },
+    {'@type': 'Question', 'name': "Should SPF end in ~all or -all?", "acceptedAnswer": { '@type': 'Answer', "text": "With DMARC enforcing policy, ~all (softfail) is the common safe default. Move to -all (hard fail) only once every legitimate sender is listed, or unlisted senders get rejected." } },
+    {'@type': 'Question', 'name': "Why does SPF pass here but fail in Gmail headers?", "acceptedAnswer": { '@type': 'Answer', "text": "This checker inspects the published record only. Real evaluation depends on the sending server's IP, envelope-from alignment, and forwarding hops. Send a test message and read its Authentication-Results header for the verdict that matters." } },
+    {'@type': 'Question', 'name': "How do I fix an SPF record over the lookup limit?", "acceptedAnswer": { '@type': 'Answer', "text": "Remove include: entries for services you no longer use and re-check. Avoid automatic flattening unless you monitor the result: flattened IP lists go stale when providers change infrastructure." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+  ]
 }
 ---
 <BaseLayout

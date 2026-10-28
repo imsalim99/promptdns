@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "How many SPF mechanisms can I have?", "acceptedAnswer": { '@type': 'Answer', "text": "You can have unlimited non-DNS mechanisms (ip4, ip6, all). DNS-querying mechanisms (include, a, mx, ptr, exists) are capped at 10 total." } },
+    {'@type': 'Question', 'name': "What happens if I use two all mechanisms?", "acceptedAnswer": { '@type': 'Answer', "text": "Only the first all mechanism is evaluated. The second is ignored. RFC 7208 requires all to be the last mechanism." } },
+    {'@type': 'Question', 'name': "Does include: recursive counting apply to nested includes?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. Each include: triggers a new SPF evaluation of the target domain, and its own DNS-querying mechanisms count against your total of 10." } }
+  ],
 };
 
 const breadcrumbs = {

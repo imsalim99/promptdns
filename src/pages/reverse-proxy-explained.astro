@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is a reverse proxy the same as a CDN?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A CDN is a globally distributed reverse proxy with caching at hundreds of locations; a local Nginx proxy is the same concept on one machine."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does it break WebSockets?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Proxies need explicit upgrade handling for WebSockets; both Nginx and Cloudflare support it with configuration."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why terminate TLS at the proxy?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Centralized certificate management. Internal traffic between proxy and backend can then use a private PKI or plain HTTP on a trusted network."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need one with a PaaS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: Vercel/Netlify/Heroku already front your app with their own proxies and load balancers."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is X-Forwarded-For?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The header a reverse proxy adds to carry the real client IP to your backend; trust it only from your own proxies, or attackers can spoof it."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is a reverse proxy the same as a CDN?", "acceptedAnswer": { '@type': 'Answer', "text": "A CDN is a globally distributed reverse proxy with caching at hundreds of locations; a local Nginx proxy is the same concept on one machine." } },
+    {'@type': 'Question', 'name': "Does it break WebSockets?", "acceptedAnswer": { '@type': 'Answer', "text": "Proxies need explicit upgrade handling for WebSockets; both Nginx and Cloudflare support it with configuration." } },
+    {'@type': 'Question', 'name': "Why terminate TLS at the proxy?", "acceptedAnswer": { '@type': 'Answer', "text": "Centralized certificate management. Internal traffic between proxy and backend can then use a private PKI or plain HTTP on a trusted network." } },
+    {'@type': 'Question', 'name': "Do I need one with a PaaS?", "acceptedAnswer": { '@type': 'Answer', "text": "No: Vercel/Netlify/Heroku already front your app with their own proxies and load balancers." } },
+    {'@type': 'Question', 'name': "What is X-Forwarded-For?", "acceptedAnswer": { '@type': 'Answer', "text": "The header a reverse proxy adds to carry the real client IP to your backend; trust it only from your own proxies, or attackers can spoof it." } }
+  ]
 }
 ---
 <BaseLayout
@@ -64,6 +29,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A forward proxy hides clients; a reverse proxy hides servers. It sits in front of your infrastructure, receives all traffic, and forwards requests to your backend: adding TLS termination, caching, load balancing, and a security layer on the way.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Proxy vs direct</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>Proxy</th><th>Direct</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Origin IP</td><td class="text-sm text-ink-dim">Hidden</td><td class="text-sm text-ink-dim">Public</td></tr><tr><td class="font-medium text-ink">TLS</td><td class="text-sm text-ink-dim">At proxy</td><td class="text-sm text-ink-dim">At origin</td></tr><tr><td class="font-medium text-ink">DDoS</td><td class="text-sm text-ink-dim">Absorbed</td><td class="text-sm text-ink-dim">On you</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

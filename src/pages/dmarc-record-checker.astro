@@ -7,55 +7,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is a good DMARC grade?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Grade A (p=reject with rua reporting) is the goal, but C (p=none with rua) is the correct starting point. Advance none to quarantine to reject as aggregate reports confirm every legitimate sender passes."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What does p=none actually do?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It monitors only: receivers send aggregate reports but still deliver failing mail. Spoofed mail keeps reaching inboxes until the policy moves to quarantine or reject."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does the record need a rua address?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Without rua= no aggregate reports are sent, so you cannot see who sends as your domain or confirm legitimate mail passes. A policy without reports cannot be tuned safely."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can subdomains have a different DMARC policy?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is DMARC alignment?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. The alignment guide explains relaxed versus strict matching with examples."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my domain sent to a server when I use this checker?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is a good DMARC grade?", "acceptedAnswer": { '@type': 'Answer', "text": "Grade A (p=reject with rua reporting) is the goal, but C (p=none with rua) is the correct starting point. Advance none to quarantine to reject as aggregate reports confirm every legitimate sender passes." } },
+    {'@type': 'Question', 'name': "What does p=none actually do?", "acceptedAnswer": { '@type': 'Answer', "text": "It monitors only: receivers send aggregate reports but still deliver failing mail. Spoofed mail keeps reaching inboxes until the policy moves to quarantine or reject." } },
+    {'@type': 'Question', 'name': "Why does the record need a rua address?", "acceptedAnswer": { '@type': 'Answer', "text": "Without rua= no aggregate reports are sent, so you cannot see who sends as your domain or confirm legitimate mail passes. A policy without reports cannot be tuned safely." } },
+    {'@type': 'Question', 'name': "Can subdomains have a different DMARC policy?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy." } },
+    {'@type': 'Question', 'name': "What is DMARC alignment?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. The alignment guide explains relaxed versus strict matching with examples." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+  ]
 }
 ---
 <BaseLayout

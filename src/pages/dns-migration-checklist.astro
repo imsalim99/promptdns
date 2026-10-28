@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How long does a DNS migration take?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The DNS change itself is instant at the authoritative server. Propagation takes one old-TTL cycle: minutes with TTL 300, up to 48 hours for nameserver changes."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I migrate without downtime?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, by lowering TTL ahead of time and keeping the old server running during the transition window."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What breaks most often during migration?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Missing records (MX, TXT for verification), forgetting to lower TTL, and decommissioning the old server too early."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need to change nameservers to migrate DNS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if you’re switching DNS providers. If you’re just changing A records at the same host, nameservers stay the same."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I export my DNS records first?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: always have a backup before any migration. Most providers offer an export option, or use the record lookup to capture current values."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the biggest migration mistake?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Decommissioning the old server before propagation completes. Cached answers still point there, and users hit a dead server."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How long does a DNS migration take?", "acceptedAnswer": { '@type': 'Answer', "text": "The DNS change itself is instant at the authoritative server. Propagation takes one old-TTL cycle: minutes with TTL 300, up to 48 hours for nameserver changes." } },
+    {'@type': 'Question', 'name': "Can I migrate without downtime?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, by lowering TTL ahead of time and keeping the old server running during the transition window." } },
+    {'@type': 'Question', 'name': "What breaks most often during migration?", "acceptedAnswer": { '@type': 'Answer', "text": "Missing records (MX, TXT for verification), forgetting to lower TTL, and decommissioning the old server too early." } },
+    {'@type': 'Question', 'name': "Do I need to change nameservers to migrate DNS?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you\u2019re switching DNS providers. If you\u2019re just changing A records at the same host, nameservers stay the same." } },
+    {'@type': 'Question', 'name': "Should I export my DNS records first?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: always have a backup before any migration. Most providers offer an export option, or use the record lookup to capture current values." } },
+    {'@type': 'Question', 'name': "What is the biggest migration mistake?", "acceptedAnswer": { '@type': 'Answer', "text": "Decommissioning the old server before propagation completes. Cached answers still point there, and users hit a dead server." } }
+  ]
 }
 ---
 <BaseLayout
@@ -70,6 +28,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Every step for a zero-downtime DNS migration, ordered by when to do it: from lowering TTLs to decommissioning the old server.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Migration timeline</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>When</th><th>Action</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">T-48 hours</td><td class="text-sm text-ink-dim">Lower TTLs</td></tr><tr><td class="font-medium text-ink">T-0</td><td class="text-sm text-ink-dim">Replicate records</td></tr><tr><td class="font-medium text-ink">T+verify</td><td class="text-sm text-ink-dim">Compare resolvers</td></tr><tr><td class="font-medium text-ink">T+48 hours</td><td class="text-sm text-ink-dim">Retire old host</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

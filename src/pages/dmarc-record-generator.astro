@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the difference between rua and ruf?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "rua receives aggregate reports (daily XML summaries of all DMARC evaluation results). ruf receives forensic reports (individual failure samples with full message content). Most providers only support rua."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I start with p=none or p=quarantine?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Start with p=none to collect reports without affecting mail delivery. Read the aggregate reports to identify all legitimate senders, fix any that fail, then step to p=quarantine and finally p=reject."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need DMARC on subdomains too?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not necessarily. Without an sp= tag, subdomains inherit the root domain's policy. Use sp= explicitly if you want different policies for subdomains."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the difference between rua and ruf?", "acceptedAnswer": { '@type': 'Answer', "text": "rua receives aggregate reports (daily XML summaries of all DMARC evaluation results). ruf receives forensic reports (individual failure samples with full message content). Most providers only support rua." } },
+    {'@type': 'Question', 'name': "Should I start with p=none or p=quarantine?", "acceptedAnswer": { '@type': 'Answer', "text": "Start with p=none to collect reports without affecting mail delivery. Read the aggregate reports to identify all legitimate senders, fix any that fail, then step to p=quarantine and finally p=reject." } },
+    {'@type': 'Question', 'name': "Do I need DMARC on subdomains too?", "acceptedAnswer": { '@type': 'Answer', "text": "Not necessarily. Without an sp= tag, subdomains inherit the root domain's policy. Use sp= explicitly if you want different policies for subdomains." } }
+  ]
 }
 ---
 <BaseLayout

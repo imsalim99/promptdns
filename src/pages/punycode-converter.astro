@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is punycode used for?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Punycode encodes internationalized domain names (IDNs) using non-ASCII characters into ASCII-compatible encoding that the DNS system can process."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are punycode domains safe to click?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Mostly yes, but attackers have used visually similar Unicode characters (homograph attacks) to imitate trusted domains. Always check the punycode form in your browser address bar."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my browser show punycode or Unicode?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Modern browsers show Unicode for legitimate IDNs but switch to punycode display when the domain contains mixed character scripts that could be used for spoofing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is punycode used for?", "acceptedAnswer": { '@type': 'Answer', "text": "Punycode encodes internationalized domain names (IDNs) using non-ASCII characters into ASCII-compatible encoding that the DNS system can process." } },
+    {'@type': 'Question', 'name': "Are punycode domains safe to click?", "acceptedAnswer": { '@type': 'Answer', "text": "Mostly yes, but attackers have used visually similar Unicode characters (homograph attacks) to imitate trusted domains. Always check the punycode form in your browser address bar." } },
+    {'@type': 'Question', 'name': "Does my browser show punycode or Unicode?", "acceptedAnswer": { '@type': 'Answer', "text": "Modern browsers show Unicode for legitimate IDNs but switch to punycode display when the domain contains mixed character scripts that could be used for spoofing." } }
+  ]
 }
 ---
 <BaseLayout title="Punycode / IDN Converter" description="Free punycode converter: translate internationalized domain names between Unicode and xn-- ASCII form, both directions."  schema={[faqSchema]}

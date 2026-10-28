@@ -7,31 +7,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What record types can I look up?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "All major types: A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA, DNSKEY, and DS. Each returns full values and TTLs from live DNS-over-HTTPS queries."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why do different tools show different results for the same domain?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNS results vary by resolver due to caching and TTL. Our tool queries Cloudflare, Google, and AliDNS directly. The propagation checker shows differences across all three side by side."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What does TTL mean in the results?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "TTL (Time To Live) is how long a resolver caches the record before re-querying the authoritative server. Lower TTLs mean faster propagation but more resolver load."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What record types can I look up?", "acceptedAnswer": { '@type': 'Answer', "text": "All major types: A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA, DNSKEY, and DS. Each returns full values and TTLs from live DNS-over-HTTPS queries." } },
+    {'@type': 'Question', 'name': "Why do different tools show different results for the same domain?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS results vary by resolver due to caching and TTL. Our tool queries Cloudflare, Google, and AliDNS directly. The propagation checker shows differences across all three side by side." } },
+    {'@type': 'Question', 'name': "What does TTL mean in the results?", "acceptedAnswer": { '@type': 'Answer', "text": "TTL (Time To Live) is how long a resolver caches the record before re-querying the authoritative server. Lower TTLs mean faster propagation but more resolver load." } }
+  ]
 }
 ---
 <BaseLayout

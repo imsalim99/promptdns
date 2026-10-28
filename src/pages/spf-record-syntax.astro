@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What does ~all mean in SPF?', acceptedAnswer: { '@type': 'Answer', text: 'Softfail: senders failing SPF are marked suspicious but not rejected. -all hardfails them. ~all is the safe choice while tuning; -all is the enforcement choice.' } },
-    { '@type': 'Question', name: 'Is +all ever correct?', acceptedAnswer: { '@type': 'Answer', text: 'No. Plus-pass on everything means any server on earth may send as your domain. It is always a misconfiguration.' } },
-    { '@type': 'Question', name: 'What is the difference between a mechanism and a modifier?', acceptedAnswer: { '@type': 'Answer', text: 'Mechanisms match the sending IP and decide the result; modifiers like redirect= and exp= change evaluation or provide explanations without matching.' } },
+    {'@type': 'Question', 'name': "What does ~all mean in SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "Softfail: senders failing SPF are marked suspicious but not rejected. -all hardfails them. ~all is the safe choice while tuning; -all is the enforcement choice." } },
+    {'@type': 'Question', 'name': "Is +all ever correct?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Plus-pass on everything means any server on earth may send as your domain. It is always a misconfiguration." } },
+    {'@type': 'Question', 'name': "What is the difference between a mechanism and a modifier?", "acceptedAnswer": { '@type': 'Answer', "text": "Mechanisms match the sending IP and decide the result; modifiers like redirect= and exp= change evaluation or provide explanations without matching." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -28,6 +28,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       qualifier glued to a mechanism, plus a couple of modifiers. This is every piece of that grammar.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF qualifiers</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Qualifier</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">+</td><td class="text-sm text-ink-dim">Pass (default)</td></tr><tr><td class="font-medium text-ink">-</td><td class="text-sm text-ink-dim">Hardfail</td></tr><tr><td class="font-medium text-ink">~</td><td class="text-sm text-ink-dim">Softfail</td></tr><tr><td class="font-medium text-ink">?</td><td class="text-sm text-ink-dim">Neutral</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
       <table class="pdns-table">
         <thead><tr><th>Term</th><th>Kind</th><th>Lookup?</th><th>Meaning</th></tr></thead>

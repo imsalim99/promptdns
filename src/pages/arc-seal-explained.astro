@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does ARC replace SPF and DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "No. ARC preserves the original SPF and DKIM results through intermediary servers. The underlying authentication must still pass at the first hop." } },
+    {'@type': 'Question', 'name': "Do I need to deploy ARC on my mail server?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if your server is an intermediate hop (mailing list, forwarder). End-user mail servers do not need ARC; they evaluate it if present." } },
+    {'@type': 'Question', 'name': "Is ARC widely supported by mailbox providers?", "acceptedAnswer": { '@type': 'Answer', "text": "Gmail and Microsoft evaluate ARC chains; many smaller providers do not yet. Treat ARC as additive authentication, not a replacement for SPF and DKIM." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does ARC replace SPF and DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. ARC preserves the original SPF and DKIM results through intermediary servers. The underlying authentication must still pass at the first hop.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to deploy ARC on my mail server?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if your server is an intermediate hop (mailing list, forwarder). End-user mail servers do not need ARC; they evaluate it if present.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does ARC replace SPF and DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. ARC preserves the original SPF and DKIM results through intermediary servers. The underlying authentication must still pass at the first hop.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to deploy ARC on my mail server?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if your server is an intermediate hop (mailing list, forwarder). End-user mail servers do not need ARC; they evaluate it if present.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is ARC widely supported by mailbox providers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail and Microsoft evaluate ARC chains; many smaller providers do not yet. Treat ARC as additive authentication, not a replacement for SPF and DKIM.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

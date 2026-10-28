@@ -7,55 +7,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Where do I get a DMARC report file to upload?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Mailbox providers email daily aggregate reports to the address in your rua= tag, usually as a .zip or .gz attachment. That attachment is exactly what you upload here; the file never leaves your browser."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why won't my forensic report parse?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "This tool parses aggregate (rua) reports, the daily XML summaries. Forensic (ruf) failure reports have a different format and are not supported."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What does a failing source in the report mean?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "One of two things: a legitimate sender with broken SPF or DKIM that you should fix, or an unknown sender spoofing your domain, which your policy is catching. You tell them apart by whether you recognize the IP and its volume pattern."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What pass rate do I need before moving to p=reject?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every legitimate source should pass SPF or DKIM alignment with unknown sources expected to fail. Reject stops only what fails, so legitimate volume passing is the green light."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why are Google and Microsoft the only reporters?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A provider sends reports only for mail claiming your domain that passed through it. As your senders and volume vary across providers, so does who reports."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my report file uploaded anywhere?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. Parsing happens entirely in your browser with JavaScript; the file is never sent to any server."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Where do I get a DMARC report file to upload?", "acceptedAnswer": { '@type': 'Answer', "text": "Mailbox providers email daily aggregate reports to the address in your rua= tag, usually as a .zip or .gz attachment. That attachment is exactly what you upload here; the file never leaves your browser." } },
+    {'@type': 'Question', 'name': "Why won't my forensic report parse?", "acceptedAnswer": { '@type': 'Answer', "text": "This tool parses aggregate (rua) reports, the daily XML summaries. Forensic (ruf) failure reports have a different format and are not supported." } },
+    {'@type': 'Question', 'name': "What does a failing source in the report mean?", "acceptedAnswer": { '@type': 'Answer', "text": "One of two things: a legitimate sender with broken SPF or DKIM that you should fix, or an unknown sender spoofing your domain, which your policy is catching. You tell them apart by whether you recognize the IP and its volume pattern." } },
+    {'@type': 'Question', 'name': "What pass rate do I need before moving to p=reject?", "acceptedAnswer": { '@type': 'Answer', "text": "Every legitimate source should pass SPF or DKIM alignment with unknown sources expected to fail. Reject stops only what fails, so legitimate volume passing is the green light." } },
+    {'@type': 'Question', 'name': "Why are Google and Microsoft the only reporters?", "acceptedAnswer": { '@type': 'Answer', "text": "A provider sends reports only for mail claiming your domain that passed through it. As your senders and volume vary across providers, so does who reports." } },
+    {'@type': 'Question', 'name': "Is my report file uploaded anywhere?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Parsing happens entirely in your browser with JavaScript; the file is never sent to any server." } }
+  ]
 }
 ---
 <BaseLayout

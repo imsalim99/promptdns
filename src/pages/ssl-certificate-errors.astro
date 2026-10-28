@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Can I click through safely?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "For a certificate you just issued and understand: maybe. For any public site: never, because that is exactly what phishing relies on."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does it work in one browser and not another?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Different certificate stores and HSTS state. Test in a private window and a second browser."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is an intermediate certificate?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The CA’s signing certificate linking yours to the trusted root; servers must serve it along with the leaf."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does Let's Encrypt expire faster?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: 90 days versus a year, by design for automation. Missing a renewal fails the same way any expiry does."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "My site works but shows not secure in the address bar",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "That is mixed content, not a certificate error: an HTTPS page loading HTTP subresources."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Can I click through safely?", "acceptedAnswer": { '@type': 'Answer', "text": "For a certificate you just issued and understand: maybe. For any public site: never, because that is exactly what phishing relies on." } },
+    {'@type': 'Question', 'name': "Why does it work in one browser and not another?", "acceptedAnswer": { '@type': 'Answer', "text": "Different certificate stores and HSTS state. Test in a private window and a second browser." } },
+    {'@type': 'Question', 'name': "What is an intermediate certificate?", "acceptedAnswer": { '@type': 'Answer', "text": "The CA\u2019s signing certificate linking yours to the trusted root; servers must serve it along with the leaf." } },
+    {'@type': 'Question', 'name': "Does Let's Encrypt expire faster?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: 90 days versus a year, by design for automation. Missing a renewal fails the same way any expiry does." } },
+    {'@type': 'Question', 'name': "My site works but shows not secure in the address bar", "acceptedAnswer": { '@type': 'Answer', "text": "That is mixed content, not a certificate error: an HTTPS page loading HTTP subresources." } }
+  ]
 }
 ---
 <BaseLayout

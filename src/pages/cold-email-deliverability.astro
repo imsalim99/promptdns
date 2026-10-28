@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How many cold emails can I send per day?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "From a warmed-up domain: 20-50 per mailbox, scaling to 200-500 across multiple mailboxes. Exceeding this on a new domain is the fastest route to spam folders."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does using multiple domains help?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: spreading across 2-5 domains with separate inboxes isolates reputation damage. Each domain needs its own authentication and warm-up."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What bounce rate is acceptable for cold email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Under 2% for verified lists; under 5% for semi-verified. Above that, your list quality (or verification tool) is the problem."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I use a subdomain for cold email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: mail.yourdomain.com isolates campaign reputation from your main domain. It needs its own SPF, DKIM, and DMARC records."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I avoid spam traps?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Never use purchased or scraped lists. Verify addresses before sending. Remove unengaged contacts after 90 days."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use the same domain for cold and transactional?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Strongly discouraged: one bad campaign can affect password resets and receipts. Use separate subdomains at minimum."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How many cold emails can I send per day?", "acceptedAnswer": { '@type': 'Answer', "text": "From a warmed-up domain: 20-50 per mailbox, scaling to 200-500 across multiple mailboxes. Exceeding this on a new domain is the fastest route to spam folders." } },
+    {'@type': 'Question', 'name': "Does using multiple domains help?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: spreading across 2-5 domains with separate inboxes isolates reputation damage. Each domain needs its own authentication and warm-up." } },
+    {'@type': 'Question', 'name': "What bounce rate is acceptable for cold email?", "acceptedAnswer": { '@type': 'Answer', "text": "Under 2% for verified lists; under 5% for semi-verified. Above that, your list quality (or verification tool) is the problem." } },
+    {'@type': 'Question', 'name': "Should I use a subdomain for cold email?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: mail.yourdomain.com isolates campaign reputation from your main domain. It needs its own SPF, DKIM, and DMARC records." } },
+    {'@type': 'Question', 'name': "How do I avoid spam traps?", "acceptedAnswer": { '@type': 'Answer', "text": "Never use purchased or scraped lists. Verify addresses before sending. Remove unengaged contacts after 90 days." } },
+    {'@type': 'Question', 'name': "Can I use the same domain for cold and transactional?", "acceptedAnswer": { '@type': 'Answer', "text": "Strongly discouraged: one bad campaign can affect password resets and receipts. Use separate subdomains at minimum." } }
+  ]
 }
 ---
 <BaseLayout
@@ -72,6 +30,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Cold email faces the hardest deliverability test: unsolicited mail to people who haven't opted in. Authentication, warm-up, and list quality aren't optional; they're the minimum to avoid the spam folder.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Cold email controls</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Stage</th><th>Control</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Setup</td><td class="text-sm text-ink-dim">Warmed domain</td></tr><tr><td class="font-medium text-ink">Volume</td><td class="text-sm text-ink-dim">20-50 per inbox</td></tr><tr><td class="font-medium text-ink">Content</td><td class="text-sm text-ink-dim">Plain text</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

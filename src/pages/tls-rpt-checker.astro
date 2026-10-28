@@ -6,23 +6,9 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is TLS-RPT and do I need it?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "TLS-RPT (RFC 8460) lets receiving servers report TLS connection failures to you via email. It is required for MTA-STS deployment and helps you diagnose delivery issues."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Where do TLS-RPT reports come from?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Major mailbox providers (Gmail, Microsoft) send daily JSON reports listing TLS connection outcomes for your domain. They arrive at the address in your _smtp._tls DNS record."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is TLS-RPT and do I need it?", "acceptedAnswer": { '@type': 'Answer', "text": "TLS-RPT (RFC 8460) lets receiving servers report TLS connection failures to you via email. It is required for MTA-STS deployment and helps you diagnose delivery issues." } },
+    {'@type': 'Question', 'name': "Where do TLS-RPT reports come from?", "acceptedAnswer": { '@type': 'Answer', "text": "Major mailbox providers (Gmail, Microsoft) send daily JSON reports listing TLS connection outcomes for your domain. They arrive at the address in your _smtp._tls DNS record." } }
+  ]
 }
 ---
 <BaseLayout title="TLS-RPT Record Checker" description="Free TLS-RPT checker: verify the _smtp._tls TXT record and where your TLS failure reports are sent."  schema={[faqSchema]}

@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Do I need a VMC certificate for BIMI?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, for Gmail and Apple Mail you need a Verified Mark Certificate (VMC) issued by a certificate authority like DigiCert or Entrust. Some providers accept Common Mark Certificates (CMC) which are cheaper."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does BIMI work without DMARC?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. BIMI requires your domain to have DMARC enforced at p=quarantine or p=reject. p=none is not sufficient. This is why DMARC enforcement is a prerequisite for BIMI deployment."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Which email providers support BIMI?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Gmail, Apple Mail (iOS 16+), and Yahoo Mail support BIMI. Microsoft Outlook does not currently support the BIMI standard."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Do I need a VMC certificate for BIMI?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, for Gmail and Apple Mail you need a Verified Mark Certificate (VMC) issued by a certificate authority like DigiCert or Entrust. Some providers accept Common Mark Certificates (CMC) which are cheaper." } },
+    {'@type': 'Question', 'name': "Does BIMI work without DMARC?", "acceptedAnswer": { '@type': 'Answer', "text": "No. BIMI requires your domain to have DMARC enforced at p=quarantine or p=reject. p=none is not sufficient. This is why DMARC enforcement is a prerequisite for BIMI deployment." } },
+    {'@type': 'Question', 'name': "Which email providers support BIMI?", "acceptedAnswer": { '@type': 'Answer', "text": "Gmail, Apple Mail (iOS 16+), and Yahoo Mail support BIMI. Microsoft Outlook does not currently support the BIMI standard." } }
+  ]
 }
 ---
 <BaseLayout title="BIMI Record Checker" description="Free BIMI record checker: verify your BIMI TXT record, logo URL, and VMC reference at default._bimi."  schema={[faqSchema]}

@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Do bounces hurt deliverability?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, and rapidly: bounce rates above roughly 2% begin degrading inbox placement, and hard-bounce-heavy sending is a spam-trap magnet. Suppress bounces the day they happen."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the difference between a bounce and a spam complaint?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A bounce is the server refusing delivery before or at arrival; a complaint is a recipient marking your mail as spam after receiving it. Both damage reputation; complaints hurt more per event."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can a hard bounce be temporary?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Rarely: a full mailbox that is later emptied, or a domain temporarily misconfigured. But the safe default is to treat 5.1.1 unknown-user as permanent."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I re-verify old lists before sending?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: lists older than six months accumulate dead addresses. Email verification services catch most hard bounces before you send."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does greylisting mean my mail failed?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: greylisting (421/450) is a deliberate first-contact deferral. Legitimate servers retry, and the mail delivers on the second attempt."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I see my bounce rate?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Your ESP's campaign dashboard shows it; the sender-side log (postfix, SES) gives per-recipient codes for deeper analysis."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Do bounces hurt deliverability?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, and rapidly: bounce rates above roughly 2% begin degrading inbox placement, and hard-bounce-heavy sending is a spam-trap magnet. Suppress bounces the day they happen." } },
+    {'@type': 'Question', 'name': "What is the difference between a bounce and a spam complaint?", "acceptedAnswer": { '@type': 'Answer', "text": "A bounce is the server refusing delivery before or at arrival; a complaint is a recipient marking your mail as spam after receiving it. Both damage reputation; complaints hurt more per event." } },
+    {'@type': 'Question', 'name': "Can a hard bounce be temporary?", "acceptedAnswer": { '@type': 'Answer', "text": "Rarely: a full mailbox that is later emptied, or a domain temporarily misconfigured. But the safe default is to treat 5.1.1 unknown-user as permanent." } },
+    {'@type': 'Question', 'name': "Should I re-verify old lists before sending?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: lists older than six months accumulate dead addresses. Email verification services catch most hard bounces before you send." } },
+    {'@type': 'Question', 'name': "Does greylisting mean my mail failed?", "acceptedAnswer": { '@type': 'Answer', "text": "No: greylisting (421/450) is a deliberate first-contact deferral. Legitimate servers retry, and the mail delivers on the second attempt." } },
+    {'@type': 'Question', 'name': "How do I see my bounce rate?", "acceptedAnswer": { '@type': 'Answer', "text": "Your ESP's campaign dashboard shows it; the sender-side log (postfix, SES) gives per-recipient codes for deeper analysis." } }
+  ]
 }
 ---
 <BaseLayout

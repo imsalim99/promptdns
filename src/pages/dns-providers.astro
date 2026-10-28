@@ -28,55 +28,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the DNS providers section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It's a curated collection of guides and tools focused on dns providers, organized from fundamentals to advanced configurations."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are all these pages free?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I navigate this section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often is this content updated?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I suggest a topic that's missing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is this content written by experts?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the DNS providers section?", "acceptedAnswer": { '@type': 'Answer', "text": "It&#39;s a curated collection of guides and tools focused on dns providers, organized from fundamentals to advanced configurations." } },
+    {'@type': 'Question', 'name': "Are all these pages free?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits." } },
+    {'@type': 'Question', 'name': "How do I navigate this section?", "acceptedAnswer": { '@type': 'Answer', "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding." } },
+    {'@type': 'Question', 'name': "How often is this content updated?", "acceptedAnswer": { '@type': 'Answer', "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands." } },
+    {'@type': 'Question', 'name': "Can I suggest a topic that&#39;s missing?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback." } },
+    {'@type': 'Question', 'name': "Is this content written by experts?", "acceptedAnswer": { '@type': 'Answer', "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details." } }
+  ]
 }
 ---
 <BaseLayout
@@ -94,7 +52,17 @@ const faqSchema = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS providers are the services that answer queries for your domain: they host the records, run the nameservers, and decide how fast changes go live. The registrar and the DNS host are two different roles.</p>
-    </div>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Provider dimensions</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Dimension</th><th>Why</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Anycast</td><td class="text-sm text-ink-dim">Latency</td></tr><tr><td class="font-medium text-ink">Change speed</td><td class="text-sm text-ink-dim">Fast edits</td></tr><tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">One-click DS</td></tr><tr><td class="font-medium text-ink">API</td><td class="text-sm text-ink-dim">Automation</td></tr></tbody>
+        </table>
+      </div>
+    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
       Every DNS host works differently: different panels, different defaults, different ways to
       break things. These playbooks cover each platform's exact flow, its quirks, and its most
       common failures.
@@ -152,5 +120,7 @@ const faqSchema = {
         <a href="/dns-propagation-checker/" class="font-medium text-accent hover:text-accent-soft">propagation checker</a>.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      
+      </div>
 </BaseLayout>

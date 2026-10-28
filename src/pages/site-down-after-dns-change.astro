@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'How long until my site works after a DNS change?', acceptedAnswer: { '@type': 'Answer', text: 'As long as the old TTL: records edited after a 300-second TTL recover in minutes, while a 3600-second TTL can hold stale answers for an hour, and NS changes up to 48 hours.' } },
-    { '@type': 'Question', name: 'My site works on mobile but not desktop, why?', acceptedAnswer: { '@type': 'Answer', text: 'Different devices use different resolvers with different caches. The propagation checker shows which resolvers still serve the old answer.' } },
-    { '@type': 'Question', name: 'Should I lower TTL before the next change?', acceptedAnswer: { '@type': 'Answer', text: 'Yes: lower to 300 seconds at least 24 hours ahead, make the change, verify, then raise it back. It is the single habit that prevents most migration incidents.' } },
+    {'@type': 'Question', 'name': "How long until my site works after a DNS change?", "acceptedAnswer": { '@type': 'Answer', "text": "As long as the old TTL: records edited after a 300-second TTL recover in minutes, while a 3600-second TTL can hold stale answers for an hour, and NS changes up to 48 hours." } },
+    {'@type': 'Question', 'name': "My site works on mobile but not desktop, why?", "acceptedAnswer": { '@type': 'Answer', "text": "Different devices use different resolvers with different caches. The propagation checker shows which resolvers still serve the old answer." } },
+    {'@type': 'Question', 'name': "Should I lower TTL before the next change?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: lower to 300 seconds at least 24 hours ahead, make the change, verify, then raise it back. It is the single habit that prevents most migration incidents." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -28,6 +28,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       the first two account for the majority. Diagnose in this order.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Post-change diagnosis matrix</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Resolves on some resolvers only</td><td class="text-sm text-ink-dim">Normal propagation</td><td class="text-sm text-ink-dim">Wait out the old TTL</td></tr><tr><td class="font-medium text-ink">NXDOMAIN everywhere</td><td class="text-sm text-ink-dim">Name typo or deleted record</td><td class="text-sm text-ink-dim">Re-add the record</td></tr><tr><td class="font-medium text-ink">Resolves but site down</td><td class="text-sm text-ink-dim">DNS is fine; the hosting is not</td><td class="text-sm text-ink-dim">Check the web server, not DNS</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

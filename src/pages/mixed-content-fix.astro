@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Why do browsers block active content?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A script loaded over HTTP can be rewritten in transit even on an HTTPS page: it would defeat the entire encryption model."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the padlock with a warning?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Passive mixed content: the page loads but is flagged as 'not fully secure.'"
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "My images broke after moving to HTTPS. Why?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "They are referenced over http:// and now blocked: update the URLs (often stored in the CMS database)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I whitelist one HTTP resource?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: the browser decides. The resource must move to HTTPS or be removed."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does the CSP header fix it for users?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "upgrade-insecure-requests rewrites subresource requests to HTTPS before fetching: a stopgap while you fix sources."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Why do browsers block active content?", "acceptedAnswer": { '@type': 'Answer', "text": "A script loaded over HTTP can be rewritten in transit even on an HTTPS page: it would defeat the entire encryption model." } },
+    {'@type': 'Question', 'name': "What is the padlock with a warning?", "acceptedAnswer": { '@type': 'Answer', "text": "Passive mixed content: the page loads but is flagged as 'not fully secure.'" } },
+    {'@type': 'Question', 'name': "My images broke after moving to HTTPS. Why?", "acceptedAnswer": { '@type': 'Answer', "text": "They are referenced over http:// and now blocked: update the URLs (often stored in the CMS database)." } },
+    {'@type': 'Question', 'name': "Can I whitelist one HTTP resource?", "acceptedAnswer": { '@type': 'Answer', "text": "No: the browser decides. The resource must move to HTTPS or be removed." } },
+    {'@type': 'Question', 'name': "Does the CSP header fix it for users?", "acceptedAnswer": { '@type': 'Answer', "text": "upgrade-insecure-requests rewrites subresource requests to HTTPS before fetching: a stopgap while you fix sources." } }
+  ]
 }
 ---
 <BaseLayout

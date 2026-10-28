@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What TTL should load-balanced records use?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Low: 60-300 seconds, so failover and reweighting take effect quickly."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can DNS failover replace a load balancer?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: DNS removes dead servers after detection delay, while a load balancer stops sending traffic to dead nodes per-connection, instantly."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Which providers support health checks?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Route 53, NS1, Constellix, and enterprise tiers of most managed DNS providers. Free tiers generally do not."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do CDN and DNS balancing interact?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The CDN does per-request balancing at the edge; your DNS points users at the nearest edge. Both layers, different jobs."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is split-horizon DNS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Different answers for internal vs external queries: internal users get private IPs, external users get public ones."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What TTL should load-balanced records use?", "acceptedAnswer": { '@type': 'Answer', "text": "Low: 60-300 seconds, so failover and reweighting take effect quickly." } },
+    {'@type': 'Question', 'name': "Can DNS failover replace a load balancer?", "acceptedAnswer": { '@type': 'Answer', "text": "No: DNS removes dead servers after detection delay, while a load balancer stops sending traffic to dead nodes per-connection, instantly." } },
+    {'@type': 'Question', 'name': "Which providers support health checks?", "acceptedAnswer": { '@type': 'Answer', "text": "Route 53, NS1, Constellix, and enterprise tiers of most managed DNS providers. Free tiers generally do not." } },
+    {'@type': 'Question', 'name': "How do CDN and DNS balancing interact?", "acceptedAnswer": { '@type': 'Answer', "text": "The CDN does per-request balancing at the edge; your DNS points users at the nearest edge. Both layers, different jobs." } },
+    {'@type': 'Question', 'name': "What is split-horizon DNS?", "acceptedAnswer": { '@type': 'Answer', "text": "Different answers for internal vs external queries: internal users get private IPs, external users get public ones." } }
+  ]
 }
 ---
 <BaseLayout

@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Can I have SPF without DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but DMARC alignment will fail whenever the mail is forwarded or the sending IP is not in your SPF record. DKIM provides forward-safe authentication." } },
+    {'@type': 'Question', 'name': "Can I have DKIM without SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but SPF provides IP-level authorization that DKIM does not. DKIM alone cannot prevent IP spoofing if the signing key is compromised." } },
+    {'@type': 'Question', 'name': "Which is more important for deliverability?", "acceptedAnswer": { '@type': 'Answer', "text": "Both matter. Gmail and Microsoft require both SPF and DKIM to pass for bulk senders. DKIM is slightly more critical because it survives forwarding." } }
+  ],
 };
 
 const breadcrumbs = {

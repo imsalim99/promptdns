@@ -19,6 +19,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       anyone. This is the checklist they run through, and how to score well on each line.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 checks and weights</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Weight</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">DMARC policy</td><td class="text-sm text-ink-dim">25</td></tr><tr><td class="font-medium text-ink">SPF record</td><td class="text-sm text-ink-dim">20</td></tr><tr><td class="font-medium text-ink">Website DNS</td><td class="text-sm text-ink-dim">15</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">15</td></tr><tr><td class="font-medium text-ink">MX records</td><td class="text-sm text-ink-dim">10</td></tr><tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">10</td></tr><tr><td class="font-medium text-ink">Nameservers</td><td class="text-sm text-ink-dim">5</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -60,5 +70,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/how-to-allow-ai-crawlers/">Allowing AI crawlers deliberately</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does the AI readiness score measure?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Seven technical signals: website DNS resolution, IPv6 support, DNSSEC, SPF, DMARC policy, AI crawler access via robots.txt, and llms.txt availability, each weighted toward a 100-point score.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a good AI readiness score?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Anything above 90 means your domain resolves cleanly, authenticates mail, and is readable by the major AI crawlers. The most common gaps are missing DNSSEC and no published llms.txt.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I re-check AI readiness?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">After any DNS, robots.txt, or hosting change. The checks run live in your browser, so re-running is free and takes seconds.</p></details></div>
+      </div>
 </BaseLayout>

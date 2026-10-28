@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What is the difference between SPF and DKIM?', acceptedAnswer: { '@type': 'Answer', text: 'SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain.' } },
-    { '@type': 'Question', name: 'Does SPF cover my website?', acceptedAnswer: { '@type': 'Answer', text: 'No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack.' } },
-    { '@type': 'Question', name: 'How many SPF records can I have?', acceptedAnswer: { '@type': 'Answer', text: 'Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating.' } },
+    {'@type': 'Question', 'name': "What is the difference between SPF and DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain." } },
+    {'@type': 'Question', 'name': "Does SPF cover my website?", "acceptedAnswer": { '@type': 'Answer', "text": "No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack." } },
+    {'@type': 'Question', 'name': "How many SPF records can I have?", "acceptedAnswer": { '@type': 'Answer', "text": "Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -30,6 +30,46 @@ import Diagram from '../components/Diagram.astro';
       fail it and your mail goes to spam, or bounces.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF mechanism lookup cost matrix</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Mechanism</th><th>Syntax example</th><th>DNS lookups consumed</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr><tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr><tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr><tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr><tr><td class="font-medium text-ink">ip4 / ip6</td><td class="text-sm text-ink-dim">ip4:192.0.2.0/24</td><td class="text-sm text-ink-dim">0</td></tr><tr><td class="font-medium text-ink">all</td><td class="text-sm text-ink-dim">~all or -all</td><td class="text-sm text-ink-dim">0</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 SPF evaluation results (RFC 7208 section 2.6)</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Result</th><th>Meaning</th><th>Typical receiver action</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Pass</td><td class="text-sm text-ink-dim">IP is authorized by the record</td><td class="text-sm text-ink-dim">Accept toward DMARC alignment</td></tr><tr><td class="font-medium text-ink">Fail (-all)</td><td class="text-sm text-ink-dim">IP is explicitly not authorized</td><td class="text-sm text-ink-dim">Reject, or mark per policy</td></tr><tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr><tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr><tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr><tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr><tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF mechanism lookup cost matrix</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Mechanism</th><th>Syntax example</th><th>DNS lookups consumed</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr><tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr><tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr><tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr><tr><td class="font-medium text-ink">ip4 / ip6</td><td class="text-sm text-ink-dim">ip4:192.0.2.0/24</td><td class="text-sm text-ink-dim">0</td></tr><tr><td class="font-medium text-ink">all</td><td class="text-sm text-ink-dim">~all or -all</td><td class="text-sm text-ink-dim">0</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 SPF evaluation results (RFC 7208 section 2.6)</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Result</th><th>Meaning</th><th>Typical receiver action</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Pass</td><td class="text-sm text-ink-dim">IP is authorized by the record</td><td class="text-sm text-ink-dim">Accept toward DMARC alignment</td></tr><tr><td class="font-medium text-ink">Fail (-all)</td><td class="text-sm text-ink-dim">IP is explicitly not authorized</td><td class="text-sm text-ink-dim">Reject, or mark per policy</td></tr><tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr><tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr><tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr><tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr><tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "How do I split a long SPF record across multiple TXT strings?", "acceptedAnswer": { '@type': 'Answer', "text": "Break the record at mechanism boundaries into 255-character chunks, each wrapped in double quotes. DNS resolvers automatically concatenate them. Most DNS providers handle this automatically." } },
+    {'@type': 'Question', 'name': "Does the 255-character limit apply to the total record?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It applies to each individual character-string within the TXT record. Multiple strings are concatenated. The practical limit is around 450-512 characters for most resolvers." } },
+    {'@type': 'Question', 'name': "Is there a tool to check both limits at once?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: our SPF record checker reports the lookup count and total length together, so you see both limits in one run." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I split a long SPF record across multiple TXT strings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Break the record at mechanism boundaries into 255-character chunks, each wrapped in double quotes. DNS resolvers automatically concatenate them. Most DNS providers handle this automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does the 255-character limit apply to the total record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It applies to each individual character-string within the TXT record. Multiple strings are concatenated. The practical limit is around 450-512 characters for most resolvers.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I split a long SPF record across multiple TXT strings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Break the record at mechanism boundaries into 255-character chunks, each wrapped in double quotes. DNS resolvers automatically concatenate them. Most DNS providers handle this automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does the 255-character limit apply to the total record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It applies to each individual character-string within the TXT record. Multiple strings are concatenated. The practical limit is around 450-512 characters for most resolvers.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is there a tool to check both limits at once?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: our SPF record checker reports the lookup count and total length together, so you see both limits in one run.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

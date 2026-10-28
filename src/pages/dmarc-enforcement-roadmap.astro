@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "What if I skip the quarantine phase?", "acceptedAnswer": { '@type': 'Answer', "text": "You can go directly from p=none to p=reject if your aggregate reports show 100% pass rate. Quarantine is a safety net, not a requirement." } },
+    {'@type': 'Question', 'name': "How do I roll back if legitimate mail is rejected?", "acceptedAnswer": { '@type': 'Answer', "text": "Lower pct= or revert to p=none. The DMARC record change propagates within minutes on Cloudflare. Then fix the failing source and re-advance." } },
+    {'@type': 'Question', 'name': "What if legitimate mail fails after moving to reject?", "acceptedAnswer": { '@type': 'Answer', "text": "Drop pct to a lower value or step back to quarantine while you fix the failing source, then re-advance. The aggregate reports show exactly which source failed." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I skip the quarantine phase?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You can go directly from p=none to p=reject if your aggregate reports show 100% pass rate. Quarantine is a safety net, not a requirement.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I roll back if legitimate mail is rejected?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Lower pct= or revert to p=none. The DMARC record change propagates within minutes on Cloudflare. Then fix the failing source and re-advance.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if I skip the quarantine phase?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">You can go directly from p=none to p=reject if your aggregate reports show 100% pass rate. Quarantine is a safety net, not a requirement.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I roll back if legitimate mail is rejected?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Lower pct= or revert to p=none. The DMARC record change propagates within minutes on Cloudflare. Then fix the failing source and re-advance.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if legitimate mail fails after moving to reject?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Drop pct to a lower value or step back to quarantine while you fix the failing source, then re-advance. The aggregate reports show exactly which source failed.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

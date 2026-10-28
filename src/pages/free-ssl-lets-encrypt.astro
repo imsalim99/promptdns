@@ -5,47 +5,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Why 90 days?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Short-lived certificates limit damage from key compromise and force automation, which is the entire point."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I get a wildcard from Let's Encrypt?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, via the DNS-01 challenge with an API-connected DNS provider."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What happens if renewal fails?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Browsers block the expired site outright. Certbot emails at 20 days remaining; monitor expiry like any other certificate."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do subdomains need separate certificates?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: one certificate covers listed SANs (www, api, etc.) or use a wildcard via DNS-01."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is Let's Encrypt trusted everywhere?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: its root ISRG Root X1 is trusted by all major browsers and platforms; very old systems needed the cross-sign, which has since been retired."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Why 90 days?", "acceptedAnswer": { '@type': 'Answer', "text": "Short-lived certificates limit damage from key compromise and force automation, which is the entire point." } },
+    {'@type': 'Question', 'name': "Can I get a wildcard from Let's Encrypt?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, via the DNS-01 challenge with an API-connected DNS provider." } },
+    {'@type': 'Question', 'name': "What happens if renewal fails?", "acceptedAnswer": { '@type': 'Answer', "text": "Browsers block the expired site outright. Certbot emails at 20 days remaining; monitor expiry like any other certificate." } },
+    {'@type': 'Question', 'name': "Do subdomains need separate certificates?", "acceptedAnswer": { '@type': 'Answer', "text": "No: one certificate covers listed SANs (www, api, etc.) or use a wildcard via DNS-01." } },
+    {'@type': 'Question', 'name': "Is Let's Encrypt trusted everywhere?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: its root ISRG Root X1 is trusted by all major browsers and platforms; very old systems needed the cross-sign, which has since been retired." } }
+  ]
 }
 ---
 <BaseLayout
@@ -65,6 +30,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Let's Encrypt is a free, automated certificate authority that made HTTPS universal. Certificates last 90 days by design and renew automatically via the ACME protocol: the cost of TLS dropped to zero, and the excuse to skip it vanished with it.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Let's Encrypt essentials</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Cost</td><td class="text-sm text-ink-dim">Free forever</td></tr><tr><td class="font-medium text-ink">Lifetime</td><td class="text-sm text-ink-dim">90 days</td></tr><tr><td class="font-medium text-ink">Validation</td><td class="text-sm text-ink-dim">ACME challenges</td></tr><tr><td class="font-medium text-ink">Limits</td><td class="text-sm text-ink-dim">Generous</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

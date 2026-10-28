@@ -22,6 +22,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       behavior plus a request.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Barracuda triggers</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Trigger</th><th>Prevention</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Spam-trap hits</td><td class="text-sm text-ink-dim">Never mail purchased lists</td></tr><tr><td class="font-medium text-ink">Complaints</td><td class="text-sm text-ink-dim">One-click unsubscribe</td></tr><tr><td class="font-medium text-ink">New IP volume</td><td class="text-sm text-ink-dim">Warm over weeks</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -59,5 +69,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does Barracuda delisting take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Usually within an hour of an approved request, and the block decays naturally in days if the sending behavior stops.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why did my IP get listed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Barracuda reacts to spam-trap hits, complaint rates, and sudden volume from new IPs. A new server sending cold email is the classic trigger.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I prevent future listings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Authenticate with SPF, DKIM, and enforced DMARC, warm new IPs slowly, and keep complaint rates low. Listings follow behavior, not luck.</p></details></div>
+      </div>
 </BaseLayout>

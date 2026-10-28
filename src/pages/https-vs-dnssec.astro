@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "If I have HTTPS, do I still need DNSSEC?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: TLS cannot help if DNS redirects users before they ever reach your real server. DNSSEC closes that pre-connection gap."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DNSSEC encrypt my DNS queries?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: it signs answers so tampering is detectable. Encrypting the queries themselves is DoH/DoT."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Which is harder to deploy?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "TLS is now near-automatic (Let's Encrypt, platform defaults). DNSSEC is a toggle at good providers; the risk zone is manual key rotation."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do both affect SEO?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "HTTPS is a confirmed (small) ranking signal and mandatory for modern browser UX. DNSSEC is a trust and reliability signal."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What happens if either fails?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "TLS failure: a visible certificate warning users can click past. DNSSEC failure: SERVFAIL, no page at all. Different symptoms, same outage effect."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is DNSSEC why my mail fails?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Unrelated layers: mail authentication is SPF/DKIM/DMARC. But a DNSSEC misconfiguration takes down web AND mail resolution together."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "If I have HTTPS, do I still need DNSSEC?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: TLS cannot help if DNS redirects users before they ever reach your real server. DNSSEC closes that pre-connection gap." } },
+    {'@type': 'Question', 'name': "Does DNSSEC encrypt my DNS queries?", "acceptedAnswer": { '@type': 'Answer', "text": "No: it signs answers so tampering is detectable. Encrypting the queries themselves is DoH/DoT." } },
+    {'@type': 'Question', 'name': "Which is harder to deploy?", "acceptedAnswer": { '@type': 'Answer', "text": "TLS is now near-automatic (Let's Encrypt, platform defaults). DNSSEC is a toggle at good providers; the risk zone is manual key rotation." } },
+    {'@type': 'Question', 'name': "Do both affect SEO?", "acceptedAnswer": { '@type': 'Answer', "text": "HTTPS is a confirmed (small) ranking signal and mandatory for modern browser UX. DNSSEC is a trust and reliability signal." } },
+    {'@type': 'Question', 'name': "What happens if either fails?", "acceptedAnswer": { '@type': 'Answer', "text": "TLS failure: a visible certificate warning users can click past. DNSSEC failure: SERVFAIL, no page at all. Different symptoms, same outage effect." } },
+    {'@type': 'Question', 'name': "Is DNSSEC why my mail fails?", "acceptedAnswer": { '@type': 'Answer', "text": "Unrelated layers: mail authentication is SPF/DKIM/DMARC. But a DNSSEC misconfiguration takes down web AND mail resolution together." } }
+  ]
 }
 ---
 <BaseLayout

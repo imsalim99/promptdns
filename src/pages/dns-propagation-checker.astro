@@ -6,55 +6,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How long does DNS propagation take?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It is governed by the record's TTL: each resolver may serve the old value until its cached copy expires, so worst case equals the full TTL. New names with no cached history resolve immediately everywhere."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why do some resolvers still show old values?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Their cached copy has not expired yet. The TTL column in the results shows how much longer each resolver may keep serving the old answer."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I speed up propagation?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not for a change already made. For future changes, lower the TTL to 300 seconds a day before, make the change, then raise it back."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Propagation finished but I still see the old site. Why?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The remaining cache is usually local: your browser, operating system, or ISP resolver keeps its own copy. Flush the local DNS cache and restart the browser."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Which resolvers does this checker query?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) over DNS-over-HTTPS, directly from your browser. These are three vantage points, not every network on earth."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my domain sent to a server when I use this checker?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. All queries run in your browser against the public resolvers above. PromptDNS has no server in the lookup path and stores nothing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How long does DNS propagation take?", "acceptedAnswer": { '@type': 'Answer', "text": "It is governed by the record's TTL: each resolver may serve the old value until its cached copy expires, so worst case equals the full TTL. New names with no cached history resolve immediately everywhere." } },
+    {'@type': 'Question', 'name': "Why do some resolvers still show old values?", "acceptedAnswer": { '@type': 'Answer', "text": "Their cached copy has not expired yet. The TTL column in the results shows how much longer each resolver may keep serving the old answer." } },
+    {'@type': 'Question', 'name': "Can I speed up propagation?", "acceptedAnswer": { '@type': 'Answer', "text": "Not for a change already made. For future changes, lower the TTL to 300 seconds a day before, make the change, then raise it back." } },
+    {'@type': 'Question', 'name': "Propagation finished but I still see the old site. Why?", "acceptedAnswer": { '@type': 'Answer', "text": "The remaining cache is usually local: your browser, operating system, or ISP resolver keeps its own copy. Flush the local DNS cache and restart the browser." } },
+    {'@type': 'Question', 'name': "Which resolvers does this checker query?", "acceptedAnswer": { '@type': 'Answer', "text": "Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) over DNS-over-HTTPS, directly from your browser. These are three vantage points, not every network on earth." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. All queries run in your browser against the public resolvers above. PromptDNS has no server in the lookup path and stores nothing." } }
+  ]
 }
 ---
 <BaseLayout

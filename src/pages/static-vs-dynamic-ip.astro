@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Does a static IP improve speed or gaming?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not meaningfully: latency and bandwidth are routing properties, not address stability. Static addresses are about reachability, not performance."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is a dynamic IP more private?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Marginally: your address changes, but tracking methods work around it, and the ISP still logs the assignment."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I know which I have?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Reboot your router and compare: a changed public address means dynamic (our What Is My IP tool shows it before and after)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can a dynamic IP be blocklisted?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, and you inherit it: check new assignments with the IP reputation checker before sending mail."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is a static lease?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A DHCP reservation: your device always receives the same PRIVATE address from the router. Useful internally, unrelated to your public IP."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do cloud servers have static IPs?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Cloud VMs typically keep their address for the instance's life; Elastic IPs (AWS) and reserved IPs make it explicit and portable."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Does a static IP improve speed or gaming?", "acceptedAnswer": { '@type': 'Answer', "text": "Not meaningfully: latency and bandwidth are routing properties, not address stability. Static addresses are about reachability, not performance." } },
+    {'@type': 'Question', 'name': "Is a dynamic IP more private?", "acceptedAnswer": { '@type': 'Answer', "text": "Marginally: your address changes, but tracking methods work around it, and the ISP still logs the assignment." } },
+    {'@type': 'Question', 'name': "How do I know which I have?", "acceptedAnswer": { '@type': 'Answer', "text": "Reboot your router and compare: a changed public address means dynamic (our What Is My IP tool shows it before and after)." } },
+    {'@type': 'Question', 'name': "Can a dynamic IP be blocklisted?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, and you inherit it: check new assignments with the IP reputation checker before sending mail." } },
+    {'@type': 'Question', 'name': "What is a static lease?", "acceptedAnswer": { '@type': 'Answer', "text": "A DHCP reservation: your device always receives the same PRIVATE address from the router. Useful internally, unrelated to your public IP." } },
+    {'@type': 'Question', 'name': "Do cloud servers have static IPs?", "acceptedAnswer": { '@type': 'Answer', "text": "Cloud VMs typically keep their address for the instance's life; Elastic IPs (AWS) and reserved IPs make it explicit and portable." } }
+  ]
 }
 ---
 <BaseLayout
@@ -72,6 +30,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A static IP never changes; a dynamic IP is leased from a pool and can change at your provider's whim. For browsing, the difference is invisible. For hosting, mail, remote access, and VPNs, it is the difference between working and broken.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Static vs dynamic</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>Static</th><th>Dynamic</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Changes</td><td class="text-sm text-ink-dim">Never</td><td class="text-sm text-ink-dim">Per lease</td></tr><tr><td class="font-medium text-ink">Mail</td><td class="text-sm text-ink-dim">Clean PTR</td><td class="text-sm text-ink-dim">Pre-blocklisted</td></tr><tr><td class="font-medium text-ink">Cost</td><td class="text-sm text-ink-dim">Paid</td><td class="text-sm text-ink-dim">Included</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

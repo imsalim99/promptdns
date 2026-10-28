@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is a DNS leak?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A DNS leak happens when your DNS queries are sent to your ISP's resolver instead of your VPN's encrypted resolver, revealing which websites you visit to your internet provider."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How does the DNS leak test work?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It generates unique subdomains and checks which resolvers respond. If resolvers outside your expected provider answer, your queries are leaking outside the tunnel."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does a DNS leak affect my DNSSEC validation?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No, DNSSEC validation is independent of which resolver handles your queries. A leak affects privacy, not integrity."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is a DNS leak?", "acceptedAnswer": { '@type': 'Answer', "text": "A DNS leak happens when your DNS queries are sent to your ISP's resolver instead of your VPN's encrypted resolver, revealing which websites you visit to your internet provider." } },
+    {'@type': 'Question', 'name': "How does the DNS leak test work?", "acceptedAnswer": { '@type': 'Answer', "text": "It generates unique subdomains and checks which resolvers respond. If resolvers outside your expected provider answer, your queries are leaking outside the tunnel." } },
+    {'@type': 'Question', 'name': "Does a DNS leak affect my DNSSEC validation?", "acceptedAnswer": { '@type': 'Answer', "text": "No, DNSSEC validation is independent of which resolver handles your queries. A leak affects privacy, not integrity." } }
+  ]
 }
 ---
 <BaseLayout title="DNS Leak Test - Which Resolver Are You Using?" description="Free DNS leak test: detect which DNS resolvers actually answer your queries, and whether your VPN's resolver matches your VPN location."  schema={[faqSchema]}

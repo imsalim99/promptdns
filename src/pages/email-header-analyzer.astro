@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Are my email headers uploaded to a server?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. All parsing happens in your browser using JavaScript. Your email headers never leave your device."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What are Received headers and why are there so many?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Each mail server that handled your message adds a Received header. Reading them bottom-to-top shows the delivery path from the sending server to your mailbox."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What does it mean when SPF or DKIM shows fail in the headers?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It means the sending server did not pass that authentication check. If DMARC also fails, the mail may be spoofed. Legitimate mail can fail if forwarding breaks the original authentication."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Are my email headers uploaded to a server?", "acceptedAnswer": { '@type': 'Answer', "text": "No. All parsing happens in your browser using JavaScript. Your email headers never leave your device." } },
+    {'@type': 'Question', 'name': "What are Received headers and why are there so many?", "acceptedAnswer": { '@type': 'Answer', "text": "Each mail server that handled your message adds a Received header. Reading them bottom-to-top shows the delivery path from the sending server to your mailbox." } },
+    {'@type': 'Question', 'name': "What does it mean when SPF or DKIM shows fail in the headers?", "acceptedAnswer": { '@type': 'Answer', "text": "It means the sending server did not pass that authentication check. If DMARC also fails, the mail may be spoofed. Legitimate mail can fail if forwarding breaks the original authentication." } }
+  ]
 }
 ---
 <BaseLayout title="Email Header Analyzer - Parse Received Chains" description="Free email header analyzer: paste headers to decode the Received chain, SPF/DKIM/DMARC results, and sending path."  schema={[faqSchema]}

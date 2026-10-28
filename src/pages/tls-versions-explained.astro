@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is TLS 1.3 backward compatible?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It has a compatibility mode so middleboxes tolerate it, but 1.3-only servers drop ancient clients by design."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is a cipher suite?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The negotiated recipe: key exchange, bulk encryption, and hash algorithms. Modern suites are all forward-secret."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I check my server's TLS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "SSL Labs Server Test grades protocol and cipher configuration, or openssl s_client with -tls1_2/-tls1_3 flags."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DNSSEC affect TLS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: different layers. DNSSEC authenticates addresses; TLS authenticates and encrypts the session."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why did old TLS die?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "POODLE, BEAST, and downgrade attacks against design flaws that cannot be patched, only retired."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is TLS 1.3 backward compatible?", "acceptedAnswer": { '@type': 'Answer', "text": "It has a compatibility mode so middleboxes tolerate it, but 1.3-only servers drop ancient clients by design." } },
+    {'@type': 'Question', 'name': "What is a cipher suite?", "acceptedAnswer": { '@type': 'Answer', "text": "The negotiated recipe: key exchange, bulk encryption, and hash algorithms. Modern suites are all forward-secret." } },
+    {'@type': 'Question', 'name': "How do I check my server's TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "SSL Labs Server Test grades protocol and cipher configuration, or openssl s_client with -tls1_2/-tls1_3 flags." } },
+    {'@type': 'Question', 'name': "Does DNSSEC affect TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "No: different layers. DNSSEC authenticates addresses; TLS authenticates and encrypts the session." } },
+    {'@type': 'Question', 'name': "Why did old TLS die?", "acceptedAnswer": { '@type': 'Answer', "text": "POODLE, BEAST, and downgrade attacks against design flaws that cannot be patched, only retired." } }
+  ]
 }
 ---
 <BaseLayout

@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Does MTA-STS require DNSSEC?', acceptedAnswer: { '@type': 'Answer', text: 'No. MTA-STS is enforced through a DNS TXT record plus an HTTPS-hosted policy file with a valid certificate. DNSSEC is unrelated.' } },
-    { '@type': 'Question', name: 'What is the difference between testing and enforce mode?', acceptedAnswer: { '@type': 'Answer', text: 'Testing reports TLS failures without affecting delivery; enforce requires valid TLS and bouncing non-compliant senders. Start in testing, watch reports, then enforce.' } },
-    { '@type': 'Question', name: 'How long is the policy max_age?', acceptedAnswer: { '@type': 'Answer', text: 'You set it in seconds; 86400 (one day) suits testing, and 604800 (a week) is common for stable enforce-mode policies.' } },
+    {'@type': 'Question', 'name': "Does MTA-STS require DNSSEC?", "acceptedAnswer": { '@type': 'Answer', "text": "No. MTA-STS is enforced through a DNS TXT record plus an HTTPS-hosted policy file with a valid certificate. DNSSEC is unrelated." } },
+    {'@type': 'Question', 'name': "What is the difference between testing and enforce mode?", "acceptedAnswer": { '@type': 'Answer', "text": "Testing reports TLS failures without affecting delivery; enforce requires valid TLS and bouncing non-compliant senders. Start in testing, watch reports, then enforce." } },
+    {'@type': 'Question', 'name': "How long is the policy max_age?", "acceptedAnswer": { '@type': 'Answer', "text": "You set it in seconds; 86400 (one day) suits testing, and 604800 (a week) is common for stable enforce-mode policies." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -29,6 +29,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       publishing a DNS policy that says: my mail servers demand valid TLS, always.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">MTA-STS policy modes</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Mode</th><th>Effect</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">none</td><td class="text-sm text-ink-dim">No policy published</td></tr><tr><td class="font-medium text-ink">testing</td><td class="text-sm text-ink-dim">Reports failures, no enforcement</td></tr><tr><td class="font-medium text-ink">enforce</td><td class="text-sm text-ink-dim">Bounces non-TLS delivery</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

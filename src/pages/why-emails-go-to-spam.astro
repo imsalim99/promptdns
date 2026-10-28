@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Does DMARC fix spam placement?', acceptedAnswer: { '@type': 'Answer', text: 'It removes the authentication reason for spam placement. Reputation, content, and engagement still matter, so DMARC is necessary but not sufficient.' } },
-    { '@type': 'Question', name: 'Can a blacklist listing send me to spam?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, major filters weigh DNSBL listings. Check and delist first, then fix the behavior that caused the listing.' } },
-    { '@type': 'Question', name: 'How long does reputation recovery take?', acceptedAnswer: { '@type': 'Answer', text: 'Days to weeks of clean, authenticated, low-complaint volume. There is no instant reset switch; consistency is the mechanism.' } },
+    {'@type': 'Question', 'name': "Does DMARC fix spam placement?", "acceptedAnswer": { '@type': 'Answer', "text": "It removes the authentication reason for spam placement. Reputation, content, and engagement still matter, so DMARC is necessary but not sufficient." } },
+    {'@type': 'Question', 'name': "Can a blacklist listing send me to spam?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, major filters weigh DNSBL listings. Check and delist first, then fix the behavior that caused the listing." } },
+    {'@type': 'Question', 'name': "How long does reputation recovery take?", "acceptedAnswer": { '@type': 'Answer', "text": "Days to weeks of clean, authenticated, low-complaint volume. There is no instant reset switch; consistency is the mechanism." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -27,6 +27,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       for nearly everything, strongest first.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Top spam-placement causes and their fixes</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Cause</th><th>Fix</th><th>Verify with</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Missing or failing authentication</td><td class="text-sm text-ink-dim">Aligned SPF, DKIM, enforced DMARC</td><td class="text-sm text-ink-dim">SPF, DKIM, and DMARC checkers</td></tr><tr><td class="font-medium text-ink">Blacklist listing</td><td class="text-sm text-ink-dim">Delist and fix the sending behavior</td><td class="text-sm text-ink-dim">Blacklist checker</td></tr><tr><td class="font-medium text-ink">New IP with no reputation</td><td class="text-sm text-ink-dim">Warm up volume gradually</td><td class="text-sm text-ink-dim">Sending reputation guides</td></tr><tr><td class="font-medium text-ink">Spam-trigger content</td><td class="text-sm text-ink-dim">Clean subject lines and honest links</td><td class="text-sm text-ink-dim">Email header analyzer</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

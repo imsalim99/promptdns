@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Why is port 25 blocked on my network?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "ISPs and cloud providers block it to prevent spam botnets from sending directly. Use 587/465 through your mail provider instead."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is 465 more secure than 587?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "465 uses implicit TLS (encrypted immediately); 587 starts plaintext and upgrades. Both are secure when configured correctly; 465 avoids the downgrade window."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What port does Gmail use?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "587 for SMTP submission (smtp.gmail.com) with STARTTLS, or 465 with SSL. Both require authentication."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I run my own mail server on port 25?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, but your ISP must unblock it (business lines usually allow it; consumer lines don’t). You also need correct PTR, SPF, and DKIM."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What happens if I use the wrong port?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Connection refused or timeout: the server isn’t listening on that port. The error message tells you which port to use."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does the port affect deliverability?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: the port is just transport. Deliverability depends on authentication, reputation, and content."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Why is port 25 blocked on my network?", "acceptedAnswer": { '@type': 'Answer', "text": "ISPs and cloud providers block it to prevent spam botnets from sending directly. Use 587/465 through your mail provider instead." } },
+    {'@type': 'Question', 'name': "Is 465 more secure than 587?", "acceptedAnswer": { '@type': 'Answer', "text": "465 uses implicit TLS (encrypted immediately); 587 starts plaintext and upgrades. Both are secure when configured correctly; 465 avoids the downgrade window." } },
+    {'@type': 'Question', 'name': "What port does Gmail use?", "acceptedAnswer": { '@type': 'Answer', "text": "587 for SMTP submission (smtp.gmail.com) with STARTTLS, or 465 with SSL. Both require authentication." } },
+    {'@type': 'Question', 'name': "Can I run my own mail server on port 25?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but your ISP must unblock it (business lines usually allow it; consumer lines don\u2019t). You also need correct PTR, SPF, and DKIM." } },
+    {'@type': 'Question', 'name': "What happens if I use the wrong port?", "acceptedAnswer": { '@type': 'Answer', "text": "Connection refused or timeout: the server isn\u2019t listening on that port. The error message tells you which port to use." } },
+    {'@type': 'Question', 'name': "Does the port affect deliverability?", "acceptedAnswer": { '@type': 'Answer', "text": "No: the port is just transport. Deliverability depends on authentication, reputation, and content." } }
+  ]
 }
 ---
 <BaseLayout

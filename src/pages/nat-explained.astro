@@ -4,31 +4,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Does NAT protect me from hackers?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It blocks unsolicited inbound connections, which is real protection, but it is not a firewall you configure: outbound threats and phishing pass freely."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does IPv6 remove NAT?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every device gets a globally routable address, so translation is unnecessary; the same protection comes from proper firewalls."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is CGNAT?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Carrier-grade NAT: your ISP applies the same trick to whole neighborhoods, stacking another layer. It breaks port forwarding entirely and puts hundreds of users behind one address."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Does NAT protect me from hackers?", "acceptedAnswer": { '@type': 'Answer', "text": "It blocks unsolicited inbound connections, which is real protection, but it is not a firewall you configure: outbound threats and phishing pass freely." } },
+    {'@type': 'Question', 'name': "Why does IPv6 remove NAT?", "acceptedAnswer": { '@type': 'Answer', "text": "Every device gets a globally routable address, so translation is unnecessary; the same protection comes from proper firewalls." } },
+    {'@type': 'Question', 'name': "What is CGNAT?", "acceptedAnswer": { '@type': 'Answer', "text": "Carrier-grade NAT: your ISP applies the same trick to whole neighborhoods, stacking another layer. It breaks port forwarding entirely and puts hundreds of users behind one address." } }
+  ]
 }
 ---
 <BaseLayout
@@ -48,6 +27,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Network Address Translation is the trick that let the internet survive IPv4 exhaustion: your router rewrites addresses so an entire household shares one public IP, and somehow everything still works.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">NAT types in practice</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Type</th><th>Behavior</th><th>Typical context</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Static NAT</td><td class="text-sm text-ink-dim">One-to-one mapping</td><td class="text-sm text-ink-dim">Servers with dedicated public IPs</td></tr><tr><td class="font-medium text-ink">Dynamic NAT</td><td class="text-sm text-ink-dim">Pool of public IPs</td><td class="text-sm text-ink-dim">Larger office networks</td></tr><tr><td class="font-medium text-ink">PAT (NAT overload)</td><td class="text-sm text-ink-dim">Many private IPs to one public IP with ports</td><td class="text-sm text-ink-dim">Home routers, most SMB networks</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

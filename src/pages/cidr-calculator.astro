@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the difference between /24 and /16?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "/24 gives you 256 addresses (a typical small network). /16 gives you 65,536 addresses (a larger network or ISP allocation). The number after the slash is the count of leading 1-bits in the subnet mask."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How many usable hosts are in a /29?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A /29 has 8 total addresses but only 6 usable hosts: 2 are reserved for the network identifier and the broadcast address. Our calculator shows usable hosts automatically."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I convert IPv4 CIDR to IPv6?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, an IPv4 /32 maps to an IPv6 /128 in the ::ffff: prefix range. Our IPv4-to-IPv6 converter handles this mapping."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the difference between /24 and /16?", "acceptedAnswer": { '@type': 'Answer', "text": "/24 gives you 256 addresses (a typical small network). /16 gives you 65,536 addresses (a larger network or ISP allocation). The number after the slash is the count of leading 1-bits in the subnet mask." } },
+    {'@type': 'Question', 'name': "How many usable hosts are in a /29?", "acceptedAnswer": { '@type': 'Answer', "text": "A /29 has 8 total addresses but only 6 usable hosts: 2 are reserved for the network identifier and the broadcast address. Our calculator shows usable hosts automatically." } },
+    {'@type': 'Question', 'name': "Can I convert IPv4 CIDR to IPv6?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, an IPv4 /32 maps to an IPv6 /128 in the ::ffff: prefix range. Our IPv4-to-IPv6 converter handles this mapping." } }
+  ]
 }
 ---
 <BaseLayout title="CIDR / Subnet Calculator" description="Free subnet calculator: CIDR notation to IP range, mask, wildcard, broadcast, and host count - with a full reference table."  schema={[faqSchema]}

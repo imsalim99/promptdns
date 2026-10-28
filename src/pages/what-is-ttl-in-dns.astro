@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What TTL should I use?', acceptedAnswer: { '@type': 'Answer', text: '300 seconds while migrating, 3600 seconds for stable records. Critical mail records can sit at 3600 once behavior is predictable.' } },
-    { '@type': 'Question', name: 'Does low TTL hurt performance?', acceptedAnswer: { '@type': 'Answer', text: 'Slightly: more resolver queries and marginally slower answers for repeat visitors. The trade is faster change propagation.' } },
-    { '@type': 'Question', name: 'Where is TTL set?', acceptedAnswer: { '@type': 'Answer', text: 'Per record in your DNS host, with a default TTL in the SOA record for the zone. Our TTL checker shows the live value for every record.' } },
+    {'@type': 'Question', 'name': "What TTL should I use?", "acceptedAnswer": { '@type': 'Answer', "text": "300 seconds while migrating, 3600 seconds for stable records. Critical mail records can sit at 3600 once behavior is predictable." } },
+    {'@type': 'Question', 'name': "Does low TTL hurt performance?", "acceptedAnswer": { '@type': 'Answer', "text": "Slightly: more resolver queries and marginally slower answers for repeat visitors. The trade is faster change propagation." } },
+    {'@type': 'Question', 'name': "Where is TTL set?", "acceptedAnswer": { '@type': 'Answer', "text": "Per record in your DNS host, with a default TTL in the SOA record for the zone. Our TTL checker shows the live value for every record." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -31,6 +31,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       change</strong> against <strong class="text-ink">speed of resolution</strong>.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">TTL by use case</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Use case</th><th>TTL</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Stable records</td><td class="text-sm text-ink-dim">3600 s</td></tr><tr><td class="font-medium text-ink">Planned changes</td><td class="text-sm text-ink-dim">300 s, lowered ahead</td></tr><tr><td class="font-medium text-ink">Mail records</td><td class="text-sm text-ink-dim">3600 s</td></tr><tr><td class="font-medium text-ink">Emergency failover</td><td class="text-sm text-ink-dim">60-300 s</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

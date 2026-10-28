@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What key size should I use for DKIM?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "2048-bit RSA is the current standard. 1024-bit keys are considered weak and are rejected by some receivers. Our generator defaults to 2048-bit."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use the same DKIM key for multiple domains?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Technically yes, but it is not recommended. Each domain should have its own DKIM key so that compromising one domain's key does not affect others."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Where do I publish the DKIM record?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "At your DNS provider as a TXT record at selector._domainkey.yourdomain.com. For example, if your selector is 'resend', publish at resend._domainkey.yourdomain.com."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What key size should I use for DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "2048-bit RSA is the current standard. 1024-bit keys are considered weak and are rejected by some receivers. Our generator defaults to 2048-bit." } },
+    {'@type': 'Question', 'name': "Can I use the same DKIM key for multiple domains?", "acceptedAnswer": { '@type': 'Answer', "text": "Technically yes, but it is not recommended. Each domain should have its own DKIM key so that compromising one domain's key does not affect others." } },
+    {'@type': 'Question', 'name': "Where do I publish the DKIM record?", "acceptedAnswer": { '@type': 'Answer', "text": "At your DNS provider as a TXT record at selector._domainkey.yourdomain.com. For example, if your selector is 'resend', publish at resend._domainkey.yourdomain.com." } }
+  ]
 }
 ---
 <BaseLayout title="DKIM Record Generator - Generate Keys in Your Browser" description="Free DKIM record generator: create a real 2048-bit RSA key pair in your browser, get the TXT record and private key file. Keys never leave your device."  schema={[faqSchema]}

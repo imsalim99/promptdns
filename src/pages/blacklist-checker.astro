@@ -7,55 +7,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Which blocklists does this checker query?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The major publicly queryable lists, including SURBL, URIBL, SpamCop, SORBS, and Barracuda. Some lists (including Spamhaus) refuse queries from public resolvers; those show as not checkable rather than clean, and should be verified on the list's own site."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "My domain is listed. What now?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Open the list's own site and read the return code, which states the reason. Fix the root cause (compromised account, open redirect, misconfigured server) before requesting delisting, or the listing returns. Our removal guides cover the big lists."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why is a shared sending IP listed?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Other customers of your email provider share that IP and caused the listing. Ask the provider to resolve it, send from your dedicated IP, or request delisting as their process allows."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "I'm listed but my mail still delivers. Does it matter?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not every receiver consults every list, so delivery can continue while some providers silently spam-folder you. Treat any listing as deliverability risk to fix promptly."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I check blocklists?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Whenever deliverability drops, and routinely afterward. The listing reason tells you what to prevent next time."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my domain sent to a server when I use this checker?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. The queries run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Which blocklists does this checker query?", "acceptedAnswer": { '@type': 'Answer', "text": "The major publicly queryable lists, including SURBL, URIBL, SpamCop, SORBS, and Barracuda. Some listsincludingly Spamhaus) refuse queries from public resolvers; those show as not checkable rather than clean, and should be verified on the list's own site." } },
+    {'@type': 'Question', 'name': "My domain is listed. What now?", "acceptedAnswer": { '@type': 'Answer', "text": "Open the list's own site and read the return code, which states the reason. Fix the root cause (compromised account, open redirect, misconfigured server) before requesting delisting, or the listing returns. Our removal guides cover the big lists." } },
+    {'@type': 'Question', 'name': "Why is a shared sending IP listed?", "acceptedAnswer": { '@type': 'Answer', "text": "Other customers of your email provider share that IP and caused the listing. Ask the provider to resolve it, send from your dedicated IP, or request delisting as their process allows." } },
+    {'@type': 'Question', 'name': "I'm listed but my mail still delivers. Does it matter?", "acceptedAnswer": { '@type': 'Answer', "text": "Not every receiver consults every list, so delivery can continue while some providers silently spam-folder you. Treat any listing as deliverability risk to fix promptly." } },
+    {'@type': 'Question', 'name': "How often should I check blocklists?", "acceptedAnswer": { '@type': 'Answer', "text": "Whenever deliverability drops, and routinely afterward. The listing reason tells you what to prevent next time." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The queries run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+  ]
 }
 ---
 <BaseLayout

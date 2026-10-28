@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Do I need MTA-STS to use TLS-RPT?", "acceptedAnswer": { '@type': 'Answer', "text": "No. TLS-RPT works independently and reports TLS connection outcomes whether or not MTA-STS is deployed." } },
+    {'@type': 'Question', 'name': "What do the TLS-RPT JSON reports contain?", "acceptedAnswer": { '@type': 'Answer', "text": "Daily summaries: total successful TLS connections, total failures, and failure details (certificate errors, handshake failures, etc.)." } },
+    {'@type': 'Question', 'name': "Which providers send TLS reports?", "acceptedAnswer": { '@type': 'Answer', "text": "Gmail and Microsoft are the major senders today. The reports arrive daily as JSON summaries of successful and failed TLS connections to your MX hosts." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need MTA-STS to use TLS-RPT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. TLS-RPT works independently and reports TLS connection outcomes whether or not MTA-STS is deployed.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What do the TLS-RPT JSON reports contain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Daily summaries: total successful TLS connections, total failures, and failure details (certificate errors, handshake failures, etc.).</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need MTA-STS to use TLS-RPT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. TLS-RPT works independently and reports TLS connection outcomes whether or not MTA-STS is deployed.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What do the TLS-RPT JSON reports contain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Daily summaries: total successful TLS connections, total failures, and failure details (certificate errors, handshake failures, etc.).</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which providers send TLS reports?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail and Microsoft are the major senders today. The reports arrive daily as JSON summaries of successful and failed TLS connections to your MX hosts.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

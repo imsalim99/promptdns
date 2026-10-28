@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Why does email break more often than websites after DNS changes?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Websites need one record (A). Email needs four working together (MX, SPF, DKIM, DMARC): four times the chances to break."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I receive mail if MX records are missing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not to your domain: senders have no routing instruction. Some servers fall back to the A record, but this is unreliable."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How long until email works after fixing MX?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The DNS fix propagates in minutes to hours. In-flight mail that bounced is lost (sender gets a bounce notice); new mail delivers normally."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I test email after DNS changes?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: send to yourself at Gmail, Outlook, and a colleague. Check both delivery and spam placement."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if only external senders can't reach me?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Internal mail may work via direct delivery. The issue is your MX records as seen by external resolvers: check propagation."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does changing my A record affect email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only indirectly: if your mail server runs on the same IP as your website, changing the A record redirects web traffic but not mail (MX points at a hostname, not an IP)."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Why does email break more often than websites after DNS changes?", "acceptedAnswer": { '@type': 'Answer', "text": "Websites need one record (A). Email needs four working together (MX, SPF, DKIM, DMARC): four times the chances to break." } },
+    {'@type': 'Question', 'name': "Can I receive mail if MX records are missing?", "acceptedAnswer": { '@type': 'Answer', "text": "Not to your domain: senders have no routing instruction. Some servers fall back to the A record, but this is unreliable." } },
+    {'@type': 'Question', 'name': "How long until email works after fixing MX?", "acceptedAnswer": { '@type': 'Answer', "text": "The DNS fix propagates in minutes to hours. In-flight mail that bounced is lost (sender gets a bounce notice); new mail delivers normally." } },
+    {'@type': 'Question', 'name': "Should I test email after DNS changes?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: send to yourself at Gmail, Outlook, and a colleague. Check both delivery and spam placement." } },
+    {'@type': 'Question', 'name': "What if only external senders can't reach me?", "acceptedAnswer": { '@type': 'Answer', "text": "Internal mail may work via direct delivery. The issue is your MX records as seen by external resolvers: check propagation." } },
+    {'@type': 'Question', 'name': "Does changing my A record affect email?", "acceptedAnswer": { '@type': 'Answer', "text": "Only indirectly: if your mail server runs on the same IP as your website, changing the A record redirects web traffic but not mail (MX points at a hostname, not an IP)." } }
+  ]
 }
 ---
 <BaseLayout
@@ -70,6 +28,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">Email breaks after DNS changes more often than websites do, because mail uses more record types (MX, SPF, DKIM, DMARC) and each one can break independently.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Mail records to re-verify</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Record</th><th>Common miss</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">MX</td><td class="text-sm text-ink-dim">Target typo</td></tr><tr><td class="font-medium text-ink">SPF</td><td class="text-sm text-ink-dim">Old include left</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">Selectors missing</td></tr><tr><td class="font-medium text-ink">DMARC</td><td class="text-sm text-ink-dim">rua retired</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

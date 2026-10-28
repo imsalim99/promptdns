@@ -7,31 +7,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is SPF flattening safe for my email delivery?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It can be, if monitored. Flattening replaces include: mechanisms with direct IP addresses, which stay under the 10-lookup limit. But if a provider changes their IPs, your flattened record becomes stale and legitimate mail breaks."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I re-flatten my SPF record?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Whenever your email providers change their sending infrastructure. Automated monitoring catches these changes; manual flattening requires you to check provider documentation regularly."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the alternative to SPF flattening?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Move sending streams to dedicated subdomains so each gets its own 10-lookup quota. This is more resilient than flattening but requires DNS and provider changes."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is SPF flattening safe for my email delivery?", "acceptedAnswer": { '@type': 'Answer', "text": "It can be, if monitored. Flattening replaces include: mechanisms with direct IP addresses, which stay under the 10-lookup limit. But if a provider changes their IPs, your flattened record becomes stale and legitimate mail breaks." } },
+    {'@type': 'Question', 'name': "How often should I re-flatten my SPF record?", "acceptedAnswer": { '@type': 'Answer', "text": "Whenever your email providers change their sending infrastructure. Automated monitoring catches these changes; manual flattening requires you to check provider documentation regularly." } },
+    {'@type': 'Question', 'name': "What is the alternative to SPF flattening?", "acceptedAnswer": { '@type': 'Answer', "text": "Move sending streams to dedicated subdomains so each gets its own 10-lookup quota. This is more resilient than flattening but requires DNS and provider changes." } }
+  ]
 }
 ---
 <BaseLayout

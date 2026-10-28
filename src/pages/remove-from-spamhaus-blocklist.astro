@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'How long does Spamhaus delisting take?', acceptedAnswer: { '@type': 'Answer', text: 'Approved SBL and XBL removals typically apply within the hour. Repeat listings after unresolved compromises re-lock quickly.' } },
-    { '@type': 'Question', name: 'Why does my IP keep getting relisted?', acceptedAnswer: { '@type': 'Answer', text: 'Persistent listings mean the underlying source is still sending: an open relay, a compromised account, or a misconfigured newsletter stack. Delisting without fixing the source loops forever.' } },
-    { '@type': 'Question', name: 'What is the difference between SBL and XBL?', acceptedAnswer: { '@type': 'Answer', text: 'SBL lists spam sources and Spamhaus observes them actively; XBL lists exploited machines found through botnet tracking. The fixes differ: content and behavior for SBL, malware cleanup for XBL.' } },
+    {'@type': 'Question', 'name': "How long does Spamhaus delisting take?", "acceptedAnswer": { '@type': 'Answer', "text": "Approved SBL and XBL removals typically apply within the hour. Repeat listings after unresolved compromises re-lock quickly." } },
+    {'@type': 'Question', 'name': "Why does my IP keep getting relisted?", "acceptedAnswer": { '@type': 'Answer', "text": "Persistent listings mean the underlying source is still sending: an open relay, a compromised account, or a misconfigured newsletter stack. Delisting without fixing the source loops forever." } },
+    {'@type': 'Question', 'name': "What is the difference between SBL and XBL?", "acceptedAnswer": { '@type': 'Answer', "text": "SBL lists spam sources and Spamhaus observes them actively; XBL lists exploited machines found through botnet tracking. The fixes differ: content and behavior for SBL, malware cleanup for XBL." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -31,6 +31,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       then request removal.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Spamhaus lists</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>List</th><th>Fix</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">SBL</td><td class="text-sm text-ink-dim">Close the spam source</td></tr><tr><td class="font-medium text-ink">XBL</td><td class="text-sm text-ink-dim">Clean the compromise</td></tr><tr><td class="font-medium text-ink">PBL</td><td class="text-sm text-ink-dim">Policy removal</td></tr><tr><td class="font-medium text-ink">DBL</td><td class="text-sm text-ink-dim">Fix the domain</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
       <table class="pdns-table">
         <thead><tr><th>List</th><th>Why you are on it</th><th>The fix</th></tr></thead>

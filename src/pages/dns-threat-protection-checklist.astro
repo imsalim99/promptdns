@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What’s the most important item?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNSSEC: it makes all forged answers detectable. Registrar lock and 2FA are equally critical for preventing hijacking."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often should I review?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Quarterly for a full audit, and after any infrastructure or provider change."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DNS threat protection affect performance?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNSSEC adds ~100-200 bytes per response; anycast DNS absorbs attacks at the edge. Impact is negligible."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What’s the first step?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Run the homepage security scanner to see your current posture, then work through this list."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my DNS provider secure?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Major providers (Cloudflare, Route 53, Google Cloud DNS) have strong internal controls, but your registrar account is the soft target."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can DNS attacks affect my email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: DNS hijacking or poisoning can redirect MX records, intercepting all your mail. Email authentication (SPF/DKIM/DMARC) is a defense."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What\u2019s the most important item?", "acceptedAnswer": { '@type': 'Answer', "text": "DNSSEC: it makes all forged answers detectable. Registrar lock and 2FA are equally critical for preventing hijacking." } },
+    {'@type': 'Question', 'name': "How often should I review?", "acceptedAnswer": { '@type': 'Answer', "text": "Quarterly for a full audit, and after any infrastructure or provider change." } },
+    {'@type': 'Question', 'name': "Does DNS threat protection affect performance?", "acceptedAnswer": { '@type': 'Answer', "text": "DNSSEC adds ~100-200 bytes per response; anycast DNS absorbs attacks at the edge. Impact is negligible." } },
+    {'@type': 'Question', 'name': "What\u2019s the first step?", "acceptedAnswer": { '@type': 'Answer', "text": "Run the homepage security scanner to see your current posture, then work through this list." } },
+    {'@type': 'Question', 'name': "Is my DNS provider secure?", "acceptedAnswer": { '@type': 'Answer', "text": "Major providers (Cloudflare, Route 53, Google Cloud DNS) have strong internal controls, but your registrar account is the soft target." } },
+    {'@type': 'Question', 'name': "Can DNS attacks affect my email?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: DNS hijacking or poisoning can redirect MX records, intercepting all your mail. Email authentication (SPF/DKIM/DMARC) is a defense." } }
+  ]
 }
 ---
 <BaseLayout
@@ -71,6 +29,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A complete checklist to harden your DNS against hijacking, poisoning, tunneling, and amplification attacks.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Threat to control</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Threat</th><th>Control</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Spoofing</td><td class="text-sm text-ink-dim">DNSSEC</td></tr><tr><td class="font-medium text-ink">Hijacking</td><td class="text-sm text-ink-dim">Registrar locks</td></tr><tr><td class="font-medium text-ink">Tunneling</td><td class="text-sm text-ink-dim">Analytics</td></tr><tr><td class="font-medium text-ink">Amplification</td><td class="text-sm text-ink-dim">Recursion limits</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="rich-text mt-8">
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">The checklist</h2>
       <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Enable DNSSEC at your DNS host and publish the DS record at your registrar.</li><li class="leading-relaxed">Enable registrar lock and two-factor authentication on your registrar account.</li><li class="leading-relaxed">Set CAA records to restrict certificate issuance to your trusted CAs.</li><li class="leading-relaxed">Disable open recursion if you self-host DNS.</li><li class="leading-relaxed">Monitor DNS record changes with automated alerts.</li><li class="leading-relaxed">Use a managed DNS provider with anycast network and DDoS protection.</li><li class="leading-relaxed">Keep nameserver software updated if self-hosting.</li><li class="leading-relaxed">Restrict zone transfers (AXFR) to known secondary IPs only.</li><li class="leading-relaxed">Set a reasonable SOA minimum TTL for negative caching.</li><li class="leading-relaxed">Monitor Certificate Transparency logs for unauthorized certificates.</li></ul>

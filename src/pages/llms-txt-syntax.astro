@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Is llms.txt a standard?', acceptedAnswer: { '@type': 'Answer', text: 'It is an emerging convention from llmstxt.org, widely adopted by AI-facing sites but not an IETF RFC. Treat it as a strong recommendation rather than a protocol.' } },
-    { '@type': 'Question', name: 'Where does llms.txt go?', acceptedAnswer: { '@type': 'Answer', text: 'At the root of your domain: https://yoursite.com/llms.txt, served like robots.txt, in Markdown format.' } },
-    { '@type': 'Question', name: 'Does llms.txt replace robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'No. robots.txt controls crawling; llms.txt curates content for the models that already read your site. They answer different questions.' } },
+    {'@type': 'Question', 'name': "Is llms.txt a standard?", "acceptedAnswer": { '@type': 'Answer', "text": "It is an emerging convention from llmstxt.org, widely adopted by AI-facing sites but not an IETF RFC. Treat it as a strong recommendation rather than a protocol." } },
+    {'@type': 'Question', 'name': "Where does llms.txt go?", "acceptedAnswer": { '@type': 'Answer', "text": "At the root of your domain: https://yoursite.com/llms.txt, served like robots.txt, in Markdown format." } },
+    {'@type': 'Question', 'name': "Does llms.txt replace robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "No. robots.txt controls crawling; llms.txt curates content for the models that already read your site. They answer different questions." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -28,6 +28,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       is the point, machines parse it without ambiguity. Here is the whole grammar.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">llms.txt structure</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">H1 title</td><td class="text-sm text-ink-dim">The one required header</td></tr><tr><td class="font-medium text-ink">Blockquote</td><td class="text-sm text-ink-dim">Site summary first</td></tr><tr><td class="font-medium text-ink">H2 sections</td><td class="text-sm text-ink-dim">Link grouping</td></tr><tr><td class="font-medium text-ink">Markdown links</td><td class="text-sm text-ink-dim">The curated list</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

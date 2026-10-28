@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "How long does it take for an SPF record to take effect?", "acceptedAnswer": { '@type': 'Answer', "text": "The DNS record propagates within minutes on Cloudflare (TTL Auto). Full propagation across all resolvers can take up to 24-48 hours depending on the TTL." } },
+    {'@type': 'Question', 'name': "Can I have multiple SPF records?", "acceptedAnswer": { '@type': 'Answer', "text": "No. RFC 7208 requires exactly one v=spf1 record. Multiple records cause a permerror. Merge all senders into a single record." } },
+    {'@type': 'Question', 'name': "What if I exceed the 10-lookup limit?", "acceptedAnswer": { '@type': 'Answer', "text": "Receivers will return a permerror and ignore your SPF policy entirely. Remove unused include: mechanisms or use our SPF flattener." } }
+  ],
 };
 
 const breadcrumbs = {

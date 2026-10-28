@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How often should I export DNS records?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Before any planned change, after any provider switch, and quarterly as a routine backup for business-critical domains."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I import an exported zone file?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: BIND-format zone files import into most providers (Cloudflare, Route 53). Format-specific exports may need conversion."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if I lose my DKIM keys?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Regenerate them from your email provider (they create new key pairs), then update the DNS record. Old mail signed with the old key will fail until the new one propagates."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is there a tool to capture all records at once?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: our all-in-one record lookup queries every type in one pass. Screenshot or copy the output as your backup."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I back up nameservers too?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: note which nameservers your registrar points at. This delegation is separate from the zone records."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I restore records after a mistake?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Use your export as a reference and re-create the records in your DNS panel. Verification with the record lookup confirms restoration."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How often should I export DNS records?", "acceptedAnswer": { '@type': 'Answer', "text": "Before any planned change, after any provider switch, and quarterly as a routine backup for business-critical domains." } },
+    {'@type': 'Question', 'name': "Can I import an exported zone file?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: BIND-format zone files import into most providers (Cloudflare, Route 53). Format-specific exports may need conversion." } },
+    {'@type': 'Question', 'name': "What if I lose my DKIM keys?", "acceptedAnswer": { '@type': 'Answer', "text": "Regenerate them from your email provider (they create new key pairs), then update the DNS record. Old mail signed with the old key will fail until the new one propagates." } },
+    {'@type': 'Question', 'name': "Is there a tool to capture all records at once?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: our all-in-one record lookup queries every type in one pass. Screenshot or copy the output as your backup." } },
+    {'@type': 'Question', 'name': "Should I back up nameservers too?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: note which nameservers your registrar points at. This delegation is separate from the zone records." } },
+    {'@type': 'Question', 'name': "How do I restore records after a mistake?", "acceptedAnswer": { '@type': 'Answer', "text": "Use your export as a reference and re-create the records in your DNS panel. Verification with the record lookup confirms restoration." } }
+  ]
 }
 ---
 <BaseLayout

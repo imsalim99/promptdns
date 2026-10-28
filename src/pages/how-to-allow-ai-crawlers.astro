@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Which AI crawlers should I allow?', acceptedAnswer: { '@type': 'Answer', text: 'The search-oriented ones whose citations you want: OAI-SearchBot for ChatGPT Search and PerplexityBot for Perplexity answers. Training crawlers are a separate, independent decision.' } },
-    { '@type': 'Question', name: 'Does allowing AI crawlers affect SEO?', acceptedAnswer: { '@type': 'Answer', text: 'No. AI crawler rules do not touch Googlebot or your rankings. Search visibility and AI visibility are independent switches.' } },
-    { '@type': 'Question', name: 'How do I allow some AI crawlers and block others?', acceptedAnswer: { '@type': 'Answer', text: 'One rule block per token: Disallow: / under User-agent: GPTBot blocks training while OAI-SearchBot stays allowed with no rule or an explicit Allow.' } },
+    {'@type': 'Question', 'name': "Which AI crawlers should I allow?", "acceptedAnswer": { '@type': 'Answer', "text": "The search-oriented ones whose citations you want: OAI-SearchBot for ChatGPT Search and PerplexityBot for Perplexity answers. Training crawlers are a separate, independent decision." } },
+    {'@type': 'Question', 'name': "Does allowing AI crawlers affect SEO?", "acceptedAnswer": { '@type': 'Answer', "text": "No. AI crawler rules do not touch Googlebot or your rankings. Search visibility and AI visibility are independent switches." } },
+    {'@type': 'Question', 'name': "How do I allow some AI crawlers and block others?", "acceptedAnswer": { '@type': 'Answer', "text": "One rule block per token: Disallow: / under User-agent: GPTBot blocks training while OAI-SearchBot stays allowed with no rule or an explicit Allow." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -33,6 +33,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       Claude, and Perplexity, then give them a clean map of your site.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Allow rules per crawler</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Crawler</th><th>Rule</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">GPTBot</td><td class="text-sm text-ink-dim">Allow: / (or omit rules)</td></tr><tr><td class="font-medium text-ink">OAI-SearchBot</td><td class="text-sm text-ink-dim">Allow: /</td></tr><tr><td class="font-medium text-ink">ClaudeBot</td><td class="text-sm text-ink-dim">Allow: /</td></tr><tr><td class="font-medium text-ink">PerplexityBot</td><td class="text-sm text-ink-dim">Allow: /</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

@@ -5,55 +5,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How do I know if my DNS has been hijacked?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don’t recognize, investigate immediately. Check your registrar’s audit log for unauthorized changes."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can DNS hijacking be reversed?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my DNS provider protect against hijacking?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the difference between DNS hijacking and DNS spoofing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I use a DNS provider with registry lock?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my hosting provider protect DNS too?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider’s security is irrelevant to DNS attacks."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How do I know if my DNS has been hijacked?", "acceptedAnswer": { '@type': 'Answer', "text": "Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don\u2019t recognize, investigate immediately. Check your registrar\u2019s audit log for unauthorized changes." } },
+    {'@type': 'Question', 'name': "Can DNS hijacking be reversed?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically." } },
+    {'@type': 'Question', 'name': "Does my DNS provider protect against hijacking?", "acceptedAnswer": { '@type': 'Answer', "text": "Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer." } },
+    {'@type': 'Question', 'name': "What is the difference between DNS hijacking and DNS spoofing?", "acceptedAnswer": { '@type': 'Answer', "text": "They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method." } },
+    {'@type': 'Question', 'name': "Should I use a DNS provider with registry lock?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security." } },
+    {'@type': 'Question', 'name': "Does my hosting provider protect DNS too?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider\u2019s security is irrelevant to DNS attacks." } }
+  ]
 }
 ---
 <BaseLayout
@@ -75,6 +33,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS hijacking redirects your domain's traffic by manipulating DNS answers. The victim never sees your server. This is one of the most damaging attacks because it is invisible to users and can persist for hours or days.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS hijacking attack types</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Type</th><th>How it works</th><th>Defense</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Registrar compromise</td><td class="text-sm text-ink-dim">Attacker takes over the registrar account and repoints NS</td><td class="text-sm text-ink-dim">Registrar lock, two-factor authentication</td></tr><tr><td class="font-medium text-ink">Local router override</td><td class="text-sm text-ink-dim">Malware changes the resolver on the device or router</td><td class="text-sm text-ink-dim">Firmware updates, resolver hard-coding</td></tr><tr><td class="font-medium text-ink">Cache poisoning</td><td class="text-sm text-ink-dim">Forged answers inserted into resolver caches</td><td class="text-sm text-ink-dim">DNSSEC validation</td></tr><tr><td class="font-medium text-ink">MITM on plaintext DNS</td><td class="text-sm text-ink-dim">On-path interception of port 53 traffic</td><td class="text-sm text-ink-dim">DoH or DoT encryption</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

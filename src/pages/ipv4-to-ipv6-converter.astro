@@ -8,31 +8,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the ::ffff: prefix in the result?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It is the IPv4-mapped IPv6 address format. It represents an IPv4 address inside the IPv6 address space for dual-stack compatibility."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can every IPv4 address be converted to IPv6?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes. Every IPv4 address maps to a unique IPv6 address using the ::ffff:0:0/96 prefix range. The conversion is lossless and reversible."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does converting to IPv6 make my site IPv6-accessible?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. You also need an AAAA DNS record and an IPv6-enabled server. The converter only translates the notation."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the ::ffff: prefix in the result?", "acceptedAnswer": { '@type': 'Answer', "text": "It is the IPv4-mapped IPv6 address format. It represents an IPv4 address inside the IPv6 address space for dual-stack compatibility." } },
+    {'@type': 'Question', 'name': "Can every IPv4 address be converted to IPv6?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. Every IPv4 address maps to a unique IPv6 address using the ::ffff:0:0/96 prefix range. The conversion is lossless and reversible." } },
+    {'@type': 'Question', 'name': "Does converting to IPv6 make my site IPv6-accessible?", "acceptedAnswer": { '@type': 'Answer', "text": "No. You also need an AAAA DNS record and an IPv6-enabled server. The converter only translates the notation." } }
+  ]
 }
 ---
 <BaseLayout title="IPv4 to IPv6 Converter" description="Free IPv4 to IPv6 converter: map any IPv4 address to its IPv6-mapped and 6to4 forms instantly."  schema={[faqSchema]}

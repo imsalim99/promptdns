@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Who assigns ASNs?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC), which also allocate the IP blocks each AS announces."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need an ASN?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if you operate a network that talks BGP with multiple providers. Hosting a server on someone else's network never requires one."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why did an IP's ASN change?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Address blocks get transferred between networks, or announcements change during incidents; lookups reflect the current announcer."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is an ASN public information?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: ASN, name, and announced prefixes are public routing data, visible in every IP lookup."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is a private ASN?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Ranges reserved for internal BGP (not routed publicly); used inside large enterprise networks."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can one company have many ASNs?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: after acquisitions or for separate product networks; each announces its own ranges."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Who assigns ASNs?", "acceptedAnswer": { '@type': 'Answer', "text": "The five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC), which also allocate the IP blocks each AS announces." } },
+    {'@type': 'Question', 'name': "Do I need an ASN?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you operate a network that talks BGP with multiple providers. Hosting a server on someone else's network never requires one." } },
+    {'@type': 'Question', 'name': "Why did an IP's ASN change?", "acceptedAnswer": { '@type': 'Answer', "text": "Address blocks get transferred between networks, or announcements change during incidents; lookups reflect the current announcer." } },
+    {'@type': 'Question', 'name': "Is an ASN public information?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: ASN, name, and announced prefixes are public routing data, visible in every IP lookup." } },
+    {'@type': 'Question', 'name': "What is a private ASN?", "acceptedAnswer": { '@type': 'Answer', "text": "Ranges reserved for internal BGP (not routed publicly); used inside large enterprise networks." } },
+    {'@type': 'Question', 'name': "Can one company have many ASNs?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: after acquisitions or for separate product networks; each announces its own ranges." } }
+  ]
 }
 ---
 <BaseLayout
@@ -72,6 +30,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">An Autonomous System is a network, or group of networks, operated under one administration with one routing policy: an ISP, a cloud provider, a university, a big company. Its ASN is the public ID it uses to announce its IP addresses to the rest of the internet.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">ASN essentials</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">What it is</td><td class="text-sm text-ink-dim">One routing domain</td></tr><tr><td class="font-medium text-ink">Example</td><td class="text-sm text-ink-dim">AS15169 = Google</td></tr><tr><td class="font-medium text-ink">Why it matters</td><td class="text-sm text-ink-dim">Reputation and verification</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

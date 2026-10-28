@@ -32,6 +32,26 @@ const tags = [
      , note the underscore, built from semicolon-separated tags. Here is every tag and what it does.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DMARC identifier alignment scenarios</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Visible From domain</th><th>SPF / DKIM domain</th><th>Relaxed alignment</th><th>Strict alignment</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">example.com (either protocol)</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">mail.example.com</td><td class="text-sm text-ink-dim">PASS (org domain matches)</td><td class="text-sm text-ink-dim">FAIL (not exact)</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">esp-customer.net</td><td class="text-sm text-ink-dim">FAIL</td><td class="text-sm text-ink-dim">FAIL</td></tr><tr><td class="font-medium text-ink">billing.example.com</td><td class="text-sm text-ink-dim">billing.example.com</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DMARC identifier alignment scenarios</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Visible From domain</th><th>SPF / DKIM domain</th><th>Relaxed alignment</th><th>Strict alignment</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">example.com (either protocol)</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">mail.example.com</td><td class="text-sm text-ink-dim">PASS (org domain matches)</td><td class="text-sm text-ink-dim">FAIL (not exact)</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">esp-customer.net</td><td class="text-sm text-ink-dim">FAIL</td><td class="text-sm text-ink-dim">FAIL</td></tr><tr><td class="font-medium text-ink">billing.example.com</td><td class="text-sm text-ink-dim">billing.example.com</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <Diagram name="dmarc-tree" caption="The DMARC decision tree showing policy application" />
 
     <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
@@ -65,7 +85,9 @@ const tags = [
       </ul>
 
       
-<h2>Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I publish the DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">As a TXT record at _dmarc.yourdomain.com in your authoritative DNS host. Most providers accept the name as _dmarc when you enter it at the root.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have multiple DMARC records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Exactly one record at _dmarc is valid; multiple records make receivers ignore DMARC entirely. Merge everything into one.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long until DMARC takes effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The record propagates in minutes, but receivers cache policies, so expect 24 to 48 hours before the policy is applied everywhere.</p></details></div>
+      <h2>Related</h2>
       <ul>
         <li><a href="/dmarc/">DMARC: the complete guide</a>, policies, alignment, enforcement road</li>
         <li><a href="/dmarc-report-analyzer/">DMARC report analyzer</a>, free</li>

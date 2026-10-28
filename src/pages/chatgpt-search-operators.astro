@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Can I track ChatGPT Search traffic?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Indirectly: check referrer data for chat.openai.com or chatgpt.com in your analytics. Direct tracking is limited."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does blocking GPTBot affect ChatGPT Search?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: OAI-SearchBot is the search crawler. GPTBot is for training data. They’re independent."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How does ChatGPT choose which sources to cite?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It combines retrieval (based on relevance and freshness) with ranking signals. Clear, authoritative, well-structured content is more likely to be cited."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I pay for better ChatGPT placement?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: ChatGPT Search citations are organic. There is no paid placement mechanism."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my site need to be popular to be cited?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: ChatGPT cites sources based on relevance and quality, not traffic volume. Smaller sites with authoritative content get cited."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often does ChatGPT Search update?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "OAI-SearchBot crawls continuously, but the index update frequency isn’t public. Fresh content tends to get picked up faster."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Can I track ChatGPT Search traffic?", "acceptedAnswer": { '@type': 'Answer', "text": "Indirectly: check referrer data for chat.openai.com or chatgpt.com in your analytics. Direct tracking is limited." } },
+    {'@type': 'Question', 'name': "Does blocking GPTBot affect ChatGPT Search?", "acceptedAnswer": { '@type': 'Answer', "text": "No: OAI-SearchBot is the search crawler. GPTBot is for training data. They\u2019re independent." } },
+    {'@type': 'Question', 'name': "How does ChatGPT choose which sources to cite?", "acceptedAnswer": { '@type': 'Answer', "text": "It combines retrieval (based on relevance and freshness) with ranking signals. Clear, authoritative, well-structured content is more likely to be cited." } },
+    {'@type': 'Question', 'name': "Can I pay for better ChatGPT placement?", "acceptedAnswer": { '@type': 'Answer', "text": "No: ChatGPT Search citations are organic. There is no paid placement mechanism." } },
+    {'@type': 'Question', 'name': "Does my site need to be popular to be cited?", "acceptedAnswer": { '@type': 'Answer', "text": "No: ChatGPT cites sources based on relevance and quality, not traffic volume. Smaller sites with authoritative content get cited." } },
+    {'@type': 'Question', 'name': "How often does ChatGPT Search update?", "acceptedAnswer": { '@type': 'Answer', "text": "OAI-SearchBot crawls continuously, but the index update frequency isn\u2019t public. Fresh content tends to get picked up faster." } }
+  ]
 }
 ---
 <BaseLayout
@@ -70,6 +28,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">ChatGPT Search uses OAI-SearchBot to index the web for real-time answers. Understanding how it selects and cites sources helps you stay visible in AI-powered search.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">ChatGPT search tokens</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Token</th><th>Role</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">OAI-SearchBot</td><td class="text-sm text-ink-dim">Search index</td></tr><tr><td class="font-medium text-ink">ChatGPT-User</td><td class="text-sm text-ink-dim">User fetches</td></tr><tr><td class="font-medium text-ink">GPTBot</td><td class="text-sm text-ink-dim">Training only</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Which one is my real IP?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "For the internet: the public one (our What Is My IP tool shows it). The 192.168.x.x address on your laptop is local-only."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can two networks use the same private IPs?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, constantly: millions of homes all use 192.168.1.x. They never see each other, so no conflict."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are private IPs more secure?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "They are unreachable from outside, which is its own protection, but it is not a substitute for host security."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What about 127.0.0.1?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "That is the loopback: the machine itself, a third category entirely (link-local and loopback are also non-routable)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I make a private server public?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only by exposing it through the gateway: port forwarding, a reverse proxy, or a public load balancer."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do cloud providers use these ranges?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: VPCs in AWS, Azure, and GCP are built on private ranges with public gateways."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Which one is my real IP?", "acceptedAnswer": { '@type': 'Answer', "text": "For the internet: the public one (our What Is My IP tool shows it). The 192.168.x.x address on your laptop is local-only." } },
+    {'@type': 'Question', 'name': "Can two networks use the same private IPs?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, constantly: millions of homes all use 192.168.1.x. They never see each other, so no conflict." } },
+    {'@type': 'Question', 'name': "Are private IPs more secure?", "acceptedAnswer": { '@type': 'Answer', "text": "They are unreachable from outside, which is its own protection, but it is not a substitute for host security." } },
+    {'@type': 'Question', 'name': "What about 127.0.0.1?", "acceptedAnswer": { '@type': 'Answer', "text": "That is the loopback: the machine itself, a third category entirely (link-local and loopback are also non-routable)." } },
+    {'@type': 'Question', 'name': "Can I make a private server public?", "acceptedAnswer": { '@type': 'Answer', "text": "Only by exposing it through the gateway: port forwarding, a reverse proxy, or a public load balancer." } },
+    {'@type': 'Question', 'name': "Do cloud providers use these ranges?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: VPCs in AWS, Azure, and GCP are built on private ranges with public gateways." } }
+  ]
 }
 ---
 <BaseLayout

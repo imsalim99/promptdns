@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Does robots.txt guarantee compliance?', acceptedAnswer: { '@type': 'Answer', text: 'No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead.' } },
-    { '@type': 'Question', name: 'Where must robots.txt be served from?', acceptedAnswer: { '@type': 'Answer', text: 'The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored.' } },
-    { '@type': 'Question', name: 'What happens with an empty robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules.' } },
+    {'@type': 'Question', 'name': "Does robots.txt guarantee compliance?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead." } },
+    {'@type': 'Question', 'name': "Where must robots.txt be served from?", "acceptedAnswer": { '@type': 'Answer', "text": "The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored." } },
+    {'@type': 'Question', 'name': "What happens with an empty robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -29,6 +29,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       crawler respects it, which makes it the single highest-use file in technical SEO.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Core directives</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Directive</th><th>Example</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">User-agent</td><td class="text-sm text-ink-dim">User-agent: GPTBot</td><td class="text-sm text-ink-dim">Target crawler</td></tr><tr><td class="font-medium text-ink">Disallow</td><td class="text-sm text-ink-dim">Disallow: /private/</td><td class="text-sm text-ink-dim">Blocked paths</td></tr><tr><td class="font-medium text-ink">Allow</td><td class="text-sm text-ink-dim">Allow: /public/</td><td class="text-sm text-ink-dim">Exceptions</td></tr><tr><td class="font-medium text-ink">Sitemap</td><td class="text-sm text-ink-dim">Sitemap: https://...</td><td class="text-sm text-ink-dim">Index location</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

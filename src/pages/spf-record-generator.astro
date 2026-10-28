@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What happens if I have two SPF records?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "RFC 7208 requires exactly one v=spf1 record per domain. Multiple records cause a permerror, which means receivers ignore your SPF entirely. Merge all senders into a single record."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the difference between ~all and -all?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "~all (softfail) marks unlisted senders as suspicious but delivers their mail. -all (hardfail) instructs receivers to reject unlisted senders. Use ~all until you are confident every legitimate sender is listed."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need ip4: and ip6: mechanisms?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if you send email from servers not covered by an include: mechanism. Most email services provide include: directives that already cover their sending IPs."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What happens if I have two SPF records?", "acceptedAnswer": { '@type': 'Answer', "text": "RFC 7208 requires exactly one v=spf1 record per domain. Multiple records cause a permerror, which means receivers ignore your SPF entirely. Merge all senders into a single record." } },
+    {'@type': 'Question', 'name': "What is the difference between ~all and -all?", "acceptedAnswer": { '@type': 'Answer', "text": "~all (softfail) marks unlisted senders as suspicious but delivers their mail. -all (hardfail) instructs receivers to reject unlisted senders. Use ~all until you are confident every legitimate sender is listed." } },
+    {'@type': 'Question', 'name': "Do I need ip4: and ip6: mechanisms?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you send email from servers not covered by an include: mechanism. Most email services provide include: directives that already cover their sending IPs." } }
+  ]
 }
 ---
 <BaseLayout title="SPF Record Generator - Build Your SPF Free" description="Free SPF record generator: add your senders (Google, Microsoft, ESPs, custom IPs) and get a valid v=spf1 record with lookup counting."  schema={[faqSchema]}

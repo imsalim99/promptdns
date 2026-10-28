@@ -6,31 +6,10 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the difference between MTA-STS and DANE?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "MTA-STS uses a DNS TXT record and an HTTPS-hosted policy file to enforce TLS for SMTP. DANE uses DNSSEC-signed TLSA records. They solve the same problem differently; MTA-STS is more widely adopted."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does MTA-STS work without DNSSEC?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes. MTA-STS relies on HTTPS certificate validation for the policy file, not DNSSEC. This makes it easier to deploy than DANE, which requires DNSSEC."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What happens if my MTA-STS policy file is unreachable?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Receiving servers fall back to their cached copy of your policy. If no cached copy exists, they skip MTA-STS enforcement and deliver normally."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is the difference between MTA-STS and DANE?", "acceptedAnswer": { '@type': 'Answer', "text": "MTA-STS uses a DNS TXT record and an HTTPS-hosted policy file to enforce TLS for SMTP. DANE uses DNSSEC-signed TLSA records. They solve the same problem differently; MTA-STS is more widely adopted." } },
+    {'@type': 'Question', 'name': "Does MTA-STS work without DNSSEC?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. MTA-STS relies on HTTPS certificate validation for the policy file, not DNSSEC. This makes it easier to deploy than DANE, which requires DNSSEC." } },
+    {'@type': 'Question', 'name': "What happens if my MTA-STS policy file is unreachable?", "acceptedAnswer": { '@type': 'Answer', "text": "Receiving servers fall back to their cached copy of your policy. If no cached copy exists, they skip MTA-STS enforcement and deliver normally." } }
+  ]
 }
 ---
 <BaseLayout title="MTA-STS Record Checker" description="Free MTA-STS checker: verify the _mta-sts TXT record and fetch the policy file to check mode and MX hosts."  schema={[faqSchema]}

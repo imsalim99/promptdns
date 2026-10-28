@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Who reads llms.txt?', acceptedAnswer: { '@type': 'Answer', text: 'AI tools and agents that use it for curated context: it points models to your best pages in Markdown. Adoption is growing across AI products and agent frameworks.' } },
-    { '@type': 'Question', name: 'Does llms.txt improve AI citations?', acceptedAnswer: { '@type': 'Answer', text: 'It helps models find your canonical pages quickly, which improves the odds of accurate citations, but it is not a guarantee: content quality and crawler access still decide.' } },
-    { '@type': 'Question', name: 'Is llms.txt required?', acceptedAnswer: { '@type': 'Answer', text: 'No. It is a strong recommendation for AI-facing sites. Missing llms.txt is scored in our AI readiness check as a gap, not an error.' } },
+    {'@type': 'Question', 'name': "Who reads llms.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "AI tools and agents that use it for curated context: it points models to your best pages in Markdown. Adoption is growing across AI products and agent frameworks." } },
+    {'@type': 'Question', 'name': "Does llms.txt improve AI citations?", "acceptedAnswer": { '@type': 'Answer', "text": "It helps models find your canonical pages quickly, which improves the odds of accurate citations, but it is not a guarantee: content quality and crawler access still decide." } },
+    {'@type': 'Question', 'name': "Is llms.txt required?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is a strong recommendation for AI-facing sites. Missing llms.txt is scored in our AI readiness check as a gap, not an error." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -29,6 +29,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       abstract and table of contents written for machines that read your whole site anyway.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">llms.txt vs robots.txt</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>robots.txt</th><th>llms.txt</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Controls</td><td class="text-sm text-ink-dim">Crawling</td><td class="text-sm text-ink-dim">Curation</td></tr><tr><td class="font-medium text-ink">Audience</td><td class="text-sm text-ink-dim">All crawlers</td><td class="text-sm text-ink-dim">AI models</td></tr><tr><td class="font-medium text-ink">Format</td><td class="text-sm text-ink-dim">Directives</td><td class="text-sm text-ink-dim">Markdown</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

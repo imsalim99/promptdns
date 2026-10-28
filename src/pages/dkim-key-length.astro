@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "How do I check my DKIM key length?", "acceptedAnswer": { '@type': 'Answer', "text": "Use our DKIM Record Checker: it estimates the key size from the published public key material and flags keys under 2048 bits." } },
+    {'@type': 'Question', 'name': "Can I use ed25519 instead of RSA for DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, RFC 8463 defines Ed25519 for DKIM. It produces shorter keys and is faster, but not all receivers support it yet. RSA 2048 is the safest choice." } },
+    {'@type': 'Question', 'name': "How do I rotate from 1024-bit to 2048-bit safely?", "acceptedAnswer": { '@type': 'Answer', "text": "Publish the new 2048-bit key under a second selector, switch signing to it, verify inbound checks pass, then remove the old selector. Never delete the old record first." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check my DKIM key length?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use our DKIM Record Checker: it estimates the key size from the published public key material and flags keys under 2048 bits.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use ed25519 instead of RSA for DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, RFC 8463 defines Ed25519 for DKIM. It produces shorter keys and is faster, but not all receivers support it yet. RSA 2048 is the safest choice.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check my DKIM key length?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use our DKIM Record Checker: it estimates the key size from the published public key material and flags keys under 2048 bits.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use ed25519 instead of RSA for DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, RFC 8463 defines Ed25519 for DKIM. It produces shorter keys and is faster, but not all receivers support it yet. RSA 2048 is the safest choice.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I rotate from 1024-bit to 2048-bit safely?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish the new 2048-bit key under a second selector, switch signing to it, verify inbound checks pass, then remove the old selector. Never delete the old record first.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

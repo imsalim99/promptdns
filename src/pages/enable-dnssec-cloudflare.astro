@@ -19,6 +19,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       your registrar. Get the order right and the whole thing is a five-minute toggle.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNSSEC activation in Cloudflare</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Step</th><th>Action</th><th>Verification</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">1. Enable signing</td><td class="text-sm text-ink-dim">DNS settings, Enable DNSSEC</td><td class="text-sm text-ink-dim">Cloudflare signs the zone instantly</td></tr><tr><td class="font-medium text-ink">2. Publish the DS record</td><td class="text-sm text-ink-dim">One-click to supported registrars, or copy the DS to the registrar</td><td class="text-sm text-ink-dim">DS visible at the parent zone</td></tr><tr><td class="font-medium text-ink">3. Confirm the chain</td><td class="text-sm text-ink-dim">DS + DNSKEY visible, validation green</td><td class="text-sm text-ink-dim">Our DNSSEC checker validates end to end</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -58,5 +68,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/what-is-dnssec/">What is DNSSEC?</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare DNSSEC cost anything?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DNSSEC signing is included on all plans, and Cloudflare can publish the DS record to supported registrars in one click.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does DNSSEC activation take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Signing is near-instant on Cloudflare; the DS record at the registrar propagates within minutes to hours. Validation goes green once the chain is visible.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if my registrar does not support DS records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Then the chain of trust cannot complete and DNSSEC stays inactive for that domain. Move DNS delegation to a registrar that publishes DS records, or host DNS with the registrar that does.</p></details></div>
+      </div>
 </BaseLayout>

@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is DNS tunneling the same as DNS hijacking?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. Hijacking redirects traffic; tunneling exfiltrates data through legitimate-looking DNS queries. Both abuse the protocol."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can HTTPS prevent DNS tunneling?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: tunneling uses DNS queries themselves (port 53 or DoH), not the HTTP connection. Even DoH can carry tunneling if the attacker controls the resolver."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How much data can be exfiltrated?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "At realistic query rates without triggering alerts: kilobytes per minute, megabytes per hour. Enough for credentials and source code over time."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What should I monitor?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNS query volume per client, entropy of queried names, NXDOMAIN rate, and TXT query frequency. Spikes indicate tunneling."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does my DNS provider detect tunneling?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Some managed providers offer DNS-layer threat detection as an add-on. Self-hosted DNS requires dedicated monitoring."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is DNS tunneling used in real attacks?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: documented in advanced persistent threat (APT) campaigns and by malware families for command-and-control channels."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is DNS tunneling the same as DNS hijacking?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Hijacking redirects traffic; tunneling exfiltrates data through legitimate-looking DNS queries. Both abuse the protocol." } },
+    {'@type': 'Question', 'name': "Can HTTPS prevent DNS tunneling?", "acceptedAnswer": { '@type': 'Answer', "text": "No: tunneling uses DNS queries themselves (port 53 or DoH), not the HTTP connection. Even DoH can carry tunneling if the attacker controls the resolver." } },
+    {'@type': 'Question', 'name': "How much data can be exfiltrated?", "acceptedAnswer": { '@type': 'Answer', "text": "At realistic query rates without triggering alerts: kilobytes per minute, megabytes per hour. Enough for credentials and source code over time." } },
+    {'@type': 'Question', 'name': "What should I monitor?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS query volume per client, entropy of queried names, NXDOMAIN rate, and TXT query frequency. Spikes indicate tunneling." } },
+    {'@type': 'Question', 'name': "Does my DNS provider detect tunneling?", "acceptedAnswer": { '@type': 'Answer', "text": "Some managed providers offer DNS-layer threat detection as an add-on. Self-hosted DNS requires dedicated monitoring." } },
+    {'@type': 'Question', 'name': "Is DNS tunneling used in real attacks?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: documented in advanced persistent threat (APT) campaigns and by malware families for command-and-control channels." } }
+  ]
 }
 ---
 <BaseLayout
@@ -74,6 +32,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">DNS tunneling encodes arbitrary data inside DNS queries and responses. Because almost every network allows DNS traffic to pass, it becomes a covert channel for data exfiltration, command-and-control communication, and firewall bypass.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS tunneling detection signals</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Signal</th><th>What it looks like</th><th>Where to look</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Long random subdomains</td><td class="text-sm text-ink-dim">Encoded data in labels</td><td class="text-sm text-ink-dim">Query logs</td></tr><tr><td class="font-medium text-ink">High TXT query volume</td><td class="text-sm text-ink-dim">Exfiltration channel</td><td class="text-sm text-ink-dim">Resolver analytics</td></tr><tr><td class="font-medium text-ink">Unique domains per query</td><td class="text-sm text-ink-dim">No caching pattern</td><td class="text-sm text-ink-dim">NXDOMAIN rates</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is 100.64.x.x a public IP?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: carrier-grade NAT space. If that is your outbound address, you are behind CGNAT and cannot host inbound services."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I use private IPs in my VPC?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: cloud VPCs are built on RFC 1918 ranges with public gateways handling translation."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What should I do if my device has 169.254.x.x?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DHCP failed: restart the router/DHCP server. The address cannot reach the internet."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are multicast ranges dangerous?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not dangerous, but often filtered: some networks block multicast to prevent flooding."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I check if an IP is private?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Match it against the ranges in this table, or run it through the IP lookup: private ranges report as reserved."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is 100.64.x.x a public IP?", "acceptedAnswer": { '@type': 'Answer', "text": "No: carrier-grade NAT space. If that is your outbound address, you are behind CGNAT and cannot host inbound services." } },
+    {'@type': 'Question', 'name': "Can I use private IPs in my VPC?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: cloud VPCs are built on RFC 1918 ranges with public gateways handling translation." } },
+    {'@type': 'Question', 'name': "What should I do if my device has 169.254.x.x?", "acceptedAnswer": { '@type': 'Answer', "text": "DHCP failed: restart the router/DHCP server. The address cannot reach the internet." } },
+    {'@type': 'Question', 'name': "Are multicast ranges dangerous?", "acceptedAnswer": { '@type': 'Answer', "text": "Not dangerous, but often filtered: some networks block multicast to prevent flooding." } },
+    {'@type': 'Question', 'name': "How do I check if an IP is private?", "acceptedAnswer": { '@type': 'Answer', "text": "Match it against the ranges in this table, or run it through the IP lookup: private ranges report as reserved." } }
+  ]
 }
 ---
 <BaseLayout

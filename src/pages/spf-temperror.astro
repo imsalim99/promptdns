@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Does TempError cause email to bounce?", "acceptedAnswer": { '@type': 'Answer', "text": "Not immediately. RFC 7208 says receivers should accept mail on TempError and retry later. However, some implementations treat it as a softfail, which may affect deliverability." } },
+    {'@type': 'Question', 'name': "How is TempError different from PermError?", "acceptedAnswer": { '@type': 'Answer', "text": "TempError is a temporary DNS failure (retryable). PermError is a permanent evaluation error (the record itself is broken). PermError means the record needs fixing; TempError means the DNS infrastructure needs checking." } },
+    {'@type': 'Question', 'name': "Can I retry a message that hit TempError myself?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: resending after a few minutes usually succeeds because the resolver or nameserver recovered. Persistent TempError means a nameserver problem, not a record problem." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does TempError cause email to bounce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not immediately. RFC 7208 says receivers should accept mail on TempError and retry later. However, some implementations treat it as a softfail, which may affect deliverability.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is TempError different from PermError?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TempError is a temporary DNS failure (retryable). PermError is a permanent evaluation error (the record itself is broken). PermError means the record needs fixing; TempError means the DNS infrastructure needs checking.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does TempError cause email to bounce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not immediately. RFC 7208 says receivers should accept mail on TempError and retry later. However, some implementations treat it as a softfail, which may affect deliverability.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is TempError different from PermError?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TempError is a temporary DNS failure (retryable). PermError is a permanent evaluation error (the record itself is broken). PermError means the record needs fixing; TempError means the DNS infrastructure needs checking.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I retry a message that hit TempError myself?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: resending after a few minutes usually succeeds because the resolver or nameserver recovered. Persistent TempError means a nameserver problem, not a record problem.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

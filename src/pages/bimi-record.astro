@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Is BIMI free?", "acceptedAnswer": { '@type': 'Answer', "text": "The DNS record is free, but Gmail requires a VMC certificate ($1,000-1,500/year) to display the logo. Apple Mail may work without a VMC in some cases." } },
+    {'@type': 'Question', 'name': "What logo format does BIMI require?", "acceptedAnswer": { '@type': 'Answer', "text": "SVG Tiny 1.2 (a specific SVG profile). The logo must be square, fit within specific dimensions, and have no external references." } },
+    {'@type': 'Question', 'name': "How long does BIMI setup take end to end?", "acceptedAnswer": { '@type': 'Answer', "text": "The DNS record and SVG are minutes; the VMC certificate is the long pole, with trademark validation and issuance typically taking weeks." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is BIMI free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS record is free, but Gmail requires a VMC certificate ($1,000-1,500/year) to display the logo. Apple Mail may work without a VMC in some cases.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What logo format does BIMI require?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SVG Tiny 1.2 (a specific SVG profile). The logo must be square, fit within specific dimensions, and have no external references.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is BIMI free?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS record is free, but Gmail requires a VMC certificate ($1,000-1,500/year) to display the logo. Apple Mail may work without a VMC in some cases.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What logo format does BIMI require?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SVG Tiny 1.2 (a specific SVG profile). The logo must be square, fit within specific dimensions, and have no external references.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does BIMI setup take end to end?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS record and SVG are minutes; the VMC certificate is the long pole, with trademark validation and issuance typically taking weeks.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

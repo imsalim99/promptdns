@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "What is the difference between testing and enforce mode?", "acceptedAnswer": { '@type': 'Answer', "text": "Testing mode reports TLS failures without affecting delivery. Enforce mode requires valid TLS and bounces connections that do not support it." } },
+    {'@type': 'Question', 'name': "Does Cloudflare Email Routing support MTA-STS?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, Cloudflare Email Routing supports STARTTLS. Publishing an MTA-STS policy in enforce mode requires that all MX hosts support TLS." } },
+    {'@type': 'Question', 'name': "How often is the MTA-STS policy refreshed?", "acceptedAnswer": { '@type': 'Answer', "text": "Receivers cache the policy for its max_age, re-fetching at expiry. Changes therefore take up to one max_age cycle to reach every sender." } }
+  ],
 };
 
 const breadcrumbs = {
@@ -70,7 +70,7 @@ const breadcrumbs = {
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between testing and enforce mode?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Testing mode reports TLS failures without affecting delivery. Enforce mode requires valid TLS and bounces connections that do not support it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare Email Routing support MTA-STS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, Cloudflare Email Routing supports STARTTLS. Publishing an MTA-STS policy in enforce mode requires that all MX hosts support TLS.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between testing and enforce mode?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Testing mode reports TLS failures without affecting delivery. Enforce mode requires valid TLS and bounces connections that do not support it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare Email Routing support MTA-STS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, Cloudflare Email Routing supports STARTTLS. Publishing an MTA-STS policy in enforce mode requires that all MX hosts support TLS.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often is the MTA-STS policy refreshed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Receivers cache the policy for its max_age, re-fetching at expiry. Changes therefore take up to one max_age cycle to reach every sender.</p></details>
       </div>
 
       <p class="mt-8 text-xs text-ink-faint">

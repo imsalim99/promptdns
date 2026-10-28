@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Am I responsible if my resolver is used in an attack?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Potentially, yes: operators of open resolvers used in DDoS attacks can face legal pressure and blocklisting. Close the recursion or face the consequences."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the amplification factor?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The ratio of response size to query size. DNSSEC-signed zones with large keys can amplify 50x or more, making them preferred weapons."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DNSSEC make amplification worse?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, larger signed responses amplify more. But the answer is rate limiting and response filtering, not abandoning DNSSEC."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can Cloudflare or Route 53 be used for amplification?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: they restrict recursion to customers and implement response rate limiting at global scale."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I test if my resolver is open?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Use an open resolver scanner (like the Shadowserver Foundation’s) or try querying it from an external network."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does this affect my website?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if you self-host DNS. If you use a managed provider, this is their problem, not yours."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Am I responsible if my resolver is used in an attack?", "acceptedAnswer": { '@type': 'Answer', "text": "Potentially, yes: operators of open resolvers used in DDoS attacks can face legal pressure and blocklisting. Close the recursion or face the consequences." } },
+    {'@type': 'Question', 'name': "What is the amplification factor?", "acceptedAnswer": { '@type': 'Answer', "text": "The ratio of response size to query size. DNSSEC-signed zones with large keys can amplify 50x or more, making them preferred weapons." } },
+    {'@type': 'Question', 'name': "Does DNSSEC make amplification worse?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, larger signed responses amplify more. But the answer is rate limiting and response filtering, not abandoning DNSSEC." } },
+    {'@type': 'Question', 'name': "Can Cloudflare or Route 53 be used for amplification?", "acceptedAnswer": { '@type': 'Answer', "text": "No: they restrict recursion to customers and implement response rate limiting at global scale." } },
+    {'@type': 'Question', 'name': "How do I test if my resolver is open?", "acceptedAnswer": { '@type': 'Answer', "text": "Use an open resolver scanner (like the Shadowserver Foundation\u2019s) or try querying it from an external network." } },
+    {'@type': 'Question', 'name': "Does this affect my website?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you self-host DNS. If you use a managed provider, this is their problem, not yours." } }
+  ]
 }
 ---
 <BaseLayout
@@ -74,6 +32,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A DNS amplification attack turns small queries into massive floods: the attacker sends a 60-byte query to an open DNS resolver, which responds with a 4000-byte answer directed at the victim. The amplification factor can exceed 50x.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Amplification factors by record type</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Record</th><th>Amplification potential</th><th>Abuse context</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">ANY queries</td><td class="text-sm text-ink-dim">Highest</td><td class="text-sm text-ink-dim">Blocked by most modern resolvers</td></tr><tr><td class="font-medium text-ink">DNSSEC-signed zones</td><td class="text-sm text-ink-dim">High</td><td class="text-sm text-ink-dim">Large signed answers multiply traffic</td></tr><tr><td class="font-medium text-ink">OPEN resolvers</td><td class="text-sm text-ink-dim">Force multiplier</td><td class="text-sm text-ink-dim">The real problem: lock recursion to your network</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

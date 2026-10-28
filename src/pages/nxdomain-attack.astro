@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Is my domain being attacked if I see random subdomain queries?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Possibly: check your DNS provider’s query logs for volume spikes on non-existent names. The NXDOMAIN attack pattern is distinctive."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does this affect my website visitors?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It can: if the flood exhausts your nameservers, legitimate queries also fail, making your entire domain unreachable."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How is this different from a DDoS attack?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "NXDOMAIN attacks ARE a type of DDoS: they target the DNS layer specifically, using the protocol’s own response mechanism as the weapon."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is negative caching?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Resolvers caching NXDOMAIN answers so repeated queries for the same non-existent name don’t hit your server again. It’s a natural defense, controlled by the SOA minimum TTL."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I block specific query patterns?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: response policy zones (RPZ) or your DNS provider’s filtering rules can block queries matching known attack patterns."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DNSSEC help with NXDOMAIN attacks?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Not directly: DNSSEC signs existing records. The attack queries names that don’t exist, so there’s nothing to verify. Negative caching and rate limiting are the defenses."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Is my domain being attacked if I see random subdomain queries?", "acceptedAnswer": { '@type': 'Answer', "text": "Possibly: check your DNS provider\u2019s query logs for volume spikes on non-existent names. The NXDOMAIN attack pattern is distinctive." } },
+    {'@type': 'Question', 'name': "Does this affect my website visitors?", "acceptedAnswer": { '@type': 'Answer', "text": "It can: if the flood exhausts your nameservers, legitimate queries also fail, making your entire domain unreachable." } },
+    {'@type': 'Question', 'name': "How is this different from a DDoS attack?", "acceptedAnswer": { '@type': 'Answer', "text": "NXDOMAIN attacks ARE a type of DDoS: they target the DNS layer specifically, using the protocol\u2019s own response mechanism as the weapon." } },
+    {'@type': 'Question', 'name': "What is negative caching?", "acceptedAnswer": { '@type': 'Answer', "text": "Resolvers caching NXDOMAIN answers so repeated queries for the same non-existent name don\u2019t hit your server again. It\u2019s a natural defense, controlled by the SOA minimum TTL." } },
+    {'@type': 'Question', 'name': "Can I block specific query patterns?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: response policy zones (RPZ) or your DNS provider\u2019s filtering rules can block queries matching known attack patterns." } },
+    {'@type': 'Question', 'name': "Does DNSSEC help with NXDOMAIN attacks?", "acceptedAnswer": { '@type': 'Answer', "text": "Not directly: DNSSEC signs existing records. The attack queries names that don\u2019t exist, so there\u2019s nothing to verify. Negative caching and rate limiting are the defenses." } }
+  ]
 }
 ---
 <BaseLayout
@@ -71,6 +29,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">NXDOMAIN attacks flood resolvers with queries for non-existent subdomains, exhaust resources, and can take an entire domain's DNS offline. Here's how they work and how to defend.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">NXDOMAIN attack essentials</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Mechanism</td><td class="text-sm text-ink-dim">Random subdomain floods</td></tr><tr><td class="font-medium text-ink">Cost</td><td class="text-sm text-ink-dim">Full lookups per miss</td></tr><tr><td class="font-medium text-ink">Defense</td><td class="text-sm text-ink-dim">Rate limiting</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

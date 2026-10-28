@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Can I combine multiple email providers in one SPF record?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. Add each provider's include: mechanism to the same v=spf1 record. Watch the 10-DNS-lookup limit when combining multiple providers." } },
+    {'@type': 'Question', 'name': "Should I use ~all or -all at the end?", "acceptedAnswer": { '@type': 'Answer', "text": "~all (softfail) is safer while setting up. Switch to -all (hardfail) once you are confident every legitimate sender is listed." } },
+    {'@type': 'Question', 'name': "What if my provider is not in these examples?", "acceptedAnswer": { '@type': 'Answer', "text": "Check your provider's documentation for their include: domain. Add it as an include: mechanism in your existing v=spf1 record." } }
+  ],
 };
 
 const breadcrumbs = {

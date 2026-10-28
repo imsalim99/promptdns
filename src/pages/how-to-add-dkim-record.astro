@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Where do I get my DKIM key?', acceptedAnswer: { '@type': 'Answer', text: 'From your sending service: Gmail, Microsoft 365, and ESPs generate the key pair and show you the public value to publish. The private key never leaves their system in hosted setups.' } },
-    { '@type': 'Question', name: 'Can I add DKIM without my ESP?', acceptedAnswer: { '@type': 'Answer', text: 'Only if you run your own mail server and generate the key pair yourself. Hosted ESPs own the private key and publish the selector for you to add.' } },
-    { '@type': 'Question', name: 'How do I test the record after adding it?', acceptedAnswer: { '@type': 'Answer', text: 'Send a message and read the DKIM result in its headers, or run the selector through our DKIM record checker before sending anything.' } },
+    {'@type': 'Question', 'name': "Where do I get my DKIM key?", "acceptedAnswer": { '@type': 'Answer', "text": "From your sending service: Gmail, Microsoft 365, and ESPs generate the key pair and show you the public value to publish. The private key never leaves their system in hosted setups." } },
+    {'@type': 'Question', 'name': "Can I add DKIM without my ESP?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you run your own mail server and generate the key pair yourself. Hosted ESPs own the private key and publish the selector for you to add." } },
+    {'@type': 'Question', 'name': "How do I test the record after adding it?", "acceptedAnswer": { '@type': 'Answer', "text": "Send a message and read the DKIM result in its headers, or run the selector through our DKIM record checker before sending anything." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -29,6 +29,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       procedure with the failure points marked.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM record fields</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Field</th><th>Example value</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Host / Name</td><td class="text-sm text-ink-dim">s1._domainkey</td><td class="text-sm text-ink-dim">Selector plus the fixed _domainkey label</td></tr><tr><td class="font-medium text-ink">Type</td><td class="text-sm text-ink-dim">TXT</td><td class="text-sm text-ink-dim">DKIM keys publish as TXT (some hosts use CNAME)</td></tr><tr><td class="font-medium text-ink">Value</td><td class="text-sm text-ink-dim">v=DKIM1; k=rsa; p=MIIB...</td><td class="text-sm text-ink-dim">The public key, verbatim from your provider</td></tr><tr><td class="font-medium text-ink">TTL</td><td class="text-sm text-ink-dim">3600</td><td class="text-sm text-ink-dim">Standard caching</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <div class="rich-text mt-8">
       <h2>Step by step</h2>
       <ol class="list-decimal space-y-2 pl-5">

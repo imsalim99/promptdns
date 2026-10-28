@@ -7,55 +7,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is a DKIM selector?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The label that names a DKIM key: the public key lives at selector._domainkey.yourdomain.com, and each signed message carries its selector in the s= field of the DKIM-Signature header."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does my provider's selector return nothing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "A miss usually means the wrong selector name, not missing DKIM. Providers pick their own (google for Workspace, selector1/2 for Microsoft 365, k1 for Mailchimp). Find the real one in the s= field of a sent message's DKIM-Signature header."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is a 1024-bit DKIM key a problem?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It is considered weak, and some receivers reject or distrust mail signed with it. 2048-bit is the current standard; rotate the key in your provider's DKIM settings."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does DKIM stop spoofing on its own?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. Receivers only act on DKIM failures through a DMARC policy. DKIM proves messages were not altered in transit and provides the identity DMARC aligns against."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can a domain have multiple DKIM records?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is my domain sent to a server when I use this checker?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What is a DKIM selector?", "acceptedAnswer": { '@type': 'Answer', "text": "The label that names a DKIM key: the public key lives at selector._domainkey.yourdomain.com, and each signed message carries its selector in the s= field of the DKIM-Signature header." } },
+    {'@type': 'Question', 'name': "Why does my provider's selector return nothing?", "acceptedAnswer": { '@type': 'Answer', "text": "A miss usually means the wrong selector name, not missing DKIM. Providers pick their own (google for Workspace, selector1/2 for Microsoft 365, k1 for Mailchimp). Find the real one in the s= field of a sent message's DKIM-Signature header." } },
+    {'@type': 'Question', 'name': "Is a 1024-bit DKIM key a problem?", "acceptedAnswer": { '@type': 'Answer', "text": "It is considered weak, and some receivers reject or distrust mail signed with it. 2048-bit is the current standard; rotate the key in your provider's DKIM settings." } },
+    {'@type': 'Question', 'name': "Does DKIM stop spoofing on its own?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Receivers only act on DKIM failures through a DMARC policy. DKIM proves messages were not altered in transit and provides the identity DMARC aligns against." } },
+    {'@type': 'Question', 'name': "Can a domain have multiple DKIM records?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+  ]
 }
 ---
 <BaseLayout

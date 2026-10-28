@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "How do I view email headers?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Gmail: three-dot menu, Show original. Outlook: File, Properties, Internet headers. Apple Mail: View, Message, All Headers."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are email headers always honest?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The bottom Received headers (closest to origin) are hardest to fake. Top headers can be injected by the sender. Authentication-Results are added by the receiving server, making them trustworthy."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the difference between From and Return-Path?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "From is what the recipient sees. Return-Path is the technical bounce address. DMARC requires alignment between them (via SPF or DKIM)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I trace where an email actually came from?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: read the Received headers bottom-up. The first Received hop (bottom) is closest to the sender’s server, with its IP address."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What does X-Mailer tell me?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The software the sender used (e.g., Outlook, PHP mail, a specific ESP). Useful for identifying automated or spoofed mail."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Should I worry about headers in emails I receive?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "For suspicious emails, yes: header analysis reveals whether the claimed sender is genuine. Use our header analyzer to automate the check."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "How do I view email headers?", "acceptedAnswer": { '@type': 'Answer', "text": "Gmail: three-dot menu, Show original. Outlook: File, Properties, Internet headers. Apple Mail: View, Message, All Headers." } },
+    {'@type': 'Question', 'name': "Are email headers always honest?", "acceptedAnswer": { '@type': 'Answer', "text": "The bottom Received headers (closest to origin) are hardest to fake. Top headers can be injected by the sender. Authentication-Results are added by the receiving server, making them trustworthy." } },
+    {'@type': 'Question', 'name': "What is the difference between From and Return-Path?", "acceptedAnswer": { '@type': 'Answer', "text": "From is what the recipient sees. Return-Path is the technical bounce address. DMARC requires alignment between them (via SPF or DKIM)." } },
+    {'@type': 'Question', 'name': "Can I trace where an email actually came from?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: read the Received headers bottom-up. The first Received hop (bottom) is closest to the sender\u2019s server, with its IP address." } },
+    {'@type': 'Question', 'name': "What does X-Mailer tell me?", "acceptedAnswer": { '@type': 'Answer', "text": "The software the sender used (e.g., Outlook, PHP mail, a specific ESP). Useful for identifying automated or spoofed mail." } },
+    {'@type': 'Question', 'name': "Should I worry about headers in emails I receive?", "acceptedAnswer": { '@type': 'Answer', "text": "For suspicious emails, yes: header analysis reveals whether the claimed sender is genuine. Use our header analyzer to automate the check." } }
+  ]
 }
 ---
 <BaseLayout

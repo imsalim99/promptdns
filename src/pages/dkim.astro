@@ -21,6 +21,46 @@ import Diagram from '../components/Diagram.astro';
       public key you publish in DNS.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM email header tags vs DNS record tags</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Location</th><th>Tag</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">v=1</td><td class="text-sm text-ink-dim">DKIM signature version</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">a=rsa-sha256</td><td class="text-sm text-ink-dim">Signing algorithm</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">d=example.com</td><td class="text-sm text-ink-dim">Signing domain (the d= tag)</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">s=selector1</td><td class="text-sm text-ink-dim">Selector used for the DNS lookup</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">bh=</td><td class="text-sm text-ink-dim">Body hash</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">b=</td><td class="text-sm text-ink-dim">Signature data</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">v=DKIM1</td><td class="text-sm text-ink-dim">Record version</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">k=rsa</td><td class="text-sm text-ink-dim">Key type</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">p=</td><td class="text-sm text-ink-dim">Public key material (empty p= means revoked)</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">t=y</td><td class="text-sm text-ink-dim">Testing mode flag</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM key strength comparison</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">512-bit RSA</td><td class="text-sm text-ink-dim">Insecure</td><td class="text-sm text-ink-dim">Rejected by major receivers</td></tr><tr><td class="font-medium text-ink">1024-bit RSA</td><td class="text-sm text-ink-dim">Legacy minimum</td><td class="text-sm text-ink-dim">Increasingly weak; migrate</td></tr><tr><td class="font-medium text-ink">2048-bit RSA</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">May need two TXT strings for the key material</td></tr><tr><td class="font-medium text-ink">Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Modern alternative</td><td class="text-sm text-ink-dim">Shorter keys, faster signing; receiver support still maturing</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM email header tags vs DNS record tags</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Location</th><th>Tag</th><th>Meaning</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">v=1</td><td class="text-sm text-ink-dim">DKIM signature version</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">a=rsa-sha256</td><td class="text-sm text-ink-dim">Signing algorithm</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">d=example.com</td><td class="text-sm text-ink-dim">Signing domain (the d= tag)</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">s=selector1</td><td class="text-sm text-ink-dim">Selector used for the DNS lookup</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">bh=</td><td class="text-sm text-ink-dim">Body hash</td></tr><tr><td class="font-medium text-ink">Email header</td><td class="text-sm text-ink-dim">b=</td><td class="text-sm text-ink-dim">Signature data</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">v=DKIM1</td><td class="text-sm text-ink-dim">Record version</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">k=rsa</td><td class="text-sm text-ink-dim">Key type</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">p=</td><td class="text-sm text-ink-dim">Public key material (empty p= means revoked)</td></tr><tr><td class="font-medium text-ink">DNS TXT record</td><td class="text-sm text-ink-dim">t=y</td><td class="text-sm text-ink-dim">Testing mode flag</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM key strength comparison</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">512-bit RSA</td><td class="text-sm text-ink-dim">Insecure</td><td class="text-sm text-ink-dim">Rejected by major receivers</td></tr><tr><td class="font-medium text-ink">1024-bit RSA</td><td class="text-sm text-ink-dim">Legacy minimum</td><td class="text-sm text-ink-dim">Increasingly weak; migrate</td></tr><tr><td class="font-medium text-ink">2048-bit RSA</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">May need two TXT strings for the key material</td></tr><tr><td class="font-medium text-ink">Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Modern alternative</td><td class="text-sm text-ink-dim">Shorter keys, faster signing; receiver support still maturing</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -73,5 +113,7 @@ import Diagram from '../components/Diagram.astro';
         <li><a href="/spf-record/">SPF explained</a> · <a href="/dmarc/">DMARC explained</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DKIM encrypt email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. DKIM signs the message so receivers can verify it was not altered. Encryption of the transport is a separate TLS mechanism.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my DKIM key is revoked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Mail signed with that selector fails verification. That is why rotation publishes the new selector first and retires the old one only after signing moves.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have multiple DKIM records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, under different selectors. Each selector is its own DNS name, and mail carries the selector it was signed with.</p></details></div>
+      </div>
 </BaseLayout>

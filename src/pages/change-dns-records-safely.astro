@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What does 'without downtime' actually mean?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No user sees an error page. Some users hit the old server, others hit the new one during the propagation window, but both serve content."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I change multiple records at once?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes for unrelated records (a web A record and an MX record). For related records (several A records for the same service), change them together."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What if I need to roll back?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Re-create the old records from your backup. Propagation of the rollback takes one more TTL cycle."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does changing DNS affect email?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if you change MX records. A/CNAME changes affect web traffic but not email routing (unless the mail host IP changes too)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I know propagation is complete?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The propagation checker shows all resolvers returning the same answer. When they agree, propagation is done."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is the safest day to change DNS?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Any day, if you follow the TTL procedure. Avoid Friday afternoons: if something goes wrong, support teams are unavailable over the weekend."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What does 'without downtime' actually mean?", "acceptedAnswer": { '@type': 'Answer', "text": "No user sees an error page. Some users hit the old server, others hit the new one during the propagation window, but both serve content." } },
+    {'@type': 'Question', 'name': "Can I change multiple records at once?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes for unrelated records (a web A record and an MX record). For related records (several A records for the same service), change them together." } },
+    {'@type': 'Question', 'name': "What if I need to roll back?", "acceptedAnswer": { '@type': 'Answer', "text": "Re-create the old records from your backup. Propagation of the rollback takes one more TTL cycle." } },
+    {'@type': 'Question', 'name': "Does changing DNS affect email?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you change MX records. A/CNAME changes affect web traffic but not email routing (unless the mail host IP changes too)." } },
+    {'@type': 'Question', 'name': "How do I know propagation is complete?", "acceptedAnswer": { '@type': 'Answer', "text": "The propagation checker shows all resolvers returning the same answer. When they agree, propagation is done." } },
+    {'@type': 'Question', 'name': "What is the safest day to change DNS?", "acceptedAnswer": { '@type': 'Answer', "text": "Any day, if you follow the TTL procedure. Avoid Friday afternoons: if something goes wrong, support teams are unavailable over the weekend." } }
+  ]
 }
 ---
 <BaseLayout
@@ -70,6 +28,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">The safe record-change procedure: lower TTL, verify the new value, watch propagation, and keep the old path alive throughout.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Pre-change safety checklist</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Why</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Lower the TTL 24 hours ahead</td><td class="text-sm text-ink-dim">Old answers expire fast when the change lands</td></tr><tr><td class="font-medium text-ink">Note the current values</td><td class="text-sm text-ink-dim">Instant rollback without archaeology</td></tr><tr><td class="font-medium text-ink">Verify the new value before deleting the old</td><td class="text-sm text-ink-dim">Both live side by side beats downtime</td></tr><tr><td class="font-medium text-ink">Confirm delegation points at you</td><td class="text-sm text-ink-dim">Editing a non-authoritative panel changes nothing</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

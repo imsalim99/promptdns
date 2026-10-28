@@ -4,47 +4,12 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What happens if a CA is hacked?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Browsers revoke trust in the CA or its intermediates; certificates stop working. CAs have died this way, which is why the system self-corrects."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why do certificates go into public logs?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Certificate Transparency makes every issuance observable, so fraudulent certificates for your domain become detectable within hours."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can a CA issue for any domain?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only after domain-control validation, and only if your CAA records permit that CA."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is a root program?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The policy bundle a browser or OS maintains: which roots are trusted, and under what requirements (Chrome, Mozilla, Microsoft, Apple each run one)."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Do I need a paid certificate for e-commerce?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No: DV certificates provide identical encryption. Compliance and customer perception, not crypto, are the arguments for paid tiers."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What happens if a CA is hacked?", "acceptedAnswer": { '@type': 'Answer', "text": "Browsers revoke trust in the CA or its intermediates; certificates stop working. CAs have died this way, which is why the system self-corrects." } },
+    {'@type': 'Question', 'name': "Why do certificates go into public logs?", "acceptedAnswer": { '@type': 'Answer', "text": "Certificate Transparency makes every issuance observable, so fraudulent certificates for your domain become detectable within hours." } },
+    {'@type': 'Question', 'name': "Can a CA issue for any domain?", "acceptedAnswer": { '@type': 'Answer', "text": "Only after domain-control validation, and only if your CAA records permit that CA." } },
+    {'@type': 'Question', 'name': "What is a root program?", "acceptedAnswer": { '@type': 'Answer', "text": "The policy bundle a browser or OS maintains: which roots are trusted, and under what requirements (Chrome, Mozilla, Microsoft, Apple each run one)." } },
+    {'@type': 'Question', 'name': "Do I need a paid certificate for e-commerce?", "acceptedAnswer": { '@type': 'Answer', "text": "No: DV certificates provide identical encryption. Compliance and customer perception, not crypto, are the arguments for paid tiers." } }
+  ]
 }
 ---
 <BaseLayout
@@ -64,6 +29,16 @@ const faqSchema = {
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">A Certificate Authority (CA) is an organization that browsers pre-trust to vouch for the link between a domain and a public key. Every HTTPS connection starts with that trust: the CA is the third party that makes first contact with a stranger safe.</p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">CA validation levels</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Level</th><th>Verifies</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">DV</td><td class="text-sm text-ink-dim">Domain control</td></tr><tr><td class="font-medium text-ink">OV</td><td class="text-sm text-ink-dim">Plus organization</td></tr><tr><td class="font-medium text-ink">EV</td><td class="text-sm text-ink-dim">Full legal entity</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

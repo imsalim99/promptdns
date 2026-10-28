@@ -3,9 +3,9 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'Do ip4 ranges count toward the limit?', acceptedAnswer: { '@type': 'Answer', text: 'No. ip4 and ip6 are answered from the record itself and cost zero lookups. Only include, a, mx, ptr, exists, and redirect consume the budget.' } },
-    { '@type': 'Question', name: 'What happens exactly at 11 lookups?', acceptedAnswer: { '@type': 'Answer', text: 'Evaluation stops and receivers return permerror: the record stops protecting the domain, and mail may fail authentication.' } },
-    { '@type': 'Question', name: 'Does the checker follow nested includes?', acceptedAnswer: { '@type': 'Answer', text: 'Our checker counts the top-level terms in your record and warns about nested includes, which consume additional lookups during real evaluation.' } },
+    {'@type': 'Question', 'name': "Do ip4 ranges count toward the limit?", "acceptedAnswer": { '@type': 'Answer', "text": "No. ip4 and ip6 are answered from the record itself and cost zero lookups. Only include, a, mx, ptr, exists, and redirect consume the budget." } },
+    {'@type': 'Question', 'name': "What happens exactly at 11 lookups?", "acceptedAnswer": { '@type': 'Answer', "text": "Evaluation stops and receivers return permerror: the record stops protecting the domain, and mail may fail authentication." } },
+    {'@type': 'Question', 'name': "Does the checker follow nested includes?", "acceptedAnswer": { '@type': 'Answer', "text": "Our checker counts the top-level terms in your record and warns about nested includes, which consume additional lookups during real evaluation." } }
   ],
 };
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -35,6 +35,16 @@ import ToolPanel from '../components/ToolPanel.astro';
       entirely, returning <code class="font-mono text-accent-soft">permerror</code>.
     </p>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Lookup cost per mechanism</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Mechanism</th><th>Lookups</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">1 + nested</td></tr><tr><td class="font-medium text-ink">a / mx</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">1 (deprecated)</td></tr><tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">ip4 / ip6 / all</td><td class="text-sm text-ink-dim">0</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>

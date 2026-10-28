@@ -4,55 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What does SERVFAIL actually mean?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Why does NXDOMAIN persist after I added a record?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I fix DNS errors on the user's side?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What's the difference between a DNS error and a connection error?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does clearing browser data fix DNS errors?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are DNS errors ever caused by malware?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "What does SERVFAIL actually mean?", "acceptedAnswer": { '@type': 'Answer', "text": "The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken." } },
+    {'@type': 'Question', 'name': "Why does NXDOMAIN persist after I added a record?", "acceptedAnswer": { '@type': 'Answer', "text": "Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches." } },
+    {'@type': 'Question', 'name': "Can I fix DNS errors on the user's side?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone." } },
+    {'@type': 'Question', 'name': "What's the difference between a DNS error and a connection error?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond." } },
+    {'@type': 'Question', 'name': "Does clearing browser data fix DNS errors?", "acceptedAnswer": { '@type': 'Answer', "text": "It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough." } },
+    {'@type': 'Question', 'name': "Are DNS errors ever caused by malware?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects." } }
+  ]
 }
 ---
 <BaseLayout

@@ -18,11 +18,11 @@ const article = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a },
-  })),
+  mainEntity: [
+    {'@type': 'Question', 'name': "Can DKIM prevent email spoofing?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, if the private key is kept secret. A spoofed message cannot produce a valid DKIM signature because the attacker does not have the private key." } },
+    {'@type': 'Question', 'name': "What happens if the DKIM private key is leaked?", "acceptedAnswer": { '@type': 'Answer', "text": "Anyone with the private key can sign messages as your domain. Rotate the key immediately: generate a new pair, publish the new public key, and delete the old DNS record." } },
+    {'@type': 'Question', 'name': "Does DKIM encrypt the email?", "acceptedAnswer": { '@type': 'Answer', "text": "No. DKIM only signs (authenticates) the message. For encryption, use S/MIME or PGP. DKIM proves authenticity, not confidentiality." } }
+  ],
 };
 
 const breadcrumbs = {
