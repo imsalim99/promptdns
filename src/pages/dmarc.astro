@@ -1,119 +1,263 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
+
 const faq = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What does DMARC do?', acceptedAnswer: { '@type': 'Answer', text: 'DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.' } },
-    { '@type': 'Question', name: 'What is a good DMARC policy?', acceptedAnswer: { '@type': 'Answer', text: 'Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.' } },
-    { '@type': 'Question', name: 'Where does a DMARC record live?', acceptedAnswer: { '@type': 'Answer', text: 'In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.' } },
+    {
+      '@type': 'Question',
+      name: 'Do I need both SPF and DKIM to set up DMARC?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Technically DMARC evaluates if at least one protocol (SPF or DKIM) is published and aligned, but deploying both SPF and DKIM is required by Gmail, Yahoo, and Microsoft bulk-sender mandates and prevents forwarded emails from failing DMARC.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Will publishing DMARC at p=none block any of my legitimate emails?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, p=none is a monitoring-only policy that instructs receiving mail servers to deliver failing messages normally while sending daily XML aggregate reports to your rua= address so you can audit senders safely.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Where does a DMARC record live in DNS?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A DMARC record is published as a DNS TXT resource record (Type 16) at the subdomain host _dmarc.<yourdomain> (for example, _dmarc.example.com), including the mandatory leading underscore.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does DMARC stop all phishing and display-name spoofing?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'DMARC at p=reject blocks exact-domain spoofing where an attacker forges your actual domain in the From: header, but it does not block lookalike domains (such as examp1e.com) or display-name spoofing from unrelated email addresses.',
+      },
+    },
   ],
 };
 ---
-<BaseLayout title="DMARC: The Complete Guide" description="DMARC explained: policies (none, quarantine, reject), alignment, aggregate reports, and the safe road from monitoring to full enforcement." schema={[faq]} breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DMARC"]]}>
+<BaseLayout
+  title="DMARC: How Email Authentication, Alignment, Policies, and Reporting Work"
+  description="DMARC explained: protocol architecture, 11 DNS tags, SPF and DKIM Identifier Alignment, p=none to p=reject enforcement rollout, and 2026 mandates."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DMARC"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DMARC</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC: The Complete Guide</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC: How Email Authentication, Alignment, Policies, and Reporting Work</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      SPF and DKIM verify mail, but neither tells the receiver <em>what to do</em> when verification
-      fails. DMARC is the policy layer: it sets the consequence, requires alignment, and, essentially,
-      reports back to you.
-    </p>
+        Domain-based Message Authentication, Reporting, and Conformance (DMARC) is <strong class="text-ink">an email authentication, policy enforcement, and reporting protocol defined in RFC 7489 that prevents exact-domain email spoofing and business email compromise (BEC)</strong>. Published as a DNS TXT record at <code>_dmarc.&lt;domain&gt;</code>, DMARC verifies that incoming messages pass SPF or DKIM with Identifier Alignment against the visible <code>From:</code> header, enforces a disposition policy (<code>none</code>, <code>quarantine</code>, or <code>reject</code>), and returns daily XML aggregate reports.
+      </p>
     </div>
 
-    
+    <Diagram name="dmarc-tree" caption="The DMARC decision tree: SPF/DKIM pass, alignment, policy" />
 
-    
-    
-    
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-three-policies">The three policies</a></li>
-        <li><a href="#alignment-the-dmarc-twist">Alignment: the DMARC twist</a></li>
-        <li><a href="#reports-the-part-nobody-skips-twice">Reports: the part nobody skips twice</a></li>
-        <li><a href="#the-safe-road-to-enforcement">The safe road to enforcement</a></li>
+        <li><a href="#what-does-dmarc-stand-for-and-why-do-spf-and-dkim-need-it">What DMARC stands for and why SPF and DKIM need it</a></li>
+        <li><a href="#how-does-dmarc-evaluation-work-step-by-step-the-6-step-flow">How DMARC evaluation works (6-step flow)</a></li>
+        <li><a href="#what-is-dmarc-identifier-alignment-relaxed-vs-strict-modes">DMARC Identifier Alignment (relaxed vs strict)</a></li>
+        <li><a href="#what-are-the-11-dmarc-record-tags-in-rfc-7489">The 11 DMARC record tags in RFC 7489</a></li>
+        <li><a href="#what-are-the-3-dmarc-policies-none-quarantine-reject-and-the-3-stage-enforcement-rollout">The 3 DMARC policies and 3-stage enforcement rollout</a></li>
+        <li><a href="#what-is-the-difference-between-dmarc-aggregate-rua-and-forensic-ruf-reports">DMARC aggregate (RUA) vs forensic (RUF) reports</a></li>
+        <li><a href="#what-attacks-does-dmarc-stop-and-what-are-its-3-limitations">Attacks DMARC stops and its 3 limitations</a></li>
+        <li><a href="#what-are-the-dmarc-compliance-requirements-in-2026">DMARC compliance requirements in 2026</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Complete DMARC tag reference (RFC 7489)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Tag</th><th>Required</th><th>Default if omitted</th><th>Purpose</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">v</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (must be first)</td><td class="text-sm text-ink-dim">Protocol version, value DMARC1</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (record invalid without it)</td><td class="text-sm text-ink-dim">Policy: none, quarantine, or reject</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No aggregate reports</td><td class="text-sm text-ink-dim">Where daily aggregate reports are sent</td></tr><tr><td class="font-medium text-ink">ruf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No forensic reports</td><td class="text-sm text-ink-dim">Where failure samples are sent (rarely honored)</td></tr><tr><td class="font-medium text-ink">sp</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">Inherits p</td><td class="text-sm text-ink-dim">Separate policy for subdomains</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">100</td><td class="text-sm text-ink-dim">Percentage of failing mail that receives the policy</td></tr><tr><td class="font-medium text-ink">adkim</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">DKIM alignment mode</td></tr><tr><td class="font-medium text-ink">aspf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">SPF alignment mode</td></tr><tr><td class="font-medium text-ink">fo</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Forensic report trigger options</td></tr><tr><td class="font-medium text-ink">rf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">afrf</td><td class="text-sm text-ink-dim">Forensic report format</td></tr><tr><td class="font-medium text-ink">ri</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">86400 seconds</td><td class="text-sm text-ink-dim">Aggregate report interval</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 3-stage enforcement rollout</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Stage</th><th>Policy</th><th>What you learn</th><th>Risk</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1. Monitor</td><td class="text-sm text-ink-dim">p=none; rua=...</td><td class="text-sm text-ink-dim">Every source sending as your domain, with pass/fail per protocol</td><td class="text-sm text-ink-dim">None: spoofed mail still delivers</td></tr><tr><td class="font-medium text-ink">2. Quarantine</td><td class="text-sm text-ink-dim">p=quarantine; pct=25 to 100</td><td class="text-sm text-ink-dim">How receivers treat failing mail without bouncing it</td><td class="text-sm text-ink-dim">Failing legitimate mail lands in spam</td></tr><tr><td class="font-medium text-ink">3. Reject</td><td class="text-sm text-ink-dim">p=reject</td><td class="text-sm text-ink-dim">Full enforcement: spoofed mail bounces</td><td class="text-sm text-ink-dim">Legitimate mail bounces if a source still fails</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <Diagram name="dmarc-tree" caption="The DMARC decision tree: SPF/DKIM pass, alignment, policy" />
-
     <div class="rich-text mt-8">
-      <h2 id="the-three-policies">The three policies</h2>
-      <ul>
-        <li><code>p=none</code>, monitor. Deliver the mail anyway, but send the domain owner aggregate reports.</li>
-        <li><code>p=quarantine</code>, accept failures but junk them (spam folder). Use <code>pct</code> to ramp: 25% → 50% → 100%.</li>
-        <li><code>p=reject</code>, refuse failures outright. Full enforcement; the end state.</li>
-      </ul>
-
-      <h2 id="alignment-the-dmarc-twist">Alignment: the DMARC twist</h2>
+      <h2 id="what-does-dmarc-stand-for-and-why-do-spf-and-dkim-need-it">What Does DMARC Stand For and Why Do SPF and DKIM Need It?</h2>
       <p>
-        Passing SPF alone isn't enough, the <strong>From:</strong> domain must also <em>align</em>
-        with the SPF/DKIM domains. Relaxed alignment (the default) accepts matches on the
-        organizational domain (<code>news.mail.example.com</code> aligns with <code>example.com</code>);
-        strict requires exact matches. Alignment is why mail sent through an ESP fails DMARC until
-        you configure the ESP to sign with your domain.
+        DMARC stands for <strong class="text-ink">Domain-based Message Authentication, Reporting, and Conformance</strong>, combining 4 distinct operational functions that neither SPF nor DKIM provides on its own.
+      </p>
+      <p>
+        The DMARC protocol standardizes 4 distinct operational functions:
+      </p>
+      <ul>
+        <li><strong>Domain-Based Policy Publication:</strong> A domain owner publishes a single DNS TXT resource record at <code>_dmarc.&lt;domain&gt;</code> that governs every inbound message claiming that domain in the visible display header.</li>
+        <li><strong>Message Authentication via Identifier Alignment:</strong> DMARC links underlying <a href="/spf-record/">SPF Record</a> (<code>RFC 5321.MailFrom</code> envelope domain) and <a href="/dkim/">DKIM Explained</a> (<code>RFC 6376</code> <code>d=</code> cryptographic signing domain) checks to the visible <code>RFC 5322.From</code> header displayed to the recipient.</li>
+        <li><strong>Reporting Visibility (RUA and RUF):</strong> Receiving mail servers transmit daily XML statistical summaries back to the domain owner detailing every IP address sending mail claiming their domain alongside authentication pass and fail verdicts.</li>
+        <li><strong>Conformance and Policy Enforcement (p=):</strong> The domain owner instructs receiving mail gateways whether to deliver (<code>p=none</code>), route to spam (<code>p=quarantine</code>), or block (<code>p=reject</code>) messages that fail authentication and alignment.</li>
+      </ul>
+      <p>
+        Standalone SPF and DKIM contain an architectural vulnerability: SPF validates exclusively the hidden envelope Return-Path domain, while DKIM proves only that a cryptographic signature matches the signing domain in the <code>d=</code> tag. Receiving mail transfer agents accept forged messages if an attacker sends email through an authorized server (such as <code>attacker-mailer.com</code>) to pass SPF and DKIM cleanly while impersonating an executive in the visible <code>From: ceo@yourcompany.com</code> header. DMARC resolves this impersonation risk by requiring Identifier Alignment between the authenticated technical domains and the visible display identity, as detailed in <a href="/dmarc-vs-spf-vs-dkim/">DMARC vs SPF vs DKIM</a>.
       </p>
 
-      <h2 id="reports-the-part-nobody-skips-twice">Reports: the part nobody skips twice</h2>
+      <h2 id="how-does-dmarc-evaluation-work-step-by-step-the-6-step-flow">How Does DMARC Evaluation Work Step by Step? (The 6-Step Flow)</h2>
       <p>
-        With a <code>rua</code> address, every participating mailbox provider sends you daily XML
-        summaries: every message using your domain, its source IP, SPF/DKIM results, and the action
-        taken. This is how you discover the marketing SaaS sending as you, and the spoofers you
-        never knew about. Read them with the free
-        <a href="/dmarc-report-analyzer/">DMARC report analyzer</a>, or let
-        <a href="/pricing/">monitoring</a> parse them continuously.
+        The DMARC evaluation engine executes <strong class="text-ink">6 sequential verification, alignment, disposition, and reporting steps</strong> whenever an inbound email arrives at a destination mail server.
+      </p>
+      <p>
+        Receiving mail gateways evaluate incoming messages through 6 sequential steps:
+      </p>
+      <ol>
+        <li><strong>Extract</strong> the organizational domain and hostname from the message's visible <code>RFC 5322.From</code> header (for example, <code>example.com</code> from <code>From: billing@example.com</code>).</li>
+        <li><strong>Query</strong> authoritative DNS nameservers for a TXT resource record at <code>_dmarc.example.com</code> starting with the mandatory version tag <code>v=DMARC1</code>.</li>
+        <li><strong>Execute</strong> standard SPF verification against the connecting server's IP address and envelope <code>RFC 5321.MailFrom</code> domain, and validate cryptographic <code>DKIM-Signature</code> headers against public keys published at <code>&lt;selector&gt;._domainkey</code>.</li>
+        <li><strong>Verify</strong> Identifier Alignment by checking whether the authenticated SPF domain aligns with the visible <code>From:</code> domain (<code>aspf</code>) or the authenticated DKIM <code>d=</code> domain aligns with the visible <code>From:</code> domain (<code>adkim</code>).</li>
+        <li><strong>Apply</strong> a <code>dmarc=pass</code> verdict if at least one aligned mechanism (SPF or DKIM) passes, or enforce the domain's published disposition policy (<code>p=none</code>, <code>p=quarantine</code>, or <code>p=reject</code>) if both mechanisms fail to pass and align.</li>
+        <li><strong>Log</strong> the evaluation outcome into local authentication records and transmit daily compressed XML aggregate reports to the destination specified in the record's <code>rua=mailto:</code> tag.</li>
+      </ol>
+      <p>
+        The DMARC evaluation engine operates on a Single-Pass OR rule: a message achieves an overall DMARC Pass if either aligned SPF passes or aligned DKIM passes. A message forwarded across intermediate servers retains a valid DMARC Pass through its cryptographic DKIM signature even when the forwarding hop alters the connecting IP address and invalidates SPF. Administrators can test domain configuration using the <a href="/dmarc-record-checker/">DMARC Record Checker</a>.
       </p>
 
-      <h2 id="the-safe-road-to-enforcement">The safe road to enforcement</h2>
+      <h2 id="what-is-dmarc-identifier-alignment-relaxed-vs-strict-modes">What Is DMARC Identifier Alignment? (Relaxed vs Strict Modes)</h2>
+      <p>
+        DMARC Identifier Alignment is <strong class="text-ink">the verification check requiring the domain authenticated by SPF (RFC 5321.MailFrom) or DKIM (d=) to match the visible Header From (RFC 5322.From) domain</strong> under relaxed (r) or strict (s) matching rules.
+      </p>
+      <p>
+        RFC 7489 Section 3.1 defines 2 distinct alignment modes for SPF and DKIM:
+      </p>
       <ul>
-        <li>Publish <code>p=none</code> + <code>rua</code> (use the <a href="/dmarc-record-generator/">generator</a>).</li>
-        <li>Read reports for 2-4 weeks; fix every legitimate sender (add to SPF, enable DKIM signing).</li>
-        <li>Step to <code>p=quarantine; pct=25</code>, watch, ramp to 100%.</li>
-        <li>Move to <code>p=reject</code>. Verify with the <a href="/dmarc-record-checker/">DMARC checker</a>.</li>
+        <li><strong>Relaxed Alignment (adkim=r, aspf=r):</strong> Matches sender identities at the Organizational Domain level determined through the Public Suffix List (PSL). Receiving servers accept subdomains matching the parent organizational domain: if the visible Header From displays <code>support@example.com</code>, an SPF Return-Path of <code>bounces@mail.example.com</code> or a DKIM signature with <code>d=marketing.example.com</code> passes relaxed alignment. Relaxed alignment operates as the protocol default when tags are omitted.</li>
+        <li><strong>Strict Alignment (adkim=s, aspf=s):</strong> Requires an exact Fully Qualified Domain Name (FQDN) character match. If the visible Header From displays <code>support@example.com</code>, both the Return-Path domain (for SPF) and the <code>d=</code> domain (for DKIM) must match <code>example.com</code> exactly; a subdomain such as <code>mail.example.com</code> fails strict alignment unless the visible Header From also originates from <code>@mail.example.com</code>.</li>
+      </ul>
+      <p>
+        Organizations sending mail across multiple third-party marketing and transactional providers maintain relaxed alignment to accommodate delegated subdomains without triggering policy failures. Detailed alignment mechanics and header matrices are documented in <a href="/dmarc-alignment/">DMARC Alignment</a> and <a href="/dmarc-record/">DMARC Record</a>.
+      </p>
+
+      <h2 id="what-are-the-11-dmarc-record-tags-in-rfc-7489">What Are the 11 DMARC Record Tags in RFC 7489?</h2>
+      <p>
+        A DMARC record is <strong class="text-ink">a semicolon-separated list of tag-value pairs published as a DNS TXT record at _dmarc.&lt;domain&gt; where v=DMARC1 and p= are mandatory first and second tags</strong>. The table below defines all 11 RFC 7489 DMARC tags by requirement status, default value, and syntax.
+      </p>
+
+      <div class="not-prose my-4">
+        <p class="font-mono text-xs font-semibold text-ink-dim">Complete Production DMARC TXT Record Example:</p>
+        <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>_dmarc.example.com. 3600 IN TXT "v=DMARC1; p=reject; sp=reject; adkim=r; aspf=r; rua=mailto:reports@promptdns.com;"</code></pre>
+      </div>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Tag</th><th>Required</th><th>Default if omitted</th><th>Purpose</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">v</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (must be first)</td><td class="text-sm text-ink-dim">Protocol version, value DMARC1</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (record invalid without it)</td><td class="text-sm text-ink-dim">Policy: none, quarantine, or reject</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No aggregate reports</td><td class="text-sm text-ink-dim">Where daily aggregate reports are sent</td></tr><tr><td class="font-medium text-ink">ruf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No forensic reports</td><td class="text-sm text-ink-dim">Where failure samples are sent (rarely honored)</td></tr><tr><td class="font-medium text-ink">sp</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">Inherits p</td><td class="text-sm text-ink-dim">Separate policy for subdomains</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">100</td><td class="text-sm text-ink-dim">Percentage of failing mail that receives the policy</td></tr><tr><td class="font-medium text-ink">adkim</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">DKIM alignment mode</td></tr><tr><td class="font-medium text-ink">aspf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">SPF alignment mode</td></tr><tr><td class="font-medium text-ink">fo</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Forensic report trigger options</td></tr><tr><td class="font-medium text-ink">rf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">afrf</td><td class="text-sm text-ink-dim">Forensic report format</td></tr><tr><td class="font-medium text-ink">ri</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">86400 seconds</td><td class="text-sm text-ink-dim">Aggregate report interval</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        RFC 7489 Section 6.3 establishes strict tag ordering and cardinality constraints: the <code>v=DMARC1</code> tag is case-sensitive and must appear first, followed immediately by the policy tag <code>p=</code>. Publishing multiple DMARC TXT records at the same <code>_dmarc</code> hostname invalidates the entire configuration, causing receiving mail servers to abort DMARC processing and treat the domain as unprotected. The ongoing IETF DMARCbis specification introduces the <code>np=</code> tag to enforce dedicated policies on non-existent subdomains, defines the <code>psd=</code> tag for Public Suffix Domains, and formally deprecates partial <code>pct=</code> percentage sampling in favor of explicit staging policies. Additional tag syntax details are covered in <a href="/dmarc-record-syntax/">DMARC Tags Explained</a>, the <a href="/dmarc-subdomain-policy/">DMARC sp Tag</a> guide, and the <a href="/dmarc-pct-tag/">DMARC pct Tag</a> reference.
+      </p>
+
+      <h2 id="what-are-the-3-dmarc-policies-none-quarantine-reject-and-the-3-stage-enforcement-rollout">What Are the 3 DMARC Policies (none, quarantine, reject) and the 3-Stage Enforcement Rollout?</h2>
+      <p>
+        The DMARC p= tag defines <strong class="text-ink">3 enforcement policy levels: p=none (monitoring only), p=quarantine (spam folder routing), and p=reject (outright SMTP rejection)</strong>, which organizations deploy sequentially across a 3-stage rollout.
+      </p>
+      <p>
+        The 3 DMARC policy levels establish distinct sender controls:
+      </p>
+      <ul>
+        <li><strong>p=none (Monitoring Mode):</strong> Instructs receiving mail servers to take zero restrictive action on failing messages, delivering them to the user's primary inbox while returning daily XML aggregate reports. Publishing <code>p=none</code> without an active <code>rua=mailto:</code> tag provides zero operational insight and zero anti-spoofing defense.</li>
+        <li><strong>p=quarantine (Soft Enforcement):</strong> Directs receiving mail transfer agents to isolate failing messages by delivering them to the recipient's spam, junk, or quarantine folder rather than the inbox.</li>
+        <li><strong>p=reject (Full Enforcement):</strong> Directs receiving mail gateways to block unauthenticated messages outright during the SMTP conversation with a permanent bounce code (typically <code>550 5.7.26</code> or <code>550 5.7.1</code>), ensuring spoofed emails never reach recipient devices.</li>
+      </ul>
+      <p>
+        Deploying <code>p=reject</code> immediately without auditing legitimate outbound email sources risks blocking mission-critical business communications. The table below outlines the 3-stage DMARC enforcement rollout by policy record, duration, and exit criteria.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Stage</th><th>Policy</th><th>What you learn</th><th>Risk</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">1. Monitor</td><td class="text-sm text-ink-dim">p=none; rua=...</td><td class="text-sm text-ink-dim">Every source sending as your domain, with pass/fail per protocol</td><td class="text-sm text-ink-dim">None: spoofed mail still delivers</td></tr><tr><td class="font-medium text-ink">2. Quarantine</td><td class="text-sm text-ink-dim">p=quarantine; pct=25 to 100</td><td class="text-sm text-ink-dim">How receivers treat failing mail without bouncing it</td><td class="text-sm text-ink-dim">Failing legitimate mail lands in spam</td></tr><tr><td class="font-medium text-ink">3. Reject</td><td class="text-sm text-ink-dim">p=reject</td><td class="text-sm text-ink-dim">Full enforcement: spoofed mail bounces</td><td class="text-sm text-ink-dim">Legitimate mail bounces if a source still fails</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Parked or defensive domains that transmit zero outbound email bypass Stages 1 and 2 entirely. Domain administrators secure inactive domains by immediately publishing <code>v=DMARC1; p=reject; sp=reject;</code> at the <code>_dmarc</code> apex alongside a null SPF record (<code>v=spf1 -all</code>) to shut down spoofing vectors on unused assets. Detailed implementation instructions are available in <a href="/dmarc-policies/">DMARC Policies</a>, <a href="/dmarc-enforcement-roadmap/">From p=none to p=reject: The DMARC Enforcement Roadmap</a>, and the automated <a href="/dmarc-record-generator/">DMARC Record Generator</a>.
+      </p>
+
+      <h2 id="what-is-the-difference-between-dmarc-aggregate-rua-and-forensic-ruf-reports">What Is the Difference Between DMARC Aggregate (RUA) and Forensic (RUF) Reports?</h2>
+      <p>
+        DMARC Aggregate (RUA) reports are <strong class="text-ink">daily compressed XML files containing IP-level authentication statistics for all mail claiming your domain</strong>, whereas Forensic (RUF) reports provide real-time per-message failure copies that major mailbox providers no longer transmit due to privacy risks.
+      </p>
+      <p>
+        RFC 7489 establishes 2 distinct feedback mechanisms to deliver domain operational data:
+      </p>
+      <ul>
+        <li><strong>Aggregate Reports (rua=mailto:, RFC 7489 Section 7.2):</strong> Destination mail servers such as Google, Microsoft, and Yahoo compile sending metrics across 24-hour intervals (controlled by <code>ri=86400</code>) and transmit them as gzipped XML attachments. Aggregate reports contain the connecting IP address, total message volume, applied policy action, SPF domain and alignment verdict, and DKIM selector and alignment verdict. Aggregate files contain zero Personally Identifiable Information (PII), excluding email subjects, message bodies, and recipient addresses. Because raw XML files index servers by IP address rather than vendor identity, administrators inspect reports using the <a href="/dmarc-report-analyzer/">DMARC Report Analyzer</a> or configure automated continuous ingestion through <a href="/dmarc-monitoring/">DMARC Monitoring</a>.</li>
+        <li><strong>Forensic and Failure Reports (ruf=mailto:, AFRF Format):</strong> Receivers generate real-time forensic reports under the Auth-Failure Reporting Format (AFRF) when an individual message fails DMARC evaluation under the selected trigger condition (<code>fo=0</code>, <code>fo=1</code>, <code>fo=d</code>, or <code>fo=s</code>). Because forensic reports reproduce original email headers and message snippets containing personal user information, major consumer mailbox providers including Google (Gmail), Microsoft 365, and Yahoo have discontinued sending RUF reports to eliminate data-privacy liabilities.</li>
+      </ul>
+      <p>
+        Delivering aggregate reports to an external domain (such as routing reports from <code>example.com</code> to <code>mailto:reports@promptdns.com</code>) requires authorization from the receiving destination under RFC 7489 Section 7.1. The reporting service publishes an authorization record at <code>example.com._report._dmarc.promptdns.com</code> containing <code>v=DMARC1</code> in DNS; without this explicit authorization, destination mail servers refuse to dispatch XML files to external addresses. Comprehensive parsing workflows are detailed in <a href="/dmarc-aggregate-reports/">DMARC Aggregate Reports (RUA)</a>, <a href="/dmarc-forensic-reports/">DMARC Forensic Reports (RUF)</a>, and <a href="/how-to-read-dmarc-reports/">How to Read DMARC Reports</a>.
+      </p>
+
+      <h2 id="what-attacks-does-dmarc-stop-and-what-are-its-3-limitations">What Attacks Does DMARC Stop (And What Are Its 3 Limitations)?</h2>
+      <p>
+        At p=quarantine or p=reject, DMARC blocks <strong class="text-ink">3 exact-domain email attacks: direct domain spoofing, brand phishing impersonation, and exact-domain Business Email Compromise (BEC)</strong>, while 3 related attack vectors remain outside DMARC's protocol scope.
+      </p>
+      <p>
+        Enforcing DMARC at p=quarantine or p=reject shuts down 3 exact-domain spoofing attack vectors:
+      </p>
+      <ul>
+        <li><strong>Direct Domain Spoofing:</strong> Attackers forge your exact domain in the visible <code>From:</code> header using unauthorized mail infrastructure. Receiving mail transfer agents detect the lack of SPF and DKIM alignment and reject the connection during the SMTP transaction.</li>
+        <li><strong>Brand Phishing Impersonation:</strong> Cybercriminals transmit bulk fraudulent emails to customers claiming to originate from your root domain or corporate subdomains. Enforcement prevents these malicious messages from reaching consumer inboxes.</li>
+        <li><strong>Exact-Domain Business Email Compromise (BEC):</strong> Threat actors craft targeted spear-phishing requests displaying an executive's exact email address (such as <code>ceo@yourcompany.com</code>) to instruct accounting staff to execute wire transfers. DMARC enforcement blocks unauthenticated messages before delivery.</li>
+      </ul>
+      <p>
+        Organizations must recognize that DMARC operates within strict architectural boundaries and leaves 3 related email threats unmitigated:
+      </p>
+      <ul>
+        <li><strong>Lookalike and Typosquatting Domains:</strong> Attackers register visually similar domain names (such as <code>examp1e.com</code> or <code>yourcompany-support.com</code>) and publish valid SPF, DKIM, and DMARC records on their own infrastructure. DMARC protects exclusively the specific DNS zone where the <code>_dmarc</code> record is published. Defending against lookalike domains requires proactive domain registration monitoring and defensive trademark registrations.</li>
+        <li><strong>Display-Name Spoofing:</strong> Attackers insert an executive's name into the friendly display string while transmitting from an unrelated webmail address (such as <code>"CEO Name" &lt;executive.update12@gmail.com&gt;</code>). Receiving mail systems evaluate DMARC against the <code>gmail.com</code> domain, which passes cleanly. Mitigating display-name spoofing requires inbound mail filtering rules that flag external emails containing internal executive names.</li>
+        <li><strong>Compromised Legitimate Mailboxes:</strong> If an attacker steals valid employee credentials or hijacks an authorized third-party Email Service Provider (ESP) API key, outbound emails originate from authorized mail infrastructure with valid SPF and DKIM signatures. DMARC marks these messages as authentic because the underlying cryptographic checks succeed. Defending against account takeovers requires multi-factor authentication (MFA) and endpoint behavioral analytics.</li>
       </ul>
 
-      
-
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DMARC do?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DMARC tells receiving mail servers what to do when a message claiming to be from your domain fails SPF and DKIM checks, monitor, quarantine, or reject, and asks them to report the results back to you.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What is a good DMARC policy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Start at p=none with reporting to see who sends as your domain, fix legitimate senders, then move to p=quarantine and finally p=reject for full enforcement.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Where does a DMARC record live?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">In DNS, as a TXT record at _dmarc.yourdomain.com, note the leading underscore.</p></details>
-      </div>      <h2 id="related">Related</h2>
+      <h2 id="what-are-the-dmarc-compliance-requirements-in-2026">What Are the DMARC Compliance Requirements in 2026?</h2>
+      <p>
+        As of 2026, <strong class="text-ink">5 major mailbox provider mandates and regulatory frameworks require organizations to publish and enforce DMARC</strong>: Google and Yahoo bulk-sender rules, Microsoft Outlook bulk-sender rules, PCI DSS v4.0.1, the EU NIS2 Directive, and BIMI brand logo verification.
+      </p>
+      <p>
+        Organizations must satisfy 5 mandatory email authentication standards across modern commercial and regulatory environments:
+      </p>
       <ul>
-        <li><a href="/spf-record/">SPF explained</a> · <a href="/dkim/">DKIM explained</a></li>
-        <li><a href="/dmarc-record/">DMARC record syntax reference</a></li>
+        <li><strong>Google (Gmail) and Yahoo Bulk Sender Requirements (Enforced since February 2024):</strong> Senders transmitting 5,000 or more messages per day to consumer Gmail or Yahoo mailboxes must configure both SPF and DKIM, publish an active DMARC record (at minimum <code>p=none</code>), maintain spam complaint rates below 0.10% (never exceeding 0.30%), and provide functional one-click <code>List-Unsubscribe</code> (RFC 8058) headers. Non-compliant mail receives soft-bounce deferrals and outright SMTP rejection. Detailed technical guidelines are outlined in <a href="/gmail-yahoo-bulk-sender-requirements/">Gmail and Yahoo Bulk Sender Requirements</a>.</li>
+        <li><strong>Microsoft Outlook.com Bulk Sender Requirements (Enforced since May 5, 2025):</strong> Senders delivering over 5,000 messages daily to Outlook.com, Hotmail, and Live.com recipients must authenticate with aligned SPF, DKIM, and DMARC. Messages failing authentication receive explicit <code>550 5.7.515</code> SMTP rejection codes.</li>
+        <li><strong>PCI DSS v4.0.1 Requirement 5.4.1 (Mandatory since March 31, 2025):</strong> Entities handling, storing, or transmitting payment cardholder data must deploy automated technical controls against phishing attacks, including DMARC policy enforcement at <code>p=quarantine</code> or <code>p=reject</code> across all customer-facing email domains. Implementation checklists are detailed in <a href="/pci-dss-4-0-dmarc-requirements/">PCI-DSS 4.0 and DMARC</a>.</li>
+        <li><strong>EU NIS2 Directive (Directive 2022/2555) and Government Mandates (CISA BOD 18-01):</strong> European essential and important entities governed by NIS2 Article 21 and United States federal executive branch agencies operating under CISA Binding Operational Directive 18-01 must publish DMARC at <code>p=reject</code> alongside DNSSEC and transport-layer encryption. Compliance criteria are documented in <a href="/nis2-dns-and-email-security-requirements/">NIS2 Directive: DNS and Email Security Requirements</a>.</li>
+        <li><strong>Brand Indicators for Message Identification (BIMI):</strong> Displaying a verified company trademark logo and verification checkmark inside Gmail, Apple Mail, and Yahoo inboxes requires an active DMARC policy of <code>p=quarantine; pct=100;</code> or <code>p=reject;</code> across the root domain. Inboxes evaluate domains at <code>p=none</code> as ineligible for BIMI certification. Technical requirements are explained in <a href="/bimi/">BIMI</a>.</li>
       </ul>
+      <p>
+        Maintaining email deliverability and protecting brand reputation in 2026 requires continuous oversight of DMARC policies, SPF and DKIM Identifier Alignment, and aggregate XML reporting data. Domain administrators can audit their live DNS publication, policy tags, and compliance readiness instantly using the <a href="/dmarc-record-checker/">DMARC Record Checker</a>.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need both SPF and DKIM to set up DMARC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Technically DMARC evaluates if <strong>at least one protocol (SPF or DKIM) is published and aligned</strong>, but deploying <strong>both SPF and DKIM is required</strong> by Gmail, Yahoo, and Microsoft bulk-sender mandates and prevents forwarded emails from failing DMARC.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will publishing DMARC at p=none block any of my legitimate emails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, <strong>p=none is a monitoring-only policy</strong> that instructs receiving mail servers to deliver failing messages normally while sending daily XML aggregate reports to your rua= address so you can audit senders safely.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where does a DMARC record live in DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A DMARC record is published as a <strong>DNS TXT resource record (Type 16) at the subdomain host _dmarc.&lt;yourdomain&gt;</strong> (for example, _dmarc.example.com), including the mandatory leading underscore.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DMARC stop all phishing and display-name spoofing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">DMARC at p=reject <strong>blocks exact-domain spoofing</strong> where an attacker forges your actual domain in the From: header, but it does not block lookalike domains (such as examp1e.com) or display-name spoofing from unrelated email addresses.</p>
+      </details>
     </div>
   </div>
 </BaseLayout>
