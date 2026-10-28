@@ -24,6 +24,23 @@ const SAMPLE_VALUES: Record<string, string> = {
   TXT: '"v=spf1 -all"',
 };
 const sampleValue = SAMPLE_VALUES[type] ?? '93.184.216.34';
+
+/** Per-type specification facts for the reference table (RFC-verified). */
+const SPEC: Record<string, { code: string; rfc: string; format: string; note: string }> = {
+  A: { code: '1', rfc: 'RFC 1035', format: '32-bit IPv4 address', note: 'Only one name per A record; multiple A records rotate answers' },
+  AAAA: { code: '28', rfc: 'RFC 3596', format: '128-bit IPv6 address', note: 'The IPv6 sibling of the A record' },
+  CNAME: { code: '5', rfc: 'RFC 1035', format: 'Canonical hostname', note: 'Cannot coexist with other records on the same name' },
+  MX: { code: '15', rfc: 'RFC 1035', format: 'priority + mail hostname', note: 'Target must resolve via A/AAAA, never a CNAME' },
+  NS: { code: '2', rfc: 'RFC 1035', format: 'Authoritative nameserver hostnames', note: 'Delegation lives at the parent zone' },
+  SOA: { code: '6', rfc: 'RFC 1035', format: 'Primary NS, serial, refresh/retry/expire/minimum', note: 'Serial increments signal zone updates' },
+  PTR: { code: '12', rfc: 'RFC 1035', format: 'Reverse hostname for an IP', note: 'Set by the network owner, not the domain owner' },
+  SRV: { code: '33', rfc: 'RFC 2782', format: 'priority weight port target', note: 'Service discovery for SIP, XMPP and similar' },
+  CAA: { code: '257', rfc: 'RFC 8659', format: 'flags tag "value"', note: 'Restricts which CAs may issue certificates' },
+  DS: { code: '43', rfc: 'RFC 4034', format: 'keytag algorithm digest-type digest', note: 'The DNSSEC chain link at the parent zone' },
+  DNSKEY: { code: '48', rfc: 'RFC 4034', format: 'flags protocol algorithm public key', note: 'Flag 257 marks the key signing key' },
+  TXT: { code: '16', rfc: 'RFC 1035', format: 'Quoted character-strings', note: 'Carries SPF, DKIM, DMARC and verification tokens' },
+};
+const spec = SPEC[type] ?? null;
 ---
 <ToolPanel>
   <form data-record-form data-type={type} class="flex flex-col gap-3 sm:flex-row">
@@ -42,6 +59,21 @@ const sampleValue = SAMPLE_VALUES[type] ?? '93.184.216.34';
       <tbody data-tbody><tr><td class="font-medium text-ink">example.com</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>{sampleValue}</code></td></tr></tbody>
     </table>
   </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">{type} record specification</h2>
+  <section class="not-prose my-4" aria-label="Record specification">
+    <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+      <table class="pdns-table" style="width:100%">
+        <thead><tr><th>Attribute</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td class="font-medium text-ink">Decimal type code</td><td class="font-mono text-xs text-ink-dim">{spec.code}</td></tr>
+          <tr><td class="font-medium text-ink">Standard</td><td class="font-mono text-xs text-ink-dim">{spec.rfc}</td></tr>
+          <tr><td class="font-medium text-ink">RDATA format</td><td class="text-sm text-ink-dim">{spec.format}</td></tr>
+          <tr><td class="font-medium text-ink">Constraint</td><td class="text-sm text-ink-dim">{spec.note}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <p class="mt-4 text-xs text-ink-faint">{hint}</p>
   <ResultCard tool={`lookup-${type.toLowerCase()}`} />
 </ToolPanel>

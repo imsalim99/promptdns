@@ -36,6 +36,16 @@ import ToolPanel from '../components/ToolPanel.astro';
       <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
     </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Metrics the speed test measures</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Metric</th><th>Method</th><th>Note</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Cold latency</td><td class="text-sm text-ink-dim">Fresh query per resolver</td><td class="text-sm text-ink-dim">Cache-miss cost</td></tr><tr><td class="font-medium text-ink">Warm latency</td><td class="text-sm text-ink-dim">Repeated query</td><td class="text-sm text-ink-dim">Cached cost</td></tr><tr><td class="font-medium text-ink">Ranking</td><td class="text-sm text-ink-dim">Fastest average wins</td><td class="text-sm text-ink-dim">Results vary by your network</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <ToolArticle slug="dns-speed-test" />
     </div>
 </BaseLayout>

@@ -27,6 +27,16 @@ import ToolPanel from '../components/ToolPanel.astro';
 <div id="sm-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">MX: mx1.example.com (10)</p><p class="mt-1 text-sm text-ink-dim">Port 25 reachable, STARTTLS offered</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">TLS certificate</p><p class="mt-1 text-sm text-ink-dim">Valid for mx1.example.com, not expired</p></div></div>
 </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the SMTP tester walks</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Good state</th><th>Source</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">MX resolution</td><td class="text-sm text-ink-dim">At least one MX with valid target</td><td class="text-sm text-ink-dim">RFC 5321</td></tr><tr><td class="font-medium text-ink">Port 25 connectivity</td><td class="text-sm text-ink-dim">Reachable, dialogue completes</td><td class="text-sm text-ink-dim">RFC 5321</td></tr><tr><td class="font-medium text-ink">STARTTLS</td><td class="text-sm text-ink-dim">Offered with a valid certificate</td><td class="text-sm text-ink-dim">RFC 3207</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <ToolArticle slug="smtp-tester" />
     </div>
 </div>

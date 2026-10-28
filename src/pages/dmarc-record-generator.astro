@@ -85,6 +85,16 @@ const faqSchema = {
     </div>
     </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Policy options the generator validates</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Option</th><th>Values</th><th>Guidance</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">none / quarantine / reject</td><td class="text-sm text-ink-dim">Start none, advance on clean reports</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">mailto: address</td><td class="text-sm text-ink-dim">Reports are the evidence for advancing</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">0-100</td><td class="text-sm text-ink-dim">Ramp enforcement gradually</td></tr><tr><td class="font-medium text-ink">sp / adkim / aspf</td><td class="text-sm text-ink-dim">Subdomain and alignment modes</td><td class="text-sm text-ink-dim">Defaults are relaxed</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <article class="rich-text mt-14 max-w-none">
       <h2>The safe path to enforcement</h2>
       <p>Start with <code>p=none</code> and a working <code>rua</code> address for 2-4 weeks: read the aggregate reports, fix every legitimate sender that fails SPF/DKIM, then step to <code>p=quarantine</code> (optionally with <code>pct</code> ramping 25 → 50 → 100), and finally <code>p=reject</code>.</p>

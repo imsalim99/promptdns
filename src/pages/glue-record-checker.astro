@@ -27,6 +27,16 @@ import ToolPanel from '../components/ToolPanel.astro';
 <div id="gr-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">ns1.example.com</p><p class="mt-1 text-sm text-ink-dim">Glue A record present at the parent: <code>192.0.2.1</code></p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">ns2.example.com</p><p class="mt-1 text-sm text-ink-dim">No glue at the parent, in-bailiwick name may fail resolution</p></div></div>
 </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the glue checker tests</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Good state</th><th>Why</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Glue presence</td><td class="text-sm text-ink-dim">In-bailiwick NS have A records at the parent</td><td class="text-sm text-ink-dim">Resolution without extra hops</td></tr><tr><td class="font-medium text-ink">Glue accuracy</td><td class="text-sm text-ink-dim">Glue matches the child NS answers</td><td class="text-sm text-ink-dim">Stale glue breaks resolution</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <ToolArticle slug="glue-record-checker" />
     </div>
 </div>

@@ -27,6 +27,16 @@ import ToolPanel from '../components/ToolPanel.astro';
 <div id="ax-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">a.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">AXFR refused, zone transfer properly restricted</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">b.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">AXFR refused, zone transfer properly restricted</p></div></div>
 </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the AXFR checker tests</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Good state</th><th>Source</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Zone transfer request</td><td class="text-sm text-ink-dim">REFUSED on every authoritative NS</td><td class="text-sm text-ink-dim">RFC 5936</td></tr><tr><td class="font-medium text-ink">Recursion exposure</td><td class="text-sm text-ink-dim">Recursion not offered to arbitrary clients</td><td class="text-sm text-ink-dim">Operator hardening</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <ToolArticle slug="axfr-checker" />
     </div>
 </div>

@@ -63,6 +63,16 @@ const faqSchema = {
 <div id="air-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">robots.txt</p><p class="mt-1 text-sm text-ink-dim">Found, 12 directives parsed</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">llms.txt</p><p class="mt-1 text-sm text-ink-dim">Not published yet</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">AI crawler access</p><p class="mt-1 text-sm text-ink-dim">6 of 8 major bots allowed</p></div></div>
     </ToolPanel>
 
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 readiness checks and weights</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Check</th><th>Weight</th><th>Good state</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">DMARC policy</td><td class="text-sm text-ink-dim">25</td><td class="text-sm text-ink-dim">Enforced with reporting</td></tr><tr><td class="font-medium text-ink">SPF record</td><td class="text-sm text-ink-dim">20</td><td class="text-sm text-ink-dim">Valid, within 10 lookups</td></tr><tr><td class="font-medium text-ink">Website DNS</td><td class="text-sm text-ink-dim">15</td><td class="text-sm text-ink-dim">Resolving consistently</td></tr><tr><td class="font-medium text-ink">DKIM</td><td class="text-sm text-ink-dim">15</td><td class="text-sm text-ink-dim">Published and strong</td></tr><tr><td class="font-medium text-ink">MX records</td><td class="text-sm text-ink-dim">10</td><td class="text-sm text-ink-dim">Mail path declared</td></tr><tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">10</td><td class="text-sm text-ink-dim">Signed with valid chain</td></tr><tr><td class="font-medium text-ink">Nameservers</td><td class="text-sm text-ink-dim">5</td><td class="text-sm text-ink-dim">Authoritative and consistent</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <article class="rich-text mt-14 max-w-none">
       <h2>What “AI ready” means</h2>
       <p>Answer engines and agents evaluate domains on the basics machines can verify: the site resolves (IPv4 + IPv6), the zone is signed (DNSSEC), mail is authenticated (SPF/DKIM/DMARC, phishing signals), AI crawlers aren’t accidentally blocked by robots.txt, and an llms.txt explains the content map. This audit checks all of it live.</p>
