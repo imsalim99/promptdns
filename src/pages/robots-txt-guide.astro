@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Does robots.txt guarantee compliance?', acceptedAnswer: { '@type': 'Answer', text: 'No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead.' } },
+    { '@type': 'Question', name: 'Where must robots.txt be served from?', acceptedAnswer: { '@type': 'Answer', text: 'The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored.' } },
+    { '@type': 'Question', name: 'What happens with an empty robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -75,5 +84,7 @@ Sitemap: https://example.com/sitemap.xml</pre>
         <li><a href="/how-to-block-ai-crawlers/">Blocking AI crawlers</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does robots.txt guarantee compliance?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where must robots.txt be served from?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens with an empty robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules.</p></details></div>
+      </div>
 </BaseLayout>

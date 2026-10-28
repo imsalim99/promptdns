@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'How long does Spamhaus delisting take?', acceptedAnswer: { '@type': 'Answer', text: 'Approved SBL and XBL removals typically apply within the hour. Repeat listings after unresolved compromises re-lock quickly.' } },
+    { '@type': 'Question', name: 'Why does my IP keep getting relisted?', acceptedAnswer: { '@type': 'Answer', text: 'Persistent listings mean the underlying source is still sending: an open relay, a compromised account, or a misconfigured newsletter stack. Delisting without fixing the source loops forever.' } },
+    { '@type': 'Question', name: 'What is the difference between SBL and XBL?', acceptedAnswer: { '@type': 'Answer', text: 'SBL lists spam sources and Spamhaus observes them actively; XBL lists exploited machines found through botnet tracking. The fixes differ: content and behavior for SBL, malware cleanup for XBL.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -47,7 +56,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>Monitor: re-run the <a href="/blacklist-checker/">blacklist checker</a> weekly, or let <a href="/pricing/">monitoring</a> do it.</li>
       </ul>
       
-<h2>Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does Spamhaus delisting take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Approved SBL and XBL removals typically apply within the hour. Repeat listings after unresolved compromises re-lock quickly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my IP keep getting relisted?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Persistent listings mean the underlying source is still sending: an open relay, a compromised account, or a misconfigured newsletter stack. Delisting without fixing the source loops forever.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between SBL and XBL?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SBL lists spam sources and Spamhaus observes them actively; XBL lists exploited machines found through botnet tracking. The fixes differ: content and behavior for SBL, malware cleanup for XBL.</p></details></div>
+      <h2>Related</h2>
       <ul>
         <li><a href="/get-off-barracuda-blocklist/">Barracuda delisting</a> and <a href="/sorbs-delisting-guide/">SORBS delisting</a></li>
         <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>

@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Does DMARC fix spam placement?', acceptedAnswer: { '@type': 'Answer', text: 'It removes the authentication reason for spam placement. Reputation, content, and engagement still matter, so DMARC is necessary but not sufficient.' } },
+    { '@type': 'Question', name: 'Can a blacklist listing send me to spam?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, major filters weigh DNSBL listings. Check and delist first, then fix the behavior that caused the listing.' } },
+    { '@type': 'Question', name: 'How long does reputation recovery take?', acceptedAnswer: { '@type': 'Answer', text: 'Days to weeks of clean, authenticated, low-complaint volume. There is no instant reset switch; consistency is the mechanism.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="Why Your Emails Go to Spam (14 Reasons)" description="Why emails go to spam: the 14 real causes from missing SPF/DKIM/DMARC to blacklistings and content triggers, with the fix for each." breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["Why Emails Go to Spam"]]}>
@@ -59,5 +68,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <a href="/email-authentication/">email authentication hub</a> collects the deep guides.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DMARC fix spam placement?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It removes the authentication reason for spam placement. Reputation, content, and engagement still matter, so DMARC is necessary but not sufficient.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a blacklist listing send me to spam?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, major filters weigh DNSBL listings. Check and delist first, then fix the behavior that caused the listing.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does reputation recovery take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Days to weeks of clean, authenticated, low-complaint volume. There is no instant reset switch; consistency is the mechanism.</p></details></div>
+      </div>
 </BaseLayout>

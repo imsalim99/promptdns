@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Is llms.txt a standard?', acceptedAnswer: { '@type': 'Answer', text: 'It is an emerging convention from llmstxt.org, widely adopted by AI-facing sites but not an IETF RFC. Treat it as a strong recommendation rather than a protocol.' } },
+    { '@type': 'Question', name: 'Where does llms.txt go?', acceptedAnswer: { '@type': 'Answer', text: 'At the root of your domain: https://yoursite.com/llms.txt, served like robots.txt, in Markdown format.' } },
+    { '@type': 'Question', name: 'Does llms.txt replace robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'No. robots.txt controls crawling; llms.txt curates content for the models that already read your site. They answer different questions.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -70,5 +79,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/robots-txt-guide/">robots.txt: the complete guide</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is llms.txt a standard?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It is an emerging convention from llmstxt.org, widely adopted by AI-facing sites but not an IETF RFC. Treat it as a strong recommendation rather than a protocol.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where does llms.txt go?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">At the root of your domain: https://yoursite.com/llms.txt, served like robots.txt, in Markdown format.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does llms.txt replace robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. robots.txt controls crawling; llms.txt curates content for the models that already read your site. They answer different questions.</p></details></div>
+      </div>
 </BaseLayout>

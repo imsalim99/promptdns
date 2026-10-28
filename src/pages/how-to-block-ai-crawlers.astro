@@ -1,8 +1,18 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Will blocking AI crawlers hurt my traffic?', acceptedAnswer: { '@type': 'Answer', text: 'Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty.' } },
+    { '@type': 'Question', name: 'Which AI crawlers ignore robots.txt?', acceptedAnswer: { '@type': 'Answer', text: 'Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds.' } },
+    { '@type': 'Question', name: 'Can I block AI crawlers in Cloudflare?', acceptedAnswer: { '@type': 'Answer', text: 'Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="How to Block AI Crawlers (robots.txt, WAF, and DNS)"
   description="How to block AI crawlers: the exact robots.txt rules for GPTBot, ClaudeBot, Google-Extended and friends, plus WAF-level blocking for bots that ignore robots.txt."
   
@@ -102,5 +112,7 @@ Disallow: /</pre>
         <li><a href="/block-ai-crawlers-cloudflare/">Block AI crawlers with Cloudflare</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will blocking AI crawlers hurt my traffic?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which AI crawlers ignore robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I block AI crawlers in Cloudflare?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read.</p></details></div>
+      </div>
 </BaseLayout>

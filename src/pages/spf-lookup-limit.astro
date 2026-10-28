@@ -1,10 +1,20 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Do ip4 ranges count toward the limit?', acceptedAnswer: { '@type': 'Answer', text: 'No. ip4 and ip6 are answered from the record itself and cost zero lookups. Only include, a, mx, ptr, exists, and redirect consume the budget.' } },
+    { '@type': 'Question', name: 'What happens exactly at 11 lookups?', acceptedAnswer: { '@type': 'Answer', text: 'Evaluation stops and receivers return permerror: the record stops protecting the domain, and mail may fail authentication.' } },
+    { '@type': 'Question', name: 'Does the checker follow nested includes?', acceptedAnswer: { '@type': 'Answer', text: 'Our checker counts the top-level terms in your record and warns about nested includes, which consume additional lookups during real evaluation.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="The SPF 10-Lookup Limit Explained (and How to Stay Under It)"
   description="The SPF 10-DNS-lookup limit explained: what counts as a lookup, why exceeding it causes permerror, and three ways to fix it."
   
@@ -78,5 +88,7 @@ import ToolPanel from '../components/ToolPanel.astro';
         <li><a href="/spf-flattener/">SPF Flattener (free)</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do ip4 ranges count toward the limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. ip4 and ip6 are answered from the record itself and cost zero lookups. Only include, a, mx, ptr, exists, and redirect consume the budget.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens exactly at 11 lookups?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Evaluation stops and receivers return permerror: the record stops protecting the domain, and mail may fail authentication.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does the checker follow nested includes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Our checker counts the top-level terms in your record and warns about nested includes, which consume additional lookups during real evaluation.</p></details></div>
+      </div>
 </BaseLayout>

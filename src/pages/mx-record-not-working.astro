@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Why is my MX lookup empty?', acceptedAnswer: { '@type': 'Answer', text: 'Either no MX record exists at the name you checked, or the records were removed. Mail falls back to the A record, which usually fails delivery.' } },
+    { '@type': 'Question', name: 'Can MX point to a CNAME?', acceptedAnswer: { '@type': 'Answer', text: 'It should not: RFC 2181 section 10.3 prohibits MX targets pointing at CNAMEs. Point MX at an A or AAAA hostname.' } },
+    { '@type': 'Question', name: 'How do I test mail delivery after fixing MX?', acceptedAnswer: { '@type': 'Answer', text: 'Send from an external account and read the delivery headers, or run an SMTP-level check that walks the MX priorities end to end.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -76,5 +85,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/email-not-working-after-dns-change/">Email stopped after a DNS change</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is my MX lookup empty?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Either no MX record exists at the name you checked, or the records were removed. Mail falls back to the A record, which usually fails delivery.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can MX point to a CNAME?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It should not: RFC 2181 section 10.3 prohibits MX targets pointing at CNAMEs. Point MX at an A or AAAA hostname.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I test mail delivery after fixing MX?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send from an external account and read the delivery headers, or run an SMTP-level check that walks the MX priorities end to end.</p></details></div>
+      </div>
 </BaseLayout>

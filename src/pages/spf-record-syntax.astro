@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What does ~all mean in SPF?', acceptedAnswer: { '@type': 'Answer', text: 'Softfail: senders failing SPF are marked suspicious but not rejected. -all hardfails them. ~all is the safe choice while tuning; -all is the enforcement choice.' } },
+    { '@type': 'Question', name: 'Is +all ever correct?', acceptedAnswer: { '@type': 'Answer', text: 'No. Plus-pass on everything means any server on earth may send as your domain. It is always a misconfiguration.' } },
+    { '@type': 'Question', name: 'What is the difference between a mechanism and a modifier?', acceptedAnswer: { '@type': 'Answer', text: 'Mechanisms match the sending IP and decide the result; modifiers like redirect= and exp= change evaluation or provide explanations without matching.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -55,7 +64,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         broken record. Test any change with the <a href="/spf-record-checker/">SPF checker</a>.
       </p>
       
-<h2>Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does ~all mean in SPF?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Softfail: senders failing SPF are marked suspicious but not rejected. -all hardfails them. ~all is the safe choice while tuning; -all is the enforcement choice.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is +all ever correct?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Plus-pass on everything means any server on earth may send as your domain. It is always a misconfiguration.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between a mechanism and a modifier?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Mechanisms match the sending IP and decide the result; modifiers like redirect= and exp= change evaluation or provide explanations without matching.</p></details></div>
+      <h2>Related</h2>
       <ul>
         <li><a href="/spf-record/">SPF: the complete guide</a></li>
         <li><a href="/spf-flattener/">SPF flattener</a></li>

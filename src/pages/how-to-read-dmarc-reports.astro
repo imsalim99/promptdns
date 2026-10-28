@@ -1,8 +1,18 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'How often do DMARC reports arrive?', acceptedAnswer: { '@type': 'Answer', text: 'Daily, one XML per provider per day. Gmail, Microsoft, and Yahoo each send their own, so volume scales with the providers your recipients use.' } },
+    { '@type': 'Question', name: 'Why do I get reports from providers I do not use?', acceptedAnswer: { '@type': 'Answer', text: 'The reports cover mail claiming to be your domain anywhere: spoofing attempts, forwarders, and recipients whose mailbox provider is that vendor.' } },
+    { '@type': 'Question', name: 'What should I do with unknown source IPs?', acceptedAnswer: { '@type': 'Answer', text: 'Reverse DNS them first: many are legitimate services you forgot. The ones that fail authentication and are unknown are your spoofing candidates.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="How to Read DMARC Reports (XML Made Simple)"
   description="How to read DMARC aggregate reports: the XML fields that matter, what pass/fail rows tell you, and how to turn reports into enforcement."
   
@@ -72,5 +82,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/dmarc-record-generator/">DMARC record generator</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often do DMARC reports arrive?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Daily, one XML per provider per day. Gmail, Microsoft, and Yahoo each send their own, so volume scales with the providers your recipients use.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do I get reports from providers I do not use?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The reports cover mail claiming to be your domain anywhere: spoofing attempts, forwarders, and recipients whose mailbox provider is that vendor.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What should I do with unknown source IPs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reverse DNS them first: many are legitimate services you forgot. The ones that fail authentication and are unknown are your spoofing candidates.</p></details></div>
+      </div>
 </BaseLayout>

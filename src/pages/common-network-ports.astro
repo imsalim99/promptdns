@@ -4,39 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Which ports must be open for a website?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Inbound 80 and 443 on the web server; everything else can stay closed. Management ports (22/3389) should be restricted to known IPs."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does closing ports improve security?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Reducing the exposed surface always helps, but hardening the services behind open ports matters more."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I check open ports?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "From outside: an online port scanner against your address. From the server: ss -tlnp or netstat -tlnp."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "What is port forwarding?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Telling a NAT router to send inbound traffic on one port to a specific internal device: the workaround for hosting behind NAT."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Which ports must be open for a website?", "acceptedAnswer": { '@type': 'Answer', "text": "Inbound 80 and 443 on the web server; everything else can stay closed. Management ports (22/3389) should be restricted to known IPs." } },
+    {'@type': 'Question', 'name': "Does closing ports improve security?", "acceptedAnswer": { '@type': 'Answer', "text": "Reducing the exposed surface always helps, but hardening the services behind open ports matters more." } },
+    {'@type': 'Question', 'name': "How do I check open ports?", "acceptedAnswer": { '@type': 'Answer', "text": "From outside: an online port scanner against your address. From the server: ss -tlnp or netstat -tlnp." } },
+    {'@type': 'Question', 'name': "What is port forwarding?", "acceptedAnswer": { '@type': 'Answer', "text": "Telling a NAT router to send inbound traffic on one port to a specific internal device: the workaround for hosting behind NAT." } },
+    {'@type': 'Question', 'name': "How do I verify my changes?", "acceptedAnswer": { '@type': 'Answer', "text": "Run the record lookup to confirm live values, then check the propagation checker for worldwide agreement. Both tools run in your browser." } },
+    {'@type': 'Question', 'name': "What TTL should I use?", "acceptedAnswer": { '@type': 'Answer', "text": "3600 seconds is the default. Drop to 300 a day before changes so cutover is quick, then restore." } }
+  ]
 }
 ---
 <BaseLayout

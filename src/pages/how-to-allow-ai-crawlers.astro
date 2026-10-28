@@ -1,8 +1,18 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Which AI crawlers should I allow?', acceptedAnswer: { '@type': 'Answer', text: 'The search-oriented ones whose citations you want: OAI-SearchBot for ChatGPT Search and PerplexityBot for Perplexity answers. Training crawlers are a separate, independent decision.' } },
+    { '@type': 'Question', name: 'Does allowing AI crawlers affect SEO?', acceptedAnswer: { '@type': 'Answer', text: 'No. AI crawler rules do not touch Googlebot or your rankings. Search visibility and AI visibility are independent switches.' } },
+    { '@type': 'Question', name: 'How do I allow some AI crawlers and block others?', acceptedAnswer: { '@type': 'Answer', text: 'One rule block per token: Disallow: / under User-agent: GPTBot blocks training while OAI-SearchBot stays allowed with no rule or an explicit Allow.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="How to Allow AI Crawlers for Visibility in ChatGPT and Perplexity"
   description="How to allow AI crawlers: clean robots.txt rules that keep GPTBot, ClaudeBot, and PerplexityBot welcome while protecting private areas, plus llms.txt."
   
@@ -90,5 +100,7 @@ Disallow: /cart/</pre>
         <li><a href="/block-ai-crawlers-cloudflare/">Block AI crawlers with Cloudflare</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which AI crawlers should I allow?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The search-oriented ones whose citations you want: OAI-SearchBot for ChatGPT Search and PerplexityBot for Perplexity answers. Training crawlers are a separate, independent decision.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does allowing AI crawlers affect SEO?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. AI crawler rules do not touch Googlebot or your rankings. Search visibility and AI visibility are independent switches.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I allow some AI crawlers and block others?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">One rule block per token: Disallow: / under User-agent: GPTBot blocks training while OAI-SearchBot stays allowed with no rule or an explicit Allow.</p></details></div>
+      </div>
 </BaseLayout>

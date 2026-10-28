@@ -4,39 +4,13 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "Can I check whether my shared IP has problems?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: run the blacklist checker and IP reputation scan on the IP your ESP sends from; repeated listings point at pool trouble worth escalating to the provider."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Does a dedicated IP guarantee better deliverability?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "No. It guarantees isolated reputation. Deliverability still depends on authentication, list quality, and engagement."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How long does IP warm-up take?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Typically two to six weeks depending on daily volume and engagement quality; the schedule matters more than the speed."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I have both shared and dedicated?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes, and high-volume senders often do: dedicated for bulk marketing, shared or separate dedicated IP for transactional mail."
-   }
-  }
- ]
+    {'@type': 'Question', 'name': "Can I check whether my shared IP has problems?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: run the blacklist checker and IP reputation scan on the IP your ESP sends from; repeated listings point at pool trouble worth escalating to the provider." } },
+    {'@type': 'Question', 'name': "Does a dedicated IP guarantee better deliverability?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It guarantees isolated reputation. Deliverability still depends on authentication, list quality, and engagement." } },
+    {'@type': 'Question', 'name': "How long does IP warm-up take?", "acceptedAnswer": { '@type': 'Answer', "text": "Typically two to six weeks depending on daily volume and engagement quality; the schedule matters more than the speed." } },
+    {'@type': 'Question', 'name': "Can I have both shared and dedicated?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, and high-volume senders often do: dedicated for bulk marketing, shared or separate dedicated IP for transactional mail." } },
+    {'@type': 'Question', 'name': "How do I verify my changes?", "acceptedAnswer": { '@type': 'Answer', "text": "Run the record lookup to confirm live values, then check the propagation checker for worldwide agreement. Both tools run in your browser." } },
+    {'@type': 'Question', 'name': "What TTL should I use?", "acceptedAnswer": { '@type': 'Answer', "text": "3600 seconds is the default. Drop to 300 a day before changes so cutover is quick, then restore." } }
+  ]
 }
 ---
 <BaseLayout

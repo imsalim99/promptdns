@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What is the difference between SPF and DKIM?', acceptedAnswer: { '@type': 'Answer', text: 'SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain.' } },
+    { '@type': 'Question', name: 'Does SPF cover my website?', acceptedAnswer: { '@type': 'Answer', text: 'No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack.' } },
+    { '@type': 'Question', name: 'How many SPF records can I have?', acceptedAnswer: { '@type': 'Answer', text: 'Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
@@ -86,5 +95,7 @@ import Diagram from '../components/Diagram.astro';
         <li><a href="/spf-record-syntax/">Full SPF syntax reference</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between SPF and DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does SPF cover my website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many SPF records can I have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating.</p></details></div>
+      </div>
 </BaseLayout>

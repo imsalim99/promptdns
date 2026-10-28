@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'Where do I get my DKIM key?', acceptedAnswer: { '@type': 'Answer', text: 'From your sending service: Gmail, Microsoft 365, and ESPs generate the key pair and show you the public value to publish. The private key never leaves their system in hosted setups.' } },
+    { '@type': 'Question', name: 'Can I add DKIM without my ESP?', acceptedAnswer: { '@type': 'Answer', text: 'Only if you run your own mail server and generate the key pair yourself. Hosted ESPs own the private key and publish the selector for you to add.' } },
+    { '@type': 'Question', name: 'How do I test the record after adding it?', acceptedAnswer: { '@type': 'Answer', text: 'Send a message and read the DKIM result in its headers, or run the selector through our DKIM record checker before sending anything.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -37,7 +46,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>Multiple senders sharing one selector: they must each use their own.</li>
       </ul>
       
-<h2>Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I get my DKIM key?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">From your sending service: Gmail, Microsoft 365, and ESPs generate the key pair and show you the public value to publish. The private key never leaves their system in hosted setups.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I add DKIM without my ESP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if you run your own mail server and generate the key pair yourself. Hosted ESPs own the private key and publish the selector for you to add.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I test the record after adding it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send a message and read the DKIM result in its headers, or run the selector through our DKIM record checker before sending anything.</p></details></div>
+      <h2>Related</h2>
       <ul>
         <li><a href="/dkim/">DKIM explained</a> and <a href="/dkim-selector/">selectors</a></li>
         <li><a href="/dmarc/">DMARC: the layer above</a></li>

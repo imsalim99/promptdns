@@ -2,13 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
 const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-  {"@type":"Question","name":"Does this site use TLS?","acceptedAnswer":{"@type":"Answer","text":"Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be."}},
-  {"@type":"Question","name":"SSL vs TLS in one line?","acceptedAnswer":{"@type":"Answer","text":"Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol."}},
-  {"@type":"Question","name":"Do I still need DNSSEC if I have HTTPS?","acceptedAnswer":{"@type":"Answer","text":"Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap."}},
-  {"@type":"Question","name":"How long are certificates valid?","acceptedAnswer":{"@type":"Answer","text":"Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal."}},
-  {"@type":"Question","name":"Does a certificate mean the site is safe?","acceptedAnswer":{"@type":"Answer","text":"No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty."}},
-  {"@type":"Question","name":"What is a certificate chain?","acceptedAnswer":{"@type":"Answer","text":"Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors."}},
-]};
+    {'@type': 'Question', 'name': "Does this site use TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be." } },
+    {'@type': 'Question', 'name': "SSL vs TLS in one line?", "acceptedAnswer": { '@type': 'Answer', "text": "Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol." } },
+    {'@type': 'Question', 'name': "Do I still need DNSSEC if I have HTTPS?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap." } },
+    {'@type': 'Question', 'name': "How long are certificates valid?", "acceptedAnswer": { '@type': 'Answer', "text": "Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal." } },
+    {'@type': 'Question', 'name': "Does a certificate mean the site is safe?", "acceptedAnswer": { '@type': 'Answer', "text": "No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty." } },
+    {'@type': 'Question', 'name': "What is a certificate chain?", "acceptedAnswer": { '@type': 'Answer', "text": "Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors." } }
+  ]};
 ---
 <BaseLayout
   title="SSL/TLS Guides"
@@ -21,7 +21,10 @@ const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity
       <span class="text-ink-dim">SSL/TLS Guides</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL/TLS Guides</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
+
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">SSL and TLS are the cryptographic protocols that encrypt connections between browsers and servers. Modern certificates use TLS; the handshake, chain of trust, and versions decide whether visitors see a padlock or a warning.</p>
+    </div>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
       TLS is the encryption and authentication layer that turns HTTP into HTTPS. This hub
       collects everything a webmaster needs: what certificates are, how encryption works,
       and the configurations that keep connections trusted.
@@ -94,5 +97,7 @@ const faqSchema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity
         DNSSEC, and authentication in one pass.
       </p>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      
+      </div>
 </BaseLayout>

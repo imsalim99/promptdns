@@ -1,8 +1,18 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What TTL should I use?', acceptedAnswer: { '@type': 'Answer', text: '300 seconds while migrating, 3600 seconds for stable records. Critical mail records can sit at 3600 once behavior is predictable.' } },
+    { '@type': 'Question', name: 'Does low TTL hurt performance?', acceptedAnswer: { '@type': 'Answer', text: 'Slightly: more resolver queries and marginally slower answers for repeat visitors. The trade is faster change propagation.' } },
+    { '@type': 'Question', name: 'Where is TTL set?', acceptedAnswer: { '@type': 'Answer', text: 'Per record in your DNS host, with a default TTL in the SOA record for the zone. Our TTL checker shows the live value for every record.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
 <BaseLayout
+  schema={[faqSchema]}
   title="DNS TTL Explained: What TTL Means and Best Values"
   description="DNS TTL explained: what time-to-live means, how it controls caching and propagation, and recommended TTL values for stability and migrations."
   
@@ -70,5 +80,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><a href="/how-dns-works/">How DNS works</a></li>
       </ul>
     </div>
-  </div>
+  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What TTL should I use?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">300 seconds while migrating, 3600 seconds for stable records. Critical mail records can sit at 3600 once behavior is predictable.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does low TTL hurt performance?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Slightly: more resolver queries and marginally slower answers for repeat visitors. The trade is faster change propagation.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where is TTL set?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Per record in your DNS host, with a default TTL in the SOA record for the zone. Our TTL checker shows the live value for every record.</p></details></div>
+      </div>
 </BaseLayout>

@@ -1,4 +1,13 @@
 ---
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What is SORBS?', acceptedAnswer: { '@type': 'Answer', text: 'The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily.' } },
+    { '@type': 'Question', name: 'How long does SORBS delisting take?', acceptedAnswer: { '@type': 'Answer', text: 'Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus.' } },
+    { '@type': 'Question', name: 'Why was I listed without sending spam?', acceptedAnswer: { '@type': 'Answer', text: 'Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one.' } },
+  ],
+};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 ---
@@ -38,7 +47,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li><strong>Respect the timer.</strong> If the listing carries an automatic expiry inside your window, waiting is often faster than requesting.</li>
       </ol>
       
-<h2>Related</h2>
+<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is SORBS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does SORBS delisting take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why was I listed without sending spam?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one.</p></details></div>
+      <h2>Related</h2>
       <ul>
         <li><a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a> and <a href="/get-off-barracuda-blocklist/">Barracuda removal</a></li>
         <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>
