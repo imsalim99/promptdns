@@ -1,133 +1,280 @@
 ---
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "What is the difference between SPF and DKIM?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain." } },
-    {'@type': 'Question', 'name': "Does SPF cover my website?", "acceptedAnswer": { '@type': 'Answer', "text": "No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack." } },
-    {'@type': 'Question', 'name': "How many SPF records can I have?", "acceptedAnswer": { '@type': 'Answer', "text": "Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating." } }
-  ],
-};
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Can a domain have more than one SPF record?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, RFC 7208 Section 3.2 strictly requires exactly one SPF TXT record per domain or subdomain. Publishing two or more v=spf1 records causes receiving mail servers to abort evaluation and return a PermError.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Should I end my SPF record with ~all or -all?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Use ~all (SoftFail) during initial deployment while auditing senders via DMARC aggregate reports, and switch to -all (HardFail) once every legitimate sending service is verified and aligned.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I protect a parked domain that never sends email?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Publish the null SPF record v=spf1 -all at the domain apex alongside a v=DMARC1; p=reject; record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Which SPF mechanisms count toward the 10-DNS-lookup limit?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Six SPF terms count toward the 10-DNS-lookup limit: include, a, mx, ptr, exists, and the redirect= modifier (plus any nested lookups inside included domains). The v=spf1, ip4, ip6, and all mechanisms require 0 DNS lookups.',
+      },
+    },
+  ],
+};
 ---
-<BaseLayout schema={[faqSchema]} title="SPF Record: The Complete Guide" description="SPF records explained: syntax, mechanisms, qualifiers, the 10-DNS-lookup limit, and how to fix broken SPF records."  
- breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SPF Records"]]}>
+<BaseLayout
+  title="SPF Record: Syntax, Mechanisms, the 10-Lookup Limit, and How It Works"
+  description="SPF records explained: syntax, mechanisms, qualifiers, the 10-DNS-lookup limit, Return-Path alignment with DMARC, and how to fix broken SPF records."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SPF Records"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">SPF Records</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record: The Complete Guide</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record: Syntax, Mechanisms, the 10-Lookup Limit, and How It Works</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      SPF (Sender Policy Framework) is a TXT record that answers: <strong class="text-ink">which mail
-      servers are allowed to send email as my domain?</strong> Receivers check it on every message;
-      fail it and your mail goes to spam, or bounces.
-    </p>
+        A Sender Policy Framework (SPF) record is <strong class="text-ink">a DNS TXT resource record defined in RFC 7208 that lists every IPv4 address, IPv6 subnet, and third-party mail server authorized to send email on behalf of a domain</strong>. Receiving mail servers query the domain's <code>v=spf1</code> record during the SMTP handshake to verify the connecting server's IP address, enforce a strict 10-DNS-lookup limit, and supply authentication results to DMARC.
+      </p>
     </div>
 
-    
+    <Diagram name="spf-eval" caption="How SPF evaluation works: first match wins" />
 
-    
-
-    
-
-    
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#anatomy-of-an-spf-record">Anatomy of an SPF record</a></li>
-        <li><a href="#the-qualifiers">The qualifiers</a></li>
-        <li><a href="#the-10-lookup-limit-where-spf-breaks">The 10-lookup limit (where SPF breaks)</a></li>
-        <li><a href="#only-one-spf-record">Only one SPF record</a></li>
-        <li><a href="#check-yours-now">Check yours now</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#how-does-an-spf-record-check-work-during-smtp-delivery">How SPF evaluation works in SMTP</a></li>
+        <li><a href="#what-is-the-syntax-of-an-spf-record-version-mechanisms-qualifiers-and-modifiers">SPF syntax, mechanisms, and qualifiers</a></li>
+        <li><a href="#what-are-the-7-official-spf-evaluation-results-in-rfc-7208">The 7 RFC 7208 evaluation results</a></li>
+        <li><a href="#what-are-the-4-technical-limits-of-an-spf-record-the-10-lookup-rule-and-beyond">The 4 technical protocol limits</a></li>
+        <li><a href="#why-can-spf-pass-while-dmarc-fails-return-path-vs-header-from-alignment">Return-Path vs Header From alignment</a></li>
+        <li><a href="#why-does-email-forwarding-break-spf-and-how-do-dkim-and-arc-fix-it">Why email forwarding breaks SPF</a></li>
+        <li><a href="#how-do-you-create-publish-and-verify-an-spf-record-4-steps">Create, publish, and verify an SPF record</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF mechanism lookup cost matrix</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Mechanism</th><th>Syntax example</th><th>DNS lookups consumed</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr><tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr><tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr><tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr><tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr><tr><td class="font-medium text-ink">ip4 / ip6</td><td class="text-sm text-ink-dim">ip4:192.0.2.0/24</td><td class="text-sm text-ink-dim">0</td></tr><tr><td class="font-medium text-ink">all</td><td class="text-sm text-ink-dim">~all or -all</td><td class="text-sm text-ink-dim">0</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 SPF evaluation results (RFC 7208 section 2.6)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Result</th><th>Meaning</th><th>Typical receiver action</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Pass</td><td class="text-sm text-ink-dim">IP is authorized by the record</td><td class="text-sm text-ink-dim">Accept toward DMARC alignment</td></tr><tr><td class="font-medium text-ink">Fail (-all)</td><td class="text-sm text-ink-dim">IP is explicitly not authorized</td><td class="text-sm text-ink-dim">Reject, or mark per policy</td></tr><tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr><tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr><tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr><tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr><tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <Diagram name="spf-eval" caption="How SPF evaluation works: first match wins" />
-
     <div class="rich-text mt-8">
-      <h2 id="anatomy-of-an-spf-record">Anatomy of an SPF record</h2>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">v=spf1 include:_spf.google.com include:sendgrid.net ip4:203.0.113.10 ~all</pre>
-      <ul>
-        <li><code>v=spf1</code>, the version; must come first.</li>
-        <li><code>include:</code>, pull in another domain's allowed senders.</li>
-        <li><code>ip4:</code> / <code>ip6:</code>, literal addresses that need no lookup.</li>
-        <li><code>a</code> / <code>mx</code>, "my website's IP" / "my mail servers".</li>
-        <li><code>~all</code>, the verdict for everyone else: softfail.</li>
-      </ul>
-
-      <h2 id="the-qualifiers">The qualifiers</h2>
+      <h2 id="how-does-an-spf-record-check-work-during-smtp-delivery">How Does an SPF Record Check Work During SMTP Delivery?</h2>
       <p>
-        Every mechanism can be prefixed: <code>+</code> pass (default), <code>-</code> hard fail
-        (reject), <code>~</code> soft fail (accept but penalize), <code>?</code> neutral. The one
-        that matters is on <code>all</code>: <code>~all</code> is the common safe default;
-        <code>-all</code> is stricter enforcement once you're confident every sender is listed.
-        For a detailed comparison of what each choice means in practice, see
-        <a href="/spf-softfail-vs-hardfail/" class="text-accent hover:text-accent-soft">softfail vs hardfail explained</a>.
+        To verify an inbound email with Sender Policy Framework, a receiving Mail Transfer Agent (MTA) executes <strong class="text-ink">6 sequential evaluation steps during the SMTP session</strong>.
+      </p>
+      <p>
+        Receiving mail gateways evaluate sender authorization through 6 sequential operational phases:
+      </p>
+      <ol>
+        <li><strong>Extract</strong> the sender's envelope domain from the SMTP <code>MAIL FROM</code> command (RFC 5321.MailFrom, also recorded in the <code>Return-Path</code> header), falling back to the <code>EHLO</code> or <code>HELO</code> hostname (RFC 5321.HELO) when the <code>MAIL FROM</code> address is empty (such as in bounce delivery status notifications).</li>
+        <li><strong>Record</strong> the connecting IPv4 or IPv6 address of the sending mail server that established the TCP port 25 connection.</li>
+        <li><strong>Query</strong> the authoritative DNS nameserver of the envelope domain for a TXT resource record (Type 16) beginning with the exact version tag <code>v=spf1</code>.</li>
+        <li><strong>Evaluate</strong> each mechanism in the published record sequentially from left to right (ip4, ip6, include, a, mx, all), resolving up to 10 nested DNS queries until a mechanism matches the connecting server IP address.</li>
+        <li><strong>Assign</strong> one of the 7 official RFC 7208 evaluation results (Pass, Fail, SoftFail, Neutral, None, TempError, or PermError) based on the prefix qualifier (+, -, ~, or ?) preceding the matching mechanism.</li>
+        <li><strong>Write</strong> the authentication verdict into the message's <code>Received-SPF</code> and <code>Authentication-Results</code> (RFC 8601) headers and pass the outcome to the receiver's DMARC policy engine.</li>
+      </ol>
+      <p>
+        Early implementations under RFC 4408 defined a dedicated SPF DNS resource record (Type 99), which RFC 7208 Section 3.1 formally deprecated in 2014; all modern SPF records publish exclusively as DNS TXT records. Domain administrators can inspect live domain records using the <a href="/spf-record-checker/">SPF Record Checker</a>.
       </p>
 
-      <h2 id="the-10-lookup-limit-where-spf-breaks">The 10-lookup limit (where SPF breaks)</h2>
+      <h2 id="what-is-the-syntax-of-an-spf-record-version-mechanisms-qualifiers-and-modifiers">What Is the Syntax of an SPF Record? (Version, Mechanisms, Qualifiers, and Modifiers)</h2>
       <p>
-        Each <code>include:</code>, <code>a</code>, <code>mx</code>, <code>exists:</code>, and
-        <code>redirect=</code> costs one DNS lookup during evaluation, and the hard limit is
-        <strong>10</strong>. Exceed it and your record evaluates to <code>permerror</code>: receivers
-        treat your SPF as broken, which is worse than having none. The fix is flattening, replacing
-        includes with their IP addresses. Run the <a href="/spf-record-checker/">SPF checker</a> to
-        count your lookups, then the free <a href="/spf-flattener/">SPF flattener</a> to fix them.
+        An SPF record consists of <strong class="text-ink">a single plain-text DNS TXT string starting with v=spf1 followed by space-separated mechanisms, prefix qualifiers, and optional modifiers</strong>.
       </p>
-
-      <h2 id="only-one-spf-record">Only one SPF record</h2>
       <p>
-        A domain may publish exactly one <code>v=spf1</code> TXT record. Multiple records = permerror.
-        If two departments "add their own SPF", they've broken both, merge them into one record.
+        A standard multi-sender SPF configuration combines IP ranges and provider includes in a single string:
       </p>
-
-      <h2 id="check-yours-now">Check yours now</h2>
-      <p>
-        Paste your domain into the <a href="/spf-record-checker/">SPF Record Checker</a> for a
-        term-by-term validation, or scan everything at once from the
-        <a href="/">homepage security scanner</a> (SPF + DKIM + DMARC + DNSSEC in one pass).
-      </p>
-
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/dkim/">DKIM explained</a>, cryptographic signing</li>
-        <li><a href="/dmarc/">DMARC explained</a>, the policy layer on top</li>
-        <li><a href="/spf-record-syntax/">Full SPF syntax reference</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Return-Path vs Header From: why SPF needs DMARC</h2>
-    <p class="mt-3">SPF validates the envelope sender (the RFC 5321.MailFrom, also called Return-Path), which the receiving server checks before the message body exists. The domain your recipients see is the RFC 5322.From header, and the two do not have to match.</p>
-    <p class="mt-3">That gap is why SPF alone cannot stop display-name spoofing: a scammer can send with a perfect envelope and a forged visible sender. DMARC closes it by requiring alignment, and the aspf tag controls how strictly: aspf=r (relaxed) matches organizational domains, aspf=s (strict) demands an exact match.</p>
-    <p class="mt-3">Check both sides with the <a href="/spf-record-checker/" class="text-accent hover:text-accent-soft">SPF record checker</a>, then enforce with the <a href="/dmarc-record-checker/" class="text-accent hover:text-accent-soft">DMARC checker</a>.</p>
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between SPF and DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF authorizes the sending IP via the envelope; DKIM signs the message content cryptographically. DMARC ties both to the visible From domain.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does SPF cover my website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. SPF covers email only. Website protection is DNS, TLS, and your hosting stack.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many SPF records can I have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Exactly one per name. Two v=spf1 records on the same domain is a permerror and receivers stop evaluating.</p></details></div>
+      <div class="not-prose my-4">
+        <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-4 font-mono text-xs text-accent-soft"><code>v=spf1 ip4:192.0.2.0/24 include:_spf.google.com include:sendgrid.net -all</code></pre>
       </div>
+      <p>
+        Mechanisms define which IP addresses or hostnames are authorized to send mail, and each mechanism carries a specific DNS query cost under RFC 7208. The table below lists the 9 SPF mechanisms and modifiers by lookup cost, syntax example, and evaluation behavior.
+      </p>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Mechanism</th><th>Syntax example</th><th>DNS lookups consumed</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr>
+              <tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr>
+              <tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr>
+              <tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr>
+              <tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr>
+              <tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr>
+              <tr><td class="font-medium text-ink">ip4 / ip6</td><td class="text-sm text-ink-dim">ip4:192.0.2.0/24</td><td class="text-sm text-ink-dim">0</td></tr>
+              <tr><td class="font-medium text-ink">all</td><td class="text-sm text-ink-dim">~all or -all</td><td class="text-sm text-ink-dim">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p>
+        The operational split between 0-lookup terms and DNS-querying mechanisms governs record efficiency. Mechanisms such as v=spf1, ip4, ip6, and all consume 0 DNS lookups, whereas include, a, mx, ptr, exists, and redirect= each consume 1 DNS lookup (plus any nested lookups inside an include target). RFC 7208 Section 5.5 explicitly deprecates the ptr mechanism because reverse DNS lookups impose heavy query latency and fail unpredictably under high mail volume. Administrators can review macro expansion and advanced syntax in the <a href="/spf-record-syntax/">SPF Record Syntax</a> guide or inspect mechanism behavior in <a href="/spf-mechanisms-explained/">SPF Mechanisms Explained</a>.
+      </p>
+
+      <h3 id="what-are-the-4-spf-qualifiers-and-2-modifiers">What Are the 4 SPF Qualifiers (+, -, ~, ?) and 2 Modifiers?</h3>
+      <p>
+        An SPF qualifier is <strong class="text-ink">a 1-character prefix (+, -, ~, or ?) placed before a mechanism that instructs the receiving server how to classify a matching IP address</strong>.
+      </p>
+      <p>
+        RFC 7208 defines 4 qualifier symbols:
+      </p>
+      <ul>
+        <li><strong>+ (Pass):</strong> Designates authorized senders. When omitted before a mechanism, the plus sign is the implied default (for example, <code>include:_spf.google.com</code> functions identically to <code>+include:_spf.google.com</code>).</li>
+        <li><strong>- (Fail / HardFail):</strong> Designates unauthorized senders and instructs receiving servers to reject non-matching messages outright (such as <code>-all</code>).</li>
+        <li><strong>~ (SoftFail):</strong> Designates unauthorized senders while instructing receiving servers to accept the message and mark it as suspicious or deliver it to spam (such as <code>~all</code>).</li>
+        <li><strong>? (Neutral):</strong> Asserts neither authorization nor rejection, prompting receiving servers to process the message without positive or negative SPF weighting. Setting <code>+all</code> creates a critical vulnerability that authorizes every IP address worldwide to send mail for the domain.</li>
+      </ul>
+      <p>
+        Modifiers provide secondary routing instructions. The <code>redirect=</code> modifier replaces the current evaluation with the target domain's SPF record, enabling organizations to manage multiple domains from a shared central policy. The <code>exp=</code> modifier references a DNS TXT record containing a custom explanation string returned to rejected senders. Administrators evaluating terminal enforcement rules can consult the <a href="/spf-softfail-vs-hardfail/">SPF Softfail vs Hardfail</a> technical comparison.
+      </p>
+
+      <h2 id="what-are-the-7-official-spf-evaluation-results-in-rfc-7208">What Are the 7 Official SPF Evaluation Results in RFC 7208?</h2>
+      <p>
+        RFC 7208 Section 2.6 defines <strong class="text-ink">7 deterministic SPF evaluation outcomes (Pass, Fail, SoftFail, Neutral, None, TempError, and PermError)</strong> that receiving mail servers record in the Authentication-Results header. The table below maps each of the 7 SPF results to its trigger condition, common receiver disposition, and DMARC impact.
+      </p>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Result</th><th>Meaning</th><th>Typical receiver action</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Pass</td><td class="text-sm text-ink-dim">IP is authorized by the record</td><td class="text-sm text-ink-dim">Accept toward DMARC alignment</td></tr>
+              <tr><td class="font-medium text-ink">Fail (-all)</td><td class="text-sm text-ink-dim">IP is explicitly not authorized</td><td class="text-sm text-ink-dim">Reject, or mark per policy</td></tr>
+              <tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr>
+              <tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr>
+              <tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr>
+              <tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr>
+              <tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <p>
+        Differentiating between transient TempError and permanent PermError determines the correct troubleshooting response. A TempError represents a temporary DNS infrastructure failure (such as a nameserver timeout or SERVFAIL response), prompting receiving MTAs to issue a 4xx temporary rejection (such as 451 4.4.3) so the sending server retries delivery automatically. Conversely, a PermError indicates that the published SPF record is structurally invalid (such as exceeding 10 DNS lookups or publishing duplicate v=spf1 records), preventing authentication entirely until corrected in DNS. Administrators can diagnose syntax and resolution errors using the <a href="/spf-permerror/">SPF PermError</a> and <a href="/spf-temperror/">SPF TempError</a> references.
+      </p>
+
+      <h2 id="what-are-the-4-technical-limits-of-an-spf-record-the-10-lookup-rule-and-beyond">What Are the 4 Technical Limits of an SPF Record? (The 10-Lookup Rule and Beyond)</h2>
+      <p>
+        RFC 7208 and RFC 1035 enforce <strong class="text-ink">4 strict technical limits on every SPF record: the single-record rule, the 10-DNS-lookup limit, the 2-void-lookup limit, and the 255-character TXT string limit</strong>.
+      </p>
+      <p>
+        Receiving mail transfer agents enforce 4 strict protocol constraints during evaluation:
+      </p>
+      <ol>
+        <li><strong>Single SPF Record per Domain (RFC 7208 §3.2):</strong> A domain or subdomain must publish at most one TXT record starting with <code>v=spf1</code>. Publishing two or more separate <code>v=spf1</code> records causes receiving servers to abort evaluation immediately and return PermError; administrators must merge multiple sending services into a single string.</li>
+        <li><strong>Maximum of 10 DNS-Querying Mechanisms (RFC 7208 §4.6.4):</strong> Evaluating an SPF record must not require more than 10 DNS queries across all top-level and recursively nested include, a, mx, ptr, exists, and redirect= terms. Receiving MTAs enforce this cap to prevent malicious actors from using forged SPF records as a DNS amplification Denial-of-Service (DoS) weapon; the 11th lookup triggers an immediate PermError.</li>
+        <li><strong>Maximum of 2 Void Lookups (RFC 7208 §4.6.4):</strong> Receivers enforce a secondary limit of 2 void lookups: queries that return an empty answer (0 records) or NXDOMAIN (RCODE 3), which frequently occurs when decommissioned third-party email providers expire.</li>
+        <li><strong>Maximum of 255 Characters per Quoted TXT String (RFC 1035 §3.3.14 and RFC 7208 §3.4):</strong> A single DNS TXT character-string cannot exceed 255 ASCII bytes. Records longer than 255 characters must be split into multiple quoted strings within the same TXT record (which DNS resolvers concatenate without spaces), keeping total UDP payload size under 450 bytes to avoid TCP fallback.</li>
+      </ol>
+      <p>
+        Administrators can prevent PermErrors by managing record complexity through 3 strategies: removing deprecated third-party services, delegating distinct mail streams to dedicated subdomains (such as <code>mail.example.com</code>, which receives an independent 10-lookup quota), or replacing dynamic includes with direct CIDR ranges. Detailed remediation workflows are available in <a href="/spf-lookup-limit/">The SPF 10-Lookup Limit Explained</a>, the automated <a href="/spf-flattener/">SPF Flattener</a> tool, and the <a href="/spf-record-too-long/">SPF Record Too Long</a> guide.
+      </p>
+
+      <h2 id="why-can-spf-pass-while-dmarc-fails-return-path-vs-header-from-alignment">Why Can SPF Pass While DMARC Fails? (Return-Path vs Header From Alignment)</h2>
+      <p>
+        An email passes SPF authentication yet fails DMARC when <strong class="text-ink">the envelope Return-Path domain (RFC 5321.MailFrom) checked by SPF does not match the visible Header From domain (RFC 5322.From) displayed to the recipient</strong>.
+      </p>
+      <p>
+        Every standard email message carries 2 distinct sender identities: the envelope Return-Path address (RFC 5321.MailFrom) used by mail servers to route delivery status notifications and evaluate SPF, and the visible Header From address (RFC 5322.From) presented to users in mail clients. Because SPF checks exclusively the envelope Return-Path domain, an attacker can transmit email with an authorized Return-Path on their own domain (passing SPF cleanly) while spoofing your company's domain in the visible Header From address.
+      </p>
+      <p>
+        The DMARC protocol closes this security loophole by mandating SPF Identifier Alignment. Under relaxed alignment (aspf=r), the organizational domain of the Return-Path must match the Header From domain (for example, <code>bounces.example.com</code> aligns with <code>example.com</code>). Under strict alignment (aspf=s), the hostnames must match exactly. Administrators can review alignment mechanics in the <a href="/dmarc/">DMARC</a> and <a href="/dmarc-alignment/">DMARC Alignment</a> guides.
+      </p>
+      <p>
+        The technical separation between envelope and display identities exposes a widespread industry error: third-party Email Service Providers (ESPs) such as Mailchimp or Amazon SES transmit email using their own shared domain in the envelope Return-Path by default. Receiving mail servers evaluate Mailchimp's or Amazon's SPF record rather than your domain's policy. Adding vendor include mechanisms to your root domain's SPF record without configuring a custom Return-Path subdomain consumes DNS lookups without achieving DMARC alignment.
+      </p>
+
+      <h2 id="why-does-email-forwarding-break-spf-and-how-do-dkim-and-arc-fix-it">Why Does Email Forwarding Break SPF (And How Do DKIM and ARC Fix It)?</h2>
+      <p>
+        Email forwarding breaks SPF authentication because <strong class="text-ink">an intermediary forwarding server retransmits the message from its own IP address while preserving the original sender's Return-Path domain</strong>.
+      </p>
+      <p>
+        An automated email forwarder breaks SPF authentication if an intermediary server relays messages to an external mailbox such as personal Gmail. The forwarding mail server retransmits the message from its own IP address while retaining the original envelope Return-Path domain. Destination mail servers evaluate the original domain's SPF policy against the forwarding IP, find no authorization entry, and produce an SPF Fail result.
+      </p>
+      <p>
+        Modern mail ecosystems preserve delivery across indirect mailflows through 3 complementary standards:
+      </p>
+      <ul>
+        <li><strong>DKIM (RFC 6376):</strong> Cryptographic signatures attach to email headers and remain intact during transmission across intermediary servers, allowing DMARC to pass via DKIM alignment even when SPF evaluation fails. Review signature architecture in <a href="/dkim/">DKIM Explained</a> and <a href="/spf-vs-dkim/">SPF vs DKIM</a>.</li>
+        <li><strong>Sender Rewriting Scheme (SRS):</strong> The forwarding server rewrites the envelope Return-Path address to an intermediary address on the forwarding domain, ensuring SPF evaluates the forwarding server's authorized IP address on subsequent hops.</li>
+        <li><strong>Authenticated Received Chain (ARC, RFC 8617):</strong> Intermediary forwarders and mailing lists attach cryptographically signed validation headers preserving original authentication verdicts across hops, detailed in <a href="/arc-seal-explained/">ARC Explained</a>.</li>
+      </ul>
+
+      <h2 id="how-do-you-create-publish-and-verify-an-spf-record-4-steps">How Do You Create, Publish, and Verify an SPF Record? (4 Steps)</h2>
+      <p>
+        To create and publish a valid SPF record in DNS, complete <strong class="text-ink">4 sequential configuration and verification steps</strong>.
+      </p>
+      <p>
+        Deploying a production SPF policy follows 4 sequential stages:
+      </p>
+      <ol>
+        <li><strong>Inventory</strong> every authorized outbound mail server and third-party Email Service Provider (ESP) that transmits email using your domain in the Return-Path (including Google Workspace, Microsoft 365, SendGrid, Postmark, and dedicated web server IPs).</li>
+        <li><strong>Construct</strong> a single <code>v=spf1</code> TXT string combining authorized IP ranges and vendor include mechanisms, ending with <code>~all</code> (during initial deployment with DMARC reporting) or <code>-all</code> (for strict enforcement), or <code>v=spf1 -all</code> for parked domains that send zero email.</li>
+        <li><strong>Publish</strong> the text string as a DNS TXT record at your authoritative DNS provider (@ for the root domain, or the subdomain hostname for isolated sending streams) with a Time to Live (TTL) of 3600 seconds.</li>
+        <li><strong>Validate</strong> the live DNS publication using the <a href="/spf-record-checker/">SPF Record Checker</a> or by executing <code>dig +short TXT example.com</code> to verify single-record compliance, syntax validity, and lookup consumption within the 10-lookup threshold.</li>
+      </ol>
+      <p>
+        Administrators can implement common deployment patterns using standard configuration templates:
+      </p>
+      <div class="not-prose my-4 space-y-3">
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">Google Workspace + SendGrid:</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>v=spf1 include:_spf.google.com include:sendgrid.net ~all</code></pre>
+        </div>
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">Microsoft 365:</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>v=spf1 include:spf.protection.outlook.com -all</code></pre>
+        </div>
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">Parked Non-Sending Domain:</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>v=spf1 -all</code></pre>
+        </div>
+      </div>
+      <p>
+        Additional configuration examples and step-by-step guides are detailed in <a href="/how-to-create-spf-record/">How to Create an SPF Record</a> and <a href="/spf-record-examples/">SPF Record Examples</a>, or generated automatically using the <a href="/spf-record-generator/">SPF Record Generator</a>.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have more than one SPF record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, RFC 7208 Section 3.2 strictly requires <strong>exactly one SPF TXT record per domain or subdomain</strong>. Publishing two or more v=spf1 records causes receiving mail servers to abort evaluation and return a PermError.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I end my SPF record with ~all or -all?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use <strong>~all (SoftFail) during initial deployment</strong> while auditing senders via DMARC aggregate reports, and switch to <strong>-all (HardFail)</strong> once every legitimate sending service is verified and aligned.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I protect a parked domain that never sends email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish the null SPF record <strong>v=spf1 -all</strong> at the domain apex alongside a <strong>v=DMARC1; p=reject;</strong> record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which SPF mechanisms count toward the 10-DNS-lookup limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Six SPF terms count toward the 10-DNS-lookup limit: <strong>include, a, mx, ptr, exists, and the redirect= modifier</strong> (plus any nested lookups inside included domains). The <strong>v=spf1, ip4, ip6, and all</strong> mechanisms require 0 DNS lookups.</p>
+      </details>
+    </div>
+  </div>
 </BaseLayout>
