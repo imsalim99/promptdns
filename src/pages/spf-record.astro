@@ -31,6 +31,25 @@ import Diagram from '../components/Diagram.astro';
     </p>
     </div>
 
+    
+
+    
+
+    
+
+    
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#anatomy-of-an-spf-record">Anatomy of an SPF record</a></li>
+        <li><a href="#the-qualifiers">The qualifiers</a></li>
+        <li><a href="#the-10-lookup-limit-where-spf-breaks">The 10-lookup limit (where SPF breaks)</a></li>
+        <li><a href="#only-one-spf-record">Only one SPF record</a></li>
+        <li><a href="#check-yours-now">Check yours now</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
+
     <h2 class="font-display mt-10 text-xl font-semibold text-ink">SPF mechanism lookup cost matrix</h2>
     <section class="not-prose my-4" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
@@ -50,29 +69,6 @@ import Diagram from '../components/Diagram.astro';
         </table>
       </div>
     </section>
-
-    
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 7 SPF evaluation results (RFC 7208 section 2.6)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Result</th><th>Meaning</th><th>Typical receiver action</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Pass</td><td class="text-sm text-ink-dim">IP is authorized by the record</td><td class="text-sm text-ink-dim">Accept toward DMARC alignment</td></tr><tr><td class="font-medium text-ink">Fail (-all)</td><td class="text-sm text-ink-dim">IP is explicitly not authorized</td><td class="text-sm text-ink-dim">Reject, or mark per policy</td></tr><tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr><tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr><tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr><tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr><tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
-      <ul>
-        <li><a href="#anatomy-of-an-spf-record">Anatomy of an SPF record</a></li>
-        <li><a href="#the-qualifiers">The qualifiers</a></li>
-        <li><a href="#the-10-lookup-limit-where-spf-breaks">The 10-lookup limit (where SPF breaks)</a></li>
-        <li><a href="#only-one-spf-record">Only one SPF record</a></li>
-        <li><a href="#check-yours-now">Check yours now</a></li>
-        <li><a href="#related">Related</a></li>
-      </ul>
-    </nav>
     <Diagram name="spf-eval" caption="How SPF evaluation works: first match wins" />
 
     <div class="rich-text mt-8">

@@ -30,6 +30,30 @@ const faq = {
     </p>
     </div>
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#the-problem-dns-solves">The problem DNS solves</a></li>
+        <li><a href="#a-hierarchy-not-one-computer">A hierarchy, not one computer</a></li>
+        <li><a href="#more-than-websites">More than websites</a></li>
+        <li><a href="#check-it-yourself-right-now">Check it yourself, right now</a></li>
+        <li><a href="#key-facts">Key facts</a></li>
+        <li><a href="#next-steps">Next steps</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
     <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS protocol specification summary</h2>
     <section class="not-prose my-4" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
@@ -59,40 +83,6 @@ const faq = {
         </table>
       </div>
     </section>
-
-    
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Core DNS record types and what each controls</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Type</th><th>Code</th><th>What it maps</th><th>Used for</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">A</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Hostname to IPv4 address</td><td class="text-sm text-ink-dim">Websites</td></tr><tr><td class="font-medium text-ink">AAAA</td><td class="text-sm text-ink-dim">28</td><td class="text-sm text-ink-dim">Hostname to IPv6 address</td><td class="text-sm text-ink-dim">Websites on IPv6</td></tr><tr><td class="font-medium text-ink">CNAME</td><td class="text-sm text-ink-dim">5</td><td class="text-sm text-ink-dim">Alias to another hostname</td><td class="text-sm text-ink-dim">Subdomain shortcuts</td></tr><tr><td class="font-medium text-ink">MX</td><td class="text-sm text-ink-dim">15</td><td class="text-sm text-ink-dim">Domain to mail server with priority</td><td class="text-sm text-ink-dim">Email routing</td></tr><tr><td class="font-medium text-ink">TXT</td><td class="text-sm text-ink-dim">16</td><td class="text-sm text-ink-dim">Free-form text</td><td class="text-sm text-ink-dim">SPF, DKIM, DMARC, site verification</td></tr><tr><td class="font-medium text-ink">NS</td><td class="text-sm text-ink-dim">2</td><td class="text-sm text-ink-dim">Domain to authoritative nameservers</td><td class="text-sm text-ink-dim">Delegation</td></tr><tr><td class="font-medium text-ink">SOA</td><td class="text-sm text-ink-dim">6</td><td class="text-sm text-ink-dim">Zone authority and timing values</td><td class="text-sm text-ink-dim">Zone management</td></tr><tr><td class="font-medium text-ink">PTR</td><td class="text-sm text-ink-dim">12</td><td class="text-sm text-ink-dim">IP address back to hostname</td><td class="text-sm text-ink-dim">Reverse DNS</td></tr><tr><td class="font-medium text-ink">CAA</td><td class="text-sm text-ink-dim">257</td><td class="text-sm text-ink-dim">Allowed certificate authorities</td><td class="text-sm text-ink-dim">TLS issuance control</td></tr><tr><td class="font-medium text-ink">DS / DNSKEY</td><td class="text-sm text-ink-dim">43 / 48</td><td class="text-sm text-ink-dim">Delegation and zone signing keys</td><td class="text-sm text-ink-dim">DNSSEC</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS history timeline</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Year</th><th>Milestone</th><th>Engineering change</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1971-1982</td><td class="text-sm text-ink-dim">HOSTS.TXT at SRI NIC</td><td class="text-sm text-ink-dim">One flat file mapped every host on the ARPANET</td></tr><tr><td class="font-medium text-ink">1983</td><td class="text-sm text-ink-dim">RFC 882 / RFC 883</td><td class="text-sm text-ink-dim">Paul Mockapetris designs the distributed Domain Name System</td></tr><tr><td class="font-medium text-ink">1987</td><td class="text-sm text-ink-dim">RFC 1034 / RFC 1035</td><td class="text-sm text-ink-dim">Modern DNS: record types, caching, hierarchy standardized</td></tr><tr><td class="font-medium text-ink">1998</td><td class="text-sm text-ink-dim">RFC 2308 + ICANN</td><td class="text-sm text-ink-dim">Negative caching defined; internet governance formalized</td></tr><tr><td class="font-medium text-ink">2005</td><td class="text-sm text-ink-dim">RFC 4033-4035</td><td class="text-sm text-ink-dim">DNSSEC adds cryptographic signing to the hierarchy</td></tr><tr><td class="font-medium text-ink">2014-2015</td><td class="text-sm text-ink-dim">RFC 7208 / RFC 7489</td><td class="text-sm text-ink-dim">SPF and DMARC standardize DNS-based email authentication</td></tr><tr><td class="font-medium text-ink">2018</td><td class="text-sm text-ink-dim">RFC 8484</td><td class="text-sm text-ink-dim">DNS-over-HTTPS encrypts queries inside browser-native traffic</td></tr><tr><td class="font-medium text-ink">2023</td><td class="text-sm text-ink-dim">RFC 9460</td><td class="text-sm text-ink-dim">SVCB and HTTPS records enable service binding</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
-      <ul>
-        <li><a href="#the-problem-dns-solves">The problem DNS solves</a></li>
-        <li><a href="#a-hierarchy-not-one-computer">A hierarchy, not one computer</a></li>
-        <li><a href="#more-than-websites">More than websites</a></li>
-        <li><a href="#check-it-yourself-right-now">Check it yourself, right now</a></li>
-        <li><a href="#key-facts">Key facts</a></li>
-        <li><a href="#next-steps">Next steps</a></li>
-        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-      </ul>
-    </nav>
     <Diagram name="resolution" caption="The DNS resolution path from browser to website" />
 
     <div class="rich-text mt-8">

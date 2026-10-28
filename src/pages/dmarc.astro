@@ -29,26 +29,10 @@ const faq = {
     </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Complete DMARC tag reference (RFC 7489)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Tag</th><th>Required</th><th>Default if omitted</th><th>Purpose</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">v</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (must be first)</td><td class="text-sm text-ink-dim">Protocol version, value DMARC1</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (record invalid without it)</td><td class="text-sm text-ink-dim">Policy: none, quarantine, or reject</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No aggregate reports</td><td class="text-sm text-ink-dim">Where daily aggregate reports are sent</td></tr><tr><td class="font-medium text-ink">ruf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No forensic reports</td><td class="text-sm text-ink-dim">Where failure samples are sent (rarely honored)</td></tr><tr><td class="font-medium text-ink">sp</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">Inherits p</td><td class="text-sm text-ink-dim">Separate policy for subdomains</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">100</td><td class="text-sm text-ink-dim">Percentage of failing mail that receives the policy</td></tr><tr><td class="font-medium text-ink">adkim</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">DKIM alignment mode</td></tr><tr><td class="font-medium text-ink">aspf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">SPF alignment mode</td></tr><tr><td class="font-medium text-ink">fo</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Forensic report trigger options</td></tr><tr><td class="font-medium text-ink">rf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">afrf</td><td class="text-sm text-ink-dim">Forensic report format</td></tr><tr><td class="font-medium text-ink">ri</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">86400 seconds</td><td class="text-sm text-ink-dim">Aggregate report interval</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    
 
     
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 3-stage enforcement rollout</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Stage</th><th>Policy</th><th>What you learn</th><th>Risk</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1. Monitor</td><td class="text-sm text-ink-dim">p=none; rua=...</td><td class="text-sm text-ink-dim">Every source sending as your domain, with pass/fail per protocol</td><td class="text-sm text-ink-dim">None: spoofed mail still delivers</td></tr><tr><td class="font-medium text-ink">2. Quarantine</td><td class="text-sm text-ink-dim">p=quarantine; pct=25 to 100</td><td class="text-sm text-ink-dim">How receivers treat failing mail without bouncing it</td><td class="text-sm text-ink-dim">Failing legitimate mail lands in spam</td></tr><tr><td class="font-medium text-ink">3. Reject</td><td class="text-sm text-ink-dim">p=reject</td><td class="text-sm text-ink-dim">Full enforcement: spoofed mail bounces</td><td class="text-sm text-ink-dim">Legitimate mail bounces if a source still fails</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    
     
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
@@ -61,6 +45,26 @@ const faq = {
         <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Complete DMARC tag reference (RFC 7489)</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Tag</th><th>Required</th><th>Default if omitted</th><th>Purpose</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">v</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (must be first)</td><td class="text-sm text-ink-dim">Protocol version, value DMARC1</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim">Yes</td><td class="text-sm text-ink-dim">None (record invalid without it)</td><td class="text-sm text-ink-dim">Policy: none, quarantine, or reject</td></tr><tr><td class="font-medium text-ink">rua</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No aggregate reports</td><td class="text-sm text-ink-dim">Where daily aggregate reports are sent</td></tr><tr><td class="font-medium text-ink">ruf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">No forensic reports</td><td class="text-sm text-ink-dim">Where failure samples are sent (rarely honored)</td></tr><tr><td class="font-medium text-ink">sp</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">Inherits p</td><td class="text-sm text-ink-dim">Separate policy for subdomains</td></tr><tr><td class="font-medium text-ink">pct</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">100</td><td class="text-sm text-ink-dim">Percentage of failing mail that receives the policy</td></tr><tr><td class="font-medium text-ink">adkim</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">DKIM alignment mode</td></tr><tr><td class="font-medium text-ink">aspf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">r (relaxed)</td><td class="text-sm text-ink-dim">SPF alignment mode</td></tr><tr><td class="font-medium text-ink">fo</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Forensic report trigger options</td></tr><tr><td class="font-medium text-ink">rf</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">afrf</td><td class="text-sm text-ink-dim">Forensic report format</td></tr><tr><td class="font-medium text-ink">ri</td><td class="text-sm text-ink-dim">No</td><td class="text-sm text-ink-dim">86400 seconds</td><td class="text-sm text-ink-dim">Aggregate report interval</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 3-stage enforcement rollout</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Stage</th><th>Policy</th><th>What you learn</th><th>Risk</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">1. Monitor</td><td class="text-sm text-ink-dim">p=none; rua=...</td><td class="text-sm text-ink-dim">Every source sending as your domain, with pass/fail per protocol</td><td class="text-sm text-ink-dim">None: spoofed mail still delivers</td></tr><tr><td class="font-medium text-ink">2. Quarantine</td><td class="text-sm text-ink-dim">p=quarantine; pct=25 to 100</td><td class="text-sm text-ink-dim">How receivers treat failing mail without bouncing it</td><td class="text-sm text-ink-dim">Failing legitimate mail lands in spam</td></tr><tr><td class="font-medium text-ink">3. Reject</td><td class="text-sm text-ink-dim">p=reject</td><td class="text-sm text-ink-dim">Full enforcement: spoofed mail bounces</td><td class="text-sm text-ink-dim">Legitimate mail bounces if a source still fails</td></tr></tbody>
+        </table>
+      </div>
+    </section>
     <Diagram name="dmarc-tree" caption="The DMARC decision tree: SPF/DKIM pass, alignment, policy" />
 
     <div class="rich-text mt-8">

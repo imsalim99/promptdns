@@ -32,6 +32,24 @@ import Diagram from '../components/Diagram.astro';
     </p>
     </div>
 
+    
+
+    
+
+    
+
+    
+<nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#how-it-works-end-to-end">How it works, end to end</a></li>
+        <li><a href="#selectors-one-domain-many-keys">Selectors: one domain, many keys</a></li>
+        <li><a href="#key-strength-matters">Key strength matters</a></li>
+        <li><a href="#dkim-the-rest">DKIM + the rest</a></li>
+        <li><a href="#related">Related</a></li>
+      </ul>
+    </nav>
+
     <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM email header tags vs DNS record tags</h2>
     <section class="not-prose my-4" aria-label="Reference table">
       <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
@@ -51,28 +69,6 @@ import Diagram from '../components/Diagram.astro';
         </table>
       </div>
     </section>
-
-    
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DKIM key strength comparison</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">512-bit RSA</td><td class="text-sm text-ink-dim">Insecure</td><td class="text-sm text-ink-dim">Rejected by major receivers</td></tr><tr><td class="font-medium text-ink">1024-bit RSA</td><td class="text-sm text-ink-dim">Legacy minimum</td><td class="text-sm text-ink-dim">Increasingly weak; migrate</td></tr><tr><td class="font-medium text-ink">2048-bit RSA</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">May need two TXT strings for the key material</td></tr><tr><td class="font-medium text-ink">Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Modern alternative</td><td class="text-sm text-ink-dim">Shorter keys, faster signing; receiver support still maturing</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
-      <ul>
-        <li><a href="#how-it-works-end-to-end">How it works, end to end</a></li>
-        <li><a href="#selectors-one-domain-many-keys">Selectors: one domain, many keys</a></li>
-        <li><a href="#key-strength-matters">Key strength matters</a></li>
-        <li><a href="#dkim-the-rest">DKIM + the rest</a></li>
-        <li><a href="#related">Related</a></li>
-      </ul>
-    </nav>
     <Diagram name="dkim-signing" caption="How DKIM signing and verification work" />
 
     <div class="rich-text mt-8">

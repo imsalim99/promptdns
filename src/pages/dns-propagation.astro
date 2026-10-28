@@ -29,33 +29,9 @@ const faq = {
     </div>
 
     
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Propagation window by change type</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Change</th><th>Typical window</th><th>Why</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">A / AAAA / CNAME / TXT edit</td><td class="text-sm text-ink-dim">Old record TTL (5 min to 4 h)</td><td class="text-sm text-ink-dim">Resolvers serve the cached answer until it expires</td></tr><tr><td class="font-medium text-ink">Brand-new record</td><td class="text-sm text-ink-dim">Near instant</td><td class="text-sm text-ink-dim">Nothing cached a name that did not exist</td></tr><tr><td class="font-medium text-ink">MX change</td><td class="text-sm text-ink-dim">Old record TTL</td><td class="text-sm text-ink-dim">Mail exchangers cache routing aggressively</td></tr><tr><td class="font-medium text-ink">NS delegation change</td><td class="text-sm text-ink-dim">Up to 48 hours</td><td class="text-sm text-ink-dim">Parent zones cache delegation far longer</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Pre-migration TTL lowering schedule</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>When</th><th>Action</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">T-48 hours</td><td class="text-sm text-ink-dim">Lower the record TTL from 3600 to 300 seconds</td></tr><tr><td class="font-medium text-ink">T-0</td><td class="text-sm text-ink-dim">Make the cutover and verify on live resolvers</td></tr><tr><td class="font-medium text-ink">T+2 hours</td><td class="text-sm text-ink-dim">Confirm all resolvers agree</td></tr><tr><td class="font-medium text-ink">T+24 hours</td><td class="text-sm text-ink-dim">Raise the TTL back to 3600</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Propagation windows</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Change</th><th>Window</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Record edit</td><td class="text-sm text-ink-dim">Old TTL</td></tr><tr><td class="font-medium text-ink">New record</td><td class="text-sm text-ink-dim">Near instant</td></tr><tr><td class="font-medium text-ink">NS change</td><td class="text-sm text-ink-dim">Up to 48 h</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    
+    
+    
 <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
@@ -67,6 +43,36 @@ const faq = {
         <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Propagation window by change type</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Change</th><th>Typical window</th><th>Why</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">A / AAAA / CNAME / TXT edit</td><td class="text-sm text-ink-dim">Old record TTL (5 min to 4 h)</td><td class="text-sm text-ink-dim">Resolvers serve the cached answer until it expires</td></tr><tr><td class="font-medium text-ink">Brand-new record</td><td class="text-sm text-ink-dim">Near instant</td><td class="text-sm text-ink-dim">Nothing cached a name that did not exist</td></tr><tr><td class="font-medium text-ink">MX change</td><td class="text-sm text-ink-dim">Old record TTL</td><td class="text-sm text-ink-dim">Mail exchangers cache routing aggressively</td></tr><tr><td class="font-medium text-ink">NS delegation change</td><td class="text-sm text-ink-dim">Up to 48 hours</td><td class="text-sm text-ink-dim">Parent zones cache delegation far longer</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Pre-migration TTL lowering schedule</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>When</th><th>Action</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">T-48 hours</td><td class="text-sm text-ink-dim">Lower the record TTL from 3600 to 300 seconds</td></tr><tr><td class="font-medium text-ink">T-0</td><td class="text-sm text-ink-dim">Make the cutover and verify on live resolvers</td></tr><tr><td class="font-medium text-ink">T+2 hours</td><td class="text-sm text-ink-dim">Confirm all resolvers agree</td></tr><tr><td class="font-medium text-ink">T+24 hours</td><td class="text-sm text-ink-dim">Raise the TTL back to 3600</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Propagation windows</h2>
+    <section class="not-prose my-4" aria-label="Reference table">
+      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+        <table class="pdns-table" style="width:100%">
+          <thead><tr><th>Change</th><th>Window</th></tr></thead>
+          <tbody><tr><td class="font-medium text-ink">Record edit</td><td class="text-sm text-ink-dim">Old TTL</td></tr><tr><td class="font-medium text-ink">New record</td><td class="text-sm text-ink-dim">Near instant</td></tr><tr><td class="font-medium text-ink">NS change</td><td class="text-sm text-ink-dim">Up to 48 h</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 
     <Diagram name="propagation" caption="Propagation is the TTL window: caches worldwide serve old answers until each expires" />
 
