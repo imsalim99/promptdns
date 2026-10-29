@@ -1,55 +1,298 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Can I click through safely?", "acceptedAnswer": { '@type': 'Answer', "text": "For a certificate you just issued and understand: maybe. For any public site: never, because that is exactly what phishing relies on." } },
-    {'@type': 'Question', 'name': "Why does it work in one browser and not another?", "acceptedAnswer": { '@type': 'Answer', "text": "Different certificate stores and HSTS state. Test in a private window and a second browser." } },
-    {'@type': 'Question', 'name': "What is an intermediate certificate?", "acceptedAnswer": { '@type': 'Answer', "text": "The CA\u2019s signing certificate linking yours to the trusted root; servers must serve it along with the leaf." } },
-    {'@type': 'Question', 'name': "Does Let's Encrypt expire faster?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: 90 days versus a year, by design for automation. Missing a renewal fails the same way any expiry does." } },
-    {'@type': 'Question', 'name': "My site works but shows not secure in the address bar", "acceptedAnswer": { '@type': 'Answer', "text": "That is mixed content, not a certificate error: an HTTPS page loading HTTP subresources." } }
-  ]
-}
+
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Why does my SSL certificate work on desktop computers but show an error on mobile phones?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Your web server is missing the Intermediate Certificate Authority (CA) bundle. Desktop browsers often download missing intermediate certificates automatically in the background, whereas Android and iOS browsers do not. Update your server config to use fullchain.pem instead of cert.pem.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can a DNS change cause an SSL certificate error?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: "Yes, pointing an A or AAAA record to the wrong IP address (or leaving an old IPv6 AAAA record pointing to a previous web host) routes visitors to a server that does not have your domain's SSL certificate installed, triggering NET::ERR_CERT_COMMON_NAME_INVALID.",
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does it take for a new SSL certificate to start working?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Bypassing an SSL warning is only safe on servers that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings.',
+      },
+    },
+  ],
+};
 ---
 <BaseLayout
-  title="SSL Certificate Errors: Causes and Fixes"
-  description="Every SSL certificate error explained: NET::ERR_CERT_DATE_INVALID, authority errors, name mismatches, and the fix for each by cause."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["SSL/TLS Guides", "/ssl-tls/"], ["Certificate Errors"]]}>
+  title="SSL Certificate Errors: Common Browser Codes, Causes, and How to Fix Them"
+  description="SSL certificate errors explained: common browser error codes (CERT_COMMON_NAME_INVALID, CERT_DATE_INVALID, authority errors, cipher mismatch), DNS causes, and fixes."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["SSL/TLS Guides", "/ssl-tls/"], ["Certificate Errors"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ssl-tls/" class="hover:text-accent">SSL/TLS Guides</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">Certificate Errors</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL Certificate Errors: Causes and Fixes</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL Certificate Errors: Common Browser Codes, Causes, and How to Fix Them</h1>
+
     <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">Certificate errors block pages outright with distinct error names. Each name is a diagnosis: expired, wrong name, untrusted chain, or self-signed. Match the error to the cause below and the fix is usually mechanical.</p>
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An SSL certificate error is <strong class="text-ink">a browser security block triggered when a web server fails to present a valid, trusted TLS certificate matching the requested domain name</strong>. Browsers halt the connection (Your connection is not private) to prevent data interception. The specific error code identifies expired dates, hostname mismatches, or untrusted issuers.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-error-decoder">The error decoder</a></li>
-        <li><a href="#the-universal-diagnosis-flow">The universal diagnosis flow</a></li>
-        <li><a href="#prevention">Prevention</a></li>
+        <li><a href="#8-common-ssl-certificate-error-codes-and-what-each-means-reference-table">8 common SSL certificate error codes</a></li>
+        <li><a href="#how-to-fix-the-5-most-common-server-side-ssl-certificate-errors">How to fix 5 server-side SSL errors</a></li>
+        <li><a href="#how-do-dns-misconfigurations-cause-ssl-certificate-errors-4-dns-root-causes">4 DNS root causes of SSL errors</a></li>
+        <li><a href="#how-to-diagnose-ssl-certificate-errors-from-the-terminal-openssl-and-curl">Diagnose SSL errors from the terminal</a></li>
+        <li><a href="#how-website-visitors-can-fix-local-ssl-warnings-5-client-side-steps">5 client-side fixes for website visitors</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-error-decoder">The error decoder</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td class="text-sm text-ink-dim">NET::ERR_CERT_DATE_INVALID</td><td class="text-sm text-ink-dim">Expired (or not yet valid) certificate</td><td class="text-sm text-ink-dim">Renew now; check server clock for not-yet-valid</td></tr><tr><td class="text-sm text-ink-dim">NET::ERR_CERT_COMMON_NAME_INVALID</td><td class="text-sm text-ink-dim">Certificate does not cover this hostname</td><td class="text-sm text-ink-dim">Add the name to the SANs or issue a matching certificate</td></tr><tr><td class="text-sm text-ink-dim">NET::ERR_CERT_AUTHORITY_INVALID</td><td class="text-sm text-ink-dim">Chain not trusted: self-signed or missing intermediate</td><td class="text-sm text-ink-dim">Install the full chain; replace self-signed with a CA certificate</td></tr><tr><td class="text-sm text-ink-dim">ERR_SSL_VERSION_OR_CIPHER_MISMATCH</td><td class="text-sm text-ink-dim">No common TLS version/cipher</td><td class="text-sm text-ink-dim">Enable TLS 1.2/1.3 with modern suites</td></tr><tr><td class="text-sm text-ink-dim">NET::ERR_CERT_REVOKED</td><td class="text-sm text-ink-dim">Certificate revoked by its CA</td><td class="text-sm text-ink-dim">Reissue immediately; investigate why it was revoked</td></tr><tr><td class="text-sm text-ink-dim">HSTS errors</td><td class="text-sm text-ink-dim">Policy forces HTTPS and something is broken</td><td class="text-sm text-ink-dim">Fix the underlying TLS problem; HSTS blocks overrides</td></tr></tbody></table></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-universal-diagnosis-flow">The universal diagnosis flow</h2>
-      <ol class="list-decimal space-y-1.5 pl-5"><li>Click the warning, view the certificate: check dates, then Subject Alternative Names, then the issuer chain.</li><li>Test with an external checker (SSL Labs) to see the chain as strangers see it: missing intermediates often work on your machine via cached chains.</li><li>Confirm the certificate is served for THIS hostname: shared infrastructure sometimes serves the wrong vhost’s certificate.</li></ol>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="prevention">Prevention</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li>Automated renewal (ACME/Let’s Encrypt) or managed certificates on your platform.</li><li>Expiry monitoring with alerts at 30 days.</li><li>Deploy the full chain (leaf + intermediates), and include every hostname variant in SANs.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I click through safely?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">For a certificate you just issued and understand: maybe. For any public site: never, because that is exactly what phishing relies on.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does it work in one browser and not another?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different certificate stores and HSTS state. Test in a private window and a second browser.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is an intermediate certificate?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The CA’s signing certificate linking yours to the trusted root; servers must serve it along with the leaf.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Let's Encrypt expire faster?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: 90 days versus a year, by design for automation. Missing a renewal fails the same way any expiry does.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">My site works but shows not secure in the address bar<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">That is mixed content, not a certificate error: an HTTPS page loading HTTP subresources.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/mixed-content-fix/" class="text-accent hover:text-accent-soft">Mixed content fixes →</a></li><li><a href="/tls-versions-explained/" class="text-accent hover:text-accent-soft">TLS versions →</a></li><li><a href="/certificate-authorities-explained/" class="text-accent hover:text-accent-soft">Certificate authorities →</a></li></ul>
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="8-common-ssl-certificate-error-codes-and-what-each-means-reference-table">8 Common SSL Certificate Error Codes and What Each Means (Reference Table)</h2>
+        <p>
+          Web browsers (Chrome, Edge, Brave, Firefox, and Safari) display <strong class="text-ink">8 distinct SSL/TLS error codes</strong> depending on which step of certificate validation or TLS handshake negotiation failed. The table below maps each browser error code to its exact technical cause and primary fix.
+        </p>
+
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">Browser Error Code</th>
+                <th class="p-3 text-sm font-semibold text-ink">Validation Failure Cause</th>
+                <th class="p-3 text-sm font-semibold text-ink">Primary Server-Side Fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>NET::ERR_CERT_COMMON_NAME_INVALID</code> (<code>SSL_ERROR_BAD_CERT_DOMAIN</code>)</td>
+                <td class="p-3 text-sm text-ink-dim">Certificate <abbr class="pd-term" data-tip="Subject Alternative Name, an X.509 extension listing all domain names and subdomains protected by a single certificate.">SAN</abbr> entries omit the requested domain or subdomain.</td>
+                <td class="p-3 text-sm text-ink-dim">Reissue certificate covering apex domain and www subdomain.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>NET::ERR_CERT_DATE_INVALID</code> (<code>SEC_ERROR_EXPIRED_CERTIFICATE</code>)</td>
+                <td class="p-3 text-sm text-ink-dim">Certificate validity window expired or local client clock drift occurred.</td>
+                <td class="p-3 text-sm text-ink-dim">Renew certificate and establish automated renewal timers.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>NET::ERR_CERT_AUTHORITY_INVALID</code> (<code>SEC_ERROR_UNKNOWN_ISSUER</code>)</td>
+                <td class="p-3 text-sm text-ink-dim">Server deploys self-signed certificate or omits the intermediate chain.</td>
+                <td class="p-3 text-sm text-ink-dim">Install fullchain bundle signed by a recognized Certificate Authority.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>ERR_SSL_VERSION_OR_CIPHER_MISMATCH</code></td>
+                <td class="p-3 text-sm text-ink-dim">Client and server share no overlapping TLS protocol or cipher suite.</td>
+                <td class="p-3 text-sm text-ink-dim">Activate TLS 1.2 and TLS 1.3 on origin web server.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>ERR_SSL_PROTOCOL_ERROR</code></td>
+                <td class="p-3 text-sm text-ink-dim">Server returns unencrypted plaintext HTTP data across port 443.</td>
+                <td class="p-3 text-sm text-ink-dim">Configure port 443 virtual host listeners with active TLS directives.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><code>NET::ERR_CERT_REVOKED</code></td>
+                <td class="p-3 text-sm text-ink-dim">Issuing authority marked certificate revoked via CRL or <abbr class="pd-term" data-tip="Online Certificate Status Protocol, an internet protocol used by browsers to check the revocation status of a digital certificate in real time.">OCSP</abbr>.</td>
+                <td class="p-3 text-sm text-ink-dim">Generate a fresh private key and request immediate certificate reissuance.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">Cloudflare Error 525 / Error 526</td>
+                <td class="p-3 text-sm text-ink-dim">Error 525 indicates origin handshake failure; Error 526 flags invalid origin cert.</td>
+                <td class="p-3 text-sm text-ink-dim">Deploy trusted certificate on origin host under Full (Strict) mode.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink"><abbr class="pd-term" data-tip="A security state where an HTTPS web page loads secondary subresources such as images or scripts over unencrypted HTTP.">Mixed Content</abbr> Warning</td>
+                <td class="p-3 text-sm text-ink-dim">Encrypted HTTPS HTML document embeds unencrypted HTTP subresources.</td>
+                <td class="p-3 text-sm text-ink-dim">Rewrite embedded asset paths to relative URLs or https endpoints.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Modern browsers prevent users from clicking past an SSL error with a bypass option on domains enforcing strict transport controls. Websites publishing an <abbr class="pd-term" data-tip="HTTP Strict Transport Security, a response header instructing browsers to connect exclusively over HTTPS and refuse SSL error overrides.">HSTS</abbr> header through <a href="/hsts-explained/">HSTS: HTTP Strict Transport Security</a> instruct browsers to disallow security overrides permanently, blocking potential man-in-the-middle attacks. Foundational encryption mechanics appear in our guide to <a href="/what-is-ssl-tls/">What Is SSL/TLS</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-to-fix-the-5-most-common-server-side-ssl-certificate-errors">How to Fix the 5 Most Common Server-Side SSL Certificate Errors</h2>
+        <p>
+          Website administrators resolve server-side SSL warnings by correcting <strong class="text-ink">5 core certificate configurations across Subject Alternative Names, automated renewal timers, intermediate CA chains, SNI virtual hosts, and mixed HTTP assets</strong>. Server-side certificate faults account for the majority of persistent user-facing warnings:
+        </p>
+
+        <ol class="list-decimal space-y-3 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Fix <code>ERR_CERT_COMMON_NAME_INVALID</code> (Include Both Root and Subdomain in SAN List):</strong> Modern web browsers ignore the legacy Common Name field and validate hostnames strictly against the Subject Alternative Name extension. Issuing a certificate exclusively for the apex domain triggers a warning whenever visitors access the www subdomain. Securing both names on a single certificate or deploying a wildcard record eliminates domain mismatch errors.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Fix <code>ERR_CERT_DATE_INVALID</code> (Automate 90-Day ACME Renewals):</strong> Free certificates from automated authorities expire every 90 days. Industry standards continue pushing certificate lifespans shorter toward a 47-day limit by 2029. Scheduled automation routines through system timers handle validation and installation prior to certificate expiration, supported by <a href="/free-ssl-lets-encrypt/">Let's Encrypt: Free Certificates and ACME Automation</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Fix <code>ERR_CERT_AUTHORITY_INVALID</code> on Mobile Devices (Serve Full Chain Bundle):</strong> Desktop browsers frequently fetch missing intermediate certificates through authority information access chasing, whereas Android and iOS platforms require complete bundles. Web servers configured with a standalone leaf certificate serve incomplete chains to mobile clients. Pointing server configuration directives to the combined bundle file resolves mobile verification failures, detailed in <a href="/certificate-authorities-explained/">Certificate Authorities and the Web of Trust</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Fix <code>ERR_SSL_VERSION_OR_CIPHER_MISMATCH</code> (Enable Modern Protocols and SNI):</strong> Outdated web servers that restrict handshakes to legacy protocols trigger handshake aborts on current client software. Enabling current TLS standards ensures broad client compatibility. Activating <abbr class="pd-term" data-tip="Server Name Indication, a TLS extension where the browser indicates the target hostname during the handshake, enabling name-based virtual hosting.">SNI</abbr> enables servers hosting multiple virtual domains on a single IP to present correct certificates, referenced in <a href="/tls-versions-explained/">TLS 1.0 to 1.3: Versions Compared</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Fix Mixed Content Padlock Warnings (Audit Insecure Asset Calls):</strong> Modern browsers block unencrypted passive images and active scripts loaded from HTTPS pages. Auditing application templates and migrating asset calls to secure paths eliminates mixed resource warnings, guided by <a href="/mixed-content-fix/">Mixed Content Warnings</a>.
+          </li>
+        </ol>
+
+        <p>
+          Updating or renewing a certificate in NGINX or Apache requires a web server process reload (<code>sudo systemctl reload nginx</code> or <code>sudo systemctl reload apache2</code>) to replace the active certificate cached in server memory.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-do-dns-misconfigurations-cause-ssl-certificate-errors-4-dns-root-causes">How Do DNS Misconfigurations Cause SSL Certificate Errors? (4 DNS Root Causes)</h2>
+        <p>
+          Flawed DNS configurations trigger browser SSL certificate errors even when web server software is configured properly, stemming from <strong class="text-ink">4 DNS misconfigurations across A and AAAA records, CAA policies, ACME challenges, and CDN proxy modes</strong>. Authoritative DNS settings govern client routing and certificate issuance authorities:
+        </p>
+
+        <ol class="list-decimal space-y-3 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Mismatched A or AAAA IP Addresses:</strong> Updating an IPv4 A record while leaving an obsolete IPv6 AAAA record pointing to a legacy host routes IPv6 visitors to an unconfigured server. That legacy endpoint lacks matching certificates for the target domain and triggers common name invalid warnings. Confirming host IP alignment across both protocol families is accessible through the <a href="/a-record-lookup/">A Record Lookup</a> tool.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Restrictive CAA Record Rules:</strong> A <a href="/caa-record/">CAA Record</a> designates authorized certificate issuers for a specific namespace. Specifying single commercial authorities forbids alternative automated providers from issuing certificates, causing automatic renewals to fail silently. Verifying authorized certificate issuers prevents issuance disruption, inspectable via the <a href="/caa-record-lookup/">CAA Record Lookup</a> utility.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Stale DNS Propagation During ACME Validation:</strong> Automated certificate issuing protocols rely on <abbr class="pd-term" data-tip="Automated Certificate Management Environment, an automated communications protocol for verifying domain control and issuing certificates.">ACME</abbr> HTTP-01 or DNS-01 challenges to confirm domain control. Running issuance tools before global nameservers synchronize prevents validation nodes from discovering challenge responses. Verifying worldwide nameserver updates precedes certificate requests via the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Cloudflare SSL/TLS Encryption Mode Mismatches:</strong> Setting CDN encryption modes to Flexible instructs proxy edges to connect to origin servers over unencrypted port 80, sparking redirect loops on servers enforcing HTTPS. Configuring Full (Strict) mode against servers presenting self-signed or expired certificates generates Cloudflare Error 526 warnings.
+          </li>
+        </ol>
+
+        <p>
+          Investigating live A, AAAA, and CAA records in DNS represents the fastest first diagnostic step whenever an SSL error manifests following domain migration or CDN activation.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-to-diagnose-ssl-certificate-errors-from-the-terminal-openssl-and-curl">How to Diagnose SSL Certificate Errors from the Terminal (openssl and curl)</h2>
+        <p>
+          Command-line tools (<code>openssl</code> and <code>curl</code>) bypass browser caches to <strong class="text-ink">inspect the raw certificate chain, expiration dates, SAN hostnames, and TLS version returned by your server on port 443</strong>. The table below lists the 4 essential terminal commands for diagnosing SSL errors.
+        </p>
+
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">Diagnostic Goal</th>
+                <th class="p-3 text-sm font-semibold text-ink">Terminal Command (Linux / macOS / Windows WSL)</th>
+                <th class="p-3 text-sm font-semibold text-ink">What to Look For in Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-medium text-ink">Inspect Full Certificate Chain &amp; SNI</td>
+                <td class="p-3 text-sm text-ink-dim"><code>openssl s_client -connect example.com:443 -servername example.com</code></td>
+                <td class="p-3 text-sm text-ink-dim">Review Certificate chain (leaf and intermediate) and Verify return code: 0 (ok).</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">Check Exact Expiration Dates &amp; SANs</td>
+                <td class="p-3 text-sm text-ink-dim"><code>curl -Iv https://example.com</code></td>
+                <td class="p-3 text-sm text-ink-dim">Examine subject, start date, expire date, and issuer in handshake log.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">Test Specific IP Before DNS Propagates</td>
+                <td class="p-3 text-sm text-ink-dim"><code>curl -Iv --resolve example.com:443:198.51.100.10 https://example.com</code></td>
+                <td class="p-3 text-sm text-ink-dim">Validates certificate configuration on target IP directly prior to DNS change.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">Verify CAA Authorization Records</td>
+                <td class="p-3 text-sm text-ink-dim"><code>dig example.com CAA +short</code></td>
+                <td class="p-3 text-sm text-ink-dim">Confirms whether CAA records restrict authorized issuing certificate authorities.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          The <code>-servername example.com</code> parameter provides essential Server Name Indication context during the handshake. Omitting this flag forces virtual hosts and CDNs to serve default fallback certificates or terminate handshakes prematurely, generating false mismatch errors.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-website-visitors-can-fix-local-ssl-warnings-5-client-side-steps">How Website Visitors Can Fix Local SSL Warnings (5 Client-Side Steps)</h2>
+        <p>
+          Resolving an SSL warning that appears solely on your local device while the website loads normally for other visitors requires <strong class="text-ink">5 local troubleshooting steps on your computer or phone</strong>:
+        </p>
+
+        <ol class="list-decimal space-y-3 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Synchronize</strong> your device system date and time settings: depleted hardware batteries reset device clocks to prior years, causing web browsers to reject valid certificates as not yet valid or expired.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Sign in</strong> to public Wi-Fi captive portals: airport, hotel, and cafe routers intercept encrypted connections until terms of service acceptance completes, presenting untrusted proxy certificates.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Disable</strong> third-party antivirus HTTPS scanning features: local endpoint security tools intercept TLS connections with custom root certificates, causing certificate authority invalid warnings.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Flush</strong> local resolver caches and clear system SSL states: clearing stored DNS entries purges stale IP routing data using instructions in <a href="/flush-dns-cache/">How to Flush DNS Cache</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Test</strong> destination websites in private browser windows: browsing in private sessions bypasses corrupted browser extensions and cached connection states.
+          </li>
+        </ol>
+
+        <p>
+          Local troubleshooting resolves client-side warning triggers arising from system time drift or aggressive network proxy interception.
+        </p>
+
+        <p>
+          Managing SSL certificate health combines accurate server provisioning with systematic DNS configuration. Monitoring domain records, establishing automated certificate renewal routines, and validating intermediate authority bundles prevents unexpected security warnings. Review broader encryption fundamentals across our resource hub on <a href="/ssl-tls/">SSL/TLS and Web Security Basics</a>.
+        </p>
+      </section>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my SSL certificate work on desktop computers but show an error on mobile phones?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Your web server is missing the Intermediate Certificate Authority (CA) bundle. Desktop browsers often download missing intermediate certificates automatically in the background, whereas Android and iOS browsers do not. Update your server config to use fullchain.pem instead of cert.pem.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a DNS change cause an SSL certificate error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, pointing an A or AAAA record to the wrong IP address (or leaving an old IPv6 AAAA record pointing to a previous web host) routes visitors to a server that does not have your domain's SSL certificate installed, triggering NET::ERR_CERT_COMMON_NAME_INVALID.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for a new SSL certificate to start working?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Bypassing an SSL warning is only safe on servers that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings.</p>
+      </details>
     </div>
   </div>
 </BaseLayout>
