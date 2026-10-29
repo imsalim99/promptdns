@@ -1,97 +1,273 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
-const tags = [
-  ['v=DMARC1', 'required', 'Protocol version, must be first.'],
-  ['p=', 'required', 'Policy for the domain: none, quarantine, or reject.'],
-  ['sp=', 'optional', 'Policy for subdomains (defaults to p).'],
-  ['pct=', 'optional', '% of failing mail the policy applies to (default 100).'],
-  ['rua=', 'recommended', 'mailto: address for aggregate (aggregate) reports.'],
-  ['ruf=', 'optional', 'mailto: address for forensic (failure) reports.'],
-  ['adkim=', 'optional', 'DKIM alignment: r (relaxed, default) or s (strict).'],
-  ['aspf=', 'optional', 'SPF alignment: r (relaxed, default) or s (strict).'],
-  ['fo=', 'optional', 'When forensic reports are sent (0, 1, d, s).'],
-  ['ri=', 'optional', 'Report interval in seconds (default 86400 = daily).'],
-];
 
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Can a domain have more than one DMARC record?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, a domain only publishes one DMARC TXT record at _dmarc. If you publish two or more v=DMARC1 records on the same hostname, receiving mail servers ignore DMARC completely. To send reports to multiple addresses, separate them with a comma inside a single rua= tag.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Where do I add a DMARC record: at my domain registrar or my email host?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'You always publish your DMARC TXT record at your authoritative DNS provider (the company whose nameservers your domain points to, such as Cloudflare, Route 53, or Namecheap), which is separate from your email inbox provider.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do I need quotes around my DMARC record value in DNS?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) add quotation marks automatically, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the best DMARC record to start with?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Start with v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com; on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports.',
+      },
+    },
+  ],
+};
 ---
-<BaseLayout title="DMARC Record: Syntax, Tags, and Examples" description="DMARC record syntax: every tag explained (p, sp, pct, rua, ruf, adkim, aspf), worked examples, and how to publish the record."  
- breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DMARC Record Syntax"]]}>
+<BaseLayout
+  title="DMARC Record: Syntax, Tag-Value Structure, and Copy-Paste Examples"
+  description="DMARC record syntax guide: tag-value pairs (v, p, rua, sp, pct), 8 copy-paste examples, identifier alignment matrix, and 7 syntax errors to avoid."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DMARC Record Syntax"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DMARC Record Syntax</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record: Syntax and Tags</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record: Syntax, Tag-Value Structure, and Copy-Paste Examples</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      A DMARC record is a TXT record at <code class="font-mono text-accent-soft">_dmarc.yourdomain.com</code>
-     , note the underscore, built from semicolon-separated tags. Here is every tag and what it does.
-    </p>
+        A DMARC record is <strong class="text-ink">a single line of semicolon-separated text published as a DNS TXT record at <code>_dmarc.&lt;yourdomain&gt;</code> that controls how mail servers handle unauthenticated email</strong>. Receiving servers read its tag-value pairs (<code>v=DMARC1</code>, <code>p=</code>, <code>rua=</code>) during delivery. The syntax of a DMARC record defines your enforcement policy, alignment strictness, and report destination.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DMARC identifier alignment scenarios</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Visible From domain</th><th>SPF / DKIM domain</th><th>Relaxed alignment</th><th>Strict alignment</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">example.com (either protocol)</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">mail.example.com</td><td class="text-sm text-ink-dim">PASS (org domain matches)</td><td class="text-sm text-ink-dim">FAIL (not exact)</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">esp-customer.net</td><td class="text-sm text-ink-dim">FAIL</td><td class="text-sm text-ink-dim">FAIL</td></tr><tr><td class="font-medium text-ink">billing.example.com</td><td class="text-sm text-ink-dim">billing.example.com</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DMARC identifier alignment scenarios</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Visible From domain</th><th>SPF / DKIM domain</th><th>Relaxed alignment</th><th>Strict alignment</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">example.com (either protocol)</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">mail.example.com</td><td class="text-sm text-ink-dim">PASS (org domain matches)</td><td class="text-sm text-ink-dim">FAIL (not exact)</td></tr><tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">esp-customer.net</td><td class="text-sm text-ink-dim">FAIL</td><td class="text-sm text-ink-dim">FAIL</td></tr><tr><td class="font-medium text-ink">billing.example.com</td><td class="text-sm text-ink-dim">billing.example.com</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr></tbody>
-        </table>
-      </div>
-    </section>
     <Diagram name="dmarc-tree" caption="The DMARC decision tree showing policy application" />
 
-    <div class="mt-8 overflow-x-auto rounded-xl border border-line bg-panel/60">
-      <table class="pdns-table">
-        <thead><tr><th>Tag</th><th>Status</th><th>Meaning</th></tr></thead>
-        <tbody>
-          {tags.map(([tag, status, meaning]) => (
-            <tr>
-              <td class="font-mono text-xs font-semibold text-accent">{tag}</td>
-              <td class="text-xs text-ink-faint">{status}</td>
-              <td class="text-sm text-ink-dim">{meaning}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-does-a-dmarc-record-look-like-in-dns-host-type-and-tag-value-anatomy">What a DMARC record looks like in DNS</a></li>
+        <li><a href="#what-do-the-11-dmarc-record-tags-mean-syntax-reference-table">The 11 DMARC record tags explained</a></li>
+        <li><a href="#8-copy-paste-dmarc-record-examples-for-every-use-case">8 copy-paste DMARC record examples</a></li>
+        <li><a href="#how-do-spf-and-dkim-domains-align-in-a-dmarc-record-alignment-scenario-matrix">SPF and DKIM domain alignment scenarios</a></li>
+        <li><a href="#what-are-the-7-most-common-dmarc-record-syntax-errors">7 most common DMARC record syntax errors</a></li>
+        <li><a href="#how-do-you-add-a-dmarc-record-to-your-domains-dns-5-steps">How to add a DMARC record in DNS (5 steps)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-does-a-dmarc-record-look-like-in-dns-host-type-and-tag-value-anatomy">What Does a DMARC Record Look Like in DNS? (Host, Type, and Tag-Value Anatomy)</h2>
+      <p>
+        A published DMARC record consists of <strong class="text-ink">4 DNS zone fields (<code>Type</code>, <code>Host</code>, <code>TTL</code>, and <code>Value</code>) where the <code>Value</code> string contains semicolon-separated <code>tag=value</code> pairs beginning with <code>v=DMARC1</code> and <code>p=</code></strong>.
+      </p>
+      <p>
+        In an authoritative DNS zone file or cloud management dashboard, a complete DMARC entry is formatted with these parameters:
+      </p>
+      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code>Host / Name:  _dmarc
+Record Type:  TXT
+TTL:          3600 (1 hour)
+Value:        v=DMARC1; p=quarantine; sp=reject; adkim=r; aspf=r; rua=mailto:dmarc@example.com;</code></pre>
+      <p>
+        The record functions through 4 distinct structural components:
+      </p>
+      <ol>
+        <li><strong>DNS Hostname (<code>_dmarc</code>):</strong> Every DMARC policy lives at the dedicated subdomain prefix <code>_dmarc</code> (resolving globally to <code>_dmarc.example.com</code>). Most managed DNS providers (such as Cloudflare, GoDaddy, and Namecheap) automatically append your root domain, meaning administrators enter only <code>_dmarc</code> in the Host input field.</li>
+        <li><strong>Record Type (<code>TXT</code>):</strong> DMARC relies on a standard <abbr class="pd-term" data-tip="TXT Record: a DNS record carrying text information readable by external services"><a href="/txt-record/">TXT Record</a></abbr> containing plain ASCII characters without requiring proprietary protocol headers.</li>
+        <li><strong>Version and Policy Sequence (<code>v=DMARC1; p=...</code>):</strong> Every compliant record starts with the uppercase version identifier <code>v=DMARC1</code>, followed immediately by the mandatory domain policy tag <code>p=</code> (set to <code>none</code>, <code>quarantine</code>, or <code>reject</code>).</li>
+        <li><strong>Optional Modifier Tags (<code>rua=</code>, <code>sp=</code>, <code>adkim=</code>, <code>aspf=</code>, <code>pct=</code>):</strong> Additional <abbr class="pd-term" data-tip="Tag-Value Pair: a semicolon-separated parameter where a tag name is assigned a specific configuration value">tag-value pairs</abbr> configure aggregate XML report delivery, separate subdomain policies, cryptographic alignment modes, and gradual percentage rollouts.</li>
+      </ol>
+      <p>
+        Domain administrators must ensure only <strong>one</strong> DMARC record exists at <code>_dmarc</code>; publishing multiple <code>v=DMARC1</code> strings causes receiving mail servers to treat DMARC as invalid and discard all policy instructions. Detailed protocol background is available in <a href="/dmarc/">DMARC</a>, and live host verification can be performed with the <a href="/dmarc-record-checker/">DMARC Record Checker</a>.
+      </p>
+
+      <h2 id="what-do-the-11-dmarc-record-tags-mean-syntax-reference-table">What Do the 11 DMARC Record Tags Mean? (Syntax Reference Table)</h2>
+      <p>
+        A DMARC record supports <strong class="text-ink">11 standard tags: 2 mandatory tags (<code>v</code> and <code>p</code>) and 9 optional tags that control policy enforcement, identifier alignment, and failure reporting</strong>. The table below defines each DMARC tag with its required order, default value when omitted, and valid syntax.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Tag</th><th>Tag Name</th><th>Required?</th><th>Default (If Omitted)</th><th>Valid Syntax &amp; Values</th></tr></thead>
+            <tbody>
+              <tr><td class="font-mono text-xs font-semibold text-accent">v</td><td class="font-medium text-ink">Protocol Version</td><td class="text-sm text-ink-dim"><strong>Required (1st)</strong></td><td class="text-sm text-ink-dim">None</td><td class="text-sm text-ink-dim"><code>v=DMARC1</code> (Must be uppercase and placed first)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">p</td><td class="font-medium text-ink">Domain Policy</td><td class="text-sm text-ink-dim"><strong>Required (2nd)</strong></td><td class="text-sm text-ink-dim">None</td><td class="text-sm text-ink-dim"><code>p=none</code>, <code>p=quarantine</code>, or <code>p=reject</code></td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">rua</td><td class="font-medium text-ink">Aggregate Report URI</td><td class="text-sm text-ink-dim">Recommended</td><td class="text-sm text-ink-dim">None (No reports sent)</td><td class="text-sm text-ink-dim"><code>rua=mailto:dmarc@example.com</code> (Comma-separated for multiple)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">sp</td><td class="font-medium text-ink">Subdomain Policy</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim">Inherits <code>p=</code> value</td><td class="text-sm text-ink-dim"><code>sp=none</code>, <code>sp=quarantine</code>, or <code>sp=reject</code></td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">adkim</td><td class="font-medium text-ink">DKIM Alignment Mode</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>r</code> (Relaxed)</td><td class="text-sm text-ink-dim"><code>adkim=r</code> (Organizational domain match) or <code>adkim=s</code> (Exact match)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">aspf</td><td class="font-medium text-ink">SPF Alignment Mode</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>r</code> (Relaxed)</td><td class="text-sm text-ink-dim"><code>aspf=r</code> (Organizational domain match) or <code>aspf=s</code> (Exact match)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">pct</td><td class="font-medium text-ink">Enforcement Percentage</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>100</code> (100% of mail)</td><td class="text-sm text-ink-dim">Whole integer from <code>pct=0</code> to <code>pct=100</code></td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">ruf</td><td class="font-medium text-ink">Forensic Report URI</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim">None</td><td class="text-sm text-ink-dim"><code>ruf=mailto:forensics@example.com</code> (Ignored by Gmail, Microsoft, and Yahoo)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">fo</td><td class="font-medium text-ink">Failure Report Trigger</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>0</code> (Both SPF and DKIM fail)</td><td class="text-sm text-ink-dim"><code>fo=0</code>, <code>fo=1</code> (Either fails), <code>fo=d</code> (DKIM fails), <code>fo=s</code> (SPF fails)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">ri</td><td class="font-medium text-ink">Reporting Interval</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>86400</code> (24 hours)</td><td class="text-sm text-ink-dim">Seconds between aggregate reports (such as <code>ri=86400</code> or <code>ri=3600</code>)</td></tr>
+              <tr><td class="font-mono text-xs font-semibold text-accent">rf</td><td class="font-medium text-ink">Report Format</td><td class="text-sm text-ink-dim">Optional</td><td class="text-sm text-ink-dim"><code>afrf</code></td><td class="text-sm text-ink-dim"><code>rf=afrf</code> (Authentication Failure Reporting Format)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Two practical syntax rules govern reporting tags in production: first, to deliver aggregate XML reports to multiple monitoring endpoints (such as an internal security mailbox and an automated reporting platform), separate each destination with a comma inside a single <abbr class="pd-term" data-tip="Aggregate Reports (RUA): daily XML summaries of email authentication volume and pass/fail states">RUA</abbr> tag (such as <code>rua=mailto:postmaster@example.com,mailto:reports@promptdns.com</code>). Second, administrators can attach an optional file size limitation suffix (such as <code>!10m</code> for 10 megabytes) to prevent large XML attachments from bouncing (for example, <code>rua=mailto:dmarc@example.com!10m</code>). Advanced modifier interactions are documented in <a href="/dmarc-record-syntax/">DMARC Tags Explained</a>, <a href="/dmarc-subdomain-policy/">DMARC sp Tag</a>, and <a href="/dmarc-pct-tag/">DMARC pct Tag</a>.
+      </p>
+
+      <h2 id="8-copy-paste-dmarc-record-examples-for-every-use-case">8 Copy-Paste DMARC Record Examples for Every Use Case</h2>
+      <p>
+        There are <strong class="text-ink">8 standard DMARC record configurations</strong> that cover every deployment stage from initial <code>p=none</code> monitoring to full <code>p=reject</code> enforcement and parked-domain lockdown.
+      </p>
+      <p>
+        Administrators can deploy these production-ready record templates directly into their DNS zone, replacing <code>example.com</code> with their actual domain name:
+      </p>
+
+      <ol>
+        <li>
+          <strong>Example 1: Basic Monitoring Mode (Day-1 Starter Record and Bulk-Sender Baseline)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=none; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Collects daily XML aggregate reports without modifying message delivery or routing mail to spam folders. Satisfies baseline Gmail, Yahoo, and Microsoft bulk-sender authentication requirements while you catalog third-party senders.</p>
+        </li>
+        <li>
+          <strong>Example 2: Phased Quarantine Rollout (Testing Enforcement on 25% of Failing Mail)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=quarantine; pct=25; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Routes 25% of unauthenticated messages to the recipient spam folder while delivering the remaining 75% to the inbox, confirming that legitimate marketing or transactional streams are not accidentally disrupted before raising <code>pct</code> to <code>100</code>.</p>
+        </li>
+        <li>
+          <strong>Example 3: Full Quarantine Enforcement (100% Spam-Folder Routing)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Directs mailbox providers to quarantine 100% of messages failing both SPF and DKIM alignment into spam folders. Satisfies the minimum policy enforcement threshold required for <abbr class="pd-term" data-tip="Brand Indicators for Message Identification: displays verified sender logos in supporting inboxes"><a href="/bimi/">BIMI</a></abbr> certified logo display.</p>
+        </li>
+        <li>
+          <strong>Example 4: Full Reject Enforcement (Maximum Anti-Spoofing and BEC Defense)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=reject; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Instructs receiving mail servers to reject unauthenticated emails outright during the initial SMTP handshake with status code <code>550 5.7.26</code>, preventing spoofed phishing messages from ever entering recipient mailboxes.</p>
+        </li>
+        <li>
+          <strong>Example 5: Main Domain Monitoring with Strict Subdomain Lockdown (<code>sp=reject</code>)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=none; sp=reject; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Maintains safe <code>p=none</code> observation on your primary domain while enforcing an immediate <code>sp=reject</code> policy across all subdomains (such as <code>promo.example.com</code> or nonexistent wildcards) to eliminate subdomain spoofing.</p>
+        </li>
+        <li>
+          <strong>Example 6: Dual-Destination Reporting (Internal Mailbox and External Analysis Service)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=reject; sp=reject; rua=mailto:postmaster@example.com,mailto:reports@promptdns.com;</code></pre>
+          <p class="text-sm text-ink-dim">Delivers aggregate XML reports simultaneously to an internal corporate archive mailbox and an automated parsing and alerting dashboard through a single comma-separated <code>rua=</code> tag.</p>
+        </li>
+        <li>
+          <strong>Example 7: High-Security Strict Alignment Record (Financial, Healthcare, and PCI-DSS)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s; rua=mailto:dmarc-reports@example.com;</code></pre>
+          <p class="text-sm text-ink-dim">Enforces strict (<code>s</code>) cryptographic alignment across both <a href="/spf-record/">SPF Record</a> and <a href="/dkim/">DKIM Explained</a>, requiring envelope domains to match the visible <code>From:</code> domain exactly without permitting subdomain delegation.</p>
+        </li>
+        <li>
+          <strong>Example 8: Parked or Non-Sending Domain Record (Zero Outbound Email Allowed)</strong>
+          <pre class="my-2 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft"><code>v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;</code></pre>
+          <p class="text-sm text-ink-dim">Defends dormant, brand-protection, or web-only domains that never transmit email. Paired with a null SPF record (<code>v=spf1 -all</code>), this record tells all mail servers worldwide to reject any message claiming to originate from the domain.</p>
+        </li>
+      </ol>
+      <p>
+        Custom record strings can be synthesized using the <a href="/dmarc-record-generator/">DMARC Record Generator</a>, and policy migration benchmarks are detailed in <a href="/dmarc-policies/">DMARC Policies</a> and <a href="/dmarc-enforcement-roadmap/">From p=none to p=reject: The DMARC Enforcement Roadmap</a>.
+      </p>
+
+      <h2 id="how-do-spf-and-dkim-domains-align-in-a-dmarc-record-alignment-scenario-matrix">How Do SPF and DKIM Domains Align in a DMARC Record? (Alignment Scenario Matrix)</h2>
+      <p>
+        A message passes a DMARC record check only when <strong class="text-ink">at least one authentication protocol (SPF or DKIM) both passes its underlying verification and aligns its domain with the visible <code>From:</code> address</strong>. The table below illustrates 4 real-world alignment scenarios for <code>From: billing@example.com</code> under relaxed (<code>r</code>) and strict (<code>s</code>) settings.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Visible From domain</th><th>SPF / DKIM domain</th><th>Relaxed alignment</th><th>Strict alignment</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">example.com (either protocol)</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr>
+              <tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">mail.example.com</td><td class="text-sm text-ink-dim">PASS (org domain matches)</td><td class="text-sm text-ink-dim">FAIL (not exact)</td></tr>
+              <tr><td class="font-medium text-ink">example.com</td><td class="text-sm text-ink-dim">esp-customer.net</td><td class="text-sm text-ink-dim">FAIL</td><td class="text-sm text-ink-dim">FAIL</td></tr>
+              <tr><td class="font-medium text-ink">billing.example.com</td><td class="text-sm text-ink-dim">billing.example.com</td><td class="text-sm text-ink-dim">PASS</td><td class="text-sm text-ink-dim">PASS</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Understanding these matrix outcomes reveals the core mechanics of <abbr class="pd-term" data-tip="Identifier Alignment: matching the visible Header From domain with authenticated SPF or DKIM domains">identifier alignment</abbr>: in Row 2, an email with a visible <code>From: example.com</code> using an envelope <abbr class="pd-term" data-tip="Return-Path: the envelope sender address where bounce notifications are directed">Return-Path</abbr> of <code>bounce@mail.example.com</code> succeeds under relaxed SPF alignment (<code>aspf=r</code>) because both share the same <abbr class="pd-term" data-tip="Organizational Domain: the base domain registered directly under a public suffix">Organizational Domain</abbr> (<code>example.com</code>). However, Row 3 fails under both modes because third-party provider domains (such as <code>esp-customer.net</code>) share no organizational relationship with the sender. In forwarded email environments where intermediate relays alter the client IP address (causing SPF to fail), Row 4 confirms that a cryptographic DKIM signature matching the <code>From:</code> domain satisfies DMARC requirements, ensuring delivery without interruption. Comprehensive alignment modes are explored in <a href="/dmarc-alignment/">DMARC Alignment</a>.
+      </p>
+
+      <h2 id="what-are-the-7-most-common-dmarc-record-syntax-errors">What Are the 7 Most Common DMARC Record Syntax Errors?</h2>
+      <p>
+        There are <strong class="text-ink">7 common syntax and DNS configuration mistakes</strong> that cause receiving mail servers to treat a published DMARC record as invalid or ignore it completely.
+      </p>
+      <p>
+        Administrators auditing non-functioning records should evaluate these 7 diagnostic failure points:
+      </p>
+      <ol>
+        <li><strong>Publishing Multiple <code>_dmarc</code> TXT Records:</strong> Creating a second TXT record at <code>_dmarc</code> instead of editing the existing string causes receiving mail servers to find multiple <code>v=DMARC1</code> entries, resulting in complete policy invalidation.</li>
+        <li><strong>Omitting the <code>mailto:</code> Prefix in <code>rua=</code> or <code>ruf=</code> Tags:</strong> Entering <code>rua=dmarc@example.com</code> without the protocol prefix causes DNS parser errors; all report destinations must explicitly specify <code>mailto:dmarc@example.com</code>.</li>
+        <li><strong>Placing <code>p=</code> Before <code>v=DMARC1</code> or Using Lowercase <code>v=dmarc1</code>:</strong> The version identifier is case-sensitive and must appear as the first tag in the record string; writing <code>p=reject; v=DMARC1</code> or <code>v=dmarc1</code> prevents parsers from recognizing the entry.</li>
+        <li><strong>Doubling the Domain Name in the DNS Host Field (<code>_dmarc.example.com.example.com</code>):</strong> Typing the full domain into a control panel that automatically appends the zone publishes the record at <code>_dmarc.example.com.example.com</code>, leaving the legitimate <code>_dmarc.example.com</code> empty.</li>
+        <li><strong>Missing Semicolons or Using Typographic Curly Quotes:</strong> Omitting the semicolon delimiter between tags (such as <code>v=DMARC1 p=none</code>) or copying formatted curly quotes from text editors corrupts plain ASCII DNS record parsing.</li>
+        <li><strong>Sending Reports to an External Domain Without External Authorization:</strong> Directing reports to a third-party domain (such as <code>rua=mailto:reports@externalvendor.com</code>) fails unless the receiving domain publishes an authorizing verification record at <code>example.com._report._dmarc.externalvendor.com</code>.</li>
+        <li><strong>Enforcing <code>p=reject</code> Before Authenticating All Legitimate Sending Sources:</strong> Escalating policies to <code>p=quarantine</code> or <code>p=reject</code> before aligning transactional gateways, CRM platforms, and marketing tools causes receivers to block genuine corporate correspondence.</li>
+      </ol>
+      <p>
+        Systematic XML report processing prevents misconfigurations and is explained in <a href="/dmarc-report-analyzer/">DMARC Report Analyzer</a> and <a href="/dmarc-aggregate-reports/">DMARC Aggregate Reports (RUA)</a>.
+      </p>
+
+      <h2 id="how-do-you-add-a-dmarc-record-to-your-domains-dns-5-steps">How Do You Add a DMARC Record to Your Domain's DNS? (5 Steps)</h2>
+      <p>
+        To add a DMARC record to your domain without disrupting legitimate email delivery, follow <strong class="text-ink">5 sequential preparation, DNS publication, and verification steps</strong>.
+      </p>
+      <p>
+        Domain administrators execute deployment through these coordinated operations:
+      </p>
+      <ol>
+        <li><strong>Verify</strong> that valid <a href="/spf-record/">SPF Record</a> (<code>v=spf1</code>) and <a href="/dkim/">DKIM Explained</a> (<code>_domainkey</code>) records have been actively signing outbound email for at least <strong>48 hours</strong> prior to DMARC publication, preventing false rejections caused by DNS propagation latency across global resolvers.</li>
+        <li><strong>Generate</strong> an initial monitoring record (<code>v=DMARC1; p=none; rua=mailto:dmarc-reports@example.com;</code>) using the <a href="/dmarc-record-generator/">DMARC Record Generator</a>, directing reports to a dedicated mailbox or <a href="/dmarc-monitoring/">DMARC Monitoring</a> service.</li>
+        <li><strong>Open</strong> the DNS zone editor within your authoritative DNS provider dashboard (such as Cloudflare, AWS Route 53, GoDaddy, or Namecheap) and click <strong>Add Record</strong>.</li>
+        <li><strong>Publish</strong> a new <code>TXT</code> record configured with Host/Name set to <code>_dmarc</code>, TTL set to <code>3600</code> seconds (1 hour), and Value containing your validated DMARC string.</li>
+        <li><strong>Validate</strong> the live deployment using the <a href="/dmarc-record-checker/">DMARC Record Checker</a> to confirm correct tag-value syntax, verify single-record status, and inspect reporting readiness, as outlined in <a href="/how-to-create-dmarc-record/">How to Create a DMARC Record</a>.</li>
+      </ol>
+      <p>
+        Maintaining a secure email infrastructure requires continuous vigilance over your DMARC record, its <code>_dmarc</code> DNS TXT record publication, and strict adherence to <code>v=DMARC1</code> tag-value syntax. As organizations transition from <code>p=none</code> monitoring to full <code>p=reject</code> policy enforcement, verifying that SPF and DKIM achieve reliable identifier alignment guarantees that authentic business emails reach user inboxes while protecting domain reputation against spoofing and phishing attacks. Analyzing daily <code>rua=</code> aggregate reports ensures newly added cloud services remain authenticated and aligned before strict policies block unauthorized mail streams.
+      </p>
     </div>
 
-    <div class="rich-text mt-10">
-      <h2>Worked examples</h2>
-      <p>Monitoring start:</p>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com</pre>
-      <p>Enforcement with subdomain policy and ramp:</p>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft">v=DMARC1; p=reject; sp=reject; pct=100; rua=mailto:dmarc@yourdomain.com; adkim=r; aspf=r</pre>
-
-      <h2>How to publish it</h2>
-      <ul>
-        <li>In your DNS host, create a TXT record with host/name <code>_dmarc</code> (the full name becomes <code>_dmarc.yourdomain.com</code>).</li>
-        <li>Paste the record value, build one safely in the <a href="/dmarc-record-generator/">DMARC record generator</a>.</li>
-        <li>TTL 3600 is fine; verify with the <a href="/dmarc-record-checker/">DMARC checker</a> minutes later.</li>
-        <li>If reports go to a different domain (e.g. a vendor), that domain must authorize yours with an external-report destination record.</li>
-      </ul>
-
-      
-<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I publish the DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">As a TXT record at _dmarc.yourdomain.com in your authoritative DNS host. Most providers accept the name as _dmarc when you enter it at the root.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I have multiple DMARC records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Exactly one record at _dmarc is valid; multiple records make receivers ignore DMARC entirely. Merge everything into one.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long until DMARC takes effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The record propagates in minutes, but receivers cache policies, so expect 24 to 48 hours before the policy is applied everywhere.</p></details></div>
-      <h2>Related</h2>
-      <ul>
-        <li><a href="/dmarc/">DMARC: the complete guide</a>, policies, alignment, enforcement road</li>
-        <li><a href="/dmarc-report-analyzer/">DMARC report analyzer</a>, free</li>
-      </ul>
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have more than one DMARC record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, a domain <strong>only publishes one DMARC TXT record at _dmarc</strong>. If you publish two or more v=DMARC1 records on the same hostname, receiving mail servers ignore DMARC completely. To send reports to multiple addresses, separate them with a comma inside a single rua= tag.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I add a DMARC record: at my domain registrar or my email host?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">You always publish your DMARC TXT record at your <strong>authoritative DNS provider</strong> (the company whose nameservers your domain points to, such as Cloudflare, Route 53, or Namecheap), which is separate from your email inbox provider.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need quotes around my DMARC record value in DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) <strong>add quotation marks automatically</strong>, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the best DMARC record to start with?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Start with <strong>v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com;</strong> on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports.</p>
+      </details>
     </div>
   </div>
 </BaseLayout>
