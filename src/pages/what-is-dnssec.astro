@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Domain Name System Security Extensions (DNSSEC) is <strong class="text-ink">a cryptographic authentication protocol suite defined in RFC 4033, RFC 4034, and RFC 4035 that attaches digital signatures to DNS resource record sets (RRsets) to prevent DNS cache poisoning and spoofing</strong>. DNSSEC verifies data origin and message integrity through a hierarchical chain of trust (<code>RRSIG</code>, <code>DNSKEY</code>, <code>DS</code>, and <code>NSEC3</code> records) anchored at the IANA root zone, without encrypting the underlying DNS query traffic.
+        Domain Name System Security Extensions (DNSSEC) is <strong class="text-ink">a cryptographic authentication suite defined in RFC 4033, 4034, and 4035 that signs DNS resource record sets (RRsets) to prevent cache poisoning</strong>. DNSSEC validates data origin and integrity using RRSIG, DNSKEY, DS, and NSEC3 records without encrypting traffic. The chain of trust of DNSSEC links child zones to the IANA root trust anchor.
       </p>
     </div>
 
@@ -74,7 +74,7 @@ const faq = {
         <li><a href="#what-is-the-difference-between-a-zone-signing-key-zsk-and-a-key-signing-key-ksk">Zone Signing Key (ZSK) vs Key Signing Key (KSK)</a></li>
         <li><a href="#how-does-the-dnssec-chain-of-trust-work-step-by-step">How the DNSSEC Chain of Trust works (7 steps)</a></li>
         <li><a href="#what-are-the-3-dnssec-validation-states-in-recursive-resolvers">3 DNSSEC validation states in recursive resolvers</a></li>
-        <li><a href="#which-dnssec-cryptographic-algorithm-should-you-use-rsa-vs-ecdsa-algorithm-13">RSA vs ECDSA Algorithm 13</a></li>
+        <li><a href="#how-do-dnssec-cryptographic-algorithms-compare-rsa-algorithm-8-vs-ecdsa-algorithm-13">RSA Algorithm 8 vs ECDSA Algorithm 13</a></li>
         <li><a href="#what-is-the-difference-between-dnssec-doh-dot-and-https-tls">DNSSEC vs DoH/DoT vs HTTPS/TLS</a></li>
         <li><a href="#how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">Enable, migrate, and disable DNSSEC safely</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
@@ -87,7 +87,7 @@ const faq = {
         DNSSEC was created because <strong class="text-ink">the original 1987 DNS protocol (RFC 1035) transmitted UDP port 53 responses without cryptographic origin verification, allowing attackers to inject forged IP addresses into recursive resolver caches</strong>.
       </p>
       <p>
-        In classic DNS architectures, a recursive resolver verified incoming response packets solely by checking whether the source IP address, UDP port, and 16-bit Transaction ID (representing 65,536 potential values) matched its pending query. In July 2008, security researcher Dan Kaminsky discovered a fundamental cache-poisoning vulnerability: an off-path attacker could flood a target recursive resolver with forged referral packets for randomized subdomains (such as <code>1.example.com</code> and <code>2.example.com</code>), guess the 16-bit Transaction ID within seconds, and overwrite the cached authoritative nameserver (NS) records for the entire target domain. Once poisoned, the resolver routed all subsequent traffic for that domain to an attacker-controlled destination, facilitating credential theft and man-in-the-middle attacks as documented in <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> and <a href="/dns-hijacking/">DNS Hijacking</a>.
+        In classic DNS architectures, a recursive resolver verified incoming response packets solely by checking whether the source IP address, UDP port, and 16-bit Transaction ID (representing 65,536 potential values) matched its pending query. In July 2008, security researcher Dan Kaminsky demonstrated that an off-path attacker could flood recursive resolvers with forged referral responses for randomized subdomains. Attackers guessed the 16-bit Transaction ID within seconds and poisoned parent NS records in cache to redirect entire domains. Once poisoned, the resolver routed all subsequent traffic for that domain to an attacker-controlled destination, facilitating credential theft and man-in-the-middle attacks as documented in <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> and <a href="/dns-hijacking/">DNS Hijacking</a>.
       </p>
       <p>
         The Internet Engineering Task Force (IETF) resolved this architectural flaw by publishing modern DNSSEC specifications in March 2005 across RFC 4033, RFC 4034, and RFC 4035. On July 15, 2010, the Internet Assigned Numbers Authority (IANA) and ICANN formally signed the DNS Root Zone (.), creating the global cryptographic trust anchor required to validate every signed Top-Level Domain (TLD) and second-level domain worldwide. Background concepts and operational mechanics are covered in <a href="/what-is-dns/">What Is DNS</a> and <a href="/dns-security/">DNS Security</a>.
@@ -108,7 +108,7 @@ const faq = {
       </section>
 
       <p>
-        RFC 4035 Section 2.2 dictates a fundamental operational rule: DNSSEC signs entire Resource Record Sets (RRsets) rather than individual records. When a domain publishes multiple A records (for example, 3 distinct IP addresses for round-robin balancing), the authoritative nameserver groups all 3 records into a single canonical RRset and generates one comprehensive <code>RRSIG</code> signature over the collection. Resolvers always retrieve and validate the entire set simultaneously. Modern registrars also support automated parent-child updates through Child DS (CDS, Type 59) and Child DNSKEY (CDNSKEY, Type 60) records defined in RFC 7344, allowing child zones to publish key rollovers automatically to supporting registries. Record structures and lookup tools are detailed in <a href="/ds-record/">DS Record</a>, <a href="/dnskey-record/">DNSKEY Record</a>, <a href="/ds-record-lookup/">DS Record Lookup</a>, and <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>.
+        RFC 4035 Section 2.2 dictates a fundamental operational rule: DNSSEC signs entire Resource Record Sets (RRsets) rather than individual records. The authoritative nameserver groups all matching records into a single canonical RRset and generates one comprehensive <code>RRSIG</code> signature over the collection when a domain publishes multiple A records for round-robin load balancing. Resolvers always retrieve and validate the entire set simultaneously. Modern registrars also support automated parent-child updates through Child DS (CDS, Type 59) and Child DNSKEY (CDNSKEY, Type 60) records defined in RFC 7344, allowing child zones to publish key rollovers automatically to supporting registries. Record structures and lookup tools are detailed in <a href="/ds-record/">DS Record</a>, <a href="/dnskey-record/">DNSKEY Record</a>, <a href="/ds-record-lookup/">DS Record Lookup</a>, and <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>.
       </p>
 
       <h3 id="why-does-modern-dnssec-use-nsec3-or-black-lies-instead-of-plain-nsec">Why Does Modern DNSSEC Use NSEC3 or Black Lies Instead of Plain NSEC?</h3>
@@ -127,8 +127,8 @@ const faq = {
         Separating cryptographic responsibilities across two specialized key pairs solves a fundamental administrative dilemma: rotating keys frequently without requiring manual updates at external domain registrars.
       </p>
       <ul>
-        <li><strong>Zone Signing Key (ZSK, DNSKEY Flag 256):</strong> The ZSK functions as the primary operational key pair for the domain. Its private half generates an <code>RRSIG</code> signature over every routine zone RRset (including A, AAAA, MX, TXT, and CNAME records), while its public half is published in the zone's <code>DNSKEY</code> RRset. Because parent TLD registries store no record of the ZSK, DNS providers can rotate the ZSK every 30 to 90 days automatically without requiring registrar intervention.</li>
-        <li><strong>Key Signing Key (KSK, DNSKEY Flag 257):</strong> The KSK serves as the zone's master authority key. Its private half signs exclusively the <code>DNSKEY</code> RRset, cryptographically validating both the ZSK and itself. A cryptographic hash of the public KSK is uploaded to the domain registrar and published in the parent TLD zone as a Delegation Signer (DS) record. Because rotating a KSK requires publishing a new DS record at the registrar and parent registry, organizations deploy stronger key lengths for the KSK and rotate it on longer intervals of 12 to 24 months.</li>
+        <li><strong>Zone Signing Key (ZSK, DNSKEY Flag 256):</strong> The Zone Signing Key (ZSK, Flag 256) signs individual RRsets (A, AAAA, MX, TXT, NS, SOA, NSEC3) inside the child zone. The private key of the ZSK generates an <code>RRSIG</code> signature over every routine zone RRset, while the public key is published in the zone's <code>DNSKEY</code> RRset. Because parent TLD registries store no record of the ZSK, DNS providers rotate the ZSK every 30 to 90 days automatically without requiring registrar intervention.</li>
+        <li><strong>Key Signing Key (KSK, DNSKEY Flag 257):</strong> The Key Signing Key (KSK, Flag 257) signs only the zone's DNSKEY RRset to authorize the ZSK. The private key of the KSK cryptographically validates both the ZSK and itself, while a SHA-256 hash of the public KSK is published in the parent TLD zone as a Delegation Signer (DS) record. Because rotating a KSK requires publishing a new DS record at the registrar, organizations rotate the KSK on longer intervals of 12 to 24 months.</li>
       </ul>
 
       <h2 id="how-does-the-dnssec-chain-of-trust-work-step-by-step">How Does the DNSSEC Chain of Trust Work Step by Step?</h2>
@@ -181,10 +181,10 @@ const faq = {
       </div>
 
       <p>
-        If Step 1 produces <code>SERVFAIL</code> while Step 2 returns <code>NOERROR</code> with the correct IP address, the domain is suffering from an invalid parent DS record, mismatched KSK, or expired RRSIG signature rather than a server outage. Parent-child consistency can be verified using the <a href="/delegation-checker/">DNS Delegation Checker</a>.
+        An invalid parent DS record, mismatched KSK, or expired RRSIG signature is the confirmed cause of a domain outage if Step 1 produces <code>SERVFAIL</code> while Step 2 returns <code>NOERROR</code> with the target IP address. Parent-child consistency can be verified using the <a href="/delegation-checker/">DNS Delegation Checker</a>.
       </p>
 
-      <h2 id="which-dnssec-cryptographic-algorithm-should-you-use-rsa-vs-ecdsa-algorithm-13">Which DNSSEC Cryptographic Algorithm Should You Use? (RSA vs ECDSA Algorithm 13)</h2>
+      <h2 id="how-do-dnssec-cryptographic-algorithms-compare-rsa-algorithm-8-vs-ecdsa-algorithm-13">How Do DNSSEC Cryptographic Algorithms Compare? (RSA Algorithm 8 vs ECDSA Algorithm 13)</h2>
       <p>
         RFC 8624 recommends <strong class="text-ink">Algorithm 13 (ECDSAP256SHA256) or Algorithm 15 (Ed25519) for all modern DNSSEC deployments</strong> because elliptic-curve keys produce compact signatures, preventing UDP packet fragmentation and DNS amplification abuse. The table below compares the 4 primary DNSSEC cryptographic algorithms by RFC standard, implementation status, and network packet impact.
       </p>
@@ -216,16 +216,16 @@ const faq = {
       </p>
       <ul>
         <li><strong>DNSSEC Authenticates Data Integrity (Zero Encryption):</strong> DNSSEC cryptographic signatures verify that DNS records originate from the genuine domain owner and were not altered by intermediate resolvers. DNSSEC does not encrypt query payloads: queries and responses remain visible as plaintext across intermediate networks unless wrapped in an encrypted transport.</li>
-        <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH, RFC 8484) and DNS-over-TLS (DoT, RFC 7858) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, if the queried domain lacks DNSSEC, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
+        <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH, RFC 8484) and DNS-over-TLS (DoT, RFC 7858) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session if the queried domain lacks DNSSEC, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
         <li><strong>HTTPS/TLS and DANE (End-to-End Application Encryption):</strong> Once DNSSEC delivers an authenticated IP address, HTTPS/TLS encrypts the application session between the browser and web server. The DNS-Based Authentication of Named Entities protocol (DANE, RFC 6698) leverages DNSSEC to publish TLSA records directly in DNS, pinning valid TLS certificates for mail exchangers and eliminating dependence on commercial certificate authorities, as explored in <a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a>.</li>
       </ul>
 
       <h2 id="how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">How Do You Enable, Migrate, and Disable DNSSEC Safely Without Breaking Your Domain?</h2>
       <p>
-        To enable DNSSEC or migrate a signed domain between DNS providers without triggering a SERVFAIL outage, you must <strong class="text-ink">synchronize child zone DNSKEY signing and parent registrar DS publication in strict reverse order during activation and deactivation</strong>.
+        To enable DNSSEC or migrate a signed domain between DNS providers without triggering a SERVFAIL outage, <strong class="text-ink">synchronize child zone DNSKEY signing and parent registrar DS publication in strict reverse order during activation and deactivation</strong>.
       </p>
       <p>
-        Domain administrators must execute DNSSEC lifecycle tasks through 2 strict operational sequences:
+        Domain administrators execute DNSSEC lifecycle tasks through 2 strict operational sequences:
       </p>
       <p class="font-semibold text-ink">Workflow A: Enabling DNSSEC (Child Zone Signing First, Parent DS Second)</p>
       <ol>
@@ -236,7 +236,7 @@ const faq = {
       </ol>
       <p class="font-semibold text-ink">Workflow B: Disabling DNSSEC or Migrating Nameservers (Parent DS Removal First, Wait Out TTL, Child Zone Second)</p>
       <p>
-        Changing nameservers on a signed domain without removing the parent DS record causes global resolution failure: validating recursive resolvers will query the new nameservers, find no matching KSK, and reject all queries with SERVFAIL. When changing DNS providers, domain owners must delete the DS record at the registrar FIRST, wait for the parent DS TTL (typically 1 to 24 hours) to expire worldwide, and only then update the authoritative nameserver delegation at the registrar.
+        Changing nameservers on a signed domain without removing the parent DS record causes global resolution failure: validating recursive resolvers query the new nameservers, find no matching KSK, and reject all queries with SERVFAIL. Delete the old DS record at your domain registrar and wait for the parent DS TTL (typically 1 to 24 hours) to expire before switching authoritative nameservers between DNS providers.
       </p>
       <p>
         Deploying comprehensive DNS defenses requires balancing cryptographic signing with operational controls across nameservers, registrar locks, and monitoring tools. Administrators can audit their complete domain posture using the <a href="/dns-threat-protection-checklist/">DNS Threat Protection Checklist</a> and validate live chains of trust anytime with the <a href="/dnssec-checker/">DNSSEC Checker</a>.

@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Domain-based Message Authentication, Reporting, and Conformance (DMARC) is <strong class="text-ink">an email authentication, policy enforcement, and reporting protocol defined in RFC 7489 that prevents exact-domain email spoofing and business email compromise (BEC)</strong>. Published as a DNS TXT record at <code>_dmarc.&lt;domain&gt;</code>, DMARC verifies that incoming messages pass SPF or DKIM with Identifier Alignment against the visible <code>From:</code> header, enforces a disposition policy (<code>none</code>, <code>quarantine</code>, or <code>reject</code>), and returns daily XML aggregate reports.
+        Domain-based Message Authentication, Reporting, and Conformance (DMARC) is <strong class="text-ink">an email authentication, policy, and reporting protocol defined in RFC 7489 that prevents exact-domain spoofing</strong>. DMARC validates inbound messages at <code>_dmarc.&lt;domain&gt;</code> by checking whether SPF or DKIM passes with Identifier Alignment against the visible From: header. The policy tag of DMARC enforces none, quarantine, or reject dispositions and generates daily XML reports.
       </p>
     </div>
 
@@ -101,7 +101,7 @@ const faq = {
 
       <h2 id="how-does-dmarc-evaluation-work-step-by-step-the-6-step-flow">How Does DMARC Evaluation Work Step by Step? (The 6-Step Flow)</h2>
       <p>
-        The DMARC evaluation engine executes <strong class="text-ink">6 sequential verification, alignment, disposition, and reporting steps</strong> whenever an inbound email arrives at a destination mail server.
+        The DMARC evaluation engine executes <strong class="text-ink">6 sequential verification, alignment, disposition, and reporting steps</strong> when an inbound email arrives at a receiving mail server.
       </p>
       <p>
         Receiving mail gateways evaluate incoming messages through 6 sequential steps:
@@ -126,11 +126,11 @@ const faq = {
         RFC 7489 Section 3.1 defines 2 distinct alignment modes for SPF and DKIM:
       </p>
       <ul>
-        <li><strong>Relaxed Alignment (adkim=r, aspf=r):</strong> Matches sender identities at the Organizational Domain level determined through the Public Suffix List (PSL). Receiving servers accept subdomains matching the parent organizational domain: if the visible Header From displays <code>support@example.com</code>, an SPF Return-Path of <code>bounces@mail.example.com</code> or a DKIM signature with <code>d=marketing.example.com</code> passes relaxed alignment. Relaxed alignment operates as the protocol default when tags are omitted.</li>
-        <li><strong>Strict Alignment (adkim=s, aspf=s):</strong> Requires an exact Fully Qualified Domain Name (FQDN) character match. If the visible Header From displays <code>support@example.com</code>, both the Return-Path domain (for SPF) and the <code>d=</code> domain (for DKIM) must match <code>example.com</code> exactly; a subdomain such as <code>mail.example.com</code> fails strict alignment unless the visible Header From also originates from <code>@mail.example.com</code>.</li>
+        <li><strong>Relaxed Alignment (adkim=r, aspf=r):</strong> Matches sender identities at the Organizational Domain level determined through the Public Suffix List (PSL). An SPF Return-Path of <code>bounces@mail.example.com</code> or a DKIM signature with <code>d=marketing.example.com</code> passes relaxed alignment if the visible Header From displays <code>support@example.com</code>.</li>
+        <li><strong>Strict Alignment (adkim=s, aspf=s):</strong> Requires an exact Fully Qualified Domain Name (FQDN) character match. Both the SPF Return-Path domain and the DKIM <code>d=</code> domain match <code>example.com</code> character-for-character under strict alignment when the visible Header From displays <code>support@example.com</code>. A subdomain such as <code>mail.example.com</code> fails strict alignment unless the visible Header From also originates from <code>@mail.example.com</code>.</li>
       </ul>
       <p>
-        Organizations sending mail across multiple third-party marketing and transactional providers maintain relaxed alignment to accommodate delegated subdomains without triggering policy failures. Detailed alignment mechanics and header matrices are documented in <a href="/dmarc-alignment/">DMARC Alignment</a> and <a href="/dmarc-record/">DMARC Record</a>.
+        RFC 7489 establishes relaxed alignment (adkim=r and aspf=r) as the protocol default when tags are omitted from a published record. Domain administrators evaluate alignment mechanics and header matrices in <a href="/dmarc-alignment/">DMARC Alignment</a> and <a href="/dmarc-record/">DMARC Record</a>.
       </p>
 
       <h2 id="what-are-the-11-dmarc-record-tags-in-rfc-7489">What Are the 11 DMARC Record Tags in RFC 7489?</h2>
@@ -197,7 +197,7 @@ const faq = {
         <li><strong>Forensic and Failure Reports (ruf=mailto:, AFRF Format):</strong> Receivers generate real-time forensic reports under the Auth-Failure Reporting Format (AFRF) when an individual message fails DMARC evaluation under the selected trigger condition (<code>fo=0</code>, <code>fo=1</code>, <code>fo=d</code>, or <code>fo=s</code>). Because forensic reports reproduce original email headers and message snippets containing personal user information, major consumer mailbox providers including Google (Gmail), Microsoft 365, and Yahoo have discontinued sending RUF reports to eliminate data-privacy liabilities.</li>
       </ul>
       <p>
-        Delivering aggregate reports to an external domain (such as routing reports from <code>example.com</code> to <code>mailto:reports@promptdns.com</code>) requires authorization from the receiving destination under RFC 7489 Section 7.1. The reporting service publishes an authorization record at <code>example.com._report._dmarc.promptdns.com</code> containing <code>v=DMARC1</code> in DNS; without this explicit authorization, destination mail servers refuse to dispatch XML files to external addresses. Comprehensive parsing workflows are detailed in <a href="/dmarc-aggregate-reports/">DMARC Aggregate Reports (RUA)</a>, <a href="/dmarc-forensic-reports/">DMARC Forensic Reports (RUF)</a>, and <a href="/how-to-read-dmarc-reports/">How to Read DMARC Reports</a>.
+        The report-receiving domain publishes an authorizing <code>example.com._report._dmarc.promptdns.com</code> TXT record (<code>v=DMARC1</code>) when a rua= tag points to an external organizational domain under RFC 7489 Section 7.1. Destination mail servers refuse to dispatch XML files to external addresses without this explicit DNS authorization record. Comprehensive parsing workflows are detailed in <a href="/dmarc-aggregate-reports/">DMARC Aggregate Reports (RUA)</a>, <a href="/dmarc-forensic-reports/">DMARC Forensic Reports (RUF)</a>, and <a href="/how-to-read-dmarc-reports/">How to Read DMARC Reports</a>.
       </p>
 
       <h2 id="what-attacks-does-dmarc-stop-and-what-are-its-3-limitations">What Attacks Does DMARC Stop (And What Are Its 3 Limitations)?</h2>
@@ -217,8 +217,8 @@ const faq = {
       </p>
       <ul>
         <li><strong>Lookalike and Typosquatting Domains:</strong> Attackers register visually similar domain names (such as <code>examp1e.com</code> or <code>yourcompany-support.com</code>) and publish valid SPF, DKIM, and DMARC records on their own infrastructure. DMARC protects exclusively the specific DNS zone where the <code>_dmarc</code> record is published. Defending against lookalike domains requires proactive domain registration monitoring and defensive trademark registrations.</li>
-        <li><strong>Display-Name Spoofing:</strong> Attackers insert an executive's name into the friendly display string while transmitting from an unrelated webmail address (such as <code>"CEO Name" &lt;executive.update12@gmail.com&gt;</code>). Receiving mail systems evaluate DMARC against the <code>gmail.com</code> domain, which passes cleanly. Mitigating display-name spoofing requires inbound mail filtering rules that flag external emails containing internal executive names.</li>
-        <li><strong>Compromised Legitimate Mailboxes:</strong> If an attacker steals valid employee credentials or hijacks an authorized third-party Email Service Provider (ESP) API key, outbound emails originate from authorized mail infrastructure with valid SPF and DKIM signatures. DMARC marks these messages as authentic because the underlying cryptographic checks succeed. Defending against account takeovers requires multi-factor authentication (MFA) and endpoint behavioral analytics.</li>
+        <li><strong>Display-Name Spoofing:</strong> DMARC evaluates the external webmail domain rather than your corporate domain if an attacker places an executive's display name in front of an unrelated webmail address (such as <code>"CEO Name" &lt;executive.update12@gmail.com&gt;</code>). Mitigating display-name spoofing requires inbound mail filtering rules that flag external emails containing internal executive names.</li>
+        <li><strong>Compromised Legitimate Mailboxes:</strong> Outbound emails carry genuine SPF and DKIM signatures and pass DMARC evaluation if an attacker compromises a legitimate employee mailbox or valid ESP API key. DMARC marks these messages as authentic because the underlying cryptographic checks succeed. Defending against account takeovers requires multi-factor authentication (MFA) and endpoint behavioral analytics.</li>
       </ul>
 
       <h2 id="what-are-the-dmarc-compliance-requirements-in-2026">What Are the DMARC Compliance Requirements in 2026?</h2>

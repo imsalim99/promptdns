@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        A Sender Policy Framework (SPF) record is <strong class="text-ink">a DNS TXT resource record defined in RFC 7208 that lists every IPv4 address, IPv6 subnet, and third-party mail server authorized to send email on behalf of a domain</strong>. Receiving mail servers query the domain's <code>v=spf1</code> record during the SMTP handshake to verify the connecting server's IP address, enforce a strict 10-DNS-lookup limit, and supply authentication results to DMARC.
+        A Sender Policy Framework (SPF) record is <strong class="text-ink">a DNS TXT resource record defined in RFC 7208 that lists every IP address and mail server authorized to send email for a domain</strong>. Receiving mail servers evaluate v=spf1 mechanisms during the SMTP handshake to verify the connecting server's IP. The lookup limit of an SPF record is capped at 10 DNS queries.
       </p>
     </div>
 
@@ -142,7 +142,7 @@ const faq = {
         RFC 7208 defines 4 qualifier symbols:
       </p>
       <ul>
-        <li><strong>+ (Pass):</strong> Designates authorized senders. When omitted before a mechanism, the plus sign is the implied default (for example, <code>include:_spf.google.com</code> functions identically to <code>+include:_spf.google.com</code>).</li>
+        <li><strong>+ (Pass):</strong> Designates authorized senders. The plus sign is the implied default when omitted before a mechanism (for example, <code>include:_spf.google.com</code> functions identically to <code>+include:_spf.google.com</code>).</li>
         <li><strong>- (Fail / HardFail):</strong> Designates unauthorized senders and instructs receiving servers to reject non-matching messages outright (such as <code>-all</code>).</li>
         <li><strong>~ (SoftFail):</strong> Designates unauthorized senders while instructing receiving servers to accept the message and mark it as suspicious or deliver it to spam (such as <code>~all</code>).</li>
         <li><strong>? (Neutral):</strong> Asserts neither authorization nor rejection, prompting receiving servers to process the message without positive or negative SPF weighting. Setting <code>+all</code> creates a critical vulnerability that authorizes every IP address worldwide to send mail for the domain.</li>
@@ -183,10 +183,10 @@ const faq = {
         Receiving mail transfer agents enforce 4 strict protocol constraints during evaluation:
       </p>
       <ol>
-        <li><strong>Single SPF Record per Domain (RFC 7208 §3.2):</strong> A domain or subdomain must publish at most one TXT record starting with <code>v=spf1</code>. Publishing two or more separate <code>v=spf1</code> records causes receiving servers to abort evaluation immediately and return PermError; administrators must merge multiple sending services into a single string.</li>
-        <li><strong>Maximum of 10 DNS-Querying Mechanisms (RFC 7208 §4.6.4):</strong> Evaluating an SPF record must not require more than 10 DNS queries across all top-level and recursively nested include, a, mx, ptr, exists, and redirect= terms. Receiving MTAs enforce this cap to prevent malicious actors from using forged SPF records as a DNS amplification Denial-of-Service (DoS) weapon; the 11th lookup triggers an immediate PermError.</li>
+        <li><strong>Single SPF Record per Domain (RFC 7208 §3.2):</strong> RFC 7208 Section 3.2 restricts each domain or subdomain to a single TXT record starting with <code>v=spf1</code>. Publishing two or more separate <code>v=spf1</code> records causes receiving servers to abort evaluation immediately and return PermError; administrators merge multiple sending services into a single string.</li>
+        <li><strong>Maximum of 10 DNS-Querying Mechanisms (RFC 7208 §4.6.4):</strong> RFC 7208 Section 4.6.4 caps SPF evaluation at 10 DNS queries across all top-level and recursively nested include, a, mx, ptr, exists, and redirect= terms. Receiving MTAs enforce this cap to prevent malicious actors from using forged SPF records as a DNS amplification Denial-of-Service (DoS) weapon; the 11th lookup triggers an immediate PermError.</li>
         <li><strong>Maximum of 2 Void Lookups (RFC 7208 §4.6.4):</strong> Receivers enforce a secondary limit of 2 void lookups: queries that return an empty answer (0 records) or NXDOMAIN (RCODE 3), which frequently occurs when decommissioned third-party email providers expire.</li>
-        <li><strong>Maximum of 255 Characters per Quoted TXT String (RFC 1035 §3.3.14 and RFC 7208 §3.4):</strong> A single DNS TXT character-string cannot exceed 255 ASCII bytes. Records longer than 255 characters must be split into multiple quoted strings within the same TXT record (which DNS resolvers concatenate without spaces), keeping total UDP payload size under 450 bytes to avoid TCP fallback.</li>
+        <li><strong>Maximum of 255 Characters per Quoted TXT String (RFC 1035 §3.3.14 and RFC 7208 §3.4):</strong> A single DNS TXT character-string contains a maximum of 255 ASCII bytes. Authoritative DNS servers split TXT records exceeding 255 ASCII characters into multiple quoted strings within the same TXT record (which DNS resolvers concatenate without spaces), keeping total UDP payload size under 450 bytes to avoid TCP fallback.</li>
       </ol>
       <p>
         Administrators can prevent PermErrors by managing record complexity through 3 strategies: removing deprecated third-party services, delegating distinct mail streams to dedicated subdomains (such as <code>mail.example.com</code>, which receives an independent 10-lookup quota), or replacing dynamic includes with direct CIDR ranges. Detailed remediation workflows are available in <a href="/spf-lookup-limit/">The SPF 10-Lookup Limit Explained</a>, the automated <a href="/spf-flattener/">SPF Flattener</a> tool, and the <a href="/spf-record-too-long/">SPF Record Too Long</a> guide.
@@ -197,13 +197,13 @@ const faq = {
         An email passes SPF authentication yet fails DMARC when <strong class="text-ink">the envelope Return-Path domain (RFC 5321.MailFrom) checked by SPF does not match the visible Header From domain (RFC 5322.From) displayed to the recipient</strong>.
       </p>
       <p>
-        Every standard email message carries 2 distinct sender identities: the envelope Return-Path address (RFC 5321.MailFrom) used by mail servers to route delivery status notifications and evaluate SPF, and the visible Header From address (RFC 5322.From) presented to users in mail clients. Because SPF checks exclusively the envelope Return-Path domain, an attacker can transmit email with an authorized Return-Path on their own domain (passing SPF cleanly) while spoofing your company's domain in the visible Header From address.
+        Every standard email message carries 2 distinct sender identities: the envelope Return-Path address (RFC 5321.MailFrom) used by mail servers to route delivery status notifications and evaluate SPF, and the visible Header From address (RFC 5322.From) presented to users in mail clients. Because SPF checks exclusively the envelope Return-Path domain, an unaligned sender transmits email with an authorized Return-Path on their own domain (passing standalone SPF) while spoofing your company's domain in the visible Header From address.
       </p>
       <p>
-        The DMARC protocol closes this security loophole by mandating SPF Identifier Alignment. Under relaxed alignment (aspf=r), the organizational domain of the Return-Path must match the Header From domain (for example, <code>bounces.example.com</code> aligns with <code>example.com</code>). Under strict alignment (aspf=s), the hostnames must match exactly. Administrators can review alignment mechanics in the <a href="/dmarc/">DMARC</a> and <a href="/dmarc-alignment/">DMARC Alignment</a> guides.
+        The DMARC protocol closes this security loophole by mandating SPF Identifier Alignment. Under relaxed alignment (aspf=r), the organizational domain of the Return-Path matches the Header From domain (for example, <code>bounces.example.com</code> aligns with <code>example.com</code>). Under strict alignment (aspf=s), the hostnames match character-for-character. Administrators can review alignment mechanics in the <a href="/dmarc/">DMARC</a> and <a href="/dmarc-alignment/">DMARC Alignment</a> guides.
       </p>
       <p>
-        The technical separation between envelope and display identities exposes a widespread industry error: third-party Email Service Providers (ESPs) such as Mailchimp or Amazon SES transmit email using their own shared domain in the envelope Return-Path by default. Receiving mail servers evaluate Mailchimp's or Amazon's SPF record rather than your domain's policy. Adding vendor include mechanisms to your root domain's SPF record without configuring a custom Return-Path subdomain consumes DNS lookups without achieving DMARC alignment.
+        The technical separation between envelope and display identities exposes a widespread industry error. Email platforms that route bounces through their own organizational domain (including Mailchimp via mcsv.net and default Amazon SES via amazonses.com) transmit email using a vendor domain in the envelope Return-Path by default. A receiving mail server queries the ESP's SPF record instead of your domain's SPF record when evaluating messages sent with a third-party Return-Path. Adding vendor include mechanisms to your root domain's SPF record without configuring a custom Return-Path subdomain consumes DNS lookups without achieving DMARC alignment.
       </p>
 
       <h2 id="why-does-email-forwarding-break-spf-and-how-do-dkim-and-arc-fix-it">Why Does Email Forwarding Break SPF (And How Do DKIM and ARC Fix It)?</h2>
@@ -211,7 +211,7 @@ const faq = {
         Email forwarding breaks SPF authentication because <strong class="text-ink">an intermediary forwarding server retransmits the message from its own IP address while preserving the original sender's Return-Path domain</strong>.
       </p>
       <p>
-        An automated email forwarder breaks SPF authentication if an intermediary server relays messages to an external mailbox such as personal Gmail. The forwarding mail server retransmits the message from its own IP address while retaining the original envelope Return-Path domain. Destination mail servers evaluate the original domain's SPF policy against the forwarding IP, find no authorization entry, and produce an SPF Fail result.
+        An automated email forwarder breaks SPF authentication if an intermediary server relays messages to an external mailbox. The connecting IP address belongs to the forwarding server (university.edu) rather than the original sender (company.com) when the final recipient server receives a forwarded message. Destination mail servers evaluate the original domain's SPF policy against the forwarding IP, find no authorization entry, and produce an SPF Fail result.
       </p>
       <p>
         Modern mail ecosystems preserve delivery across indirect mailflows through 3 complementary standards:

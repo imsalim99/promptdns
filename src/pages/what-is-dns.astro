@@ -55,7 +55,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        The Domain Name System (DNS) is <strong class="text-ink">a hierarchical, decentralized internet naming protocol defined in RFC 1034 and RFC 1035 that translates human-readable domain names into numerical IPv4 and IPv6 addresses</strong>. DNS resolution routes web browsers and mail servers to target hosts by executing iterative and recursive queries across 4 server tiers, caching resource records by Time to Live (TTL), and securing lookups via DNSSEC and DNS-over-HTTPS (DoH).
+        The Domain Name System (DNS) is <strong class="text-ink">a hierarchical, decentralized naming protocol defined in RFC 1034 and 1035 that translates domain names into numerical IPv4 and IPv6 addresses</strong>. DNS resolves hostnames by executing iterative and recursive queries across 4 server tiers over port 53. The record architecture of DNS governs web routing, TTL caching, and DNSSEC authentication.
       </p>
     </div>
 
@@ -113,7 +113,7 @@ const faq = {
         <li><strong>Deliver</strong> the resolved IP address from the recursive resolver to the client web browser and cache the record for the duration of the TTL.</li>
       </ol>
       <p>
-        When a hostname points to a canonical alias via a CNAME record, the recursive resolver restarts the resolution sequence for the canonical target domain before returning the final IP address. For an interactive step-by-step trace of resolution packets across global networks, review the <a href="/how-dns-works/">How DNS Works</a> guide or verify resolver consensus with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+        The recursive resolver restarts the resolution sequence for the canonical target domain before returning the final IP address when a hostname points to a canonical alias via a CNAME record. For an interactive step-by-step trace of resolution packets across global networks, review the <a href="/how-dns-works/">How DNS Works</a> guide or verify resolver consensus with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
       </p>
 
       <h2 id="what-is-the-difference-between-an-authoritative-dns-server-and-a-recursive-dns-resolver">What Is the Difference Between an Authoritative DNS Server and a Recursive DNS Resolver?</h2>
@@ -130,7 +130,7 @@ const faq = {
       </p>
       <ul>
         <li><strong>Recursive Query:</strong> The client stub resolver queries a recursive resolver with the Recursion Desired (RD=1) bit set in the DNS header. The recursive resolver must return either the requested resource record or an explicit error response (such as NXDOMAIN or SERVFAIL).</li>
-        <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. If the queried nameserver does not hold the exact record, the nameserver returns an authoritative referral pointing to nameservers lower in the DNS tree.</li>
+        <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. The queried nameserver returns an authoritative referral pointing to nameservers lower in the DNS tree if the queried nameserver does not hold the exact record.</li>
         <li><strong>Non-Recursive Query:</strong> The resolver answers the query immediately without contacting upstream servers, either because the requested record already resides in local cache or because the queried server holds authoritative data for the zone.</li>
       </ul>
 
@@ -154,7 +154,7 @@ const faq = {
         </div>
       </section>
       <p>
-        Standard DNS relies on connectionless UDP port 53 for low-latency single-packet queries up to 512 bytes, which EDNS0 (RFC 6891) extends up to 4,096 bytes to support DNSSEC signatures. When a DNS response exceeds the negotiated UDP buffer size, the server sets the Truncated (TC=1) bit in the header, prompting the resolver to re-issue the query over TCP port 53 (RFC 7766). Full zone transfers between authoritative servers (AXFR under RFC 5936) operate exclusively over TCP port 53 to guarantee reliable transmission. Modern network environments increasingly deploy encrypted transports to prevent eavesdropping, detailed in the <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a> technical comparison.
+        Standard DNS relies on connectionless UDP port 53 for low-latency single-packet queries up to 512 bytes, which EDNS0 (RFC 6891) extends up to 4,096 bytes to support DNSSEC signatures. The server sets the Truncated (TC=1) bit in the header and prompts the resolver to re-issue the query over TCP port 53 (RFC 7766) when a DNS response exceeds the negotiated UDP buffer size. Full zone transfers between authoritative servers (AXFR under RFC 5936) operate exclusively over TCP port 53 to guarantee reliable transmission. Modern network environments increasingly deploy encrypted transports to prevent eavesdropping, detailed in the <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a> technical comparison.
       </p>
 
       <h2 id="which-dns-record-types-control-web-traffic-email-and-domain-security">Which DNS Record Types Control Web Traffic, Email, and Domain Security?</h2>
@@ -189,13 +189,15 @@ const faq = {
         DNS caching occurs across <strong class="text-ink">3 primary resolution layers: the web browser cache, the operating system stub resolver cache, and the recursive resolver cache</strong>, for a duration governed by the record's Time to Live (TTL) in seconds.
       </p>
       <p>
-        Web browsers check local memory first to minimize network round trips. In Chromium browsers, administrators can view cached hostnames, IP mappings, and expiration times at <code>chrome://net-internals/#dns</code>. When a browser cache misses or a non-browser application issues a lookup, the request reaches the OS stub resolver. The stub resolver consults the local hosts file and system DNS cache before sending packets onto the network. Administrators can clear cached local records by following the <a href="/flush-dns-cache/">How to Flush DNS Cache</a> reference.
+        DNS caching operates across 3 primary resolution tiers:
       </p>
+      <ul>
+        <li><strong>Browser DNS cache:</strong> Stores hostnames and IP addresses directly in application memory to eliminate network round trips on repeat visits. In Chromium browsers, administrators inspect active entries and expiration timers at <code>chrome://net-internals/#dns</code>.</li>
+        <li><strong>Operating System (OS) stub resolver cache:</strong> Evaluates local system memory and the local hosts file before transmitting UDP packets onto the physical network when a browser cache misses or a command-line utility executes a query. Administrators clear stale OS stub records using the commands in <a href="/flush-dns-cache/">How to Flush DNS Cache</a>.</li>
+        <li><strong>Recursive resolver cache:</strong> Retains resource record sets across public Anycast resolvers and ISP recursors for the full duration declared by authoritative nameservers. A recursive resolver bypasses root and TLD nameservers on subsequent lookups and queries the authoritative nameserver directly when the recursive resolver holds cached NS delegation records for a TLD (.com) or second-level domain (example.com).</li>
+      </ul>
       <p>
-        Public and ISP recursive resolvers cache answers for the full TTL duration declared by authoritative servers. When a recursive resolver holds cached NS delegation records for a TLD (.com) or domain (example.com), the recursor bypasses root and TLD nameservers completely on subsequent lookups, querying the authoritative nameserver directly.
-      </p>
-      <p>
-        Positive DNS responses remain in cache according to the record's TTL (commonly 300 to 86,400 seconds). Non-existent domain responses (NXDOMAIN, RCODE 3) undergo negative caching under RFC 2308, where resolvers cache the negative result for the duration declared in the authoritative SOA record's MINIMUM field. Domain owners adjusting cache lifetimes can consult the <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a> guide and verify global caching convergence across resolvers with the <a href="/dns-propagation/">DNS Propagation</a> reference.
+        Positive DNS responses remain in cache according to the record's configured TTL (commonly 300 to 86,400 seconds). Non-existent domain responses (NXDOMAIN, RCODE 3) undergo negative caching under RFC 2308, where resolvers cache the negative result for the duration declared in the authoritative SOA record's MINIMUM field. Domain owners adjusting cache lifetimes can consult the <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a> guide and verify global caching convergence across resolvers with the <a href="/dns-propagation/">DNS Propagation</a> reference.
       </p>
 
       <h2 id="what-is-the-difference-between-public-dns-private-dns-and-managed-dns">What Is the Difference Between Public DNS, Private DNS, and Managed DNS?</h2>

@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        DNS propagation is <strong class="text-ink">the asynchronous time window required for cached DNS records and parent TLD nameserver delegations to expire and refresh across recursive resolvers worldwide after a DNS change</strong>. Because DNS uses a pull-based caching model under RFC 1035, record edits propagate within 5 minutes to 24 hours based on the previous Time to Live (TTL), while registrar nameserver (NS) changes take up to 48 hours due to TLD registry caching.
+        DNS propagation is <strong class="text-ink">the asynchronous cache-expiration window required for updated DNS records and TLD nameserver delegations to refresh across global recursive resolvers</strong>. Recursive resolvers retain cached records under RFC 1035 until the previous Time to Live (TTL) timer reaches zero. The duration of DNS propagation ranges from 5 minutes for record edits to 48 hours for NS changes.
       </p>
     </div>
 
@@ -91,8 +91,8 @@ const faq = {
         Queries encounter 4 independent caching layers between client applications and authoritative servers:
       </p>
       <ol>
-        <li><strong>ISP and Public Recursive Resolvers:</strong> Tens of thousands of recursive resolver clusters operated by Internet Service Providers (such as Comcast, Jio, and British Telecom) and public operators (such as Cloudflare 1.1.1.1, Google Public DNS 8.8.8.8, and AliDNS 223.5.5.5) cache answered records for the exact duration of the previously published TTL.</li>
-        <li><strong>Top-Level Domain (TLD) Registry Servers:</strong> When domain owners change authoritative nameserver (NS) delegations at their registrar, parent TLD registry operators (such as Verisign for .com and .net) cache parent NS and glue records with fixed registry TTLs of 172,800 seconds (48 hours).</li>
+        <li><strong>ISP and Public Recursive Resolvers:</strong> Public Anycast recursive resolvers (including Cloudflare 1.1.1.1, Google 8.8.8.8, and AliDNS 223.5.5.5) and regional ISP resolvers (such as Comcast, Jio, and British Telecom) cache answered records for the exact duration of the previously published TTL.</li>
+        <li><strong>Top-Level Domain (TLD) Registry Servers:</strong> Parent TLD registry operators (such as Verisign for .com and .net) cache parent NS and glue records with fixed registry TTLs of 172,800 seconds (48 hours) when domain owners change authoritative nameserver (NS) delegations at their registrar.</li>
         <li><strong>Local Router and Operating System Stub Caches:</strong> Residential gateways, office edge routers, and local operating system stub resolver daemons (including Windows dnscache, macOS mDNSResponder, and Linux systemd-resolved) retain local memory tables of resolved hostnames.</li>
         <li><strong>Web Browser In-Memory Caches:</strong> Modern browsers such as Google Chrome, Microsoft Edge, Mozilla Firefox, and Apple Safari maintain isolated internal DNS tables (caching addresses for 60 to 300 seconds) and keep persistent HTTP/2 or HTTP/3 TCP sockets open to the old IP address until idle connections close.</li>
       </ol>
@@ -115,7 +115,7 @@ const faq = {
       </section>
 
       <p>
-        Understanding propagation requires distinguishing between existing record modifications and brand-new hostnames. Creating a brand-new subdomain (such as <code>app.example.com</code>) resolves globally within minutes because resolvers hold no prior cached data for that name. A newly created record experiences unexpected propagation delays if users or automated monitoring systems queried the hostname before saving the DNS record. Under RFC 2308 (DNS Negative Caching), recursive resolvers that receive an <code>NXDOMAIN</code> (RCODE 3) response cache that negative result for the duration of the <code>MINIMUM</code> field in the zone's Start of Authority (SOA) record, which typically ranges from 300 to 3,600 seconds.
+        Understanding propagation requires distinguishing between existing record modifications and brand-new hostnames. Creating a brand-new subdomain (such as <code>app.example.com</code>) resolves globally within minutes because resolvers hold no prior cached data for that name. Your recursive resolver caches an NXDOMAIN (RCODE 3) response for the duration of the SOA MINIMUM field if you query a new subdomain (such as <code>app.example.com</code>) before saving the record in DNS. Under RFC 2308 (DNS Negative Caching), recursive resolvers that receive an <code>NXDOMAIN</code> response cache that negative result for the duration of the <code>MINIMUM</code> field in the zone's Start of Authority (SOA) record, which typically ranges from 300 to 3,600 seconds.
       </p>
       <p>
         Similarly, deploying or modifying <a href="/what-is-dnssec/">What Is DNSSEC</a> configurations introduces multi-stage propagation constraints: updating Delegation Signer (DS) records at the parent registrar requires waiting out parent TLD DS caching (typically 3,600 to 86,400 seconds) alongside child zone DNSKEY and RRSIG TTLs to ensure validating recursive resolvers do not generate validation errors. Administrators can inspect active record countdowns using the <a href="/ttl-checker/">DNS TTL Checker</a>.
@@ -129,13 +129,13 @@ const faq = {
         Technical variables delaying global DNS cache expiration include 4 specific network conditions:
       </p>
       <ol>
-        <li><strong>High Pre-Change Record TTLs (3,600s to 86,400s):</strong> If an active A record carried a 24-hour TTL (86,400 seconds) and an administrator modifies the server IP address while simultaneously lowering the TTL to 300 seconds, resolvers that cached the record shortly before the update enforce the original 86,400-second timer before fetching the new 300-second record.</li>
+        <li><strong>High Pre-Change Record TTLs (3,600s to 86,400s):</strong> Recursive resolvers that cached your A record prior to an update continue to obey the previous 86,400-second timer if you change the IP address and lower the TTL to 300 seconds in the same save action.</li>
         <li><strong>ISP Minimum TTL Floor Overrides and Serve-Stale (RFC 8767):</strong> While public recursive resolvers (such as 1.1.1.1 and 8.8.8.8) honor authoritative TTL values down to low thresholds, certain residential Internet Service Providers configure recursive resolver caches to enforce artificial minimum floors (ranging from 1,800 to 3,600 seconds) to conserve bandwidth, or serve expired records under RFC 8767 (Serving Stale Data to Improve DNS Resiliency) when upstream queries experience latency.</li>
         <li><strong>TLD Registry Zone Publication Schedules:</strong> Parent registry operators publish zone updates according to independent operational cycles: while Verisign (.com and .net) pushes Extensible Provisioning Protocol (EPP) nameserver updates into parent zones within minutes (subject to parent 48-hour NS TTLs), certain country-code top-level domains (ccTLDs) rebuild parent zone files on batched hourly or multi-hour schedules.</li>
-        <li><strong>Stale Multi-Hop Forwarder Chains:</strong> Corporate local area networks and branch offices frequently route DNS queries through chained local caching forwarders before reaching upstream ISP resolvers, creating stacked caching layers that each enforce independent TTL expiration timers.</li>
+        <li><strong>Stale Multi-Hop Forwarder Chains:</strong> Each resolution hop maintains an independent TTL countdown timer when an office router forwards queries through a chained ISP resolver.</li>
       </ol>
       <p>
-        Independent caching tier configurations explain why two visitors in adjacent cities or on different cellular networks resolve different server IP addresses during active transition windows.
+        These cumulative caching tiers determine regional propagation variance during active transition windows. Domain administrators analyze resolution performance across providers in <a href="/what-is-dns/">What Is DNS</a> and <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a>.
       </p>
 
       <h2 id="how-do-you-speed-up-dns-propagation-before-and-after-a-change">How Do You Speed Up DNS Propagation Before and After a Change?</h2>
@@ -146,14 +146,14 @@ const faq = {
       <section class="not-prose my-4" aria-label="Reference table">
         <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
           <table class="pdns-table" style="width:100%">
-            <thead><tr><th>When</th><th>Action</th></tr></thead>
+            <thead><tr><th>Timeline</th><th>Required action</th></tr></thead>
             <tbody><tr><td class="font-medium text-ink">T-48 hours</td><td class="text-sm text-ink-dim">Lower the record TTL from 3600 to 300 seconds</td></tr><tr><td class="font-medium text-ink">T-0</td><td class="text-sm text-ink-dim">Make the cutover and verify on live resolvers</td></tr><tr><td class="font-medium text-ink">T+2 hours</td><td class="text-sm text-ink-dim">Confirm all resolvers agree</td></tr><tr><td class="font-medium text-ink">T+24 hours</td><td class="text-sm text-ink-dim">Raise the TTL back to 3600</td></tr></tbody>
           </table>
         </div>
       </section>
 
       <p>
-        Executing this schedule guarantees that old cached records expire worldwide before the server switch occurs. When migrating between DNS hosting providers (such as moving authoritative DNS from GoDaddy to Cloudflare), administrators prevent downtime through the Zero-Downtime Nameserver Migration Sequence: replicate all existing zone records identically on the new provider, configure both providers to point to the active server IP with a 300-second TTL, and update registrar nameserver delegation only after both zones match. Step-by-step procedures are detailed in <a href="/change-dns-records-safely/">How to Change DNS Records Without Downtime</a> and <a href="/dns-migration-checklist/">The Complete DNS Migration Checklist</a>.
+        Executing this schedule guarantees that old cached records expire worldwide before the server switch occurs. Administrators prevent downtime through the Zero-Downtime Nameserver Migration Sequence when migrating between DNS hosting providers (such as moving authoritative DNS from GoDaddy to Cloudflare): replicate all existing zone records identically on the new provider, configure both providers to point to the active server IP with a 300-second TTL, and update registrar nameserver delegation only after both zones match. Step-by-step procedures are detailed in <a href="/change-dns-records-safely/">How to Change DNS Records Without Downtime</a> and <a href="/dns-migration-checklist/">The Complete DNS Migration Checklist</a>.
       </p>
 
       <h3 id="can-you-force-public-dns-resolvers-to-flush-a-cached-record-after-a-change">Can You Force Public DNS Resolvers to Flush a Cached Record After a Change?</h3>
@@ -188,18 +188,18 @@ dig @8.8.8.8 example.com A +noall +answer</code></pre>
         <li><strong>Inspect</strong> parent-to-child nameserver delegation and DS record synchronization following a nameserver migration using the <a href="/delegation-checker/">DNS Delegation Checker</a> and <a href="/nameserver-lookup/">Nameserver Lookup</a>.</li>
       </ol>
       <p>
-        When recursive resolver responses match the authoritative nameserver output across all vantages, global DNS propagation is complete.
+        Global DNS propagation is complete when recursive resolver responses match the authoritative nameserver output across all vantages. Administrators verify resolution convergence across geographic locations using the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
       </p>
 
       <h2 id="why-has-my-dns-change-still-not-propagated-after-48-to-72-hours-5-root-causes">Why Has My DNS Change Still Not Propagated After 48 to 72 Hours? (5 Root Causes)</h2>
       <p>
-        A DNS update that fails to resolve after 48 to 72 hours is no longer experiencing normal cache propagation; the delay is caused by <strong class="text-ink">1 of 5 configuration errors in your authoritative zone, registrar delegation, or DNSSEC chain</strong>.
+        A DNS change fails to propagate after 48 to 72 hours due to <strong class="text-ink">1 of 5 configuration errors in your authoritative zone, registrar delegation, or DNSSEC chain</strong> rather than normal TTL caching.
       </p>
       <p>
         Investigating persistent resolution failures requires auditing 5 primary configuration errors:
       </p>
       <ol>
-        <li><strong>Editing Records at the Old DNS Provider After Switching Nameservers:</strong> If a domain's NS records at the registrar point to Cloudflare, modifying A or MX records inside GoDaddy's control panel has zero operational effect because GoDaddy nameservers no longer answer queries for that domain.</li>
+        <li><strong>Editing Records at the Old DNS Provider After Switching Nameservers:</strong> Editing A or MX records inside GoDaddy's control panel has zero operational effect on live traffic if your domain's NS records at the registrar point to Cloudflare because GoDaddy nameservers no longer answer queries for that domain.</li>
         <li><strong>Broken DNSSEC Chain of Trust (Stale DS Record Causing SERVFAIL):</strong> Migrating authoritative nameservers without first deleting the previous provider's Delegation Signer (DS) record at the domain registrar breaks cryptographic validation, causing DNSSEC-validating resolvers (such as 1.1.1.1 and 8.8.8.8) to reject responses with <code>SERVFAIL</code> (RCODE 2). Diagnosing validation failures is detailed in the <a href="/dnssec-checker/">DNSSEC Checker</a>.</li>
         <li><strong>Lame Delegation (Nameservers Missing an Active Zone File):</strong> Pointing registrar NS records to nameservers where the domain zone file was never created or enabled causes the new nameservers to return <code>REFUSED</code> (RCODE 5) or <code>NXDOMAIN</code> errors.</li>
         <li><strong>Doubled Domain Suffix in Control Panels:</strong> Entering <code>sub.example.com</code> instead of <code>sub</code> in a DNS host management interface that automatically appends the root domain creates an unintended record for <code>sub.example.com.example.com</code>, leaving <code>sub.example.com</code> unresolved.</li>

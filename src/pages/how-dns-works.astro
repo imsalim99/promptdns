@@ -19,7 +19,7 @@ const faq = {
       name: 'Why does my computer not ask the root server every time?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Recursive resolvers cache both final resource records and intermediate TLD and authoritative NS referrals for the duration of their Time to Live (TTL), allowing over 95% of lookups to bypass the root servers.',
+        text: 'Recursive resolvers cache both final resource records and intermediate TLD and authoritative NS referrals for the duration of their Time to Live (TTL), allowing subsequent lookups to bypass root servers during the 48-hour TLD referral window.',
       },
     },
     {
@@ -35,7 +35,7 @@ const faq = {
       name: 'What happens if a DNS response is larger than 512 bytes?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'If a DNS response exceeds the 512-byte UDP limit (or the 4,096-byte EDNS0 buffer size), the server sets the Truncated (TC=1) header flag, prompting the client to retry the query over TCP port 53 (RFC 7766).',
+        text: 'The server sets the Truncated (TC=1) header flag and prompts the client to retry over TCP port 53 (RFC 7766) if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer.',
       },
     },
   ],
@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        The Domain Name System resolution process is <strong class="text-ink">a hierarchical sequence of local cache checks and iterative network queries that translates a domain name into an IPv4 or IPv6 address in milliseconds</strong>. When an application requests a hostname, the operating system stub resolver checks local memory caches and the hosts file before querying a recursive DNS resolver across root, Top-Level Domain (TLD), and authoritative nameservers over UDP or TCP port 53.
+        DNS resolution is <strong class="text-ink">a multi-step lookup process defined in RFC 1034 and 1035 that maps a domain name to an IPv4 or IPv6 address</strong>. The operating system stub resolver queries local caches before contacting a recursor across root, TLD, and authoritative nameservers. The wire format of DNS lookups uses a 12-byte header, 5 packet sections, and TTL timers.
       </p>
     </div>
 
@@ -84,7 +84,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-happens-on-your-device-before-a-dns-query-enters-the-network">What Happens on Your Device Before a DNS Query Enters the Network?</h2>
       <p>
-        Before transmitting a packet over the network, a client device executes <strong class="text-ink">4 local pre-resolution checks across the application, browser cache, operating system stub resolver, and local hosts file</strong>.
+        A client device executes <strong class="text-ink">4 local pre-resolution checks across the application, browser cache, operating system stub resolver, and local hosts file</strong> before transmitting a DNS packet over the network.
       </p>
       <p>
         Client operating systems process hostname requests through 4 local stages:
@@ -101,12 +101,12 @@ const faq = {
         A client device discovers its primary recursive DNS server IP address through <strong class="text-ink">3 configuration mechanisms: Dynamic Host Configuration Protocol (DHCP), IPv6 Router Advertisements, or manual network interface settings</strong>.
       </p>
       <p>
-        On IPv4 local area networks, routers provide local recursive server addresses through DHCP Option 6 (RFC 2132) when the device connects. On IPv6 networks, routers broadcast recursive DNS server addresses via the IPv6 Router Advertisement RDNSS option (RFC 8106). Network administrators can override automatic router settings by assigning manual public resolvers, including Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), AliDNS (223.5.5.5), and Quad9 (9.9.9.9). When local resolver settings change, administrators can clear stale cached records by following the <a href="/flush-dns-cache/">How to Flush DNS Cache</a> guide.
+        On IPv4 local area networks, routers provide local recursive server addresses through DHCP Option 6 (RFC 2132) when the device connects. On IPv6 networks, routers broadcast recursive DNS server addresses via the IPv6 Router Advertisement RDNSS option (RFC 8106). Network administrators can override automatic router settings by assigning manual public resolvers, including Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), AliDNS (223.5.5.5), and Quad9 (9.9.9.9). Administrators clear stale OS stub entries using the commands in <a href="/flush-dns-cache/">How to Flush DNS Cache</a> when local resolver settings change.
       </p>
 
       <h2 id="how-does-a-recursive-dns-lookup-work-across-the-4-server-tiers">How Does a Recursive DNS Lookup Work Across the 4 Server Tiers?</h2>
       <p>
-        When local caches miss, the operating system stub resolver sends a recursive query (RD=1) to a recursive resolver, which executes <strong class="text-ink">8 network query and response steps across root, TLD, and authoritative nameservers</strong>.
+        A recursive DNS lookup resolves an uncached domain by executing <strong class="text-ink">8 network query and response steps across the recursive resolver, root nameserver, TLD nameserver, and authoritative nameserver</strong>.
       </p>
       <p>
         A cold, uncached DNS lookup executes 8 sequential network steps:
@@ -138,7 +138,7 @@ const faq = {
         </div>
       </section>
       <p>
-        Intermediate caching streamlines this resolution sequence significantly. In over 95% of live production queries, recursive resolvers already hold the .com TLD NS records in memory, enabling the resolver to bypass Steps 2 and 3 and query authoritative nameservers directly. Administrators can compare fundamental system architecture in the <a href="/what-is-dns/">What Is DNS</a> guide or benchmark cold versus cached lookup latency with the <a href="/dns-response-time-test/">DNS Response Time Test</a>.
+        Intermediate caching streamlines this resolution sequence significantly. A recursive resolver caches the .com TLD referral across all subsequent queries and skips Steps 2 and 3 during that 48-hour window because TLD registries publish NS delegation records with a 172,800-second (48-hour) TTL. Administrators can compare fundamental system architecture in the <a href="/what-is-dns/">What Is DNS</a> guide or benchmark cold versus cached lookup latency with the <a href="/dns-response-time-test/">DNS Response Time Test</a>.
       </p>
 
       <h2 id="how-do-root-hints-priming-and-glue-records-prevent-circular-dependencies">How Do Root Hints Priming and Glue Records Prevent Circular Dependencies?</h2>
@@ -149,7 +149,7 @@ const faq = {
         Every recursive resolver (such as BIND, Unbound, or Knot Resolver) requires known destination addresses to begin resolution. Resolvers overcome this bootstrap problem by shipping with an IANA root hints file (named.root) containing hardcoded IPv4 and IPv6 addresses for the 13 root server clusters (a.root-servers.net to m.root-servers.net). On initial startup, the resolver issues a priming query (RFC 8109), an NS query directed to the root zone (.), which fetches the authoritative, current Anycast IP addresses for all 13 root server clusters.
       </p>
       <p>
-        A second circular dependency arises when a domain uses its own subdomains as authoritative nameservers (such as example.com delegating to ns1.example.com). In this setup, a recursive resolver cannot resolve example.com without first obtaining the IP address of ns1.example.com, creating an infinite resolution loop. The parent TLD registry breaks this circular dependency by publishing glue records (A and AAAA records for ns1.example.com) directly inside the ADDITIONAL section of the TLD referral response. Domain administrators can verify parent-child delegation integrity using the <a href="/glue-record-checker/">Glue Record Checker</a> and <a href="/delegation-checker/">DNS Delegation Checker</a>.
+        A second circular dependency arises when a domain uses its own subdomains as authoritative nameservers. In this setup, a recursive resolver cannot resolve example.com without first knowing the IP address of ns1.example.com if example.com uses its own in-bailiwick subdomain ns1.example.com as its authoritative nameserver. The parent TLD registry breaks this circular dependency by publishing glue records (A and AAAA records for ns1.example.com) directly inside the ADDITIONAL section of the TLD referral response. Domain administrators can verify parent-child delegation integrity using the <a href="/glue-record-checker/">Glue Record Checker</a> and <a href="/delegation-checker/">DNS Delegation Checker</a>.
       </p>
 
       <h2 id="what-is-inside-a-dns-packet-5-message-sections-and-7-header-flags">What Is Inside a DNS Packet? (5 Message Sections and 7 Header Flags)</h2>
@@ -175,18 +175,18 @@ const faq = {
         </div>
       </section>
       <p>
-        The 16-bit Transaction ID (ID) combined with randomized UDP source ports (RFC 5452) provides critical protocol security. Resolvers match incoming responses to outstanding queries by verifying that the source IP address, destination port, and 16-bit ID match exactly. Because 16 bits yield only 65,536 possible transaction IDs, port randomization increases the entropy space to billions of permutations, preventing off-path attackers from forging malicious responses before the authoritative server replies. When cryptographic data integrity is required, DNSSEC signs each record set, as detailed in the <a href="/what-is-dnssec/">What Is DNSSEC</a> guide.
+        The 16-bit Transaction ID (ID) combined with randomized UDP source ports (RFC 5452) provides critical protocol security. Resolvers match incoming responses to outstanding queries by verifying that the source IP address, destination port, and 16-bit ID match exactly. Because 16 bits yield only 65,536 possible transaction IDs, port randomization increases the entropy space to billions of permutations, preventing off-path attackers from forging malicious responses before the authoritative server replies. DNSSEC signs each record set when cryptographic data integrity is required, as detailed in the <a href="/what-is-dnssec/">What Is DNSSEC</a> guide.
       </p>
 
       <h2 id="how-does-dns-resolution-handle-cname-chains-and-subdomain-redirects">How Does DNS Resolution Handle CNAME Chains and Subdomain Redirects?</h2>
       <p>
-        When an authoritative nameserver returns a CNAME (Canonical Name) record instead of an A or AAAA record, the recursive resolver <strong class="text-ink">restarts the resolution process for the target alias hostname until it reaches a final IP address</strong>.
+        DNS resolution handles a CNAME (Canonical Name) record by <strong class="text-ink">restarting the lookup process for the target alias hostname until the recursive resolver reaches a final A or AAAA IP address</strong>.
       </p>
       <p>
-        When a client requests an alias hostname (such as shop.example.com), the authoritative nameserver returns a record stating that shop.example.com aliases to stores.myshopify.com. Because the canonical target belongs to an external domain, the recursive resolver must initiate a new resolution pass across the .myshopify.com TLD and authoritative nameservers to obtain its IP address. Once resolved, the recursor packages both the CNAME mapping and the final A record into the ANSWER section for the client browser.
+        The authoritative nameserver returns a record stating that shop.example.com aliases to stores.myshopify.com when a client requests an alias hostname (such as shop.example.com). Because the canonical target belongs to an external domain, the recursive resolver initiates a new resolution pass across the .myshopify.com TLD and authoritative nameservers to obtain its IP address. Once resolved, the recursor packages both the CNAME mapping and the final A record into the ANSWER section for the client browser.
       </p>
       <p>
-        When both the alias and the target hostname exist inside the same authoritative zone file (such as www.example.com pointing to example.com), the authoritative nameserver includes both the CNAME record and the target A record in the initial response, resolving the query in a single round trip. The DNS specification strictly forbids CNAME records on zone apex hostnames, a restriction managed by modern DNS providers through <a href="/cname-flattening/">CNAME Flattening</a>.
+        The authoritative nameserver includes both the CNAME record and the target A record in a single response packet (1 RTT) if both the alias and target reside in the same zone file. The DNS specification strictly forbids CNAME records on zone apex hostnames, a restriction managed by modern DNS providers through <a href="/cname-flattening/">CNAME Flattening</a>.
       </p>
 
       <h2 id="how-does-reverse-dns-resolution-ptr-lookup-work-compared-to-forward-dns">How Does Reverse DNS Resolution (PTR Lookup) Work Compared to Forward DNS?</h2>
@@ -230,7 +230,7 @@ example.com.            3600    IN  A   93.184.216.34
 
       <h2 id="what-happens-in-the-dns-hierarchy-when-you-register-a-new-domain">What Happens in the DNS Hierarchy When You Register a New Domain?</h2>
       <p>
-        When you register a new domain name, <strong class="text-ink">5 provisioning steps connect your domain registrar to the TLD registry and your authoritative DNS zone</strong> so global recursive resolvers can locate your site.
+        Registering a new domain name triggers <strong class="text-ink">5 provisioning steps that connect your domain registrar, the TLD registry, and your authoritative DNS zone</strong> so global recursive resolvers can locate your site.
       </p>
       <p>
         Domain provisioning links the registry hierarchy through 5 sequential steps:
@@ -255,7 +255,7 @@ example.com.            3600    IN  A   93.184.216.34
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my computer not ask the root server every time?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Recursive resolvers <strong>cache both final resource records and intermediate TLD and authoritative NS referrals</strong> for the duration of their Time to Live (TTL), allowing over 95% of lookups to bypass the root servers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Recursive resolvers <strong>cache both final resource records and intermediate TLD and authoritative NS referrals</strong> for the duration of their Time to Live (TTL), allowing subsequent lookups to bypass root servers during the 48-hour TLD referral window.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does a DNS lookup take in milliseconds?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
@@ -263,7 +263,7 @@ example.com.            3600    IN  A   93.184.216.34
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if a DNS response is larger than 512 bytes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">If a DNS response exceeds the 512-byte UDP limit (or the 4,096-byte EDNS0 buffer size), the server sets the <strong>Truncated (TC=1) header flag</strong>, prompting the client to retry the query over <strong>TCP port 53</strong> (RFC 7766).</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">The server sets the <strong>Truncated (TC=1) header flag</strong> and prompts the client to retry over <strong>TCP port 53</strong> (RFC 7766) if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer.</p>
       </details>
     </div>
   </div>
