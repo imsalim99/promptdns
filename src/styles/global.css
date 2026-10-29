@@ -389,3 +389,49 @@ body {
 
 /* Reserved result-region height: zero CLS when live results replace samples */
 .pd-results { min-height: 200px; }
+
+
+/* Technical term explanation tooltip (pure CSS, zero JS, 0 CLS) */
+.pd-term {
+  position: relative;
+  text-decoration: none;
+  border-bottom: 1.5px dotted color-mix(in oklab, var(--color-accent) 60%, transparent);
+  cursor: help;
+  color: inherit;
+}
+.pd-term:hover,
+.pd-term:focus {
+  border-bottom-color: var(--color-accent);
+}
+.pd-term::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 280px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #0b1222;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(34, 211, 238, 0.15);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 50;
+}
+.pd-term:hover::after,
+.pd-term:focus::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-2px);
+}

@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        DNS propagation is <strong class="text-ink">the asynchronous cache-expiration window required for updated DNS records and TLD nameserver delegations to refresh across global recursive resolvers</strong>. Recursive resolvers retain cached records under RFC 1035 until the previous Time to Live (TTL) timer reaches zero. The duration of DNS propagation ranges from 5 minutes for record edits to 48 hours for NS changes.
+        DNS propagation is <strong class="text-ink">the waiting period required for DNS resolvers and ISPs worldwide to clear old cached records and start serving your updated DNS settings</strong>. DNS servers refresh their stored records only after the previous Time to Live (TTL) timer expires. The duration of DNS propagation ranges from 5 minutes for record edits to 48 hours for nameserver changes.
       </p>
     </div>
 
@@ -82,10 +82,10 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="why-is-dns-propagation-not-instant-the-pull-cache-architecture">Why Is DNS Propagation Not Instant? (The Pull-Cache Architecture)</h2>
       <p>
-        DNS propagation is not instant because <strong class="text-ink">authoritative nameservers do not push updates to the internet; instead, 4 independent caching layers continue serving the old record until its Time to Live (TTL) expires</strong>.
+        DNS propagation is not instant because <strong class="text-ink">authoritative nameservers do not push updates to the internet; instead, 4 independent caching layers continue serving the old record until its <abbr class="pd-term" data-tip="Time to Live, the number of seconds DNS records are cached by resolvers">Time to Live (TTL)</abbr> expires</strong>.
       </p>
       <p>
-        Authoritative nameservers update their active zone files immediately across Anycast edge networks whenever an administrator saves a record edit in a DNS control panel. The observed propagation delay stems from the pull-based caching architecture defined in RFC 1035: client devices and recursive resolvers store answered queries locally and refuse to query authoritative servers again until the cached record countdown timer reaches zero.
+        Authoritative nameservers update their active zone files immediately across <abbr class="pd-term" data-tip="Network addressing that routes requests to the nearest data center for fast response times">Anycast</abbr> edge networks whenever an administrator saves a record edit in a DNS control panel. The observed propagation delay stems from the <abbr class="pd-term" data-tip="Architecture where clients request and cache data locally rather than servers pushing updates">pull-cache</abbr> architecture of DNS: client devices and recursive resolvers store answered queries locally and refuse to query authoritative servers again until the cached record countdown timer reaches zero.
       </p>
       <p>
         Queries encounter 4 independent caching layers between client applications and authoritative servers:
@@ -115,7 +115,7 @@ const faq = {
       </section>
 
       <p>
-        Understanding propagation requires distinguishing between existing record modifications and brand-new hostnames. Creating a brand-new subdomain (such as <code>app.example.com</code>) resolves globally within minutes because resolvers hold no prior cached data for that name. Your recursive resolver caches an NXDOMAIN (RCODE 3) response for the duration of the SOA MINIMUM field if you query a new subdomain (such as <code>app.example.com</code>) before saving the record in DNS. Under RFC 2308 (DNS Negative Caching), recursive resolvers that receive an <code>NXDOMAIN</code> response cache that negative result for the duration of the <code>MINIMUM</code> field in the zone's Start of Authority (SOA) record, which typically ranges from 300 to 3,600 seconds.
+        Understanding propagation requires distinguishing between existing record modifications and brand-new hostnames. Creating a brand-new subdomain (such as <code>app.example.com</code>) resolves globally within minutes because resolvers hold no prior cached data for that name. Your recursive resolver caches an NXDOMAIN response for the duration of the SOA MINIMUM field if you query a new subdomain (such as <code>app.example.com</code>) before saving the record in DNS. Under <abbr class="pd-term" data-tip="The practice of caching NXDOMAIN or NODATA responses to prevent repeated queries for non-existent names">negative caching</abbr> rules, recursive resolvers that receive an <code>NXDOMAIN</code> response cache that negative result for the duration of the <code>MINIMUM</code> field in the zone's Start of Authority (SOA) record, which typically ranges from 300 to 3,600 seconds.
       </p>
       <p>
         Similarly, deploying or modifying <a href="/what-is-dnssec/">What Is DNSSEC</a> configurations introduces multi-stage propagation constraints: updating Delegation Signer (DS) records at the parent registrar requires waiting out parent TLD DS caching (typically 3,600 to 86,400 seconds) alongside child zone DNSKEY and RRSIG TTLs to ensure validating recursive resolvers do not generate validation errors. Administrators can inspect active record countdowns using the <a href="/ttl-checker/">DNS TTL Checker</a>.
@@ -130,7 +130,7 @@ const faq = {
       </p>
       <ol>
         <li><strong>High Pre-Change Record TTLs (3,600s to 86,400s):</strong> Recursive resolvers that cached your A record prior to an update continue to obey the previous 86,400-second timer if you change the IP address and lower the TTL to 300 seconds in the same save action.</li>
-        <li><strong>ISP Minimum TTL Floor Overrides and Serve-Stale (RFC 8767):</strong> While public recursive resolvers (such as 1.1.1.1 and 8.8.8.8) honor authoritative TTL values down to low thresholds, certain residential Internet Service Providers configure recursive resolver caches to enforce artificial minimum floors (ranging from 1,800 to 3,600 seconds) to conserve bandwidth, or serve expired records under RFC 8767 (Serving Stale Data to Improve DNS Resiliency) when upstream queries experience latency.</li>
+        <li><strong>ISP Minimum TTL Floor Overrides and Serve-Stale:</strong> While public recursive resolvers (such as 1.1.1.1 and 8.8.8.8) honor authoritative TTL values down to low thresholds, certain residential Internet Service Providers configure recursive resolver caches to enforce artificial minimum floors (ranging from 1,800 to 3,600 seconds) to conserve bandwidth, or serve expired records using serve-stale behavior when upstream queries experience latency.</li>
         <li><strong>TLD Registry Zone Publication Schedules:</strong> Parent registry operators publish zone updates according to independent operational cycles: while Verisign (.com and .net) pushes Extensible Provisioning Protocol (EPP) nameserver updates into parent zones within minutes (subject to parent 48-hour NS TTLs), certain country-code top-level domains (ccTLDs) rebuild parent zone files on batched hourly or multi-hour schedules.</li>
         <li><strong>Stale Multi-Hop Forwarder Chains:</strong> Each resolution hop maintains an independent TTL countdown timer when an office router forwards queries through a chained ISP resolver.</li>
       </ol>

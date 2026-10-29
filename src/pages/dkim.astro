@@ -27,7 +27,7 @@ const faq = {
       name: 'Should I use a 1024-bit or 2048-bit DKIM key?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains, as recommended by RFC 8301. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.',
+        text: 'Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.',
       },
     },
     {
@@ -43,7 +43,7 @@ const faq = {
 ---
 <BaseLayout
   title="DKIM Explained: How Cryptographic Email Signing, Selectors, and Public Keys Work"
-  description="DKIM explained: RFC 6376 cryptographic email signing, DKIM-Signature headers, DNS selector lookup, 1024 vs 2048-bit RSA keys, and DMARC alignment."
+  description="DKIM explained: cryptographic email signing, DKIM-Signature headers, DNS selector lookup, 1024 vs 2048-bit RSA keys, and DMARC alignment."
   schema={[faq]}
   breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["DKIM"]]}
 >
@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        DomainKeys Identified Mail (DKIM) is <strong class="text-ink">an asymmetric cryptographic email authentication protocol defined in RFC 6376 that signs outbound messages to verify domain origin and message integrity</strong>. Sending mail servers attach a private-key DKIM-Signature header to each message. The public key of a DKIM record is published in DNS at <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code> for receiver verification.
+        DomainKeys Identified Mail (DKIM) is <strong class="text-ink">an email authentication method that attaches a cryptographic digital signature to outgoing emails to prove they came from your domain and were not altered in transit</strong>. Your mail server signs each message with a private key (DKIM-Signature). The public key of a DKIM record lives in your DNS at &lt;selector&gt;._domainkey so receivers verify it.
       </p>
     </div>
 
@@ -73,7 +73,7 @@ const faq = {
         <li><a href="#what-is-the-difference-between-a-dkim-signature-header-and-a-dkim-dns-record">DKIM-Signature header vs DKIM DNS record</a></li>
         <li><a href="#what-is-a-dkim-selector-s-and-why-do-domains-use-multiple-selectors">DKIM selectors and multiple keys</a></li>
         <li><a href="#how-do-1024-bit-rsa-2048-bit-rsa-and-ed25519-dkim-key-lengths-compare">1024-bit vs 2048-bit RSA vs Ed25519 key lengths</a></li>
-        <li><a href="#what-is-dkim-canonicalization-c-relaxed-relaxed-vs-simple-simple">DKIM canonicalization (relaxed vs simple)</a></li>
+        <li><a href="#what-is-dkim-canonicalization-relaxed-relaxed-vs-simple-simple">DKIM canonicalization (relaxed vs simple)</a></li>
         <li><a href="#why-does-dkim-survive-email-forwarding-and-how-does-it-power-dmarc-alignment">Why DKIM survives email forwarding</a></li>
         <li><a href="#how-do-you-set-up-and-verify-dkim-for-your-domain-4-steps">Set up and verify DKIM (4 steps)</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
@@ -89,10 +89,10 @@ const faq = {
         Mail transfer agents sign and verify messages through 7 sequential technical operations:
       </p>
       <ol>
-        <li><strong>Canonicalize</strong> the outbound email body and selected headers (From, To, Subject, Date, Message-ID) on the sending Mail Transfer Agent (MTA) using the normalization rule specified in <code>c=</code> (such as <code>relaxed/relaxed</code>).</li>
+        <li><strong><abbr class="pd-term" data-tip="The pre-hashing normalization algorithm that standardizes whitespace and header casing">Canonicalize</abbr></strong> the outbound email body and selected headers (From, To, Subject, Date, Message-ID) on the sending Mail Transfer Agent (MTA) using the normalization rule specified in <code>c=</code> (such as <code>relaxed/relaxed</code>).</li>
         <li><strong>Compute</strong> a SHA-256 cryptographic hash of the normalized message body (<code>bh=</code>) and sign the selected headers plus the <code>DKIM-Signature</code> header fields using the domain's private RSA or Ed25519 key to generate the digital signature (<code>b=</code>).</li>
-        <li><strong>Prepend</strong> the completed <code>DKIM-Signature</code> header (for example, <code>v=1; a=rsa-sha256; d=example.com; s=selector1; bh=...; b=...</code>) to the message and transmit the email over SMTP.</li>
-        <li><strong>Extract</strong> the signing domain (<code>d=example.com</code>) and the selector (<code>s=selector1</code>) from the incoming <code>DKIM-Signature</code> header at the receiving mail server.</li>
+        <li><strong>Prepend</strong> the completed <abbr class="pd-term" data-tip="Cryptographic email header containing the digital signature, hash values, and signing domain"><code>DKIM-Signature</code></abbr> header (for example, <code>v=1; a=rsa-sha256; d=example.com; s=selector1; bh=...; b=...</code>) to the message and transmit the email over SMTP.</li>
+        <li><strong>Extract</strong> the signing domain (<code>d=example.com</code>) and the <abbr class="pd-term" data-tip="A unique subdomain label identifying which public key verifies an email signature">selector</abbr> (<code>s=selector1</code>) from the incoming <code>DKIM-Signature</code> header at the receiving mail server.</li>
         <li><strong>Query</strong> the authoritative DNS servers for the TXT resource record located at <code>&lt;selector&gt;._domainkey.&lt;domain&gt;</code> (for example, <code>selector1._domainkey.example.com</code>) to retrieve the sender's public key (<code>p=</code>).</li>
         <li><strong>Decrypt</strong> the header signature (<code>b=</code>) using the public key and recalculate the SHA-256 hashes of the received headers and message body locally.</li>
         <li><strong>Record</strong> <code>dkim=pass</code> in the <code>Authentication-Results</code> header if both the decrypted header hash and the recalculated body hash (<code>bh=</code>) match byte-for-byte, or return <code>dkim=fail</code> if any signed header or body text was altered in transit.</li>
@@ -131,7 +131,7 @@ const faq = {
       </section>
 
       <p>
-        RFC 6376 establishes distinct parsing rules across these two artifacts: in the message header, the <code>v=1</code> tag is mandatory, whereas in the DNS TXT record, <code>v=DKIM1</code> is optional because <code>p=</code> serves as the only mandatory DNS tag. Publishing a DNS TXT record with an empty public key tag (such as <code>v=DKIM1; p=</code>) constitutes the official RFC 6376 Section 3.6.1 revocation method, signaling to receiving mail servers that the private key is decommissioned and any future signatures under that selector must fail. Step-by-step DNS record creation is covered in <a href="/how-to-add-dkim-record/">How to Add a DKIM Record</a>.
+        The DKIM standard establishes distinct parsing rules across these two artifacts: in the message header, the <code>v=1</code> tag is mandatory, whereas in the DNS TXT record, <code>v=DKIM1</code> is optional because <code>p=</code> serves as the only mandatory DNS tag. Publishing a DNS TXT record with an empty public key tag (such as <code>v=DKIM1; p=</code>) constitutes the official key revocation method, signaling to receiving mail servers that the private key is decommissioned and any future signatures under that selector must fail. Step-by-step DNS record creation is covered in <a href="/how-to-add-dkim-record/">How to Add a DKIM Record</a>.
       </p>
 
       <h2 id="what-is-a-dkim-selector-s-and-why-do-domains-use-multiple-selectors">What Is a DKIM Selector (s=) and Why Do Domains Use Multiple Selectors?</h2>
@@ -169,7 +169,7 @@ const faq = {
 
       <h2 id="how-do-1024-bit-rsa-2048-bit-rsa-and-ed25519-dkim-key-lengths-compare">How Do 1024-Bit RSA, 2048-Bit RSA, and Ed25519 DKIM Key Lengths Compare?</h2>
       <p>
-        RFC 8301 requires <strong class="text-ink">a minimum DKIM RSA key length of 1024 bits and recommends 2048-bit RSA or Ed25519 (RFC 8463) keys</strong> while permanently revoking 512-bit keys and the SHA-1 hash algorithm (rsa-sha1). The table below compares the 4 DKIM cryptographic key options by bit length, security status, and DNS TXT string behavior.
+        Modern email standards require <strong class="text-ink">a minimum DKIM RSA key length of 1024 bits and recommend 2048-bit RSA or Ed25519 keys</strong> while permanently revoking 512-bit keys and the legacy SHA-1 hash algorithm (rsa-sha1). The table below compares the 4 DKIM cryptographic key options by bit length, security status, and DNS TXT string behavior.
       </p>
 
       <section class="not-prose my-4" aria-label="Reference table">
@@ -185,15 +185,15 @@ const faq = {
         DNS administrators split a 2048-bit public key into two quoted 255-character segments when publishing the TXT record manually in a zone file. Authoritative DNS providers split the payload into two contiguous quoted strings (for example, <code>"v=DKIM1; k=rsa; p=MIIBIj..." "...DAQAB"</code>), which resolvers concatenate without spaces during signature verification. Key length trade-offs and browser-based key generation are detailed in <a href="/dkim-key-length/">DKIM Key Length</a> and the <a href="/dkim-record-generator/">DKIM Record Generator</a>.
       </p>
 
-      <h2 id="what-is-dkim-canonicalization-c-relaxed-relaxed-vs-simple-simple">What Is DKIM Canonicalization (c=relaxed/relaxed vs simple/simple)?</h2>
+      <h2 id="what-is-dkim-canonicalization-relaxed-relaxed-vs-simple-simple">What Is DKIM Canonicalization (relaxed/relaxed vs simple/simple)?</h2>
       <p>
-        DKIM canonicalization (c=header/body, defined in RFC 6376 Section 3.4) is <strong class="text-ink">the pre-hashing normalization algorithm that determines whether minor whitespace or header formatting changes in transit invalidate a DKIM signature</strong>.
+        DKIM canonicalization is <strong class="text-ink">the pre-hashing normalization algorithm that determines whether minor whitespace or header formatting changes in transit invalidate a DKIM signature</strong>.
       </p>
       <p>
         Mail Transfer Agents, security appliances, and intermediary relays regularly modify message formatting during delivery by folding long headers, adjusting tab spacing, or appending blank lines. Canonicalization defines how sending MTAs prepare headers and body text before hashing, and how receiving MTAs reconstruct them before cryptographic verification.
       </p>
       <p>
-        RFC 6376 standardizes 2 canonicalization algorithms configured independently for headers and body content:
+        The DKIM standard defines 2 canonicalization algorithms configured independently for headers and body content:
       </p>
       <ul>
         <li><strong>simple Canonicalization (c=simple/simple):</strong> Tolerates zero modification to whitespace, line wraps, or empty lines. The recalculated hash fails to match bh= or b= and triggers a dkim=fail result under simple canonicalization if an intermediate mail relay adds a single space or re-wraps a header line.</li>
@@ -211,7 +211,7 @@ const faq = {
         The forwarding server's IP address fails the original sender's SPF check when a recipient auto-forwards an email to another inbox. Because the <code>DKIM-Signature</code> header travels inside the message payload, destination mail servers verify the cryptographic signature using the sender's public key in DNS. The message passes <a href="/dmarc/">DMARC</a> through DKIM alignment (<code>adkim</code>) if the signing domain in <code>d=</code> matches the domain in the visible <code>From:</code> header, ensuring uninterrupted inbox delivery as explained in <a href="/spf-vs-dkim/">SPF vs DKIM</a> and <a href="/dkim-vs-dmarc/">DKIM vs DMARC</a>.
       </p>
       <p>
-        An attacker captures a legitimate email signed by a domain, preserves the intact <code>DKIM-Signature</code>, and retransmits the signed message to unauthorized recipient lists from botnet IP addresses during a DKIM replay attack. Mail systems neutralize replay attacks through 3 operational safeguards:
+        An attacker captures a legitimate email signed by a domain, preserves the intact <code>DKIM-Signature</code>, and retransmits the signed message to unauthorized recipient lists from botnet IP addresses during a DKIM <abbr class="pd-term" data-tip="An attack where a threat actor intercepts a valid signed email and resends it to thousands of victims">replay attack</abbr>. Mail systems neutralize replay attacks through 3 operational safeguards:
       </p>
       <ul>
         <li><strong>Oversigning sensitive headers:</strong> Declaring duplicate headers in <code>h=From:To:Subject:Date:Message-ID</code> prevents attackers from prepending new recipients without breaking the signature hash.</li>
@@ -252,7 +252,7 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use a 1024-bit or 2048-bit DKIM key?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a <strong>2048-bit RSA key</strong> (or Ed25519 where supported) for all production domains, as recommended by RFC 8301. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a <strong>2048-bit RSA key</strong> (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does Cloudflare break my DKIM CNAME record if proxied?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>

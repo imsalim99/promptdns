@@ -43,7 +43,7 @@ const faq = {
 ---
 <BaseLayout
   title="What Is DNSSEC? How the Chain of Trust, Keys, and Signatures Secure DNS"
-  description="DNSSEC explained: RFC 4033-4035 architecture, RRSIG/DNSKEY/DS/NSEC3 records, ZSK vs KSK keys, the Chain of Trust, and safe activation."
+  description="DNSSEC explained: cryptographic architecture, RRSIG/DNSKEY/DS/NSEC3 records, ZSK vs KSK keys, the Chain of Trust, and safe activation."
   schema={[faq]}
   breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["What Is DNSSEC"]]}
 >
@@ -60,7 +60,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Domain Name System Security Extensions (DNSSEC) is <strong class="text-ink">a cryptographic authentication suite defined in RFC 4033, 4034, and 4035 that signs DNS resource record sets (RRsets) to prevent cache poisoning</strong>. DNSSEC validates data origin and integrity using RRSIG, DNSKEY, DS, and NSEC3 records without encrypting traffic. The chain of trust of DNSSEC links child zones to the IANA root trust anchor.
+        Domain Name System Security Extensions (DNSSEC) is <strong class="text-ink">a security feature that adds cryptographic digital signatures to your DNS records so attackers cannot hijack or spoof your domain's IP address</strong>. Validating resolvers verify these signatures across a chain of trust from the root zone down to your domain. The signatures of DNSSEC protect data integrity without encrypting DNS queries.
       </p>
     </div>
 
@@ -70,7 +70,7 @@ const faq = {
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
         <li><a href="#why-was-dnssec-created-solving-the-plaintext-dns-cache-poisoning-flaw">Why DNSSEC was created</a></li>
-        <li><a href="#what-are-the-4-core-dnssec-record-types-in-rfc-4034">The 4 core DNSSEC record types (RFC 4034)</a></li>
+        <li><a href="#what-are-the-4-core-dnssec-record-types">The 4 core DNSSEC record types</a></li>
         <li><a href="#what-is-the-difference-between-a-zone-signing-key-zsk-and-a-key-signing-key-ksk">Zone Signing Key (ZSK) vs Key Signing Key (KSK)</a></li>
         <li><a href="#how-does-the-dnssec-chain-of-trust-work-step-by-step">How the DNSSEC Chain of Trust works (7 steps)</a></li>
         <li><a href="#what-are-the-3-dnssec-validation-states-in-recursive-resolvers">3 DNSSEC validation states in recursive resolvers</a></li>
@@ -84,16 +84,16 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="why-was-dnssec-created-solving-the-plaintext-dns-cache-poisoning-flaw">Why Was DNSSEC Created? (Solving the Plaintext DNS Cache Poisoning Flaw)</h2>
       <p>
-        DNSSEC was created because <strong class="text-ink">the original 1987 DNS protocol (RFC 1035) transmitted UDP port 53 responses without cryptographic origin verification, allowing attackers to inject forged IP addresses into recursive resolver caches</strong>.
+        DNSSEC was created because <strong class="text-ink">the original DNS protocol transmitted UDP port 53 responses without cryptographic origin verification, allowing attackers to inject forged IP addresses into recursive resolver caches</strong>.
       </p>
       <p>
         In classic DNS architectures, a recursive resolver verified incoming response packets solely by checking whether the source IP address, UDP port, and 16-bit Transaction ID (representing 65,536 potential values) matched its pending query. In July 2008, security researcher Dan Kaminsky demonstrated that an off-path attacker could flood recursive resolvers with forged referral responses for randomized subdomains. Attackers guessed the 16-bit Transaction ID within seconds and poisoned parent NS records in cache to redirect entire domains. Once poisoned, the resolver routed all subsequent traffic for that domain to an attacker-controlled destination, facilitating credential theft and man-in-the-middle attacks as documented in <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> and <a href="/dns-hijacking/">DNS Hijacking</a>.
       </p>
       <p>
-        The Internet Engineering Task Force (IETF) resolved this architectural flaw by publishing modern DNSSEC specifications in March 2005 across RFC 4033, RFC 4034, and RFC 4035. On July 15, 2010, the Internet Assigned Numbers Authority (IANA) and ICANN formally signed the DNS Root Zone (.), creating the global cryptographic trust anchor required to validate every signed Top-Level Domain (TLD) and second-level domain worldwide. Background concepts and operational mechanics are covered in <a href="/what-is-dns/">What Is DNS</a> and <a href="/dns-security/">DNS Security</a>.
+        The Internet Engineering Task Force (IETF) resolved this architectural flaw by publishing modern DNSSEC specifications in 2005. On July 15, 2010, the Internet Assigned Numbers Authority (IANA) and ICANN formally signed the DNS Root Zone (.), creating the global cryptographic trust anchor required to validate every signed Top-Level Domain (TLD) and second-level domain worldwide. Background concepts and operational mechanics are covered in <a href="/what-is-dns/">What Is DNS</a> and <a href="/dns-security/">DNS Security</a>.
       </p>
 
-      <h2 id="what-are-the-4-core-dnssec-record-types-in-rfc-4034">What Are the 4 Core DNSSEC Record Types in RFC 4034?</h2>
+      <h2 id="what-are-the-4-core-dnssec-record-types">What Are the 4 Core DNSSEC Record Types?</h2>
       <p>
         DNSSEC operates by publishing <strong class="text-ink">4 specialized resource record types (RRSIG, DNSKEY, DS, and NSEC/NSEC3) alongside standard zone records</strong>. The table below defines the 4 core DNSSEC record types by IANA type code, zone location, and cryptographic function.
       </p>
@@ -108,20 +108,20 @@ const faq = {
       </section>
 
       <p>
-        RFC 4035 Section 2.2 dictates a fundamental operational rule: DNSSEC signs entire Resource Record Sets (RRsets) rather than individual records. The authoritative nameserver groups all matching records into a single canonical RRset and generates one comprehensive <code>RRSIG</code> signature over the collection when a domain publishes multiple A records for round-robin load balancing. Resolvers always retrieve and validate the entire set simultaneously. Modern registrars also support automated parent-child updates through Child DS (CDS, Type 59) and Child DNSKEY (CDNSKEY, Type 60) records defined in RFC 7344, allowing child zones to publish key rollovers automatically to supporting registries. Record structures and lookup tools are detailed in <a href="/ds-record/">DS Record</a>, <a href="/dnskey-record/">DNSKEY Record</a>, <a href="/ds-record-lookup/">DS Record Lookup</a>, and <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>.
+        DNSSEC enforces a fundamental operational rule: it signs entire <abbr class="pd-term" data-tip="Resource Record Set: a collection of DNS records with the exact same name, class, and type">Resource Record Sets (RRsets)</abbr> rather than individual records. The authoritative nameserver groups all matching records into a single canonical RRset and generates one comprehensive <code>RRSIG</code> signature over the collection when a domain publishes multiple A records for round-robin load balancing. Resolvers always retrieve and validate the entire set simultaneously. Modern registrars also support automated parent-child updates through Child DS (CDS, Type 59) and Child DNSKEY (CDNSKEY, Type 60) records, allowing child zones to publish key rollovers automatically to supporting registries. Record structures and lookup tools are detailed in <a href="/ds-record/">DS Record</a>, <a href="/dnskey-record/">DNSKEY Record</a>, <a href="/ds-record-lookup/">DS Record Lookup</a>, and <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>.
       </p>
 
       <h3 id="why-does-modern-dnssec-use-nsec3-or-black-lies-instead-of-plain-nsec">Why Does Modern DNSSEC Use NSEC3 or Black Lies Instead of Plain NSEC?</h3>
       <p>
-        Modern DNSSEC deployments use <strong class="text-ink">NSEC3 (RFC 5155) or Compact Denial of Existence (RFC 9824) instead of plain NSEC records</strong> to prevent attackers from enumerating every subdomain in a zone file.
+        Modern DNSSEC deployments use <strong class="text-ink"><abbr class="pd-term" data-tip="Next Secure Record v3: provides authenticated proof that a DNS record does not exist using hashed names to prevent zone walking">NSEC3</abbr> or Compact Denial of Existence instead of plain NSEC records</strong> to prevent attackers from enumerating every subdomain in a zone file.
       </p>
       <p>
-        The original NSEC record (RFC 4034) proved that a requested record did not exist by linking existing hostnames in alphabetical order (for example, confirming that nothing exists between <code>api.example.com</code> and <code>dev.example.com</code>). This sequential linking created a critical vulnerability called DNSSEC Zone Walking: an external attacker could issue successive queries to extract every active record in the zone. NSEC3 (RFC 5155) resolved zone walking by replacing plain-text domain names with salted SHA-1 cryptographic hashes. Advanced Anycast platforms (such as Cloudflare) deploy Compact Denial of Existence (RFC 9824, informally known as Black Lies), dynamically generating a synthetic NSEC record that asserts non-existence specifically for the queried name, preventing zone enumeration while eliminating the computational burden of NSEC3 hash iterations.
+        The original NSEC record proved that a requested record did not exist by linking existing hostnames in alphabetical order (for example, confirming that nothing exists between <code>api.example.com</code> and <code>dev.example.com</code>). This sequential linking created a critical vulnerability called DNSSEC Zone Walking: an external attacker could issue successive queries to extract every active record in the zone. NSEC3 resolved zone walking by replacing plain-text domain names with salted SHA-1 cryptographic hashes. Advanced Anycast platforms (such as Cloudflare) deploy Compact Denial of Existence (informally known as Black Lies), dynamically generating a synthetic NSEC record that asserts non-existence specifically for the queried name, preventing zone enumeration while eliminating the computational burden of NSEC3 hash iterations.
       </p>
 
       <h2 id="what-is-the-difference-between-a-zone-signing-key-zsk-and-a-key-signing-key-ksk">What Is the Difference Between a Zone Signing Key (ZSK) and a Key Signing Key (KSK)?</h2>
       <p>
-        DNSSEC splits public-key management inside DNSKEY records into <strong class="text-ink">2 distinct key roles: the Zone Signing Key (ZSK, Flag 256) that signs individual record sets, and the Key Signing Key (KSK, Flag 257) that signs the DNSKEY RRset and links to the parent zone's DS record</strong>.
+        DNSSEC splits public-key management inside DNSKEY records into <strong class="text-ink">2 distinct key roles: the <abbr class="pd-term" data-tip="Zone Signing Key: the cryptographic key pair used to sign routine DNS record sets in a zone">Zone Signing Key (ZSK)</abbr> (Flag 256) that signs individual record sets, and the <abbr class="pd-term" data-tip="Key Signing Key: the cryptographic key pair that signs the DNSKEY set and links to the parent zone DS record">Key Signing Key (KSK)</abbr> (Flag 257) that signs the DNSKEY RRset and links to the parent zone's <abbr class="pd-term" data-tip="Delegation Signer: record published in the parent zone containing a cryptographic hash of the child zone KSK">DS record</abbr></strong>.
       </p>
       <p>
         Separating cryptographic responsibilities across two specialized key pairs solves a fundamental administrative dilemma: rotating keys frequently without requiring manual updates at external domain registrars.
@@ -133,13 +133,13 @@ const faq = {
 
       <h2 id="how-does-the-dnssec-chain-of-trust-work-step-by-step">How Does the DNSSEC Chain of Trust Work Step by Step?</h2>
       <p>
-        To validate a signed DNS response, a recursive resolver executes <strong class="text-ink">7 cryptographic verification steps tracing the Chain of Trust from the child zone up to the hardcoded IANA Root Zone trust anchor</strong>.
+        To validate a signed DNS response, a recursive resolver executes <strong class="text-ink">7 cryptographic verification steps tracing the <abbr class="pd-term" data-tip="The uninterrupted sequence of cryptographic signatures linking your domain up to the root DNS zone">Chain of Trust</abbr> from the child zone up to the hardcoded IANA Root Zone trust anchor</strong>.
       </p>
       <p>
         Validating recursive resolvers verify data authenticity through 7 sequential operations:
       </p>
       <ol>
-        <li><strong>Set</strong> the DNSSEC OK (DO=1) bit within the EDNS0 OPT pseudo-header (RFC 3225) when querying the authoritative nameserver for <code>example.com A</code>, signaling that the resolver requires RRSIG signature records in the response.</li>
+        <li><strong>Set</strong> the DNSSEC OK (DO=1) bit within the EDNS0 OPT pseudo-header when querying the authoritative nameserver for <code>example.com A</code>, signaling that the resolver requires RRSIG signature records in the response.</li>
         <li><strong>Retrieve</strong> the requested A RRset alongside its accompanying RRSIG signature record from the authoritative nameserver for <code>example.com</code>.</li>
         <li><strong>Query</strong> the authoritative nameserver for the zone's <code>DNSKEY</code> RRset (containing the public ZSK Flag 256 and KSK Flag 257) along with the RRSIG signature covering that DNSKEY set.</li>
         <li><strong>Verify</strong> the A record's RRSIG signature using the public ZSK (DNSKEY 256), confirming that the returned IP addresses were signed by <code>example.com</code> and that the signature falls within valid inception and expiration timestamps.</li>
@@ -153,7 +153,7 @@ const faq = {
 
       <h2 id="what-are-the-3-dnssec-validation-states-in-recursive-resolvers">What Are the 3 DNSSEC Validation States in Recursive Resolvers?</h2>
       <p>
-        RFC 4035 Section 4.3 classifies every DNS lookup evaluated by a DNSSEC-aware recursive resolver into <strong class="text-ink">1 of 3 deterministic validation states: Secure, Insecure, or Bogus</strong>. The table below defines each validation state by DNS header flags, RCODE output, and root cause.
+        A DNSSEC-aware recursive resolver classifies every DNS lookup into <strong class="text-ink">1 of 3 deterministic validation states: Secure, Insecure, or Bogus</strong>. The table below defines each validation state by DNS header flags, RCODE output, and root cause.
       </p>
 
       <section class="not-prose my-4" aria-label="Reference table">
@@ -186,7 +186,7 @@ const faq = {
 
       <h2 id="how-do-dnssec-cryptographic-algorithms-compare-rsa-algorithm-8-vs-ecdsa-algorithm-13">How Do DNSSEC Cryptographic Algorithms Compare? (RSA Algorithm 8 vs ECDSA Algorithm 13)</h2>
       <p>
-        RFC 8624 recommends <strong class="text-ink">Algorithm 13 (ECDSAP256SHA256) or Algorithm 15 (Ed25519) for all modern DNSSEC deployments</strong> because elliptic-curve keys produce compact signatures, preventing UDP packet fragmentation and DNS amplification abuse. The table below compares the 4 primary DNSSEC cryptographic algorithms by RFC standard, implementation status, and network packet impact.
+        Security standards recommend <strong class="text-ink">Algorithm 13 (ECDSAP256SHA256) or Algorithm 15 (Ed25519) for all modern DNSSEC deployments</strong> because elliptic-curve keys produce compact signatures, preventing UDP packet fragmentation and DNS amplification abuse. The table below compares the 4 primary DNSSEC cryptographic algorithms by RFC standard, implementation status, and network packet impact.
       </p>
 
       <section class="not-prose my-4" aria-label="Reference table">
@@ -216,8 +216,8 @@ const faq = {
       </p>
       <ul>
         <li><strong>DNSSEC Authenticates Data Integrity (Zero Encryption):</strong> DNSSEC cryptographic signatures verify that DNS records originate from the genuine domain owner and were not altered by intermediate resolvers. DNSSEC does not encrypt query payloads: queries and responses remain visible as plaintext across intermediate networks unless wrapped in an encrypted transport.</li>
-        <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH, RFC 8484) and DNS-over-TLS (DoT, RFC 7858) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session if the queried domain lacks DNSSEC, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
-        <li><strong>HTTPS/TLS and DANE (End-to-End Application Encryption):</strong> Once DNSSEC delivers an authenticated IP address, HTTPS/TLS encrypts the application session between the browser and web server. The DNS-Based Authentication of Named Entities protocol (DANE, RFC 6698) leverages DNSSEC to publish TLSA records directly in DNS, pinning valid TLS certificates for mail exchangers and eliminating dependence on commercial certificate authorities, as explored in <a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a>.</li>
+        <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH) and DNS-over-TLS (DoT) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session if the queried domain lacks DNSSEC, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
+        <li><strong>HTTPS/TLS and DANE (End-to-End Application Encryption):</strong> Once DNSSEC delivers an authenticated IP address, HTTPS/TLS encrypts the application session between the browser and web server. The DNS-Based Authentication of Named Entities protocol (DANE) leverages DNSSEC to publish TLSA records directly in DNS, pinning valid TLS certificates for mail exchangers and eliminating dependence on commercial certificate authorities, as explored in <a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a>.</li>
       </ul>
 
       <h2 id="how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">How Do You Enable, Migrate, and Disable DNSSEC Safely Without Breaking Your Domain?</h2>
