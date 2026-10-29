@@ -1,62 +1,245 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Who assigns ASNs?", "acceptedAnswer": { '@type': 'Answer', "text": "The five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC), which also allocate the IP blocks each AS announces." } },
-    {'@type': 'Question', 'name': "Do I need an ASN?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you operate a network that talks BGP with multiple providers. Hosting a server on someone else's network never requires one." } },
-    {'@type': 'Question', 'name': "Why did an IP's ASN change?", "acceptedAnswer": { '@type': 'Answer', "text": "Address blocks get transferred between networks, or announcements change during incidents; lookups reflect the current announcer." } },
-    {'@type': 'Question', 'name': "Is an ASN public information?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: ASN, name, and announced prefixes are public routing data, visible in every IP lookup." } },
-    {'@type': 'Question', 'name': "What is a private ASN?", "acceptedAnswer": { '@type': 'Answer', "text": "Ranges reserved for internal BGP (not routed publicly); used inside large enterprise networks." } },
-    {'@type': 'Question', 'name': "Can one company have many ASNs?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: after acquisitions or for separate product networks; each announces its own ranges." } }
-  ]
-}
+
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What does ASN stand for in networking?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'ASN stands for Autonomous System Number, a globally unique 16-bit or 32-bit number (such as AS13335 for Cloudflare or AS15169 for Google) that identifies a large network of IP addresses for Border Gateway Protocol (BGP) routing on the internet.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is an ASN the same as an IP address?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, an IP address identifies an individual device or server (such as 1.1.1.1), whereas an ASN identifies the entire network organization (such as AS13335) that owns and routes one or more large blocks of IP addresses.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How many bits long is an Autonomous System Number (ASN)?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I find the ASN of an IP address?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal.',
+      },
+    },
+  ],
+};
 ---
 <BaseLayout
-  title="What Is an ASN (Autonomous System Number)?"
-  description="ASN explained: what autonomous systems are, how ASNs route internet traffic via BGP, and what an IP's ASN tells you in an IP lookup."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["IP & Networking", "/ip-and-networking/"], ["What Is an ASN"]]}>
+  title="What Is an ASN (Autonomous System Number)? BGP Routing, Bit Ranges, and Lookup"
+  description="ASN explained: what Autonomous System Numbers are, how BGP routes IP prefixes, 16-bit vs 32-bit ranges, AS types, advantages, and how to look up an ASN."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["IP & Networking", "/ip-and-networking/"], ["What Is an ASN"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ip-and-networking/" class="hover:text-accent">IP & Networking</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">What Is an ASN</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is an ASN (Autonomous System Number)?</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is an ASN (Autonomous System Number)? BGP Routing, Bit Ranges, and Lookup</h1>
+
     <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">An Autonomous System is a network, or group of networks, operated under one administration with one routing policy: an ISP, a cloud provider, a university, a big company. Its ASN is the public ID it uses to announce its IP addresses to the rest of the internet.</p>
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An Autonomous System Number (ASN) is <strong class="text-ink">a globally unique numerical identifier assigned to a network so routers exchange IP traffic across the internet using Border Gateway Protocol (BGP)</strong>. Every ISP, cloud provider, and enterprise announces its IP address blocks under an ASN. The bit length is either 16 or 32 bits.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#how-asns-route-the-internet">How ASNs route the internet</a></li>
-        <li><a href="#what-an-asn-tells-you-in-practice">What an ASN tells you in practice</a></li>
+        <li><a href="#what-does-asn-mean-in-networking-and-how-does-bgp-use-it-5-steps">What ASN means &amp; BGP routing (5 steps)</a></li>
+        <li><a href="#how-many-bits-long-is-an-asn-16-bit-vs-32-bit-and-public-vs-private-ranges">ASN bit length &amp; number ranges</a></li>
+        <li><a href="#what-are-the-3-types-of-autonomous-systems-stub-multihomed-and-transit">3 types of Autonomous Systems</a></li>
+        <li><a href="#what-are-the-4-advantages-of-having-your-own-asn-when-you-need-one">4 advantages of having an ASN</a></li>
+        <li><a href="#examples-of-well-known-public-asns-and-the-5-regional-internet-registries-rirs">Notable ASNs &amp; the 5 RIRs</a></li>
+        <li><a href="#why-do-asns-matter-for-email-deliverability-cybersecurity-and-bot-detection">Why ASNs matter for email &amp; security</a></li>
+        <li><a href="#how-do-you-find-the-asn-for-any-ip-address-or-domain-3-lookup-methods">How to find an ASN (3 methods)</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">ASN essentials</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">What it is</td><td class="text-sm text-ink-dim">One routing domain</td></tr><tr><td class="font-medium text-ink">Example</td><td class="text-sm text-ink-dim">AS15169 = Google</td></tr><tr><td class="font-medium text-ink">Why it matters</td><td class="text-sm text-ink-dim">Reputation and verification</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-asns-route-the-internet">How ASNs route the internet</h2>
-      <p>The internet has no central switch: it is ~75,000 autonomous systems exchanging reachability via BGP (Border Gateway Protocol). Each AS announces the IP ranges it owns to its neighbors; those announcements propagate, and every router builds a map of where to send traffic. When you run an IP lookup, the ASN in the result is the network currently announcing that address.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="what-an-asn-tells-you-in-practice">What an ASN tells you in practice</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li><strong class="text-ink">Who operates an address:</strong> AS13335 is Cloudflare, AS15169 is Google, AS16509 is AWS. In logs and IP lookups, the ASN is the fastest identity signal.</li><li><strong class="text-ink">Reputation context:</strong> mail from a residential ASN behaves differently from mail from a hosting ASN; filters notice.</li><li><strong class="text-ink">Routing health:</strong> BGP hijacks are ASN-level events; monitoring your own ASN’s announcements is a real (if advanced) security practice.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who assigns ASNs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC), which also allocate the IP blocks each AS announces.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need an ASN?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if you operate a network that talks BGP with multiple providers. Hosting a server on someone else's network never requires one.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why did an IP's ASN change?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Address blocks get transferred between networks, or announcements change during incidents; lookups reflect the current announcer.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is an ASN public information?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: ASN, name, and announced prefixes are public routing data, visible in every IP lookup.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a private ASN?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Ranges reserved for internal BGP (not routed publicly); used inside large enterprise networks.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can one company have many ASNs?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: after acquisitions or for separate product networks; each announces its own ranges.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/ip-lookup/" class="text-accent hover:text-accent-soft">IP lookup tool →</a></li><li><a href="/public-vs-private-ip/" class="text-accent hover:text-accent-soft">Reserved IP ranges →</a></li><li><a href="/ip-and-networking/" class="text-accent hover:text-accent-soft">IP and networking hub →</a></li><li><a href="/ip-lookup/">IP lookup</a>, see the ASN behind any address</li><li><a href="/public-vs-private-ip/">Public vs private IP</a>, how ranges are divided</li><li><a href="/nat-explained/">NAT explained</a>, why private ranges need translation</li></ul>
+      <h2 id="what-does-asn-mean-in-networking-and-how-does-bgp-use-it-5-steps">What Does ASN Mean in Networking and How Does BGP Use It? (5 Steps)</h2>
+      <p>
+        In networking, an Autonomous System (AS) is <strong class="text-ink">a collection of IP prefixes operated under a unified routing policy</strong>, and its ASN is the unique number that identifies that network across <strong class="text-ink">5 Border Gateway Protocol (BGP) routing steps</strong>.
+      </p>
+      <p>
+        Global packet routing proceeds through this sequence:
+      </p>
+      <ol>
+        <li><strong>Assign</strong> a unique Autonomous System Number (such as <code>AS13335</code> for Cloudflare) and <a href="/ipv4-vs-ipv6/">IPv4 vs IPv6</a> <abbr class="pd-term" data-tip="Classless Inter-Domain Routing (CIDR): an IP addressing scheme allocating flexible address prefixes rather than rigid legacy classes">CIDR</abbr> prefixes to the network operator through a Regional Internet Registry.</li>
+        <li><strong>Announce</strong> those <abbr class="pd-term" data-tip="IP Prefix: a contiguous block of IP addresses designated by a network address and subnet mask notation">IP prefixes</abbr> and the originating ASN to neighboring routers over <abbr class="pd-term" data-tip="Border Gateway Protocol (BGP): the standard exterior gateway protocol exchanging routing and reachability information between Autonomous Systems">Border Gateway Protocol (BGP)</abbr>, the exterior routing backbone of the internet.</li>
+        <li><strong>Append</strong> each transit network's ASN to the BGP <code>AS_PATH</code> attribute as route advertisements travel between networks, preventing routing loops.</li>
+        <li><strong>Select</strong> the shortest, healthiest <code>AS_PATH</code> (fewest ASN hops) at each router when forwarding packets toward a destination IP address.</li>
+        <li><strong>Deliver</strong> the packet into the destination Autonomous System, where an Interior Gateway Protocol like <abbr class="pd-term" data-tip="Open Shortest Path First (OSPF): an interior gateway protocol used to route packets within a single internal autonomous routing domain">OSPF</abbr> (Open Shortest Path First) routes across internal switches to the final server.</li>
+      </ol>
+      <p>
+        BGP uses public ASNs to route traffic between Autonomous Systems globally, whereas OSPF operates inside private networks by organizing routers into local topology areas. Administrators calculate subnet boundaries through the <a href="/cidr-calculator/">CIDR / Subnet Calculator</a>.
+      </p>
+
+      <h2 id="how-many-bits-long-is-an-asn-16-bit-vs-32-bit-and-public-vs-private-ranges">How Many Bits Long Is an ASN? (16-Bit vs 32-Bit and Public vs Private Ranges)</h2>
+      <p>
+        An Autonomous System Number is <strong class="text-ink">either 16 bits long (supporting 65,536 numbers) or 32 bits long (supporting 4,294,967,296 numbers)</strong>, written in decimal notation with prefix <code>AS</code>. The table below defines official IANA public, private, and reserved ASN ranges.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>ASN Range (Decimal ASPLAIN)</th><th>Bit Length</th><th>Classification</th><th>Purpose and Assignment Scope</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS1 to AS64495</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs</td><td class="text-sm text-ink-dim">Assigned by RIRs for public BGP routing.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS64496 to AS64511</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm text-ink-dim">Documentation ASNs</td><td class="text-sm text-ink-dim">Reserved by IANA for documentation and examples.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS64512 to AS65534</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (1,023 total)</td><td class="text-sm text-ink-dim">Reserved for internal BGP networks; never announced publicly.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS65536 to AS4199999999</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs</td><td class="text-sm text-ink-dim">Expanded 4-byte pool introduced after 16-bit exhaustion.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS4200000000 to AS4294967294</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (~94.9M total)</td><td class="text-sm text-ink-dim">Expanded 32-bit pool for data center and cloud peering.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS0 and AS65535</td><td class="text-sm text-ink-dim">16-bit / 32-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">Reserved by IANA (AS23456 serves as AS_TRANS for legacy interop).</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        BGP address structures mirror IP assignments. Just as <a href="/public-vs-private-ip/">Public vs Private IP Addresses</a> and <a href="/reserved-ip-ranges/">Reserved and Private IP Ranges</a> isolate public routable IPs from internal subnets, ASN ranges maintain identical separation. Public ASNs require registry allocation for internet advertisement, whereas private ASNs operate inside corporate networks, Kubernetes clusters, and cloud interconnects without registration.
+      </p>
+
+      <h2 id="what-are-the-3-types-of-autonomous-systems-stub-multihomed-and-transit">What Are the 3 Types of Autonomous Systems? (Stub, Multihomed, and Transit)</h2>
+      <p>
+        Network engineers classify Autonomous Systems into <strong class="text-ink">3 categories based on connectivity and transit handling: Stub AS, Multihomed AS, and Transit AS</strong>.
+      </p>
+      <p>
+        Internet topology separates these 3 system architectures:
+      </p>
+      <ol>
+        <li><strong>Stub Autonomous System (Single-Homed Network):</strong> Connects to one upstream provider. Traffic traverses a single provider path, so single-homed organizations use IP space leased from their parent ISP rather than running independent BGP tables.</li>
+        <li><strong>Multihomed Autonomous System (Redundant Enterprise or Cloud Network):</strong> Connects to two or more upstream providers to maintain uptime during outages. A multihomed system advertises its ASN and prefixes to multiple carriers while rejecting third-party transit.</li>
+        <li><strong>Transit Autonomous System (Tier-1 Backbones, Regional Carriers, and ISPs):</strong> Connects to multiple external networks and carries third-party traffic. Tier-1 backbones like Lumen (<code>AS3356</code>) and Telia Arelion (<code>AS1299</code>) form the transit core linking customer networks globally.</li>
+      </ol>
+      <p>
+        Enterprise design favors edge autonomy over transit duties. Over 80 percent of registered Autonomous Systems operate as multihomed edge networks that originate and terminate traffic for their own web applications without carrying third-party transit.
+      </p>
+
+      <h2 id="what-are-the-4-advantages-of-having-your-own-asn-when-you-need-one">What Are the 4 Advantages of Having Your Own ASN? (When You Need One)</h2>
+      <p>
+        Obtaining a public ASN provides <strong class="text-ink">4 strategic infrastructure advantages: multi-ISP failover, provider-independent IP portability, global Anycast deployment, and direct Internet Exchange Point (IXP) peering</strong>.
+      </p>
+      <p>
+        Organizations gain these 4 technical capabilities by deploying an autonomous network:
+      </p>
+      <ol>
+        <li><strong>Automatic Multi-ISP Failover (BGP Multi-Homing):</strong> Announcing prefixes under a dedicated ASN across multiple transit providers enables BGP routers to reroute traffic automatically through a secondary path within seconds during carrier outages.</li>
+        <li><strong>Provider-Independent (PI) IP Address Portability:</strong> Leasing IP space forces organizations to renumber servers, firewalls, and DNS records when switching vendors. Owning an ASN and provider-independent IP block preserves address permanence across different transit carriers.</li>
+        <li><strong>Global Anycast DNS and CDN Routing:</strong> Announcing identical IP addresses from an identical ASN across global data centers delivers <abbr class="pd-term" data-tip="Anycast: a network addressing and routing technique where a single destination IP address is shared across multiple physical nodes">Anycast</abbr> traffic distribution, routing visitors to the nearest physical node.</li>
+        <li><strong>Lower Latency and Transit Costs via Direct IXP Peering:</strong> Operating a registered ASN qualifies networks to connect to Internet Exchange Points like Equinix IX, DE-CIX, and LINX, enabling settlement-free peering with eyeball networks and cloud platforms.</li>
+      </ol>
+      <p>
+        Application architecture dictates ASN requirements. Organizations deploying on serverless platforms or standard hosting rely on their upstream provider's network. Operating a dedicated ASN becomes essential when an organization controls at least a <code>/24</code> IPv4 or <code>/48</code> IPv6 allocation and establishes BGP peering across two or more carriers.
+      </p>
+
+      <h2 id="examples-of-well-known-public-asns-and-the-5-regional-internet-registries-rirs">Examples of Well-Known Public ASNs and the 5 Regional Internet Registries (RIRs)</h2>
+      <p>
+        The <abbr class="pd-term" data-tip="Internet Assigned Numbers Authority (IANA): the global coordination entity overseeing IP addresses, ASNs, and root zone management">Internet Assigned Numbers Authority (IANA)</abbr> delegates global ASN blocks to <strong class="text-ink">5 Regional Internet Registries (RIRs)</strong>, which assign ASNs to cloud platforms, telecom carriers, and enterprises. The table below lists 8 well-known public ASNs along with their managing RIR.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>ASN (ASPLAIN)</th><th>Organization / Network Name</th><th>Network Role</th><th>Managing RIR &amp; Region</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS13335</td><td class="text-sm font-semibold text-ink">Cloudflare, Inc.</td><td class="text-sm text-ink-dim">Global Anycast CDN, DNS &amp; 1.1.1.1</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS15169</td><td class="text-sm font-semibold text-ink">Google LLC</td><td class="text-sm text-ink-dim">Search, Workspace, YouTube &amp; 8.8.8.8</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS16509 / AS14618</td><td class="text-sm font-semibold text-ink">Amazon.com, Inc. (AWS)</td><td class="text-sm text-ink-dim">AWS Infrastructure (EC2, CloudFront, Route 53)</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS8075</td><td class="text-sm font-semibold text-ink">Microsoft Corporation</td><td class="text-sm text-ink-dim">Azure, Microsoft 365 &amp; Edge Network</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS32934</td><td class="text-sm font-semibold text-ink">Meta Platforms, Inc.</td><td class="text-sm text-ink-dim">Meta Edge (Facebook, Instagram, WhatsApp)</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS3356</td><td class="text-sm font-semibold text-ink">Lumen Technologies (Level 3)</td><td class="text-sm text-ink-dim">Global Tier-1 Transit Backbone</td><td class="text-sm text-ink-dim">ARIN (North America)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS3320</td><td class="text-sm font-semibold text-ink">Deutsche Telekom AG</td><td class="text-sm text-ink-dim">European Telecom &amp; Eyeball ISP</td><td class="text-sm text-ink-dim">RIPE NCC (Europe &amp; Middle East)</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS55836 / AS45609</td><td class="text-sm font-semibold text-ink">Reliance Jio / Bharti Airtel</td><td class="text-sm text-ink-dim">Asian Telecom &amp; Mobile Networks</td><td class="text-sm text-ink-dim">APNIC (Asia-Pacific)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Geographic governance of internet numbers operates through 5 non-profit <abbr class="pd-term" data-tip="Regional Internet Registry (RIR): one of five regional non-profit organizations managing IP allocations and ASN assignments">Regional Internet Registries (RIRs)</abbr>: ARIN (North America), RIPE NCC (Europe and Middle East), APNIC (Asia-Pacific), LACNIC (Latin America), and AFRINIC (Africa). Acquiring an ASN requires applying directly to your regional registry and demonstrating active <abbr class="pd-term" data-tip="Multi-homing: connecting a network to two or more independent upstream internet service providers for redundancy">multi-homing</abbr> requirements.
+      </p>
+
+      <h2 id="why-do-asns-matter-for-email-deliverability-cybersecurity-and-bot-detection">Why Do ASNs Matter for Email Deliverability, Cybersecurity, and Bot Detection?</h2>
+      <p>
+        Beyond BGP routing, security teams inspect the originating ASN of incoming connections for <strong class="text-ink">3 critical security and email deliverability checks</strong>.
+      </p>
+      <p>
+        Security systems evaluate incoming traffic across these 3 threat dimensions:
+      </p>
+      <ol>
+        <li><strong>ASN-Level Email Spam Reputation and Blocklisting:</strong> Mailbox providers evaluate sending Autonomous System reputation alongside individual IPs. Transmitting messages from hosting networks known for spam causes filters to reject or defer messages even when SPF and DKIM pass.</li>
+        <li><strong>Firewall and WAF Bot Filtering by ASN:</strong> Cloud security platforms configure edge rules challenging traffic from data center and VPS networks while permitting residential traffic. Search engines like Googlebot originate from verified ASNs (<code>AS15169</code>), allowing webmasters to whitelist legitimate crawlers while blocking scraping farms.</li>
+        <li><strong>BGP Hijacking Mitigation and RPKI Route Validation:</strong> Malicious actors occasionally advertise unauthorized IP prefixes from rogue ASNs to intercept web traffic. Engineers prevent routing hijacks by deploying Resource Public Key Infrastructure (RPKI) certificates that cryptographically validate which ASN is authorized to announce specific address blocks.</li>
+      </ol>
+      <p>
+        Monitoring origin signals provides essential protection against automated abuse and delivery failures. Mail administrators audit infrastructure reputation using <a href="/ip-reputation-checker/">IP Reputation Checker</a> and evaluate blacklist triggers through <a href="/blacklist-checker/">MX and IP Blacklist Checker</a>.
+      </p>
+
+      <h2 id="how-do-you-find-the-asn-for-any-ip-address-or-domain-3-lookup-methods">How Do You Find the ASN for Any IP Address or Domain? (3 Lookup Methods)</h2>
+      <p>
+        To find the ASN, network owner, and CIDR prefix for any IP address, use <strong class="text-ink">1 of 3 browser-based or command-line lookup methods</strong>.
+      </p>
+      <p>
+        Network analysts extract ASN intelligence using these 3 investigation methods:
+      </p>
+      <ol>
+        <li><strong>Look Up Any IP or Domain Instantly in Your Browser:</strong> Enter any address into <a href="/ip-lookup/">IP Lookup</a> to discover its originating ASN, organization title, hosting country, and reverse DNS records, or open <a href="/my-ip/">What Is My IP Address</a> to inspect personal connection details.</li>
+        <li><strong>Query RDAP and RIR Registration Records:</strong> Search an IP address or numerical ASN inside <a href="/whois-lookup/">WHOIS / RDAP Lookup</a> to review official registry ownership records, abuse contacts, and allocation dates.</li>
+        <li><strong>Run a Terminal ASN Query via Team Cymru DNS or WHOIS:</strong> Query routing engines directly from your terminal using command-line WHOIS or DNS TXT records:</li>
+      </ol>
+
+      <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code># Query ASN, BGP Prefix, Country, and RIR via WHOIS:
+whois -h whois.cymru.com " -v 1.1.1.1"
+
+# Or query ASN via DNS TXT lookup (reversed IP octets):
+dig +short 1.1.1.1.origin.asn.cymru.com TXT
+# Returns: "13335 | 1.1.1.0/24 | US | arin | 2014-03-28"</code></pre>
+
+      <p>
+        Understanding how an Autonomous System Number (ASN) operates clarifies the routing foundation connecting independent networks. From BGP path selection and bit allocations to Regional Internet Registries (RIRs) and multi-homed ISP failover, ASNs organize billions of endpoints into a fault-tolerant topology. Explore broader networking guides inside the <a href="/ip-and-networking/">IP and Networking</a> knowledge base.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does ASN stand for in networking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">ASN stands for Autonomous System Number, a globally unique 16-bit or 32-bit number (such as AS13335 for Cloudflare or AS15169 for Google) that identifies a large network of IP addresses for Border Gateway Protocol (BGP) routing on the internet.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is an ASN the same as an IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, an IP address identifies an individual device or server (such as 1.1.1.1), whereas an ASN identifies the entire network organization (such as AS13335) that owns and routes one or more large blocks of IP addresses.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many bits long is an Autonomous System Number (ASN)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find the ASN of an IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal.</p>
+      </details>
     </div>
   </div>
 </BaseLayout>
