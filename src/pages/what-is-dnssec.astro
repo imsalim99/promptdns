@@ -102,7 +102,7 @@ const faq = {
         <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
           <table class="pdns-table" style="width:100%">
             <thead><tr><th>Record</th><th>Role</th><th>Key detail</th></tr></thead>
-            <tbody><tr><td class="font-medium text-ink">RRSIG</td><td class="text-sm text-ink-dim">Digital signature over each record set</td><td class="text-sm text-ink-dim">Must be refreshed before signature expiry</td></tr><tr><td class="font-medium text-ink">DNSKEY</td><td class="text-sm text-ink-dim">Zone signing key (flag 256) and key signing key (flag 257)</td><td class="text-sm text-ink-dim">The KSK signs the DNSKEY set</td></tr><tr><td class="font-medium text-ink">DS</td><td class="text-sm text-ink-dim">Hash of the KSK published in the parent zone</td><td class="text-sm text-ink-dim">The chain of trust link at the registrar</td></tr><tr><td class="font-medium text-ink">NSEC / NSEC3</td><td class="text-sm text-ink-dim">Authenticated denial of existence</td><td class="text-sm text-ink-dim">Proves a name genuinely does not exist</td></tr></tbody>
+            <tbody><tr><td class="font-medium text-ink">RRSIG</td><td class="text-sm text-ink-dim">Digital signature over each record set</td><td class="text-sm text-ink-dim">Requires refresh before signature expiry</td></tr><tr><td class="font-medium text-ink">DNSKEY</td><td class="text-sm text-ink-dim">Zone signing key (flag 256) and key signing key (flag 257)</td><td class="text-sm text-ink-dim">The KSK signs the DNSKEY set</td></tr><tr><td class="font-medium text-ink">DS</td><td class="text-sm text-ink-dim">Hash of the KSK published in the parent zone</td><td class="text-sm text-ink-dim">The chain of trust link at the registrar</td></tr><tr><td class="font-medium text-ink">NSEC / NSEC3</td><td class="text-sm text-ink-dim">Authenticated denial of existence</td><td class="text-sm text-ink-dim">Proves a name genuinely does not exist</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -124,12 +124,15 @@ const faq = {
         DNSSEC splits public-key management inside DNSKEY records into <strong class="text-ink">2 distinct key roles: the <abbr class="pd-term" data-tip="Zone Signing Key: the cryptographic key pair used to sign routine DNS record sets in a zone">Zone Signing Key (ZSK)</abbr> (Flag 256) that signs individual record sets, and the <abbr class="pd-term" data-tip="Key Signing Key: the cryptographic key pair that signs the DNSKEY set and links to the parent zone DS record">Key Signing Key (KSK)</abbr> (Flag 257) that signs the DNSKEY RRset and links to the parent zone's <abbr class="pd-term" data-tip="Delegation Signer: record published in the parent zone containing a cryptographic hash of the child zone KSK">DS record</abbr></strong>.
       </p>
       <p>
-        Separating cryptographic responsibilities across two specialized key pairs solves a fundamental administrative dilemma: rotating keys frequently without requiring manual updates at external domain registrars.
+        Separating cryptographic responsibilities across two specialized key pairs solves a fundamental administrative dilemma through 2 distinct roles:
       </p>
       <ul>
         <li><strong>Zone Signing Key (ZSK, DNSKEY Flag 256):</strong> The Zone Signing Key (ZSK, Flag 256) signs individual RRsets (A, AAAA, MX, TXT, NS, SOA, NSEC3) inside the child zone. The private key of the ZSK generates an <code>RRSIG</code> signature over every routine zone RRset, while the public key is published in the zone's <code>DNSKEY</code> RRset. Because parent TLD registries store no record of the ZSK, DNS providers rotate the ZSK every 30 to 90 days automatically without requiring registrar intervention.</li>
         <li><strong>Key Signing Key (KSK, DNSKEY Flag 257):</strong> The Key Signing Key (KSK, Flag 257) signs only the zone's DNSKEY RRset to authorize the ZSK. The private key of the KSK cryptographically validates both the ZSK and itself, while a SHA-256 hash of the public KSK is published in the parent TLD zone as a Delegation Signer (DS) record. Because rotating a KSK requires publishing a new DS record at the registrar, organizations rotate the KSK on longer intervals of 12 to 24 months.</li>
       </ul>
+      <p>
+        Dividing signing duties between a frequently rotated ZSK and a stable KSK minimizes administrative overhead while preserving cryptographic resilience.
+      </p>
 
       <h2 id="how-does-the-dnssec-chain-of-trust-work-step-by-step">How Does the DNSSEC Chain of Trust Work Step by Step?</h2>
       <p>
@@ -219,6 +222,9 @@ const faq = {
         <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH) and DNS-over-TLS (DoT) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session if the queried domain lacks DNSSEC, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
         <li><strong>HTTPS/TLS and DANE (End-to-End Application Encryption):</strong> Once DNSSEC delivers an authenticated IP address, HTTPS/TLS encrypts the application session between the browser and web server. The DNS-Based Authentication of Named Entities protocol (DANE) leverages DNSSEC to publish TLSA records directly in DNS, pinning valid TLS certificates for mail exchangers and eliminating dependence on commercial certificate authorities, as explored in <a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a>.</li>
       </ul>
+      <p>
+        Deploying DNSSEC alongside encrypted DNS transport and TLS certificates establishes end-to-end security protecting domain resolution, network transmission, and application data.
+      </p>
 
       <h2 id="how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">How Do You Enable, Migrate, and Disable DNSSEC Safely Without Breaking Your Domain?</h2>
       <p>
@@ -227,19 +233,19 @@ const faq = {
       <p>
         Domain administrators execute DNSSEC lifecycle tasks through 2 strict operational sequences:
       </p>
-      <p class="font-semibold text-ink">Workflow A: Enabling DNSSEC (Child Zone Signing First, Parent DS Second)</p>
+      <p class="font-semibold text-ink">Workflow A: Enabling DNSSEC (Child Zone Signing First, Parent DS Second):</p>
       <ol>
         <li><strong>Enable</strong> DNSSEC signing within your authoritative DNS provider dashboard (such as Cloudflare, AWS Route 53, or Google Cloud DNS) so the nameserver generates active ZSK and KSK pairs and publishes signed RRSIG records.</li>
         <li><strong>Copy</strong> the generated Delegation Signer (DS) record parameters (Key Tag, Algorithm 13, Digest Type 2 SHA-256, and Digest hex string) from your DNS provider.</li>
         <li><strong>Publish</strong> the DS record in your domain registrar's DNSSEC management interface, allowing the parent TLD registry to insert the DS record into the top-level zone.</li>
-        <li><strong>Verify</strong> the completed chain of trust using the <a href="/dnssec-checker/">DNSSEC Checker</a>, following specific setup steps in <a href="/enable-dnssec-cloudflare/">How to Enable DNSSEC in Cloudflare</a>.</li>
+        <li><strong>Verify</strong> the completed chain of trust using the DNSSEC Checker, following specific setup steps in <a href="/enable-dnssec-cloudflare/">How to Enable DNSSEC in Cloudflare</a>.</li>
       </ol>
       <p class="font-semibold text-ink">Workflow B: Disabling DNSSEC or Migrating Nameservers (Parent DS Removal First, Wait Out TTL, Child Zone Second)</p>
       <p>
         Changing nameservers on a signed domain without removing the parent DS record causes global resolution failure: validating recursive resolvers query the new nameservers, find no matching KSK, and reject all queries with SERVFAIL. Delete the old DS record at your domain registrar and wait for the parent DS TTL (typically 1 to 24 hours) to expire before switching authoritative nameservers between DNS providers.
       </p>
       <p>
-        Deploying comprehensive DNS defenses requires balancing cryptographic signing with operational controls across nameservers, registrar locks, and monitoring tools. Administrators can audit their complete domain posture using the <a href="/dns-threat-protection-checklist/">DNS Threat Protection Checklist</a> and validate live chains of trust anytime with the <a href="/dnssec-checker/">DNSSEC Checker</a>.
+        Deploying comprehensive DNS defenses requires balancing cryptographic signing with operational controls across nameservers, registrar locks, and monitoring tools. Administrators can audit their complete domain posture using the <a href="/dns-threat-protection-checklist/">DNS Threat Protection Checklist</a> and validate live chains of trust anytime with the DNSSEC Checker.
       </p>
     </div>
 

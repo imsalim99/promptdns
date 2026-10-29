@@ -94,7 +94,7 @@ example.com.    60    IN    A    198.51.100.12   ; Web Server 3 (EU-Central)</co
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">Publish</strong> two or more <a href="/a-record/">A Record</a> (IPv4) or <a href="/aaaa-record/">AAAA Record</a> (IPv6) entries on the same hostname inside your authoritative DNS zone with a short Time to Live (60 to 300 seconds).
+            <strong class="text-ink">Publish</strong> two or more <a href="/a-record/">A Record</a> (IPv4) or <a href="/aaaa-record/">AAAA Record</a> (IPv6) entries on the same hostname inside your authoritative DNS zone with a short Time to Live.
           </li>
           <li class="leading-relaxed">
             <strong class="text-ink">Receive</strong> a DNS lookup request for the hostname at your authoritative nameserver originating from a visitor recursive DNS resolver.
@@ -134,7 +134,7 @@ example.com.    60    IN    A    198.51.100.12   ; Web Server 3 (EU-Central)</co
             <tbody>
               <tr>
                 <td class="p-3 font-medium text-ink"><abbr class="pd-term" data-tip="A basic DNS distribution technique that cycles through a list of IP addresses in sequential order for incoming queries.">Round-Robin DNS</abbr></td>
-                <td class="p-3 text-sm text-ink-dim">Cycles through all published A and AAAA records in sequential order (1 &gt; 2 &gt; 3 &gt; 1).</td>
+                <td class="p-3 text-sm text-ink-dim">Cycles through published A and AAAA records in sequential order.</td>
                 <td class="p-3 text-sm font-medium text-amber-400">No (Continues serving dead IPs without health checks)</td>
                 <td class="p-3 text-sm text-ink-dim">Simple, zero-cost traffic spreading across identical stateless web nodes.</td>
               </tr>
@@ -243,7 +243,7 @@ example.com.    60    IN    A    198.51.100.12   ; Web Server 3 (EU-Central)</co
         </div>
 
         <p>
-          High-availability architectures deploy DNS load balancing alongside regional application proxies in a complementary two-tier hierarchy. Global Server Load Balancing steers client traffic to the nearest operational data center, and local reverse proxies balance requests across backend application clusters. Detailed proxy patterns appear in our guide to <a href="/reverse-proxy-explained/">Reverse Proxy Explained</a>.
+          High-availability architectures deploy DNS load balancing alongside regional application proxies in a complementary two-tier hierarchy. Global Server Load Balancing steers client traffic to the nearest operational data center, while local reverse proxies balance requests across backend application clusters. Network engineers distinguish application traffic steering from dedicated DNS Server Load Balancing, which positions nameserver fleets behind Anycast or Layer-4 port 53 load balancers to absorb raw query volume. Detailed proxy patterns appear in our guide to <a href="/reverse-proxy-explained/">Reverse Proxy Explained</a>.
         </p>
       </section>
 
@@ -258,7 +258,7 @@ example.com.    60    IN    A    198.51.100.12   ; Web Server 3 (EU-Central)</co
             <strong class="text-ink">Cloudflare Load Balancing:</strong> Combines global <abbr class="pd-term" data-tip="A network addressing method where multiple physical servers share a single IP address, routing users to the nearest node via BGP.">Anycast</abbr> DNS routing with automated failover, latency-based dynamic steering, and health check probes running from worldwide edge points every 15 seconds.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">AWS Route 53 (Traffic Flow and Routing Policies):</strong> Provides Simple, Weighted, Latency-Based, Geolocation, and Active-Passive Failover routing policies integrated with Amazon CloudWatch health checks. Comparative benchmarks feature in our review of <a href="/cloudflare-vs-route53/">Cloudflare DNS vs AWS Route 53</a>.
+            <strong class="text-ink">AWS Route 53 (Traffic Flow and Routing Policies):</strong> Provides Simple, Weighted, Latency-Based, Geolocation, and Active-Passive Failover routing policies integrated with Amazon CloudWatch. Comparative benchmarks feature in our review of <a href="/cloudflare-vs-route53/">Cloudflare DNS vs AWS Route 53</a>.
           </li>
           <li class="leading-relaxed">
             <strong class="text-ink">Azure Traffic Manager:</strong> Operates as Microsoft dedicated DNS traffic director, supporting Priority failover, Weighted distribution, Performance latency routing, and Geographic routing across Azure and external endpoints.

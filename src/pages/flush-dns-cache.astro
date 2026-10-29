@@ -122,6 +122,9 @@ const faq = {
         </li>
         <li><strong>Confirm</strong> that Windows displays <code>Successfully flushed the DNS Resolver Cache.</code></li>
       </ol>
+      <p>
+        Users can also launch the command directly through the Windows Key + R Run dialog shortcut (<code>Win + R</code>, type <code>ipconfig /flushdns</code>, and press Enter), and resolve stubborn network binding conflicts by combining the flush with <code>ipconfig /release</code> and <code>ipconfig /renew</code>.
+      </p>
 
       <h3 id="how-do-you-view-cached-dns-records-on-windows-before-flushing">How Do You View Cached DNS Records on Windows Before Flushing?</h3>
       <p>
@@ -222,6 +225,9 @@ sudo rndc flush</code></pre>
           <p class="mt-1 text-sm text-ink-dim">Safari delegates DNS caching to macOS. Closing Safari completely (<code>Command + Q</code>) after running the Terminal flush command ensures fresh lookups, or select <strong>Develop &rarr; Empty Caches</strong> (<code>Option + Command + E</code>).</p>
         </li>
       </ol>
+      <p>
+        Purging application-level host caches alongside open socket pools ensures that browser networking threads immediately initiate fresh lookups against system resolver interfaces.
+      </p>
 
       <h2 id="how-to-flush-dns-cache-on-iphone-ios-android-and-home-wi-fi-routers">How to Flush DNS Cache on iPhone (iOS), Android, and Home Wi-Fi Routers</h2>
       <p>
@@ -235,6 +241,9 @@ sudo rndc flush</code></pre>
         <li><strong>Android Smartphones and Tablets:</strong> Toggle <strong>Airplane Mode</strong> ON for 10 seconds and OFF to clear the radio cache, and open <code>chrome://net-internals/#dns</code> inside Chrome for Android to tap <strong>Clear host cache</strong>.</li>
         <li><strong>Home and Office Wi-Fi Routers (CPE Forwarder Cache):</strong> Wi-Fi routers act as local caching DNS forwarders (typically at <code>192.168.1.1</code> or <code>192.168.0.1</code>). Disconnect the router power adapter, wait 30 seconds, and plug it back in to wipe the router RAM cache completely.</li>
       </ol>
+      <p>
+        Power cycling local wireless equipment and toggling cellular network interfaces purges stubborn gateway forwarder tables that retain obsolete IP records across connected client devices.
+      </p>
 
       <h2 id="why-should-you-flush-your-dns-cache-4-common-scenarios-and-what-to-do-if-it-fails">Why Should You Flush Your DNS Cache? (4 Common Scenarios and What to Do If It Fails)</h2>
       <p>
@@ -250,7 +259,7 @@ sudo rndc flush</code></pre>
         <li><strong>Clearing Local Browsing Footprint on Shared Computers:</strong> Any administrative user can run <code>ipconfig /displaydns</code> to inspect recently visited domains unless the cache is cleared.</li>
       </ol>
       <p>
-        The outdated DNS record resides upstream at your Internet Service Provider's recursive resolver when clearing your local cache, purging browser socket pools, and rebooting your router still returns the previous IP address. Administrators can inspect global resolver status with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a> and verify remaining cache expiration timers via the <a href="/ttl-checker/">DNS TTL Checker</a>. Reconfiguring your network adapter to query public resolvers such as Cloudflare (<code>1.1.1.1</code>) or Google Public DNS (<code>8.8.8.8</code>) bypasses sluggish ISP caches while global <abbr class="pd-term" data-tip="DNS Propagation: the time required for DNS record updates to replace cached answers across recursive resolvers worldwide"><a href="/dns-propagation/">DNS Propagation</a></abbr> completes.
+        The outdated DNS record resides upstream at your Internet Service Provider's recursive resolver when clearing your local cache, purging browser socket pools, and rebooting your router still returns the previous IP address. Administrators can inspect global resolver status with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a> and verify remaining cache expiration timers via the <a href="/ttl-checker/">DNS TTL Checker</a>. Reconfiguring your network adapter to query public resolvers such as Cloudflare (<code>1.1.1.1</code>) or Google Public DNS (<code>8.8.8.8</code>) bypasses sluggish ISP caches while global <abbr class="pd-term" data-tip="DNS Propagation: the time required for DNS record updates to replace cached answers across recursive resolvers worldwide"><a href="/dns-propagation/">DNS Propagation</a></abbr> completes. Public cache-flush portals such as Google Public DNS additionally require flushing the apex root domain prior to clearing individual subdomains whenever nameserver delegations change, ensuring validating resolvers purge parent delegation records before refreshing child records.
       </p>
     </div>
 

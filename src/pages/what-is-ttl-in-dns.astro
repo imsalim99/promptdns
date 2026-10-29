@@ -19,7 +19,7 @@ const faq = {
       name: 'What does "Auto" TTL mean in Cloudflare?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: "In Cloudflare DNS, setting a record's TTL to Auto assigns a default TTL of 300 seconds (5 minutes) for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers.",
+        text: "In Cloudflare DNS, setting a record's TTL to Auto assigns a default TTL of 300 seconds (5 minutes) for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers. Cloudflare provides a minimum custom TTL of 60 seconds on standard plans and 30 seconds on Enterprise plans.",
       },
     },
     {
@@ -195,11 +195,11 @@ const faq = {
       </p>
       <ol>
         <li><strong>DNS Record TTL (Seconds):</strong> Stored inside resource records to instruct recursive resolvers how long to cache IP mappings before re-querying authoritative servers.</li>
-        <li><strong>IP Packet TTL / Hop Limit (Router Hops, 1 to 255):</strong> An 8-bit field in IPv4 headers (Hop Limit in IPv6) decremented at every routing hop to prevent infinite loops. The <code>ttl=56</code> metric in <code>ping</code> reflects remaining router hops, not DNS caching timers.</li>
+        <li><strong>IP Packet TTL / Hop Limit (Router Hops, 1 to 255):</strong> An 8-bit field in IPv4 headers (Hop Limit in IPv6) decremented at every routing hop to prevent infinite network loops. Reaching a hop counter value of zero causes the handling router to discard the packet and return an ICMP Time Exceeded (Type 11) message, forming the foundational mechanism utilized by traceroute diagnostics. The <code>ttl=56</code> metric in <code>ping</code> reflects remaining router hops rather than DNS caching timers.</li>
         <li><strong>CDN and HTTP Cache-Control TTL (Seconds):</strong> Transmitted in HTTP headers (such as <code>Cache-Control: max-age=86400</code>) directing browsers and <abbr class="pd-term" data-tip="Anycast: a network addressing method that routes client queries to the topologically nearest server location">Anycast</abbr> CDN edges how long to store static files.</li>
       </ol>
       <p>
-        Inspecting a domain live TTL countdown is straightforward using terminal commands like <code>dig +noall +answer example.com A @1.1.1.1</code>, where the second column outputs the remaining seconds before cache expiration. Monitoring your domain DNS TTL values, maintaining a balanced 300 to 86400 seconds caching schedule, and executing timely pre-migration adjustments ensures authoritative nameservers and recursive resolver caches deliver optimal performance. Webmasters can audit multi-resolver caching via the <a href="/ttl-checker/">DNS TTL Checker</a> and monitor global record propagation through the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+        Inspecting a domain live TTL countdown is straightforward using terminal commands like <code>dig +noall +answer example.com A @1.1.1.1</code>, where the second column outputs the remaining seconds before cache expiration. Monitoring your domain DNS TTL values, maintaining a balanced 300 to 86400 seconds caching schedule, and executing timely pre-migration adjustments ensures authoritative nameservers and recursive resolver caches deliver optimal performance. Webmasters can audit multi-resolver caching via the DNS TTL Checker and monitor global record propagation through the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
       </p>
     </div>
 
@@ -211,7 +211,7 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does "Auto" TTL mean in Cloudflare?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">In Cloudflare DNS, setting a record's TTL to <strong>Auto</strong> assigns a default TTL of <strong>300 seconds (5 minutes)</strong> for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">In Cloudflare DNS, setting a record's TTL to <strong>Auto</strong> assigns a default TTL of <strong>300 seconds (5 minutes)</strong> for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers. Cloudflare provides a minimum custom TTL of <strong>60 seconds</strong> on standard plans and <strong>30 seconds</strong> on Enterprise plans.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does lowering my DNS TTL clear caches that already have the old record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>

@@ -104,6 +104,9 @@ example.com.    300     IN    ALIAS myapp.herokuapp.com.   ; <-- Synthesizes A /
       <p>
         Modern cloud platforms like Vercel, Netlify, Heroku, Shopify, and AWS Elastic Load Balancing provide dynamic target hostnames rather than fixed IP addresses. Infrastructure providers rotate underlying IP addresses frequently during scaling cycles. Entering a static IP in a standard address record creates brittleness, while publishing a CNAME at the apex breaks domain delegation. An ALIAS record resolves this dilemma by delivering dynamic hostname tracking while preserving compatibility with all apex records.
       </p>
+      <p>
+        Authoritative nameservers enforce precise coexistence rules for synthesized aliasing: an ALIAS record coexists alongside SOA, NS, MX, and TXT records, but conflicts with CNAME or HTTP Web Redirect records configured on the exact same hostname. Furthermore, DNS providers support publishing multiple ALIAS records under a single hostname, enabling administrators to combine multiple dynamic targets for automated round-robin traffic distribution.
+      </p>
 
       <h2 id="how-does-an-alias-or-aname-record-work-behind-the-scenes-5-steps">How Does an ALIAS or ANAME Record Work Behind the Scenes? (5 Steps)</h2>
       <p>

@@ -126,13 +126,16 @@ const faq = {
 
       <h3 id="what-are-the-3-types-of-dns-queries">What Are the 3 Types of DNS Queries?</h3>
       <p>
-        There are <strong class="text-ink">3 types of DNS queries</strong> executed during resolution: <strong class="text-ink">recursive queries, iterative queries, and non-recursive queries</strong>.
+        There are <strong class="text-ink">3 types of DNS queries</strong> executed during resolution:
       </p>
       <ul>
-        <li><strong>Recursive Query:</strong> The client stub resolver queries a recursive resolver with the Recursion Desired (RD=1) bit set in the DNS header. The recursive resolver must return either the requested resource record or an explicit error response (such as <abbr class="pd-term" data-tip="A DNS response code indicating that the queried domain name does not exist">NXDOMAIN</abbr> or <abbr class="pd-term" data-tip="A DNS error code indicating that the nameserver encountered an internal failure or DNSSEC signature mismatch">SERVFAIL</abbr>).</li>
+        <li><strong>Recursive Query:</strong> The client stub resolver queries a recursive resolver with the Recursion Desired (RD=1) bit set in the DNS header. The recursive resolver returns either the requested resource record or an explicit error response (such as <abbr class="pd-term" data-tip="A DNS response code indicating that the queried domain name does not exist">NXDOMAIN</abbr> or <abbr class="pd-term" data-tip="A DNS error code indicating that the nameserver encountered an internal failure or DNSSEC signature mismatch">SERVFAIL</abbr>).</li>
         <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. The queried nameserver returns an authoritative referral pointing to nameservers lower in the DNS tree if the queried nameserver does not hold the exact record.</li>
         <li><strong>Non-Recursive Query:</strong> The resolver answers the query immediately without contacting upstream servers, either because the requested record already resides in local cache or because the queried server holds authoritative data for the zone.</li>
       </ul>
+      <p>
+        Coordinating these 3 query modes allows client devices to offload resolution overhead while upstream nameservers answer efficiently through referrals and caching.
+      </p>
 
       <h2 id="what-are-the-core-dns-protocol-specifications-and-transport-ports">What Are the Core DNS Protocol Specifications and Transport Ports?</h2>
       <p>
@@ -236,6 +239,9 @@ const faq = {
         <li><strong>Email Authentication Protocols (SPF, DKIM, and DMARC):</strong> Publish sender validation policies in DNS TXT records to prevent domain spoofing, explained in the <a href="/email-authentication/">Email Authentication</a> reference.</li>
         <li><strong>Registrar Locks, Multi-Factor Authentication, and Continuous Monitoring:</strong> Prevent unauthorized nameserver changes, detailed in the <a href="/dns-security/">DNS Security</a> and <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> guides.</li>
       </ol>
+      <p>
+        Deploying layered defenses across DNSSEC, encrypted transports, email records, and access controls creates a resilient operational perimeter against infrastructure tampering.
+      </p>
 
       <h2 id="how-did-the-domain-name-system-evolve-from-arpanet-to-modern-standards">How Did the Domain Name System Evolve From ARPANET to Modern Standards?</h2>
       <p>

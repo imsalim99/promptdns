@@ -221,6 +221,9 @@ const faq = {
         <li><strong>Sender Rewriting Scheme (SRS):</strong> The forwarding server rewrites the envelope Return-Path address to an intermediary address on the forwarding domain, ensuring SPF evaluates the forwarding server's authorized IP address on subsequent hops.</li>
         <li><strong>Authenticated Received Chain (ARC):</strong> Intermediary forwarders and mailing lists attach cryptographically signed validation headers preserving original authentication verdicts across hops, detailed in <a href="/arc-seal-explained/">ARC Explained</a>.</li>
       </ul>
+      <p>
+        Deploying DKIM cryptographic signing alongside SPF ensures that legitimate forwarded emails survive intermediary hops and pass DMARC alignment checks.
+      </p>
 
       <h2 id="how-do-you-create-publish-and-verify-an-spf-record-4-steps">How Do You Create, Publish, and Verify an SPF Record? (4 Steps)</h2>
       <p>
@@ -233,7 +236,7 @@ const faq = {
         <li><strong>Inventory</strong> every authorized outbound mail server and third-party Email Service Provider (ESP) that transmits email using your domain in the Return-Path (including Google Workspace, Microsoft 365, SendGrid, Postmark, and dedicated web server IPs).</li>
         <li><strong>Construct</strong> a single <code>v=spf1</code> TXT string combining authorized IP ranges and vendor include mechanisms, ending with <code>~all</code> (during initial deployment with DMARC reporting) or <code>-all</code> (for strict enforcement), or <code>v=spf1 -all</code> for parked domains that send zero email.</li>
         <li><strong>Publish</strong> the text string as a DNS TXT record at your authoritative DNS provider (@ for the root domain, or the subdomain hostname for isolated sending streams) with a <abbr class="pd-term" data-tip="Time to Live, the number of seconds DNS records are cached by resolvers">Time to Live (TTL)</abbr> of 3600 seconds.</li>
-        <li><strong>Validate</strong> the live DNS publication using the <a href="/spf-record-checker/">SPF Record Checker</a> or by executing <code>dig +short TXT example.com</code> to verify single-record compliance, syntax validity, and lookup consumption within the 10-lookup threshold.</li>
+        <li><strong>Validate</strong> the live DNS publication using the SPF Record Checker or by executing <code>dig +short TXT example.com</code> to verify single-record compliance, syntax validity, and lookup consumption within the 10-lookup threshold.</li>
       </ol>
       <p>
         Administrators can implement common deployment patterns using standard configuration templates:

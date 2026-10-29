@@ -131,7 +131,7 @@ const faq = {
       </section>
 
       <p>
-        The DKIM standard establishes distinct parsing rules across these two artifacts: in the message header, the <code>v=1</code> tag is mandatory, whereas in the DNS TXT record, <code>v=DKIM1</code> is optional because <code>p=</code> serves as the only mandatory DNS tag. Publishing a DNS TXT record with an empty public key tag (such as <code>v=DKIM1; p=</code>) constitutes the official key revocation method, signaling to receiving mail servers that the private key is decommissioned and any future signatures under that selector must fail. Step-by-step DNS record creation is covered in <a href="/how-to-add-dkim-record/">How to Add a DKIM Record</a>.
+        The DKIM standard establishes distinct parsing rules across these two artifacts: in the message header, the <code>v=1</code> tag is mandatory, whereas in the DNS TXT record, <code>v=DKIM1</code> is optional because <code>p=</code> serves as the only mandatory DNS tag. Publishing a DNS TXT record with an empty public key tag (such as <code>v=DKIM1; p=</code>) constitutes the official key revocation method, signaling to receiving mail servers that the private key is decommissioned and any future signatures under that selector fail. Step-by-step DNS record creation is covered in <a href="/how-to-add-dkim-record/">How to Add a DKIM Record</a>.
       </p>
 
       <h2 id="what-is-a-dkim-selector-s-and-why-do-domains-use-multiple-selectors">What Is a DKIM Selector (s=) and Why Do Domains Use Multiple Selectors?</h2>
@@ -219,7 +219,7 @@ const faq = {
         <li><strong>Executing regular key rotation:</strong> Rotating cryptographic key pairs every 6 to 12 months across alternating selectors invalidates old captured signatures.</li>
       </ul>
       <p>
-        Domain administrators isolate sending services and manage dual-key rotation strategies using the configurations detailed in <a href="/multiple-dkim-selectors/">Multiple DKIM Selectors</a>.
+        Domain administrators isolate sending services and manage dual-key rotation strategies using the configurations detailed in Multiple DKIM Selectors.
       </p>
 
       <h2 id="how-do-you-set-up-and-verify-dkim-for-your-domain-4-steps">How Do You Set Up and Verify DKIM for Your Domain? (4 Steps)</h2>
@@ -230,13 +230,13 @@ const faq = {
         Configuring production DKIM follows 4 sequential stages:
       </p>
       <ol>
-        <li><strong>Generate</strong> a 2048-bit RSA (or Ed25519) key pair and selector label inside your Email Service Provider's administration portal (or generate custom keys using the <a href="/dkim-record-generator/">DKIM Record Generator</a> for on-premise mail servers).</li>
+        <li><strong>Generate</strong> a 2048-bit RSA (or Ed25519) key pair and selector label inside your Email Service Provider's administration portal (or generate custom keys using the DKIM Record Generator for on-premise mail servers).</li>
         <li><strong>Publish</strong> the public key as a DNS TXT record (starting with <code>v=DKIM1; k=rsa; p=...</code>) or configure the provider's delegated CNAME records at <code>&lt;selector&gt;._domainkey.&lt;yourdomain&gt;</code> (ensuring proxy services such as Cloudflare Orange Cloud remain set to DNS Only / Grey Cloud on DKIM CNAME entries).</li>
         <li><strong>Enable</strong> outbound DKIM signing within your mail provider dashboard once the DNS records propagate globally.</li>
-        <li><strong>Verify</strong> the published public key, selector configuration, and cryptographic validity using the <a href="/dkim-record-checker/">DKIM Record Checker</a> or by executing terminal queries with <code>dig +short TXT &lt;selector&gt;._domainkey.example.com</code>, as described in <a href="/check-spf-dkim-dmarc-dig/">Check SPF, DKIM and DMARC with dig</a>.</li>
+        <li><strong>Verify</strong> the published public key, selector configuration, and cryptographic validity using the DKIM Record Checker or by executing terminal queries with <code>dig +short TXT &lt;selector&gt;._domainkey.example.com</code>, as described in <a href="/check-spf-dkim-dmarc-dig/">Check SPF, DKIM and DMARC with dig</a>.</li>
       </ol>
       <p>
-        Maintaining high email deliverability and protecting domain reputation in modern mail ecosystems relies on DomainKeys Identified Mail (DKIM) signatures, isolated selector namespaces, 2048-bit RSA public keys, and strict DMARC alignment. Domain administrators can verify live public keys, test selector records, and inspect outbound message headers across all sending providers with the <a href="/dkim-record-checker/">DKIM Record Checker</a>.
+        Maintaining high email deliverability and protecting domain reputation in modern mail ecosystems relies on DomainKeys Identified Mail (DKIM) signatures, isolated selector namespaces, 2048-bit RSA public keys, and strict DMARC alignment. Domain administrators can verify live public keys, test selector records, and inspect outbound message headers across all sending providers with the DKIM Record Checker.
       </p>
     </div>
 
