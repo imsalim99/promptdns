@@ -139,7 +139,7 @@ const faq = {
         A DKIM selector (s=) is <strong class="text-ink">a prefix label prepended to ._domainkey.&lt;domain&gt; that allows a single domain to publish multiple independent public keys in DNS simultaneously</strong>.
       </p>
       <p>
-        Unlike an <a href="/spf-record/">SPF Record</a> that merges all authorized sending IPs into a single root TXT record subject to a 10-DNS-lookup limit, DKIM segregates every outbound mail stream under an isolated DNS namespace. An organization utilizing Google Workspace for corporate mail, SendGrid for transactional receipts, and Mailchimp for newsletters generates independent public-private key pairs for each provider. DKIM selector isolation allows administrators to add, rotate, or revoke keys for one provider without disrupting other sending streams because each service signs messages with its own private key.
+        Each email service provider (including Google Workspace, Microsoft 365, SendGrid, Mailchimp, and Resend) generates an independent private key and publishes its public key under a dedicated selector (<code>&lt;selector&gt;._domainkey.example.com</code>), unlike <a href="/spf-record/">SPF Record</a> where all senders share a single root <code>v=spf1</code> string. DKIM selector isolation allows administrators to add, rotate, or revoke keys for one provider without disrupting other sending streams because each service signs messages with its own private key.
       </p>
       <p>
         Because DNS does not permit wildcard enumeration of <code>_domainkey</code> subdomains, verifying a domain's DKIM public key requires querying the exact selector string. The table below lists the default DKIM selector names and DNS record types used by 8 major email providers.

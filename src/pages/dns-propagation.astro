@@ -85,7 +85,7 @@ const faq = {
         DNS propagation is not instant because <strong class="text-ink">authoritative nameservers do not push updates to the internet; instead, 4 independent caching layers continue serving the old record until its <abbr class="pd-term" data-tip="Time to Live, the number of seconds DNS records are cached by resolvers">Time to Live (TTL)</abbr> expires</strong>.
       </p>
       <p>
-        Authoritative nameservers update their active zone files immediately across <abbr class="pd-term" data-tip="Network addressing that routes requests to the nearest data center for fast response times">Anycast</abbr> edge networks whenever an administrator saves a record edit in a DNS control panel. The observed propagation delay stems from the <abbr class="pd-term" data-tip="Architecture where clients request and cache data locally rather than servers pushing updates">pull-cache</abbr> architecture of DNS: client devices and recursive resolvers store answered queries locally and refuse to query authoritative servers again until the cached record countdown timer reaches zero.
+        Your authoritative nameserver serves the updated record within 5 to 60 seconds after you save a change in your DNS provider dashboard. The observed propagation delay stems from the <abbr class="pd-term" data-tip="Architecture where clients request and cache data locally rather than servers pushing updates">pull-cache</abbr> architecture of DNS: client devices and recursive resolvers store answered queries locally and refuse to query authoritative servers again until the cached record countdown timer reaches zero.
       </p>
       <p>
         Queries encounter 4 independent caching layers between client applications and authoritative servers:
@@ -158,7 +158,7 @@ const faq = {
 
       <h3 id="can-you-force-public-dns-resolvers-to-flush-a-cached-record-after-a-change">Can You Force Public DNS Resolvers to Flush a Cached Record After a Change?</h3>
       <p>
-        While you cannot force every ISP worldwide to clear its cache, you can <strong class="text-ink">manually purge cached DNS records on Cloudflare (1.1.1.1) and Google Public DNS (8.8.8.8) using their official web cache-flush tools</strong>.
+        Yes, administrators <strong class="text-ink">purge cached DNS records manually on Cloudflare (1.1.1.1) and Google Public DNS (8.8.8.8) using their official public cache-flush web interfaces</strong>, although residential ISP caches still wait for standard TTL expiration.
       </p>
       <p>
         Administrators can accelerate post-migration propagation through 3 immediate actions:

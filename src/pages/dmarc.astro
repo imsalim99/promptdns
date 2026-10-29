@@ -11,7 +11,7 @@ const faq = {
       name: 'Do I need both SPF and DKIM to set up DMARC?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Technically DMARC evaluates if at least one protocol (SPF or DKIM) is published and aligned, but deploying both SPF and DKIM is required by Gmail, Yahoo, and Microsoft bulk-sender mandates and prevents forwarded emails from failing DMARC.',
+        text: 'No, DMARC evaluation passes when at least one authentication protocol (SPF or DKIM) passes and aligns, but deploying both SPF and DKIM is required by Gmail, Yahoo, and Microsoft bulk-sender mandates and protects forwarded mail.',
       },
     },
     {
@@ -96,7 +96,7 @@ const faq = {
         <li><strong>Conformance and Policy Enforcement (p=):</strong> The domain owner instructs receiving mail gateways whether to deliver (<code>p=none</code>), route to spam (<code>p=quarantine</code>), or block (<code>p=reject</code>) messages that fail authentication and alignment.</li>
       </ul>
       <p>
-        Standalone SPF and DKIM contain an architectural vulnerability: SPF validates exclusively the hidden envelope Return-Path domain, while DKIM proves only that a cryptographic signature matches the signing domain in the <code>d=</code> tag. Receiving mail transfer agents accept forged messages if an attacker sends email through an authorized server (such as <code>attacker-mailer.com</code>) to pass SPF and DKIM cleanly while impersonating an executive in the visible <code>From: ceo@yourcompany.com</code> header. DMARC resolves this impersonation risk by requiring <abbr class="pd-term" data-tip="Requirement that the authenticated SPF or DKIM domain matches the visible From: domain">Identifier Alignment</abbr> between the authenticated technical domains and the visible display identity, as detailed in <a href="/dmarc-vs-spf-vs-dkim/">DMARC vs SPF vs DKIM</a>.
+        Standalone SPF and DKIM contain an architectural vulnerability: SPF validates exclusively the hidden envelope Return-Path domain, while DKIM proves only that a cryptographic signature matches the signing domain in the <code>d=</code> tag. An unaligned sender passes standalone SPF and DKIM using an external domain (<code>attacker-mailer.com</code>) while forging <code>From: ceo@yourcompany.com</code> in the visible header when a domain lacks DMARC alignment. DMARC resolves this impersonation risk by requiring <abbr class="pd-term" data-tip="Requirement that the authenticated SPF or DKIM domain matches the visible From: domain">Identifier Alignment</abbr> between the authenticated technical domains and the visible display identity, as detailed in <a href="/dmarc-vs-spf-vs-dkim/">DMARC vs SPF vs DKIM</a>.
       </p>
 
       <h2 id="how-does-dmarc-evaluation-work-step-by-step-the-6-step-flow">How Does DMARC Evaluation Work Step by Step? (The 6-Step Flow)</h2>
@@ -244,7 +244,7 @@ const faq = {
     <div class="mt-3 grid gap-3">
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need both SPF and DKIM to set up DMARC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Technically DMARC evaluates if <strong>at least one protocol (SPF or DKIM) is published and aligned</strong>, but deploying <strong>both SPF and DKIM is required</strong> by Gmail, Yahoo, and Microsoft bulk-sender mandates and prevents forwarded emails from failing DMARC.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, DMARC evaluation passes when <strong>at least one authentication protocol (SPF or DKIM) passes and aligns</strong>, but deploying <strong>both SPF and DKIM is required</strong> by Gmail, Yahoo, and Microsoft bulk-sender mandates and protects forwarded mail.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will publishing DMARC at p=none block any of my legitimate emails?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
