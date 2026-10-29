@@ -1,94 +1,232 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "ALIAS/ANAME",
- "title": "ALIAS/ANAME Records: CNAME Behavior at the Apex",
- "description": "ALIAS/ANAME records explained in depth: the apex problem, provider implementations, flattening modes, and when not to use them.",
- "intro": "You cannot put a CNAME at your zone's apex, but nearly every modern host wants exactly that. ALIAS and ANAME records are the industry's answer: provider-resolved pseudo-records that give apex domains CNAME ergonomics while answering as legal A records.",
- "deepDive": [
-  "The restriction they work around is old and absolute: the apex must carry SOA and NS records, and CNAME cannot share a name with anything. So ALIAS/ANAME moves the resolution server-side. Your provider periodically (or per-query) resolves the target hostname and publishes the resulting addresses as ordinary A/AAAA records. The internet sees a perfectly legal apex; you get follow-the-target behavior.",
-  "Implementations differ in a way that matters operationally. Flatten-on-query resolves at request time: always fresh, slightly slower, dependent on the provider's resolvers. Flatten-on-publish resolves when you save and caches for the TTL: faster, but stale if the target changes quickly. Cloudflare flattens automatically for any apex CNAME; DNSimple and Route 53 offer explicit ALIAS records; some hosts implement nothing. The feature belongs to the DNS host, which means the zone must live where you configure it.",
-  "Short TTLs are the honest companion to ALIAS: the synthesized answer is only as current as your refresh interval, so a 300-second TTL is typical. And remember what ALIAS cannot carry: it resolves to addresses, so anything the target publishes besides A/AAAA (like its own TXT-based verification) does not teleport to your apex."
- ],
- "example": "example.com.  300  IN  ALIAS  target-service.net.\n; Cloudflare style: create a normal CNAME at the apex; flattening is automatic.",
- "anatomy": [
-  [
-   "ALIAS / ANAME",
-   "Provider-specific pseudo-types, not standards-track. Portable meaning, non-portable mechanics."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Is an ALIAS record the same as an ANAME record?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, ALIAS and ANAME are two different provider names for the exact same virtual DNS record. Both resolve a target hostname behind the scenes at your authoritative DNS server and return standard A and AAAA IP addresses for your root domain.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why does my ALIAS record show up as an A record when I run a DNS lookup?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'The authoritative DNS server translates the ALIAS target into standard A (IPv4) and AAAA (IPv6) records before transmitting the answer to resolvers because ALIAS operates as a virtual provider-side feature rather than an official wire protocol type.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Should I use an ALIAS record or a CNAME record for www?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Use a standard CNAME record for www and other subdomains that do not have MX or TXT records on the same name. Reserve ALIAS or ANAME records for the root domain (@) where CNAME records are prohibited.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does an ALIAS record break MX email records on my root domain?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, an ALIAS record coexists safely with MX, SPF, TXT, NS, and SOA records on your root domain because resolvers only see standard A and AAAA records rather than a conflicting CNAME.',
+      },
+    },
   ],
-  [
-   "target-service.net.",
-   "The origin hostname the provider resolves for you."
-  ],
-  [
-   "300",
-   "Short TTL so the synthesized A answers track a moving target."
-  ]
- ],
- "uses": [
-  "Pointing the apex at CDNs, load balancers, and PaaS hosts that hand you a hostname",
-  "Escaping hardcoded origin IPs that break when the provider rotates them"
- ],
- "steps": [
-  [
-   "Confirm provider support",
-   "Look for ALIAS, ANAME, or apex CNAME flattening in your DNS host's docs."
-  ],
-  [
-   "Get the target hostname",
-   "From your CDN or platform's domain setup instructions."
-  ],
-  [
-   "Create the record at the apex",
-   "Using the provider's ALIAS/ANAME flow, or a CNAME if it flattens automatically."
-  ],
-  [
-   "Verify what the world sees",
-   "An A lookup on your apex should return the provider-synthesized addresses."
-  ]
- ],
- "mistakes": [
-  "Expecting ALIAS to work after moving DNS elsewhere; it is a host feature, not a record you can export",
-  "Long TTLs defeating the freshness the record exists to provide",
-  "Assuming TXT verification on the target transfers to your apex; it does not",
-  "Confusing ALIAS with HTTP redirects; this is resolution-level, URLs do not change"
- ],
- "faqs": [
-  [
-   "Is ALIAS a real DNS record type?",
-   "No. It is synthesized by your provider into A/AAAA answers. That is why portability is limited."
-  ],
-  [
-   "What is the difference from CNAME flattening?",
-   "Mostly naming and where resolution happens (on publish vs on query). Behavior at the apex is equivalent."
-  ],
-  [
-   "Why is my ALIAS TTL low?",
-   "The synthesized answers must track the target; caching them long defeats the purpose."
-  ],
-  [
-   "Can I use ALIAS for www too?",
-   "You can, but www has no SOA/NS conflict, so a plain CNAME is the standard choice there."
-  ],
-  [
-   "How do I check ALIAS/ANAME records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should ALIAS/ANAME records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "CNAME records",
-   "/cname-record/"
-  ],
-  [
-   "CNAME flattening explained",
-   "/cname-flattening/"
-  ]
- ]
 };
 ---
-<RecordTypeTemplate data={data} />
+<BaseLayout
+  title="ALIAS and ANAME Records: Pointing Your Root Domain (Zone Apex) to a Hostname"
+  description="ALIAS and ANAME records explained: how zone apex aliasing works, why root CNAME records are prohibited, 4-way comparison table, and provider support."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Record Types", "/dns-records/"], ["ALIAS Record"]]}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">ALIAS Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ALIAS and ANAME Records: Pointing Your Root Domain (Zone Apex) to a Hostname</h1>
+
+    <div class="pd-answer" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An ALIAS record (or ANAME record) is <strong class="text-ink">a virtual DNS record that points your root domain to another hostname while returning standard A and AAAA IP addresses</strong>. Authoritative DNS servers resolve the target hostname internally. The main advantage of an ALIAS record is working safely at the zone apex.
+      </p>
+    </div>
+
+    <Diagram name="resolution" caption="DNS resolution flow: authoritative nameservers synthesize A and AAAA address answers from the ALIAS target" />
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-a-zone-apex-record-and-why-cant-you-use-a-cname-at-the-root-domain">What is a zone apex record &amp; root CNAME conflict</a></li>
+        <li><a href="#how-does-an-alias-or-aname-record-work-behind-the-scenes-5-steps">How ALIAS &amp; ANAME records work (5 steps)</a></li>
+        <li><a href="#a-record-vs-cname-vs-alias-aname-vs-https-record-comparison-table">A vs CNAME vs ALIAS vs HTTPS comparison</a></li>
+        <li><a href="#what-do-different-dns-providers-call-alias-records-provider-support-matrix">Provider support matrix &amp; naming</a></li>
+        <li><a href="#what-are-the-3-technical-limitations-of-alias-and-aname-records">3 technical limitations of ALIAS records</a></li>
+        <li><a href="#how-do-you-add-and-verify-an-alias-or-aname-record-4-steps">How to add &amp; verify an ALIAS record (4 steps)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-a-zone-apex-record-and-why-cant-you-use-a-cname-at-the-root-domain">What Is a Zone Apex Record and Why Can't You Use a CNAME at the Root Domain?</h2>
+      <p>
+        The <abbr class="pd-term" data-tip="Zone Apex: the root or apex level of a DNS domain without any subdomain prefix, represented by the at symbol">zone apex</abbr> (represented by <code>@</code> in DNS control panels) is <strong class="text-ink">the bare root domain name itself (such as <code>example.com</code> without <code>www</code> or any subdomain prefix)</strong>, where standard DNS rules prohibit placing a <code>CNAME</code> record.
+      </p>
+      <p>
+        This restriction originates from the coexistence rule governing canonical name records. A standard <a href="/cname-record/">CNAME Record</a> instructs resolvers to redirect all lookups for that exact label to the target hostname. DNS specifications prohibit a CNAME record from coexisting with any other resource record on the exact same name.
+      </p>
+      <p>
+        Every root domain already carries mandatory administrative records. The apex hosts an <abbr class="pd-term" data-tip="Start of Authority (SOA): a mandatory DNS record storing core zone administration parameters and contact details"><a href="/soa-record/">SOA Record</a></abbr> defining zone properties, along with authoritative <abbr class="pd-term" data-tip="Name Server (NS) record: specifies the authoritative nameservers responsible for a DNS zone"><a href="/ns-record/">NS Record</a></abbr> entries delegating name resolution. Domains also publish an <abbr class="pd-term" data-tip="Mail Exchange (MX) record: directs incoming email to designated destination mail servers"><a href="/mx-record/">MX Record</a></abbr> for email routing and TXT records for ownership verification. Publishing a standard CNAME at <code>@</code> overrides these records, severing delegation and halting incoming mail.
+      </p>
+
+      <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code># INVALID: A standard CNAME at @ conflicts with SOA, NS, and MX records
+example.com.    3600    IN    SOA   ns1.provider.com. admin.example.com. (...)
+example.com.    3600    IN    MX    10 smtp.google.com.
+example.com.    300     IN    CNAME myapp.herokuapp.com.   ; <-- REJECTED OR BREAKS EMAIL!
+
+# VALID: An ALIAS / ANAME record at @ coexists with SOA, NS, MX, and TXT
+example.com.    300     IN    ALIAS myapp.herokuapp.com.   ; <-- Synthesizes A / AAAA on the wire</code></pre>
+
+      <p>
+        Modern cloud platforms like Vercel, Netlify, Heroku, Shopify, and AWS Elastic Load Balancing provide dynamic target hostnames rather than fixed IP addresses. Infrastructure providers rotate underlying IP addresses frequently during scaling cycles. Entering a static IP in a standard address record creates brittleness, while publishing a CNAME at the apex breaks domain delegation. An ALIAS record resolves this dilemma by delivering dynamic hostname tracking while preserving compatibility with all apex records.
+      </p>
+
+      <h2 id="how-does-an-alias-or-aname-record-work-behind-the-scenes-5-steps">How Does an ALIAS or ANAME Record Work Behind the Scenes? (5 Steps)</h2>
+      <p>
+        An ALIAS or ANAME record works across <strong class="text-ink">5 server-side resolution steps where your authoritative DNS provider resolves the target hostname internally and returns synthesized <code>A</code> or <code>AAAA</code> records to the visitor</strong>.
+      </p>
+      <p>
+        Server-side record synthesis follows this sequential 5-step process:
+      </p>
+      <ol>
+        <li><strong>Configure</strong> an ALIAS or ANAME record at your DNS host pointing <code>@</code> to the target hostname (such as <code>shop.myshopify.com</code>).</li>
+        <li><strong>Receive</strong> a standard A (IPv4) or AAAA (IPv6) query for <code>example.com</code> at your authoritative nameserver from a visitor's recursive resolver.</li>
+        <li><strong>Resolve</strong> the target hostname (<code>shop.myshopify.com</code>) internally from your authoritative DNS server (or read the pre-polled IP address from the provider's edge cache).</li>
+        <li><strong>Synthesize</strong> a standard <a href="/a-record/">A Record</a> (Type 1) or <a href="/aaaa-record/">AAAA Record</a> (Type 28) response containing the target's current IP address (<code>23.227.38.65</code>).</li>
+        <li><strong>Return</strong> the synthesized A or AAAA packet to the recursive resolver in a single round-trip, making the response indistinguishable from a standard A record.</li>
+      </ol>
+      <p>
+        Authoritative nameservers serve synthesized address answers exclusively because ALIAS and ANAME operate as virtual provider-side configurations rather than official IANA wire types. Standard terminal queries like <code>dig example.com ALIAS</code> return zero records, whereas running live checks through the <a href="/a-record-lookup/">A Record Lookup</a> or <a href="/aaaa-record-lookup/">AAAA Record Lookup</a> displays the synthesized IPv4 and IPv6 addresses immediately.
+      </p>
+
+      <h2 id="a-record-vs-cname-vs-alias-aname-vs-https-record-comparison-table">A Record vs CNAME vs ALIAS/ANAME vs HTTPS Record (Comparison Table)</h2>
+      <p>
+        DNS administrators choose between <strong class="text-ink"><code>A</code>, <code>CNAME</code>, <code>ALIAS</code>/<code>ANAME</code>, and <code>HTTPS</code>/<code>SVCB</code> records</strong> based on whether the target is a static IP address or a dynamic hostname and whether the record sits at the zone apex (<code>@</code>). The table below compares all 4 record types across 6 technical dimensions.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Feature / Constraint</th><th>A / AAAA Record</th><th>CNAME Record</th><th>ALIAS / ANAME Record</th><th>HTTPS / SVCB Record (AliasMode)</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Points To (Target Value)</td><td class="text-sm text-ink-dim">Static IPv4 or IPv6 address</td><td class="text-sm text-ink-dim">Another domain / hostname</td><td class="text-sm text-ink-dim">Another domain / hostname</td><td class="text-sm text-ink-dim">Another domain / hostname + service params</td></tr>
+              <tr><td class="font-medium text-ink">Allowed at Zone Apex (@)?</td><td class="text-sm font-semibold text-emerald-400">Yes</td><td class="text-sm font-semibold text-rose-400">No (Conflicts with SOA/NS/MX)</td><td class="text-sm font-semibold text-emerald-400">Yes (Synthesizes A/AAAA)</td><td class="text-sm font-semibold text-emerald-400">Yes (Official IETF standard)</td></tr>
+              <tr><td class="font-medium text-ink">Coexists with MX and TXT?</td><td class="text-sm font-semibold text-emerald-400">Yes</td><td class="text-sm font-semibold text-rose-400">No</td><td class="text-sm font-semibold text-emerald-400">Yes</td><td class="text-sm font-semibold text-emerald-400">Yes</td></tr>
+              <tr><td class="font-medium text-ink">IANA Wire Type Code</td><td class="text-sm font-mono text-accent">Type 1 (A) / Type 28 (AAAA)</td><td class="text-sm font-mono text-accent">Type 5 (CNAME)</td><td class="text-sm font-mono text-accent">Virtual (Served as Type 1 / 28)</td><td class="text-sm font-mono text-accent">Type 65 (HTTPS) / Type 64 (SVCB)</td></tr>
+              <tr><td class="font-medium text-ink">Client Lookup Round-Trips</td><td class="text-sm text-ink-dim">1 lookup (Direct IP)</td><td class="text-sm text-ink-dim">2+ lookups (Follows alias chain)</td><td class="text-sm text-ink-dim">1 lookup to client (Resolved at edge)</td><td class="text-sm text-ink-dim">1 lookup (Includes IP hints)</td></tr>
+              <tr><td class="font-medium text-ink">Best Use Case</td><td class="text-sm text-ink-dim">Fixed server IP addresses</td><td class="text-sm text-ink-dim">Subdomains (www, blog, DKIM)</td><td class="text-sm text-ink-dim">Root domain (@) pointing to CDN/PaaS</td><td class="text-sm text-ink-dim">Modern browsers + HTTP/3 apex aliasing</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Selecting the proper record depends on target destination and zone placement. Subdomains like <code>www</code> or <code>blog</code> without MX records utilize a standard CNAME record, verifiable via <a href="/cname-record-lookup/">CNAME Record Lookup</a>. Root domains (<code>@</code>) pointing to cloud hostnames deploy ALIAS or ANAME records, while modern browsers increasingly adopt HTTPS AliasMode records to eliminate proprietary workarounds. Comprehensive specifications appear in our guide to <a href="/dns-records/">DNS Record Types</a>.
+      </p>
+
+      <h2 id="what-do-different-dns-providers-call-alias-records-provider-support-matrix">What Do Different DNS Providers Call ALIAS Records? (Provider Support Matrix)</h2>
+      <p>
+        Because the IETF never finalized a single RFC for <code>ALIAS</code> or <code>ANAME</code>, <strong class="text-ink">each DNS hosting provider uses its own proprietary record name and polling interval</strong> to deliver root-domain hostname aliasing. The table below lists how 8 major DNS providers implement zone apex aliasing.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>DNS Hosting Provider</th><th>Record Name in Dashboard</th><th>How It Updates Target IPs</th><th>Supports Root (@) Aliasing?</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Cloudflare DNS</td><td class="text-sm font-mono text-accent">CNAME (Auto-Flattened)</td><td class="text-sm text-ink-dim">Real-time edge resolution on query (CNAME Flattening)</td><td class="text-sm font-semibold text-emerald-400">Yes (Automatic at @)</td></tr>
+              <tr><td class="font-medium text-ink">AWS Route 53</td><td class="text-sm font-mono text-accent">A / AAAA (Alias = Yes)</td><td class="text-sm text-ink-dim">Native internal pointer to AWS ELB, CloudFront, or S3</td><td class="text-sm font-semibold text-emerald-400">Yes (Free for AWS resources)</td></tr>
+              <tr><td class="font-medium text-ink">DNS Made Easy / Constellix</td><td class="text-sm font-mono text-accent">ANAME Record</td><td class="text-sm text-ink-dim">Resolves target and updates synthesized A/AAAA records</td><td class="text-sm font-semibold text-emerald-400">Yes</td></tr>
+              <tr><td class="font-medium text-ink">Namecheap Basic / Premium DNS</td><td class="text-sm font-mono text-accent">ALIAS Record</td><td class="text-sm text-ink-dim">Polls target hostname every 1 to 5 minutes</td><td class="text-sm font-semibold text-emerald-400">Yes</td></tr>
+              <tr><td class="font-medium text-ink">DNSimple / Porkbun / ClouDNS</td><td class="text-sm font-mono text-accent">ALIAS Record</td><td class="text-sm text-ink-dim">Resolves target dynamically at authoritative edge</td><td class="text-sm font-semibold text-emerald-400">Yes</td></tr>
+              <tr><td class="font-medium text-ink">NS1 (IBM NS1 Connect)</td><td class="text-sm font-mono text-accent">ALIAS Record</td><td class="text-sm text-ink-dim">Zone-internal linked record resolution</td><td class="text-sm font-semibold text-emerald-400">Yes (Within NS1 zones)</td></tr>
+              <tr><td class="font-medium text-ink">Azure DNS</td><td class="text-sm font-mono text-accent">Alias Record Set</td><td class="text-sm text-ink-dim">Links to Azure Public IP, Traffic Manager, or Front Door</td><td class="text-sm font-semibold text-emerald-400">Yes (For Azure resources)</td></tr>
+              <tr><td class="font-medium text-ink">GoDaddy Standard DNS</td><td class="text-sm text-ink-dim">Not supported natively</td><td class="text-sm text-ink-dim">Requires hardcoded A record or HTTP forwarding redirect</td><td class="text-sm font-semibold text-rose-400">No</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Implementation architectures differ across managed DNS platforms. Cloudflare provides automated edge synthesis through <abbr class="pd-term" data-tip="CNAME Flattening: an automated DNS feature that intercepts CNAME queries at the zone apex and returns resolved A/AAAA addresses"><a href="/cname-flattening/">CNAME Flattening</a></abbr>, resolving target hostnames on the fly during incoming queries. Polling-based providers query target hostnames on scheduled intervals and update internal records, introducing brief propagation delays during upstream IP reassignments.
+      </p>
+
+      <h2 id="what-are-the-3-technical-limitations-of-alias-and-aname-records">What Are the 3 Technical Limitations of ALIAS and ANAME Records?</h2>
+      <p>
+        Despite solving the root-domain CNAME restriction, ALIAS and ANAME records introduce <strong class="text-ink">3 technical trade-offs involving GeoDNS accuracy, zone file portability, and polling latency</strong>.
+      </p>
+      <p>
+        System architects evaluate these 3 technical limitations before deploying virtual apex records:
+      </p>
+      <ol>
+        <li><strong>GeoDNS Location Mismatch Without EDNS Client Subnet:</strong> Resolving target CDN hostnames at the authoritative DNS server exposes the server's geographic location rather than the visitor's resolver IP. <abbr class="pd-term" data-tip="GeoDNS: a traffic management technology that returns different DNS responses based on a visitor's physical location">GeoDNS</abbr> platforms route visitors to suboptimal regional edge nodes unless resolvers transmit <abbr class="pd-term" data-tip="EDNS Client Subnet (ECS): an extension to DNS carrying a client's IP subnet to optimize geographic CDN routing">EDNS Client Subnet</abbr> payloads.</li>
+        <li><strong>Non-Portable BIND Zone File Exports:</strong> Exporting DNS zones to BIND formats converts virtual ALIAS entries into static address records because BIND specifications reject unofficial pseudo-types. Migrating to another provider requires manually recreating dynamic alias records.</li>
+        <li><strong>Polling Delay During Target IP Failover (1 to 5 Minutes):</strong> Providers using polling mechanisms query targets on a scheduled cycle rather than per-query, introducing a 1 to 5 minute propagation window before upstream load balancer IP reassignments reflect in authoritative answers.</li>
+      </ol>
+      <p>
+        The Internet Engineering Task Force addressed these limitations in <abbr class="pd-term" data-tip="RFC 9460: standardizes Service Binding (SVCB) and HTTPS DNS resource records for secure and optimized web delivery">RFC 9460</abbr>, introducing native SVCB (Type 64) and HTTPS (Type 65) resource records. Operating in AliasMode (Priority 0), HTTPS records deliver standardized wire-level apex aliasing with parameter hints, eliminating proprietary resolution hacks.
+      </p>
+
+      <h2 id="how-do-you-add-and-verify-an-alias-or-aname-record-4-steps">How Do You Add and Verify an ALIAS or ANAME Record? (4 Steps)</h2>
+      <p>
+        To point your root domain (<code>@</code>) to a target hostname using an ALIAS or ANAME record, complete <strong class="text-ink">4 configuration and verification steps inside your DNS provider dashboard</strong>.
+      </p>
+      <p>
+        Deploying and verifying an apex alias record proceeds through this sequence:
+      </p>
+      <ol>
+        <li><strong>Remove</strong> any conflicting hardcoded A or AAAA records currently published on <code>@</code> (your root domain) while leaving your existing MX, TXT, SOA, and NS records intact.</li>
+        <li><strong>Select</strong> ALIAS or ANAME from the record type dropdown (or select CNAME on Cloudflare where root flattening is automatic).</li>
+        <li><strong>Enter</strong> <code>@</code> (or leave the Host field blank if required by your provider) as the Host/Name, paste the target hostname (such as <code>myapp.onrender.com</code>) in the Value/Target field, and set the <abbr class="pd-term" data-tip="Time to Live (TTL): an expiration timer in seconds indicating how long DNS resolvers cache record responses">TTL</abbr> to 300 seconds.</li>
+        <li><strong>Verify</strong> that your root domain resolves to the target's live IPv4 and IPv6 addresses across global resolvers using the <a href="/dns-propagation-checker/">DNS Propagation Checker</a> or by running <code>dig example.com A +short</code>.</li>
+      </ol>
+      <p>
+        Deploying an ALIAS record or ANAME record resolves the historical zone apex CNAME conflict, giving root domain owners full CNAME ergonomics while answering resolvers with compliant synthesized A and AAAA records. Zone administrators maintain MX and TXT coexistence, ensuring incoming email delivery and domain security remain intact while directing apex web traffic to modern cloud platforms.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is an ALIAS record the same as an ANAME record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, ALIAS and ANAME are two different provider names for the exact same virtual DNS record. Both resolve a target hostname behind the scenes at your authoritative DNS server and return standard A and AAAA IP addresses for your root domain.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my ALIAS record show up as an A record when I run a DNS lookup?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">The authoritative DNS server translates the ALIAS target into standard A (IPv4) and AAAA (IPv6) records before transmitting the answer to resolvers because ALIAS operates as a virtual provider-side feature rather than an official wire protocol type.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use an ALIAS record or a CNAME record for www?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a standard CNAME record for www and other subdomains that do not have MX or TXT records on the same name. Reserve ALIAS or ANAME records for the root domain (@) where CNAME records are prohibited.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does an ALIAS record break MX email records on my root domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, an ALIAS record coexists safely with MX, SPF, TXT, NS, and SOA records on your root domain because resolvers only see standard A and AAAA records rather than a conflicting CNAME.</p>
+      </details>
+    </div>
+  </div>
+</BaseLayout>
