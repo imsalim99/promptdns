@@ -1,123 +1,266 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
+
 const faq = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    { '@type': 'Question', name: 'What does DNSSEC protect against?', acceptedAnswer: { '@type': 'Answer', text: 'DNSSEC protects against tampered DNS answers: cache poisoning and on-path spoofing that redirect users to attacker-controlled servers. It does not encrypt DNS queries; that is DoH or DoT.' } },
-    { '@type': 'Question', name: 'Should I enable DNSSEC?', acceptedAnswer: { '@type': 'Answer', text: 'Yes if your DNS host and registrar integrate it cleanly (Cloudflare, Route 53, and major registrars do). The risk window is key rotation handled out of order.' } },
-    { '@type': 'Question', name: 'Why does DNSSEC break my whole domain?', acceptedAnswer: { '@type': 'Answer', text: 'Validating resolvers must refuse answers that fail verification. A stale DS record after key rotation breaks the chain of trust, so the entire domain returns SERVFAIL.' } },
+    {
+      '@type': 'Question',
+      name: 'Does DNSSEC encrypt my DNS traffic?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No, DNSSEC authenticates the origin and integrity of DNS records using cryptographic digital signatures (RRSIG), but the records themselves remain plaintext. Pair DNSSEC with DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) to encrypt DNS queries in transit.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why did my website stop working with SERVFAIL after changing nameservers?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: "Switching authoritative nameservers without first removing the old provider's DS (Delegation Signer) record at your domain registrar breaks the DNSSEC chain of trust. Validating resolvers (such as 1.1.1.1 and 8.8.8.8) treat the mismatch as tampering and return SERVFAIL (RCODE 2).",
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does enabling DNSSEC slow down DNS lookups?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: "With modern Algorithm 13 (ECDSAP256SHA256) keys, DNSSEC adds near-zero latency because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL.",
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I check if DNSSEC is enabled and valid on my domain?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Run your domain through the DNSSEC Checker to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the Authenticated Data (AD=1) flag.',
+      },
+    },
   ],
 };
 ---
-<BaseLayout title="What Is DNSSEC and Should You Enable It?" description="DNSSEC explained: how signed zones and the chain of trust stop cache poisoning, the DS/DNSKEY relationship, and safe activation and rollover." schema={[faq]} breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["What Is DNSSEC"]]}>
+<BaseLayout
+  title="What Is DNSSEC? How the Chain of Trust, Keys, and Signatures Secure DNS"
+  description="DNSSEC explained: RFC 4033-4035 architecture, RRSIG/DNSKEY/DS/NSEC3 records, ZSK vs KSK keys, the Chain of Trust, and safe activation."
+  schema={[faq]}
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["What Is DNSSEC"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/dns/" class="hover:text-accent">DNS Guide</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">What Is DNSSEC</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNSSEC?</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is DNSSEC? How the Chain of Trust, Keys, and Signatures Secure DNS</h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      DNSSEC (DNS Security Extensions) adds cryptographic signatures to DNS answers, so a resolver
-      can prove the answer it received is the one your zone actually published. Without it, DNS is
-      trusted on vibes: whoever answers first wins.
-    </p>
+        Domain Name System Security Extensions (DNSSEC) is <strong class="text-ink">a cryptographic authentication protocol suite defined in RFC 4033, RFC 4034, and RFC 4035 that attaches digital signatures to DNS resource record sets (RRsets) to prevent DNS cache poisoning and spoofing</strong>. DNSSEC verifies data origin and message integrity through a hierarchical chain of trust (<code>RRSIG</code>, <code>DNSKEY</code>, <code>DS</code>, and <code>NSEC3</code> records) anchored at the IANA root zone, without encrypting the underlying DNS query traffic.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The 4 core DNSSEC record types (RFC 4034)</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Record</th><th>Role</th><th>Key detail</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">RRSIG</td><td class="text-sm text-ink-dim">Digital signature over each record set</td><td class="text-sm text-ink-dim">Must be refreshed before signature expiry</td></tr><tr><td class="font-medium text-ink">DNSKEY</td><td class="text-sm text-ink-dim">Zone signing key (flag 256) and key signing key (flag 257)</td><td class="text-sm text-ink-dim">The KSK signs the DNSKEY set</td></tr><tr><td class="font-medium text-ink">DS</td><td class="text-sm text-ink-dim">Hash of the KSK published in the parent zone</td><td class="text-sm text-ink-dim">The chain of trust link at the registrar</td></tr><tr><td class="font-medium text-ink">NSEC / NSEC3</td><td class="text-sm text-ink-dim">Authenticated denial of existence</td><td class="text-sm text-ink-dim">Proves a name genuinely does not exist</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNSSEC validation states in resolvers</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>State</th><th>Meaning</th><th>What you see</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Secure</td><td class="text-sm text-ink-dim">Chain of trust validates to the root</td><td class="text-sm text-ink-dim">AD flag set on the answer</td></tr><tr><td class="font-medium text-ink">Insecure</td><td class="text-sm text-ink-dim">Zone is unsigned; no DS at the parent</td><td class="text-sm text-ink-dim">Normal answer, no AD flag</td></tr><tr><td class="font-medium text-ink">Bogus</td><td class="text-sm text-ink-dim">Broken chain: mismatched DS, expired RRSIG</td><td class="text-sm text-ink-dim">SERVFAIL for the whole zone</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
-      <ul>
-        <li><a href="#the-threat-it-stops">The threat it stops</a></li>
-        <li><a href="#how-the-chain-of-trust-works">How the chain of trust works</a></li>
-        <li><a href="#what-dnssec-does-not-do">What DNSSEC does not do</a></li>
-        <li><a href="#enable-it-safely">Enable it safely</a></li>
-        <li><a href="#check-your-domain-right-now">Check your domain right now</a></li>
-        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
-      </ul>
-    </nav>
     <Diagram name="dnssec-chain" caption="The DNSSEC chain of trust: root to TLD to your domain" />
 
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#why-was-dnssec-created-solving-the-plaintext-dns-cache-poisoning-flaw">Why DNSSEC was created</a></li>
+        <li><a href="#what-are-the-4-core-dnssec-record-types-in-rfc-4034">The 4 core DNSSEC record types (RFC 4034)</a></li>
+        <li><a href="#what-is-the-difference-between-a-zone-signing-key-zsk-and-a-key-signing-key-ksk">Zone Signing Key (ZSK) vs Key Signing Key (KSK)</a></li>
+        <li><a href="#how-does-the-dnssec-chain-of-trust-work-step-by-step">How the DNSSEC Chain of Trust works (7 steps)</a></li>
+        <li><a href="#what-are-the-3-dnssec-validation-states-in-recursive-resolvers">3 DNSSEC validation states in recursive resolvers</a></li>
+        <li><a href="#which-dnssec-cryptographic-algorithm-should-you-use-rsa-vs-ecdsa-algorithm-13">RSA vs ECDSA Algorithm 13</a></li>
+        <li><a href="#what-is-the-difference-between-dnssec-doh-dot-and-https-tls">DNSSEC vs DoH/DoT vs HTTPS/TLS</a></li>
+        <li><a href="#how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">Enable, migrate, and disable DNSSEC safely</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
     <div class="rich-text mt-8">
-      <h2 id="the-threat-it-stops">The threat it stops</h2>
+      <h2 id="why-was-dnssec-created-solving-the-plaintext-dns-cache-poisoning-flaw">Why Was DNSSEC Created? (Solving the Plaintext DNS Cache Poisoning Flaw)</h2>
       <p>
-        Classic DNS responses are unauthenticated plaintext. An attacker positioned on the network, or
-        one who has poisoned a resolver's cache, can forge an answer that points your domain at their
-        server. Users type your URL, see your site load (from their fake copy), and hand over
-        credentials. DNSSEC closes exactly this hole: a forged answer cannot carry a valid signature,
-        so validating resolvers reject it instead of serving it.
+        DNSSEC was created because <strong class="text-ink">the original 1987 DNS protocol (RFC 1035) transmitted UDP port 53 responses without cryptographic origin verification, allowing attackers to inject forged IP addresses into recursive resolver caches</strong>.
+      </p>
+      <p>
+        In classic DNS architectures, a recursive resolver verified incoming response packets solely by checking whether the source IP address, UDP port, and 16-bit Transaction ID (representing 65,536 potential values) matched its pending query. In July 2008, security researcher Dan Kaminsky discovered a fundamental cache-poisoning vulnerability: an off-path attacker could flood a target recursive resolver with forged referral packets for randomized subdomains (such as <code>1.example.com</code> and <code>2.example.com</code>), guess the 16-bit Transaction ID within seconds, and overwrite the cached authoritative nameserver (NS) records for the entire target domain. Once poisoned, the resolver routed all subsequent traffic for that domain to an attacker-controlled destination, facilitating credential theft and man-in-the-middle attacks as documented in <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> and <a href="/dns-hijacking/">DNS Hijacking</a>.
+      </p>
+      <p>
+        The Internet Engineering Task Force (IETF) resolved this architectural flaw by publishing modern DNSSEC specifications in March 2005 across RFC 4033, RFC 4034, and RFC 4035. On July 15, 2010, the Internet Assigned Numbers Authority (IANA) and ICANN formally signed the DNS Root Zone (.), creating the global cryptographic trust anchor required to validate every signed Top-Level Domain (TLD) and second-level domain worldwide. Background concepts and operational mechanics are covered in <a href="/what-is-dns/">What Is DNS</a> and <a href="/dns-security/">DNS Security</a>.
       </p>
 
-      <h2 id="how-the-chain-of-trust-works">How the chain of trust works</h2>
+      <h2 id="what-are-the-4-core-dnssec-record-types-in-rfc-4034">What Are the 4 Core DNSSEC Record Types in RFC 4034?</h2>
       <p>
-        Your zone signs its records with private keys and publishes the public halves as
-        <a href="/dnskey-record/">DNSKEY records</a>. Self-published keys prove nothing on their own,
-        so the parent zone publishes a <a href="/ds-record/">DS record</a>: a digest of your key-signing
-        key. Validators walk root → TLD → your domain, checking each link against the DS above it.
-        Every link verifies, and your answers are provably yours. Any link breaks, and the resolver
-        must refuse the whole domain, which is why DNSSEC misconfiguration produces total outages
-        rather than partial ones.
+        DNSSEC operates by publishing <strong class="text-ink">4 specialized resource record types (RRSIG, DNSKEY, DS, and NSEC/NSEC3) alongside standard zone records</strong>. The table below defines the 4 core DNSSEC record types by IANA type code, zone location, and cryptographic function.
       </p>
 
-      <h2 id="what-dnssec-does-not-do">What DNSSEC does not do</h2>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Record</th><th>Role</th><th>Key detail</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">RRSIG</td><td class="text-sm text-ink-dim">Digital signature over each record set</td><td class="text-sm text-ink-dim">Must be refreshed before signature expiry</td></tr><tr><td class="font-medium text-ink">DNSKEY</td><td class="text-sm text-ink-dim">Zone signing key (flag 256) and key signing key (flag 257)</td><td class="text-sm text-ink-dim">The KSK signs the DNSKEY set</td></tr><tr><td class="font-medium text-ink">DS</td><td class="text-sm text-ink-dim">Hash of the KSK published in the parent zone</td><td class="text-sm text-ink-dim">The chain of trust link at the registrar</td></tr><tr><td class="font-medium text-ink">NSEC / NSEC3</td><td class="text-sm text-ink-dim">Authenticated denial of existence</td><td class="text-sm text-ink-dim">Proves a name genuinely does not exist</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        RFC 4035 Section 2.2 dictates a fundamental operational rule: DNSSEC signs entire Resource Record Sets (RRsets) rather than individual records. When a domain publishes multiple A records (for example, 3 distinct IP addresses for round-robin balancing), the authoritative nameserver groups all 3 records into a single canonical RRset and generates one comprehensive <code>RRSIG</code> signature over the collection. Resolvers always retrieve and validate the entire set simultaneously. Modern registrars also support automated parent-child updates through Child DS (CDS, Type 59) and Child DNSKEY (CDNSKEY, Type 60) records defined in RFC 7344, allowing child zones to publish key rollovers automatically to supporting registries. Record structures and lookup tools are detailed in <a href="/ds-record/">DS Record</a>, <a href="/dnskey-record/">DNSKEY Record</a>, <a href="/ds-record-lookup/">DS Record Lookup</a>, and <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>.
+      </p>
+
+      <h3 id="why-does-modern-dnssec-use-nsec3-or-black-lies-instead-of-plain-nsec">Why Does Modern DNSSEC Use NSEC3 or Black Lies Instead of Plain NSEC?</h3>
+      <p>
+        Modern DNSSEC deployments use <strong class="text-ink">NSEC3 (RFC 5155) or Compact Denial of Existence (RFC 9824) instead of plain NSEC records</strong> to prevent attackers from enumerating every subdomain in a zone file.
+      </p>
+      <p>
+        The original NSEC record (RFC 4034) proved that a requested record did not exist by linking existing hostnames in alphabetical order (for example, confirming that nothing exists between <code>api.example.com</code> and <code>dev.example.com</code>). This sequential linking created a critical vulnerability called DNSSEC Zone Walking: an external attacker could issue successive queries to extract every active record in the zone. NSEC3 (RFC 5155) resolved zone walking by replacing plain-text domain names with salted SHA-1 cryptographic hashes. Advanced Anycast platforms (such as Cloudflare) deploy Compact Denial of Existence (RFC 9824, informally known as Black Lies), dynamically generating a synthetic NSEC record that asserts non-existence specifically for the queried name, preventing zone enumeration while eliminating the computational burden of NSEC3 hash iterations.
+      </p>
+
+      <h2 id="what-is-the-difference-between-a-zone-signing-key-zsk-and-a-key-signing-key-ksk">What Is the Difference Between a Zone Signing Key (ZSK) and a Key Signing Key (KSK)?</h2>
+      <p>
+        DNSSEC splits public-key management inside DNSKEY records into <strong class="text-ink">2 distinct key roles: the Zone Signing Key (ZSK, Flag 256) that signs individual record sets, and the Key Signing Key (KSK, Flag 257) that signs the DNSKEY RRset and links to the parent zone's DS record</strong>.
+      </p>
+      <p>
+        Separating cryptographic responsibilities across two specialized key pairs solves a fundamental administrative dilemma: rotating keys frequently without requiring manual updates at external domain registrars.
+      </p>
       <ul>
-        <li>It does not encrypt queries; observers still see domains being resolved. Encryption is <a href="/doh-vs-dot/">DoH/DoT</a>.</li>
-        <li>It does not stop DDoS attacks against your nameservers.</li>
-        <li>It authenticates answers, not the content those answers lead to; TLS still does that job.</li>
+        <li><strong>Zone Signing Key (ZSK, DNSKEY Flag 256):</strong> The ZSK functions as the primary operational key pair for the domain. Its private half generates an <code>RRSIG</code> signature over every routine zone RRset (including A, AAAA, MX, TXT, and CNAME records), while its public half is published in the zone's <code>DNSKEY</code> RRset. Because parent TLD registries store no record of the ZSK, DNS providers can rotate the ZSK every 30 to 90 days automatically without requiring registrar intervention.</li>
+        <li><strong>Key Signing Key (KSK, DNSKEY Flag 257):</strong> The KSK serves as the zone's master authority key. Its private half signs exclusively the <code>DNSKEY</code> RRset, cryptographically validating both the ZSK and itself. A cryptographic hash of the public KSK is uploaded to the domain registrar and published in the parent TLD zone as a Delegation Signer (DS) record. Because rotating a KSK requires publishing a new DS record at the registrar and parent registry, organizations deploy stronger key lengths for the KSK and rotate it on longer intervals of 12 to 24 months.</li>
       </ul>
 
-      <h2 id="enable-it-safely">Enable it safely</h2>
-      <ol class="list-decimal space-y-1.5 pl-5">
-        <li>Turn on DNSSEC at your DNS host (a toggle on Cloudflare and Route 53).</li>
-        <li>Copy the DS record it shows you to your registrar, all four fields exactly.</li>
-        <li>Wait for propagation, then verify: our record lookup with DS selected should return your record, and the domain should resolve normally through Quad9 or Cloudflare (validating resolvers).</li>
-        <li>Let your provider handle key rotation. If rotating manually: publish the new key's DS, wait, then retire the old key. Never the reverse order.</li>
+      <h2 id="how-does-the-dnssec-chain-of-trust-work-step-by-step">How Does the DNSSEC Chain of Trust Work Step by Step?</h2>
+      <p>
+        To validate a signed DNS response, a recursive resolver executes <strong class="text-ink">7 cryptographic verification steps tracing the Chain of Trust from the child zone up to the hardcoded IANA Root Zone trust anchor</strong>.
+      </p>
+      <p>
+        Validating recursive resolvers verify data authenticity through 7 sequential operations:
+      </p>
+      <ol>
+        <li><strong>Set</strong> the DNSSEC OK (DO=1) bit within the EDNS0 OPT pseudo-header (RFC 3225) when querying the authoritative nameserver for <code>example.com A</code>, signaling that the resolver requires RRSIG signature records in the response.</li>
+        <li><strong>Retrieve</strong> the requested A RRset alongside its accompanying RRSIG signature record from the authoritative nameserver for <code>example.com</code>.</li>
+        <li><strong>Query</strong> the authoritative nameserver for the zone's <code>DNSKEY</code> RRset (containing the public ZSK Flag 256 and KSK Flag 257) along with the RRSIG signature covering that DNSKEY set.</li>
+        <li><strong>Verify</strong> the A record's RRSIG signature using the public ZSK (DNSKEY 256), confirming that the returned IP addresses were signed by <code>example.com</code> and that the signature falls within valid inception and expiration timestamps.</li>
+        <li><strong>Validate</strong> the DNSKEY RRset's RRSIG signature using the public KSK (DNSKEY 257), establishing that the KSK authorizes the active ZSK.</li>
+        <li><strong>Fetch</strong> the Delegation Signer (DS) record for <code>example.com</code> from the parent <code>.com</code> TLD nameserver, hash the child zone's public KSK (DNSKEY 257) using SHA-256, and confirm the computed hash matches the parent DS digest byte-for-byte.</li>
+        <li><strong>Repeat</strong> the verification process recursively up to the Root Zone (.), validating the .com DS record against the Root KSK, which is permanently embedded as a trusted anchor in resolver software through the international ICANN Root Key Signing Ceremony.</li>
       </ol>
-
-      <h2 id="check-your-domain-right-now">Check your domain right now</h2>
       <p>
-        Run the homepage <a href="/">security scanner</a>: the DNSSEC check looks for your DS record and
-        reports whether the zone is signed, alongside SPF, DKIM, DMARC, and AI readiness.
+        The resolver marks the record as authentic and delivers it to the client application once every link in this cryptographic hierarchy matches, as detailed in <a href="/how-dns-works/">How DNS Works</a> and verified with the <a href="/dnssec-checker/">DNSSEC Checker</a>.
       </p>
 
-      
+      <h2 id="what-are-the-3-dnssec-validation-states-in-recursive-resolvers">What Are the 3 DNSSEC Validation States in Recursive Resolvers?</h2>
+      <p>
+        RFC 4035 Section 4.3 classifies every DNS lookup evaluated by a DNSSEC-aware recursive resolver into <strong class="text-ink">1 of 3 deterministic validation states: Secure, Insecure, or Bogus</strong>. The table below defines each validation state by DNS header flags, RCODE output, and root cause.
+      </p>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">What does DNSSEC protect against?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNSSEC protects against tampered DNS answers: cache poisoning and on-path spoofing that redirect users to attacker-controlled servers. It does not encrypt DNS queries; that is DoH or DoT.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Should I enable DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes if your DNS host and registrar integrate it cleanly (Cloudflare, Route 53, and major registrars do). The risk window is key rotation handled out of order.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&\::-webkit-details-marker]:hidden">Why does DNSSEC break my whole domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Validating resolvers must refuse answers that fail verification. A stale DS record after key rotation breaks the chain of trust, so the entire domain returns SERVFAIL.</p></details>
-      </div>      <h2 id="related">Related</h2>
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>State</th><th>Meaning</th><th>What you see</th></tr></thead>
+            <tbody><tr><td class="font-medium text-ink">Secure</td><td class="text-sm text-ink-dim">Chain of trust validates to the root</td><td class="text-sm text-ink-dim">AD flag set on the answer</td></tr><tr><td class="font-medium text-ink">Insecure</td><td class="text-sm text-ink-dim">Zone is unsigned; no DS at the parent</td><td class="text-sm text-ink-dim">Normal answer, no AD flag</td></tr><tr><td class="font-medium text-ink">Bogus</td><td class="text-sm text-ink-dim">Broken chain: mismatched DS, expired RRSIG</td><td class="text-sm text-ink-dim">SERVFAIL for the whole zone</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Validating resolvers refuse to serve unverified data and return a <code>SERVFAIL</code> (RCODE 2) response whenever a configuration error breaks the chain of trust. System administrators can isolate whether an outage is caused by DNSSEC validation failure in seconds by querying public resolvers with the Checking Disabled (+cd) flag:
+      </p>
+
+      <div class="not-prose my-4 space-y-3">
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">Step 1: Standard DNSSEC query (fails with SERVFAIL on broken chain):</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>dig example.com A @1.1.1.1 +dnssec</code></pre>
+        </div>
+        <div>
+          <p class="font-mono text-xs font-semibold text-ink-dim">Step 2: Checking Disabled query (+cd flag bypasses DNSSEC validation):</p>
+          <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-3 font-mono text-xs text-accent-soft"><code>dig example.com A @1.1.1.1 +cd</code></pre>
+        </div>
+      </div>
+
+      <p>
+        If Step 1 produces <code>SERVFAIL</code> while Step 2 returns <code>NOERROR</code> with the correct IP address, the domain is suffering from an invalid parent DS record, mismatched KSK, or expired RRSIG signature rather than a server outage. Parent-child consistency can be verified using the <a href="/delegation-checker/">DNS Delegation Checker</a>.
+      </p>
+
+      <h2 id="which-dnssec-cryptographic-algorithm-should-you-use-rsa-vs-ecdsa-algorithm-13">Which DNSSEC Cryptographic Algorithm Should You Use? (RSA vs ECDSA Algorithm 13)</h2>
+      <p>
+        RFC 8624 recommends <strong class="text-ink">Algorithm 13 (ECDSAP256SHA256) or Algorithm 15 (Ed25519) for all modern DNSSEC deployments</strong> because elliptic-curve keys produce compact signatures, preventing UDP packet fragmentation and DNS amplification abuse. The table below compares the 4 primary DNSSEC cryptographic algorithms by RFC standard, implementation status, and network packet impact.
+      </p>
+
+      <section class="not-prose my-4" aria-label="Reference table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Algorithm Number & Name</th><th>RFC Standard</th><th>RFC 8624 Status</th><th>Signature Size & Packet Impact</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">Alg 5 (RSASHA1) / Alg 7</td><td class="text-sm text-ink-dim">RFC 3110 / RFC 5155</td><td class="text-sm text-ink-dim">MUST NOT Sign</td><td class="text-sm text-ink-dim">Obsolete SHA-1; insecure and rejected by modern registrars</td></tr>
+              <tr><td class="font-medium text-ink">Alg 8 (RSASHA256)</td><td class="text-sm text-ink-dim">RFC 5702</td><td class="text-sm text-ink-dim">MUST Implement (Legacy)</td><td class="text-sm text-ink-dim">2048-bit key yields 256-byte signatures; inflates UDP packets (&gt;1,200B) and increases DNS amplification DDoS factor</td></tr>
+              <tr><td class="font-medium text-ink">Alg 13 (ECDSAP256SHA256)</td><td class="text-sm text-ink-dim">RFC 6605</td><td class="text-sm text-ink-dim">MUST Implement (Recommended Default)</td><td class="text-sm text-ink-dim">256-bit elliptic curve (equal to 3072-bit RSA strength) with compact 64-byte signatures; used by Cloudflare and Route 53</td></tr>
+              <tr><td class="font-medium text-ink">Alg 15 (Ed25519)</td><td class="text-sm text-ink-dim">RFC 8080</td><td class="text-sm text-ink-dim">RECOMMENDED</td><td class="text-sm text-ink-dim">High-speed Edwards-curve 64-byte signatures; supported by modern resolvers and registries</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Choosing the correct algorithm directly affects network security and performance: legacy Algorithm 8 (RSASHA256) keys require 2048 bits to maintain adequate security, inflating DNS response packets beyond 1,200 bytes. These large responses force resolvers to negotiate Extended DNS (EDNS0) buffer sizes and provide threat actors with potent reflection targets for <a href="/dns-amplification-attack/">DNS Amplification Attacks</a>. Algorithm 13 delivers equivalent 128-bit cryptographic security using 256-bit elliptic curves that generate compact 64-byte signatures, allowing responses to fit comfortably inside standard 512-byte UDP envelopes.
+      </p>
+
+      <h2 id="what-is-the-difference-between-dnssec-doh-dot-and-https-tls">What Is the Difference Between DNSSEC, DoH/DoT, and HTTPS/TLS?</h2>
+      <p>
+        DNSSEC, encrypted DNS transport (DoH and DoT), and HTTPS/TLS operate at <strong class="text-ink">3 complementary security layers: DNSSEC authenticates record integrity, DoH and DoT encrypt the recursive query channel, and HTTPS/TLS encrypts the final web application connection</strong>.
+      </p>
+      <p>
+        Understanding internet security requires distinguishing authentication from confidentiality across 3 distinct protocols:
+      </p>
       <ul>
-        <li><a href="/ds-record/">DS records</a> and <a href="/dnskey-record/">DNSKEY records</a></li>
-        <li><a href="/enable-dnssec-cloudflare/">Enable DNSSEC in Cloudflare</a></li>
-        <li><a href="/dns-security/">DNS security cluster</a></li>
-        <li><a href="/dns-cache-poisoning/">Cache poisoning</a></li>
+        <li><strong>DNSSEC Authenticates Data Integrity (Zero Encryption):</strong> DNSSEC cryptographic signatures verify that DNS records originate from the genuine domain owner and were not altered by intermediate resolvers. DNSSEC does not encrypt query payloads: queries and responses remain visible as plaintext across intermediate networks unless wrapped in an encrypted transport.</li>
+        <li><strong>DoH and DoT Encrypt Transport (Zero Origin Authentication):</strong> DNS-over-HTTPS (DoH, RFC 8484) and DNS-over-TLS (DoT, RFC 7858) encrypt the last-mile communication between client stub resolvers and upstream recursive resolvers, preventing eavesdropping and tampering by local network operators or ISPs. However, if the queried domain lacks DNSSEC, a compromised recursive resolver can deliver poisoned records through an encrypted DoH session, as detailed in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.</li>
+        <li><strong>HTTPS/TLS and DANE (End-to-End Application Encryption):</strong> Once DNSSEC delivers an authenticated IP address, HTTPS/TLS encrypts the application session between the browser and web server. The DNS-Based Authentication of Named Entities protocol (DANE, RFC 6698) leverages DNSSEC to publish TLSA records directly in DNS, pinning valid TLS certificates for mail exchangers and eliminating dependence on commercial certificate authorities, as explored in <a href="/https-vs-dnssec/">HTTPS vs DNSSEC</a>.</li>
       </ul>
+
+      <h2 id="how-do-you-enable-migrate-and-disable-dnssec-safely-without-breaking-your-domain">How Do You Enable, Migrate, and Disable DNSSEC Safely Without Breaking Your Domain?</h2>
+      <p>
+        To enable DNSSEC or migrate a signed domain between DNS providers without triggering a SERVFAIL outage, you must <strong class="text-ink">synchronize child zone DNSKEY signing and parent registrar DS publication in strict reverse order during activation and deactivation</strong>.
+      </p>
+      <p>
+        Domain administrators must execute DNSSEC lifecycle tasks through 2 strict operational sequences:
+      </p>
+      <p class="font-semibold text-ink">Workflow A: Enabling DNSSEC (Child Zone Signing First, Parent DS Second)</p>
+      <ol>
+        <li><strong>Enable</strong> DNSSEC signing within your authoritative DNS provider dashboard (such as Cloudflare, AWS Route 53, or Google Cloud DNS) so the nameserver generates active ZSK and KSK pairs and publishes signed RRSIG records.</li>
+        <li><strong>Copy</strong> the generated Delegation Signer (DS) record parameters (Key Tag, Algorithm 13, Digest Type 2 SHA-256, and Digest hex string) from your DNS provider.</li>
+        <li><strong>Publish</strong> the DS record in your domain registrar's DNSSEC management interface, allowing the parent TLD registry to insert the DS record into the top-level zone.</li>
+        <li><strong>Verify</strong> the completed chain of trust using the <a href="/dnssec-checker/">DNSSEC Checker</a>, following specific setup steps in <a href="/enable-dnssec-cloudflare/">How to Enable DNSSEC in Cloudflare</a>.</li>
+      </ol>
+      <p class="font-semibold text-ink">Workflow B: Disabling DNSSEC or Migrating Nameservers (Parent DS Removal First, Wait Out TTL, Child Zone Second)</p>
+      <p>
+        Changing nameservers on a signed domain without removing the parent DS record causes global resolution failure: validating recursive resolvers will query the new nameservers, find no matching KSK, and reject all queries with SERVFAIL. When changing DNS providers, domain owners must delete the DS record at the registrar FIRST, wait for the parent DS TTL (typically 1 to 24 hours) to expire worldwide, and only then update the authoritative nameserver delegation at the registrar.
+      </p>
+      <p>
+        Deploying comprehensive DNS defenses requires balancing cryptographic signing with operational controls across nameservers, registrar locks, and monitoring tools. Administrators can audit their complete domain posture using the <a href="/dns-threat-protection-checklist/">DNS Threat Protection Checklist</a> and validate live chains of trust anytime with the <a href="/dnssec-checker/">DNSSEC Checker</a>.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNSSEC encrypt my DNS traffic?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, DNSSEC <strong>authenticates the origin and integrity of DNS records</strong> using cryptographic digital signatures (RRSIG), but the records themselves remain plaintext. Pair DNSSEC with <strong>DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT)</strong> to encrypt DNS queries in transit.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why did my website stop working with SERVFAIL after changing nameservers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Switching authoritative nameservers without first removing the old provider's <strong>DS (Delegation Signer) record</strong> at your domain registrar breaks the DNSSEC chain of trust. Validating resolvers (such as 1.1.1.1 and 8.8.8.8) treat the mismatch as tampering and return <strong>SERVFAIL (RCODE 2)</strong>.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does enabling DNSSEC slow down DNS lookups?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">With modern <strong>Algorithm 13 (ECDSAP256SHA256)</strong> keys, DNSSEC adds <strong>near-zero latency</strong> because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check if DNSSEC is enabled and valid on my domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Run your domain through the <strong>DNSSEC Checker</strong> to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the <strong>Authenticated Data (AD=1)</strong> flag.</p>
+      </details>
     </div>
   </div>
 </BaseLayout>
