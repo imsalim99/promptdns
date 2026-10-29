@@ -85,7 +85,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-is-the-structure-of-an-mx-record-in-dns-fields-and-syntax">What Is the Structure of an MX Record in DNS? (Fields and Syntax)</h2>
       <p>
-        An MX record (DNS Type 15) contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component along with its technical constraints.
+        An MX record (DNS Type 15) contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component.
       </p>
 
       <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code>example.com.    3600    IN    MX    10 mail1.example.com.
@@ -107,12 +107,12 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
       </section>
 
       <p>
-        The <code>Host</code> field is almost universally configured as <code>@</code> because standard email addresses format destinations as <code>user@example.com</code>. Publishing an MX record on a subdomain like <code>mail</code> only routes messages sent to <code>user@mail.example.com</code>. Live host records can be inspected with the <a href="/mx-record-lookup/">MX Record Lookup</a>, while provider setup steps are detailed in <a href="/how-to-add-mx-record/">How to Add MX Records for Email</a>.
+        The <code>Host</code> field uses <code>@</code> because standard email addresses format destinations as <code>user@example.com</code>. Publishing an MX record on a subdomain like <code>mail</code> routes only messages addressed to <code>user@mail.example.com</code>. Live records can be inspected with the <a href="/mx-record-lookup/">MX Record Lookup</a>, while setup procedures appear in <a href="/how-to-add-mx-record/">How to Add MX Records for Email</a>.
       </p>
 
       <h2 id="how-do-mail-servers-use-mx-records-to-deliver-email-5-steps">How Do Mail Servers Use MX Records to Deliver Email? (5 Steps)</h2>
       <p>
-        To deliver an email to <code>alex@example.com</code>, the sender's outbound <abbr class="pd-term" data-tip="Mail Transfer Agent (MTA): software responsible for transferring and routing emails between sender and recipient mail servers">Mail Transfer Agent (MTA)</abbr> executes <strong class="text-ink">5 sequential DNS lookup and SMTP connection steps</strong>.
+        To deliver email to <code>alex@example.com</code>, the sender's outbound <abbr class="pd-term" data-tip="Mail Transfer Agent (MTA): software responsible for transferring and routing emails between sender and recipient mail servers">Mail Transfer Agent (MTA)</abbr> executes <strong class="text-ink">5 sequential DNS lookup and SMTP connection steps</strong>.
       </p>
       <p>
         Inbound message dispatch proceeds through this standardized sequence:
@@ -125,7 +125,7 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
         <li><strong>Retry</strong> delivery against backup MX hosts if the primary server times out, spooling messages for 48 to 72 hours if all endpoints fail.</li>
       </ol>
       <p>
-        Sending mail servers automatically fall back to attempting SMTP delivery directly to the domain root <a href="/a-record/">A Record</a> or <a href="/aaaa-record/">AAAA Record</a> web server IP under the standard SMTP specification (<abbr class="pd-term" data-tip="Simple Mail Transfer Protocol: defines mail exchange routing and delivery fallback rules">RFC 5321 §5.1</abbr>) when a domain publishes zero MX records. Domains that never receive email prevent this unintended web server traffic by publishing an explicit <abbr class="pd-term" data-tip="Null MX (RFC 7505): a specialized DNS MX record with priority 0 and target dot indicating a domain accepts zero incoming email">Null MX</abbr> record (<code>0 .</code>).
+        Sending mail servers automatically fall back to attempting SMTP delivery directly to the domain root A or AAAA address web server IP under the standard SMTP specification (<abbr class="pd-term" data-tip="Simple Mail Transfer Protocol: defines mail exchange routing and delivery fallback rules">RFC 5321 §5.1</abbr>) when a domain publishes zero MX records. Domains that never receive email prevent this unintended web server traffic by publishing an explicit <abbr class="pd-term" data-tip="Null MX (RFC 7505): a specialized DNS MX record with priority 0 and target dot indicating a domain accepts zero incoming email">Null MX</abbr> record (<code>0 .</code>).
       </p>
 
       <h2 id="how-do-mx-priority-preference-numbers-work-failover-vs-load-balancing">How Do MX Priority (Preference) Numbers Work? (Failover vs Load Balancing)</h2>
@@ -136,14 +136,17 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
         Organizations utilize these 3 architectural priority layouts:
       </p>
       <ol>
-        <li><strong>Primary and Backup Failover (Distinct Priority Numbers, e.g., <code>10</code> and <code>20</code>):</strong> Senders try priority <code>10</code> first (<code>mx1.example.com</code>) and only query priority <code>20</code> if the primary endpoint is offline. Numerical gaps (such as <code>10</code>, <code>20</code>, <code>30</code>) allow inserting intermediate servers later without renumbering existing records.</li>
-        <li><strong>Equal-Priority Load Distribution (Identical Priority Numbers, e.g., <code>10</code> and <code>10</code>):</strong> Assigning identical priority values directs senders to randomize selection equally, distributing incoming mail volume 50/50 across multiple mail processing nodes.</li>
-        <li><strong>Single Anycast MX Endpoint (Modern Cloud Providers, e.g., Priority <code>0</code> or <code>1</code>):</strong> Providers like Microsoft 365 (priority <code>0</code>) and Google Workspace (priority <code>1 smtp.google.com</code>) handle redundancy at the global IP Anycast layer behind a single hostname.</li>
+        <li><strong>Primary and Backup Failover (Distinct Priority Numbers, e.g., <code>10</code> and <code>20</code>):</strong> Senders query priority <code>10</code> first and contact priority <code>20</code> only if the primary server is offline. Numerical increments allow inserting intermediate gateways later without renumbering existing records.</li>
+        <li><strong>Equal-Priority Load Distribution (Identical Priority Numbers, e.g., <code>10</code> and <code>10</code>):</strong> Assigning identical priority numbers directs senders to randomize selection, distributing inbound mail evenly across multiple mail processing nodes.</li>
+        <li><strong>Single Anycast MX Endpoint (Modern Cloud Providers, e.g., Priority <code>0</code> or <code>1</code>):</strong> Providers like Microsoft 365 and Google Workspace manage redundancy at the global Anycast layer behind a single hostname.</li>
       </ol>
+      <p>
+        Configuring appropriate priority levels prevents traffic bottlenecks during peak message volumes and guarantees seamless failover during unexpected mail server outages.
+      </p>
 
       <h2 id="standard-mx-record-examples-for-major-email-providers-google-microsoft-365-zoho-proton">Standard MX Record Examples for Major Email Providers (Google, Microsoft 365, Zoho, Proton)</h2>
       <p>
-        Every email hosting provider supplies <strong class="text-ink">its own authoritative mail exchanger hostnames and priority values</strong> that you publish at your domain DNS host. The table below lists the standard production MX records for 6 major email platforms plus the Null MX configuration.
+        Every email provider supplies <strong class="text-ink">its own authoritative mail exchanger hostnames and priority values</strong> for your DNS zone. The table below lists production MX records for 6 major email platforms plus the Null MX configuration.
       </p>
 
       <section class="not-prose my-4" aria-label="Reference table">
@@ -164,21 +167,24 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
       </section>
 
       <p>
-        Publishing MX records from two separate email providers simultaneously splits inbound delivery unpredictably, causing incoming messages to land in conflicting inboxes or bounce. For non-sending domains, publishing a Null MX record (<code>0 .</code>) explicitly informs worldwide MTAs that the domain accepts zero incoming mail, stopping unwanted connection retries and bounce loops.
+        Publishing MX records from two email providers simultaneously splits inbound delivery unpredictably, causing incoming messages to bounce or misroute. For non-sending domains, publishing a Null MX record (<code>0 .</code>) informs worldwide MTAs that the domain accepts zero incoming email, stopping connection retries and bounce loops.
       </p>
 
       <h2 id="what-are-the-3-strict-dns-rules-for-mx-target-hostnames">What Are the 3 Strict DNS Rules for MX Target Hostnames?</h2>
       <p>
-        DNS and SMTP standards enforce <strong class="text-ink">3 strict rules on every MX target hostname: it must never point to an IP address, it must never point to a CNAME alias, and it must never sit behind an HTTP proxy</strong>.
+        DNS and SMTP standards enforce <strong class="text-ink">3 strict rules on every MX target hostname: the target cannot point to an IP address, cannot point to a CNAME alias, and cannot sit behind an HTTP reverse proxy</strong>.
       </p>
       <p>
-        Administrators must adhere to these 3 technical prohibitions:
+        Mail architecture requires strict adherence to these 3 technical prohibitions:
       </p>
       <ol>
-        <li><strong>An MX Record Never Points Directly to an IPv4 or IPv6 Address:</strong> Entering a raw IP (such as <code>192.0.2.25</code>) in the MX target value field violates DNS specifications (<abbr class="pd-term" data-tip="Domain Implementation and Specification: specifies that MX targets must be hostnames">RFC 1035</abbr> / <abbr class="pd-term" data-tip="Clarifications to the DNS Specification: re-affirms MX target prohibitions">RFC 2181</abbr>). An MX record must always specify a fully qualified domain name resolving via its own A or AAAA record.</li>
-        <li><strong>An MX Target Hostname Never Points to a CNAME Record:</strong> Pointing an MX record to a <abbr class="pd-term" data-tip="CNAME Record: a canonical name DNS record that aliases one domain name to another rather than resolving directly to an IP"><a href="/cname-record/">CNAME alias</a></abbr> is prohibited by <abbr class="pd-term" data-tip="Clarifications to the DNS Specification: section 10.3 explicitly prohibits MX targets pointing to CNAME aliases">RFC 2181 §10.3</abbr>. Mail servers expect direct terminal address records; alias chaining introduces lookup delays and delivery errors.</li>
-        <li><strong>Never Enable Cloudflare Orange Cloud Proxy on a Mail Hostname:</strong> Placing a mail server host behind Cloudflare's HTTP proxy (Orange Cloud) replaces your server's true IP with an HTTP/HTTPS reverse proxy that blocks port 25, 465, and 587 SMTP traffic. Administrators must always leave mail server hostnames set to <strong>DNS Only (Grey Cloud)</strong>.</li>
+        <li><strong>An MX Record Never Points Directly to an IPv4 or IPv6 Address:</strong> Entering a raw IP address in the MX target field violates DNS specifications (<abbr class="pd-term" data-tip="Domain Implementation and Specification: specifies that MX targets are hostnames">RFC 1035</abbr> / <abbr class="pd-term" data-tip="Clarifications to the DNS Specification: re-affirms MX target prohibitions">RFC 2181</abbr>). An MX record always specifies a fully qualified domain name resolving via its own A or AAAA record.</li>
+        <li><strong>An MX Target Hostname Never Points to a CNAME Record:</strong> Pointing an MX record to a <abbr class="pd-term" data-tip="CNAME Record: a canonical name DNS record that aliases one domain name to another rather than resolving directly to an IP"><a href="/cname-record/">CNAME alias</a></abbr> is prohibited by <abbr class="pd-term" data-tip="Clarifications to the DNS Specification: section 10.3 explicitly prohibits MX targets pointing to CNAME aliases">RFC 2181 §10.3</abbr>. Mail servers require direct terminal address records; alias chaining introduces lookup delays and delivery failures.</li>
+        <li><strong>Never Enable Cloudflare Orange Cloud Proxy on a Mail Hostname:</strong> Placing a mail server behind Cloudflare's proxy (Orange Cloud) replaces the true IP with an HTTP reverse proxy that blocks port 25 SMTP traffic. Administrators always keep mail server hostnames set to <strong>DNS Only (Grey Cloud)</strong>.</li>
       </ol>
+      <p>
+        Observing these target restrictions prevents connection drops and ensures worldwide mail transfer agents locate destination IP addresses without resolution delays.
+      </p>
 
       <h2 id="how-do-mx-records-connect-to-mta-sts-spf-dmarc-and-blacklists">How Do MX Records Connect to MTA-STS, SPF, DMARC, and Blacklists?</h2>
       <p>
@@ -189,14 +195,17 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
       </p>
       <ol>
         <li><strong>MX Handles Inbound Mail; SPF, DKIM, and DMARC Handle Outbound Mail:</strong> An MX record directs incoming messages; it does not authorize outbound senders. Outbound authentication and spoofing defense require <a href="/spf-record/">SPF Record</a>, <a href="/dkim/">DKIM Explained</a>, and <a href="/dmarc/">DMARC</a>.</li>
-        <li><strong>The <code>mx</code> Mechanism Inside SPF (<code>v=spf1 mx -all</code>):</strong> Including the <code>mx</code> mechanism instructs receiving servers to resolve the domain's MX records and authorize their IP addresses to transmit outbound mail.</li>
+        <li><strong>The <code>mx</code> Mechanism Inside SPF (<code>v=spf1 mx -all</code>):</strong> Including the <code>mx</code> mechanism authorizes the IP addresses of the domain's MX hosts to transmit outbound mail.</li>
         <li><strong>Securing MX Connections with <abbr class="pd-term" data-tip="MTA-STS (RFC 8461): a security standard enabling domains to enforce TLS encryption and authenticated certificates for incoming mail"><a href="/mta-sts/">MTA-STS</a></abbr> (<abbr class="pd-term" data-tip="SMTP MTA Strict Transport Security: standardizes inbound TLS enforcement and MX hostname pinning">RFC 8461</abbr>):</strong> Publishing an MTA-STS policy explicitly pins your valid MX hostnames and enforces strict TLS encryption to prevent downgrade attacks, verifiable via the <a href="/mta-sts-checker/">MTA-STS Record Checker</a>.</li>
-        <li><strong>Reverse DNS (<a href="/ptr-record/">PTR Record</a>) and Blacklist Hygiene:</strong> Outbound email gateways operating on MX host IPs must publish matching PTR records and maintain clean listings on spam databases, auditable with the <a href="/blacklist-checker/">MX and IP Blacklist Checker</a>.</li>
+        <li><strong>Reverse DNS (<a href="/ptr-record/">PTR Record</a>) and Blacklist Hygiene:</strong> Outbound email gateways operating on MX host IPs require matching PTR records and clean listings on spam databases, auditable with the <a href="/blacklist-checker/">MX and IP Blacklist Checker</a>.</li>
       </ol>
+      <p>
+        Integrating inbound MX records with these security layers protects organizational domains from impersonation and secures mail transfer across untrusted network paths.
+      </p>
 
       <h2 id="how-do-you-check-and-troubleshoot-your-domains-mx-records">How Do You Check and Troubleshoot Your Domain's MX Records?</h2>
       <p>
-        To verify your live MX records and diagnose incoming email delivery failures, run <strong class="text-ink">a browser-based DNS-over-HTTPS query or terminal <code>dig</code> lookup and check for the 4 most common MX misconfigurations</strong>.
+        To verify live MX records and diagnose incoming email delivery failures, run <strong class="text-ink">a browser-based lookup or terminal <code>dig</code> query to check for 4 common MX misconfigurations</strong>.
       </p>
       <p>
         Querying your domain via terminal tooling reveals active mail exchangers:
@@ -207,7 +216,7 @@ dig example.com MX +short
 # Windows Command Prompt:
 nslookup -type=mx example.com 1.1.1.1</code></pre>
       <p>
-        When diagnosing bounced messages, evaluate these 4 common root causes:
+        Evaluate these 4 common root causes when diagnosing bounced incoming messages:
       </p>
       <ol>
         <li><strong>Residual Legacy MX Records:</strong> Old mail exchanger records left behind during an email provider switch cause split delivery and bounced messages.</li>
@@ -216,7 +225,7 @@ nslookup -type=mx example.com 1.1.1.1</code></pre>
         <li><strong>Unpropagated DNS Updates:</strong> Changing MX records without accounting for TTL expiration causes senders to query cached records until propagation completes.</li>
       </ol>
       <p>
-        Maintaining accurate MX records, priority numbers, and valid target hostnames guarantees reliable inbound SMTP email routing across all recipient mailboxes. Administrators can audit live routing through the <a href="/mx-record-lookup/">MX Record Lookup</a>, test encryption handshakes with the <a href="/smtp-tester/">SMTP Connectivity and STARTTLS Tester</a>, resolve delivery errors using <a href="/mx-record-not-working/">MX Record Not Working?</a>, and track global updates with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+        Maintaining accurate MX records, priority numbers, and valid hostnames guarantees reliable inbound SMTP routing. Administrators can audit routing through MX Record Lookup, test encryption with the <a href="/smtp-tester/">SMTP Connectivity and STARTTLS Tester</a>, resolve delivery errors using <a href="/mx-record-not-working/">MX Record Not Working?</a>, and track propagation with the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
       </p>
     </div>
 
