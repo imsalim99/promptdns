@@ -94,7 +94,7 @@ const breadcrumb = [
     <div class="rich-text mt-8">
       <h2 id="what-is-a-dns-txt-record-and-what-does-its-structure-look-like">What Is a DNS TXT Record and What Does Its Structure Look Like?</h2>
       <p>
-        Originally introduced in 1987 (IANA Type 16) allowing system administrators to attach simple descriptive notes to a server hostname, the <strong class="text-ink">DNS TXT record has evolved into the primary machine-readable security and verification layer of the modern internet</strong>. Cloud platforms and mail receivers query structured <code>attribute=value</code> TXT strings published at your root domain (<code>@</code>) or dedicated underscore subdomains (<code>_dmarc</code>, <code>selector._domainkey</code>, <code>_mta-sts</code>) to prove domain control and enforce email authentication. The table below defines the core technical specifications and wire constraints of a DNS TXT record.
+        The DNS TXT record (IANA Type 16) <strong class="text-ink">has evolved into the primary machine-readable security and verification layer of the modern internet</strong> since its introduction in 1987 for attaching descriptive notes to hostnames. Cloud platforms and mail receivers query structured <code>attribute=value</code> TXT strings published at your root domain (<code>@</code>) or dedicated underscore subdomains (<code>_dmarc</code>, <code>selector._domainkey</code>, <code>_mta-sts</code>) to prove domain control and enforce email authentication. The table below defines the core technical specifications and wire constraints of a DNS TXT record.
       </p>
 
       <p class="text-sm font-medium text-ink-dim">
@@ -259,7 +259,7 @@ google._domainkey.example.com. 3600 IN TXT (
 
       <ol class="list-decimal space-y-4 pl-6">
         <li class="leading-relaxed">
-          <strong class="text-ink">Multiple Verification Tokens Coexist Safely on the Apex Domain, Except SPF:</strong> Administrators publish separate TXT records on the root domain (<code>@</code>) for Google Search Console, Microsoft 365, Apple, and Stripe simultaneously. However, RFC 7208 forbids publishing multiple <code>v=spf1</code> records on one hostname, which triggers immediate SPF PermError delivery failures.
+          <strong class="text-ink">Multiple Verification Tokens Coexist Safely on the Apex Domain, Except SPF:</strong> Administrators publish separate TXT records on the root domain (<code>@</code>) for Google Search Console, Microsoft 365, Apple, and Stripe simultaneously. However, DNS rules prohibit publishing multiple <code>v=spf1</code> records on one hostname, which triggers immediate SPF PermError delivery failures.
         </li>
         <li class="leading-relaxed">
           <strong class="text-ink">A TXT Record Cannot Coexist With a CNAME Record on the Same Subdomain:</strong> Publishing a <a href="/cname-record/">CNAME Record</a> on an alias like <code>app.example.com</code> prevents adding any TXT records to that exact hostname. Verification tokens for external platforms reside on the root domain or separate subdomains.
