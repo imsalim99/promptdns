@@ -94,7 +94,7 @@ const breadcrumb = [
     <div class="rich-text mt-8">
       <h2 id="what-is-a-ds-record-and-what-do-its-4-fields-mean-syntax-and-anatomy">What Is a DS Record and What Do Its 4 Fields Mean? (Syntax and Anatomy)</h2>
       <p>
-        In DNSSEC architecture, a ds record dns resource record (IANA Type 43, RFC 4034) <strong class="text-ink">differs from standard records by residing in the parent Top-Level Domain (TLD) zone (such as .com) via your registrar rather than your own zone file</strong>. Analyzing a ds record vs dnskey demonstrates that while DNSKEY holds the full public key, a DS record holds a 4-field cryptographic fingerprint (Key Tag, Algorithm, Digest Type, and Digest) of your child Key Signing Key (DNSKEY Flag 257). Every ds record key tag algorithm digest type tuple provides the parameters for resolver verification. The table below defines all 4 fields of a standard DS record.
+        A Delegation Signer (DS) record (IANA Type 43) <strong class="text-ink">differs from standard DNS records because it is published one level up in the parent Top-Level Domain (TLD) registry zone (such as .com or .org) through your domain registrar rather than inside your own zone file</strong>. Unlike a DNSKEY record (which holds the full public key in your child zone), a DS record holds a compact 4-field cryptographic fingerprint (Key Tag, Algorithm, Digest Type, and Digest) of your child zone's Key Signing Key (DNSKEY Flag 257). The table below defines all 4 data fields of a standard DS record.
       </p>
 
       <p class="text-sm font-medium text-ink-dim">
@@ -215,7 +215,7 @@ example.com.     86400  IN     DS    2371     13         2            1F987CC658
       </section>
 
       <p>
-        When your DNS host displays a Digest Type 2 (SHA-256) hash for your registrar, the hexadecimal string contains exactly 64 characters without spaces. Truncating characters or pasting a 40-character SHA-1 string under Digest Type 2 causes immediate validation failure across resolvers.
+        The hexadecimal string always contains <strong class="text-ink">exactly 64 characters without spaces</strong> when your DNS host generates a Digest Type 2 (SHA-256) hash for your registrar. Truncating characters or pasting a 40-character SHA-1 string under Digest Type 2 causes immediate validation failure across resolvers.
       </p>
 
       <h2 id="how-do-validating-resolvers-use-a-ds-record-in-the-chain-of-trust-5-steps">How Do Validating Resolvers Use a DS Record in the Chain of Trust? (5 Steps)</h2>
@@ -247,7 +247,7 @@ example.com.     86400  IN     DS    2371     13         2            1F987CC658
 
       <h2 id="where-do-you-add-a-ds-record-domain-registrar-vs-your-own-dns-zone-panel">Where Do You Add a DS Record? (Domain Registrar vs Your Own DNS Zone Panel)</h2>
       <p>
-        Determining where is a ds record published depends on <strong class="text-ink">which zone you are securing across 3 distinct delegation scenarios</strong>:
+        Where you publish a DS record depends on <strong class="text-ink">which zone you are securing across 3 distinct delegation scenarios</strong>:
       </p>
 
       <ol class="list-decimal space-y-4 pl-6">
@@ -268,7 +268,7 @@ example.com.     86400  IN     DS    2371     13         2            1F987CC658
 
       <h2 id="how-to-add-rotate-or-remove-a-ds-record-safely-without-causing-a-servfail-outage">How to Add, Rotate, or Remove a DS Record Safely Without Causing a SERVFAIL Outage</h2>
       <p>
-        A stale ds record servfail outage occurs when a parent registry hash points to a missing or retired child key. Mastering how to add or remove a ds record at registrar requires <strong class="text-ink">3 strict operational procedures when enabling, rotating, or retiring keys</strong>:
+        A domain-wide SERVFAIL outage occurs if a parent registry DS hash points to a missing or retired child key. Adding, rotating, or removing a DS record at your registrar safely requires following <strong class="text-ink">3 strict operational timing sequences</strong>:
       </p>
 
       <ol class="list-decimal space-y-4 pl-6">
