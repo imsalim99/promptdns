@@ -1,108 +1,346 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "A",
- "title": "A Record: What It Is, How It Works, and How to Fix It",
- "description": "A records explained in depth: how IPv4 mapping works, anatomy, TTL strategy, round-robin behavior, common mistakes, and how to check yours live.",
- "intro": "The A record is DNS's most fundamental answer: it maps a hostname to the IPv4 address of the server that hosts it. Every website visit, API call, and ping starts with someone, somewhere, reading an A record.",
- "deepDive": [
-  "When a resolver asks your nameserver for example.com, the A record is the reply that says '203.0.113.10'. That single line is the difference between a name that works and a name that goes nowhere. Everything else in your zone, mail routing, security signatures, verification tokens, exists in service of the traffic that the A record directs.",
-  "One hostname can hold multiple A records, each pointing at a different address. Resolvers return all of them and clients typically pick the first, a behavior called round-robin DNS. It distributes load across servers, but be clear about what it is not: round-robin has no health checking, so a dead server keeps receiving its share of connections until you remove the record. For real failover you need a load balancer (one A record pointing at the balancer's IP) or a DNS provider with health-checked failover.",
-  "TTL strategy matters more with A records than with almost anything else in your zone, because A records change when servers do. A 24-hour TTL is efficient for a stable site, but it converts every migration into a day of split traffic. The professional pattern: drop the TTL to 300 seconds a full day before any planned change, make the change, confirm propagation, then raise the TTL back."
- ],
- "example": "example.com.   3600  IN  A  203.0.113.10\nwww            3600  IN  A  203.0.113.10\napi            300   IN  A  198.51.100.7",
- "anatomy": [
-  [
-   "example.com.",
-   "The owner name. The bare apex is often written @ in provider UIs."
-  ],
-  [
-   "3600",
-   "TTL in seconds: how long resolvers worldwide may cache this answer."
-  ],
-  [
-   "IN",
-   "The class, short for Internet. Always IN in practice."
-  ],
-  [
-   "A",
-   "The record type. Exactly one IPv4 address follows."
-  ],
-  [
-   "203.0.113.10",
-   "The address. Must be a literal IPv4, not a hostname."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Can a domain have multiple A records?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Publishing multiple A records on the exact same hostname with different IPv4 addresses distributes traffic across several servers (Round-Robin DNS). Leaving an old web host's A record active alongside a new server causes half of all visitors to route to the retired host."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I include a port number (like 198.51.100.10:8080) in an A record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. An A record accepts only a 32-bit IPv4 address (four numbers from 0 to 255 separated by dots) with no field for port numbers. Deploying a reverse proxy (like NGINX or Cloudflare) on port 80/443 routes domain traffic to a custom backend port like 8080 or 3000 without exposing the port in the browser."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I use an A record or a CNAME record for my www subdomain?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, we recommend using a CNAME record for www (www.example.com -> example.com) and keeping a single A record on the root domain (@). That architecture ensures that when the server IPv4 address changes, editing the single root A record automatically updates the www subdomain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does an A record change take to update?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world cutovers, editing an existing A record takes as long as the previous record's TTL timer (such as 5 minutes for a 300-second TTL, or 1 hour for 3600 seconds). Creating a brand-new subdomain A record that was never queried before resolves almost instantly across global networks."
+      }
+    }
   ]
- ],
- "uses": [
-  "Pointing your apex and www at your web server or CDN",
-  "Pointing subdomains (api, shop, staging) at individual servers",
-  "Round-robin distribution across several identical servers",
-  "Migration cutover: change one address and traffic follows"
- ],
- "steps": [
-  [
-   "Look it up",
-   "Run your domain through the PromptDNS A record lookup. You should see the address you expect, with its TTL."
-  ],
-  [
-   "Compare apex and www",
-   "Check both names. If only one exists, part of your audience gets errors depending on how they type your domain."
-  ],
-  [
-   "Verify propagation after changes",
-   "Run the propagation checker: when every resolver returns the new address, the change is fully live."
-  ],
-  [
-   "Confirm the server answers",
-   "DNS only points; it does not serve. If DNS is right but the site is down, the problem is on the server or firewall."
-  ]
- ],
- "mistakes": [
-  "Keeping an old server's IP after a migration; lower the TTL first, then cut over, then decommission",
-  "Assuming apex and www are the same record; they are two separate entries that both need to exist (or one should redirect to the other)",
-  "Using multiple A records as failover; round-robin happily sends traffic to a dead server",
-  "Pointing an A record at an address behind a home router with a changing IP; that scenario needs dynamic DNS"
- ],
- "faqs": [
-  [
-   "Can an A record point to a domain name?",
-   "No. A records point to literal IPv4 addresses only. If you want name-to-name pointing, that is a CNAME record."
-  ],
-  [
-   "How many A records can one name have?",
-   "As many as you like, and resolvers return them all. Multiple records mean round-robin distribution, not redundancy."
-  ],
-  [
-   "Why do I see the old IP after changing my A record?",
-   "Caches. Resolvers keep the previous answer until its TTL expires. Check the propagation checker and flush your local cache."
-  ],
-  [
-   "Do I need an A record if I use a CDN?",
-   "Yes in some form: either an A record at the CDN's edge IPs, or a CNAME/ALIAS to the CDN hostname. Follow your CDN's DNS instructions."
-  ],
-  [
-   "How do I check A records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should A records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "AAAA records (IPv6)",
-   "/aaaa-record/"
-  ],
-  [
-   "CNAME vs A records",
-   "/cname-record/"
-  ],
-  [
-   "TTL explained",
-   "/what-is-ttl-in-dns/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["A Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="A Record: What a DNS Address Record Is, Syntax, Examples, and Rules"
+  description="Learn what an A record is in DNS, what A stands for, syntax for root (@) and wildcards, Round-Robin load balancing, and A vs AAAA vs CNAME records."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">A Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      A Record: What a DNS Address Record Is, Syntax, Examples, and Rules
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An A record is <strong class="text-ink">the fundamental DNS resource record mapping a domain directly to a 32-bit <abbr class="pd-term" data-tip="IPv4: Internet Protocol version 4, allocating 32-bit numerical addresses to internet devices">IPv4</abbr> address like <code>93.184.216.34</code></strong>. Web browsers and mail servers query A records to locate origin server interfaces. The IPv4 address value represents the definitive terminal destination of every recursive lookup resolution chain.
+      </p>
+    </div>
+
+    <Diagram name="resolution" caption="DNS resolution flow: how recursive resolvers query A records to resolve hostnames into IPv4 addresses" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-does-a-stand-for-in-dns-and-what-does-an-a-record-look-like">What "A" stands for &amp; syntax</a></li>
+        <li><a href="#what-are-the-5-essential-uses-of-dns-a-records">5 essential uses of A records</a></li>
+        <li><a href="#how-do-multiple-a-records-on-one-domain-work-round-robin-load-balancing">Multiple A records &amp; round-robin</a></li>
+        <li><a href="#a-record-vs-aaaa-vs-cname-vs-ptr-record-comparison-table">A vs AAAA vs CNAME vs PTR comparison</a></li>
+        <li><a href="#5-common-a-record-mistakes-that-break-websites-and-how-to-avoid-them">5 common A record mistakes</a></li>
+        <li><a href="#how-to-add-check-and-verify-an-a-record-dig-nslookup-and-browser-doh">Add &amp; verify A records (dig &amp; nslookup)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-does-a-stand-for-in-dns-and-what-does-an-a-record-look-like">What Does "A" Stand For in DNS and What Does an A Record Look Like?</h2>
+      <p>
+        Users asking what is an a record and what does a stand for in dns discover that the letter <strong class="text-ink">"A" stands for "Address"</strong> (IANA Type 1, RFC 1035), establishing the A record as <strong class="text-ink">the oldest and most frequently queried resource record on the internet</strong>. An A record connects a human-readable hostname (<code>@</code> for the bare root domain, <code>blog</code> for a subdomain, or <code>*</code> for a catch-all wildcard) to a 32-bit IPv4 address written as four decimal <abbr class="pd-term" data-tip="Octet: 8-bit section of an IPv4 address ranging in value from 0 to 255">octets</abbr> separated by periods (<code>0.0.0.0</code> to <code>255.255.255.255</code>). The table below defines the 5 core specifications and syntax rules of a DNS A record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following production A record example illustrates zone entries for root domains, standard subdomains, mail exchangers, and wildcard fallbacks:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; Host / Name           TTL    Class  Type   32-Bit IPv4 Address (Value)
+example.com.            3600   IN     A      93.184.216.34     ; Root domain (@)
+www.example.com.        3600   IN     A      93.184.216.34     ; www subdomain
+mail.example.com.       3600   IN     A      198.51.100.25     ; Mail server target
+*.example.com.          3600   IN     A      93.184.216.34     ; Wildcard catch-all</code></pre>
+
+      <section class="not-prose my-6" aria-label="A record specification table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Value</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">Type code</td>
+                <td class="text-sm font-mono text-accent">1</td>
+                <td class="text-sm text-ink-dim">IANA resource record type for IPv4 addresses</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">RFC standard</td>
+                <td class="text-sm font-mono text-accent">RFC 1035</td>
+                <td class="text-sm text-ink-dim">Original DNS standard defining the Address record</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Value format</td>
+                <td class="text-sm font-mono text-accent">Dotted-decimal IPv4</td>
+                <td class="text-sm text-ink-dim">Four octets separated by dots (e.g. <code>93.184.216.34</code>)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Coexistence</td>
+                <td class="text-sm font-mono text-accent">AAAA, MX, TXT, NS, SOA</td>
+                <td class="text-sm text-ink-dim">Coexists with other types at the same name; conflicts with CNAME</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Common TTL</td>
+                <td class="text-sm font-mono text-accent">300 to 86400 seconds</td>
+                <td class="text-sm text-ink-dim">Shorter for migrations, longer for stable infrastructure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        The <code>@</code> symbol denotes the <abbr class="pd-term" data-tip="Zone Apex: root level of a domain namespace without any subdomain prefix">zone apex</abbr> (the root domain <code>example.com</code> without any prefix). Publishing a <abbr class="pd-term" data-tip="Wildcard DNS: record using an asterisk (*) to match any unconfigured subdomain">wildcard DNS</abbr> entry using an asterisk (<code>*</code>) creates a wildcard a record that resolves any unconfigured subdomain to that IP address. Inspect any domain's live address using our <a href="/a-record-lookup/">A Record Lookup</a>.
+      </p>
+
+      <h2 id="what-are-the-5-essential-uses-of-dns-a-records">What Are the 5 Essential Uses of DNS A Records?</h2>
+      <p>
+        Beyond pointing a website domain to a web host, DNS A records power <strong class="text-ink">5 foundational internet functions across web routing, mail exchanger resolution, nameserver glue records, SPF authentication, and spam blocklists</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Directing Root Domains and Subdomains to Web Servers:</strong> A records connect <code>example.com</code> and application subdomains to the public IPv4 address of an origin server or cloud load balancer.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Providing the Final IPv4 Target for MX, CNAME, and SRV Records:</strong> Mail exchanger (<a href="/mx-record/">MX Record</a>), alias (<a href="/cname-record/">CNAME Record</a>), and SRV records accept only domain names, relying on an underlying A record (<code>mail.example.com -> 198.51.100.25</code>) to deliver packets.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Supplying In-Bailiwick Nameserver Glue Records at the Registry:</strong> Delegating a domain to a child nameserver (<code>ns1.example.com</code>) requires the registry to publish <abbr class="pd-term" data-tip="Glue Record: A or AAAA record published at the parent TLD registry providing the IP address of an authoritative nameserver">glue records</abbr> to prevent circular resolution loops.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Authorizing Outbound Email Senders via the SPF a Mechanism:</strong> Declaring the <code>a</code> mechanism in an <a href="/spf-record/">SPF Record</a> (<code>v=spf1 a -all</code>) authorizes your domain's A record IP address to send email.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Powering DNS-Based Blackhole Lists (DNSBL Spam Checks):</strong> Spam filters query reputation lists through <abbr class="pd-term" data-tip="DNSBL (DNS-based Blackhole List): mechanism querying DNS to identify spamming or malicious IP addresses">DNSBL</abbr> lookups. Mail servers reverse sending IP octets (<code>25.100.51.198.zen.spamhaus.org</code>) for an A record, returning <code>127.0.0.2</code> if listed or <code>NXDOMAIN</code> if clean, tested via our <a href="/blacklist-checker/">MX and IP Blacklist Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Critical internet protocols depend directly on A records for terminal addressing; deleting an A record disrupts web traffic, email delivery, and external APIs simultaneously.
+      </p>
+
+      <h2 id="how-do-multiple-a-records-on-one-domain-work-round-robin-load-balancing">How Do Multiple A Records on One Domain Work? (Round-Robin Load Balancing)</h2>
+      <p>
+        Publishing two or more A records with the exact same hostname (<code>@</code> or <code>www</code>) and different IPv4 addresses activates <strong class="text-ink"><abbr class="pd-term" data-tip="Round-Robin DNS: load distribution technique rotating multiple IP addresses sequentially across DNS replies">round-robin DNS</abbr> load distribution across 4 resolution steps</strong>. Configuring multiple a records round robin balances traffic across server clusters:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; Multiple A records on the exact same hostname enable round-robin rotation:
+example.com.    300    IN    A    198.51.100.10
+example.com.    300    IN    A    198.51.100.11
+example.com.    300    IN    A    198.51.100.12</code></pre>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Publish</strong> multiple A records on the same hostname pointing to separate server IPs with a short <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a> cache (60 to 300 seconds).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Return</strong> the full set of A records in every answer, rotating the IP order sequentially (<code>[.10, .11, .12]</code> on Query 1, <code>[.11, .12, .10]</code> on Query 2).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Connect</strong> the visiting client browser to the first IPv4 address listed at the top of the received answer packet.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Retry</strong> the subsequent IP address in the response list automatically if the initial server refuses the TCP connection, delivering basic client-side fault tolerance.
+        </li>
+      </ol>
+
+      <p>
+        Standard round-robin DNS operates without real-time health checks, sending traffic to dead servers until manually edited. Production setups pair multiple IPs with health-checked routing in <a href="/dns-load-balancing/">DNS Load Balancing</a>.
+      </p>
+
+      <h2 id="a-record-vs-aaaa-vs-cname-vs-ptr-record-comparison-table">A Record vs AAAA vs CNAME vs PTR Record (Comparison Table)</h2>
+      <p>
+        Four core DNS records handle hostname and IP mapping (A, AAAA, CNAME, and PTR). Comparing an a record vs cname and pointer types clarifies zone roles. The table below contrasts all 4 record types by input, output, and zone placement.
+      </p>
+
+      <section class="not-prose my-6" aria-label="A record comparison table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Record Type</th>
+                <th>IANA Type Code</th>
+                <th>Lookup Direction (Maps X to Y)</th>
+                <th>Example Value</th>
+                <th>Allowed at Root (@)?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">A Record</td>
+                <td class="text-sm font-mono text-accent">Type 1</td>
+                <td class="text-sm text-ink-dim">Hostname to 32-bit IPv4 Address (Forward Lookup)</td>
+                <td class="text-sm font-mono text-accent">93.184.216.34</td>
+                <td class="text-sm text-ink">Yes</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">AAAA Record</td>
+                <td class="text-sm font-mono text-accent">Type 28</td>
+                <td class="text-sm text-ink-dim">Hostname to 128-bit IPv6 Address (Forward Lookup)</td>
+                <td class="text-sm font-mono text-accent">2606:2800:220:1::1946</td>
+                <td class="text-sm text-ink">Yes (Coexists with A)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">CNAME Record</td>
+                <td class="text-sm font-mono text-accent">Type 5</td>
+                <td class="text-sm text-ink-dim">Alias Subdomain to Canonical Target Hostname</td>
+                <td class="text-sm font-mono text-accent">example.com.</td>
+                <td class="text-sm text-ink">No (Requires ALIAS/Flattening)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">PTR Record</td>
+                <td class="text-sm font-mono text-accent">Type 12</td>
+                <td class="text-sm text-ink-dim">IP Address to Hostname (Reverse DNS Lookup)</td>
+                <td class="text-sm font-mono text-accent">mail.example.com.</td>
+                <td class="text-sm text-ink">Published in .arpa zones</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Modern networks maintain dual-stack routing by publishing an A record beside an <a href="/aaaa-record/">AAAA Record</a>. A forward A record does not create a reverse <a href="/ptr-record/">PTR Record</a> automatically, because reverse pointers reside in <code>.in-addr.arpa</code> zones managed by the IP owner. Review all resource records in our directory of <a href="/dns-records/">DNS Record Types</a>.
+      </p>
+
+      <h2 id="5-common-a-record-mistakes-that-break-websites-and-how-to-avoid-them">5 Common A Record Mistakes That Break Websites (And How to Avoid Them)</h2>
+      <p>
+        Five common configuration mistakes cause a published A record to <strong class="text-ink">fail validation, expose internal networks, or route visitors to a dead or hijacked server</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Including Port Numbers (:8080), http://, or URL Paths (/app) in the Value Box:</strong> DNS panels accept only a bare 32-bit IPv4 address (<code>198.51.100.10</code>). Entering <code>198.51.100.10:8080</code> or <code>https://...</code> fails validation because ports and paths belong to web servers, not DNS records.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Publishing Private RFC 1918 IP Addresses on a Public Website:</strong> Pointing a public domain to LAN ranges (<code>192.168.1.50</code>, <code>10.0.0.1</code>) leaves the site unreachable externally. Examining why private ip in public a record fails reveals that routers discard internal IPs; public sites require routable addresses detailed in <a href="/public-vs-private-ip/">Public vs Private IP Addresses</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Leaving a Conflicting CNAME or Parking Record on the Same Hostname:</strong> Registrars often pre-populate parking A records or CNAME records on root or <code>www</code> labels. Publishing your server IP without deleting parking records causes resolvers to balance traffic between your site and the parking page.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Dangling A Records Pointing to Released Cloud IPs (IP Takeover Risk):</strong> Terminating a cloud VM while leaving its A record active creates a dangling record. Cloud providers reassign released IPs to other accounts, allowing attackers to serve malicious content or request SSL certificates on your domain.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Forgetting to Create an A Record for Both @ and www:</strong> Configuring an A record solely on <code>@</code> leaves <code>www.example.com</code> returning <code>NXDOMAIN</code> unless accompanied by a dedicated <code>www</code> A record or CNAME record.
+        </li>
+      </ol>
+
+      <p>
+        Auditing DNS zones before decommissioning cloud virtual machines prevents dangling A records from exposing domains to takeover attacks, ensuring that DNS mappings retire simultaneously with server hardware.
+      </p>
+
+      <h2 id="how-to-add-check-and-verify-an-a-record-dig-nslookup-and-browser-doh">How to Add, Check, and Verify an A Record (dig, nslookup, and Browser DoH)</h2>
+      <p>
+        Publishing and validating a new A record in your DNS provider dashboard proceeds across <strong class="text-ink">4 configuration and terminal diagnosis steps</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Remove</strong> existing conflicting parking records or CNAME entries assigned to the target hostname (<code>@</code> or <code>www</code>).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Create</strong> the new record by setting Type to <code>A</code>, Host/Name to <code>@</code> (for the apex) or subdomain (<code>www</code>, <code>api</code>), Value to the server's public IPv4 address, and <abbr class="pd-term" data-tip="Time to Live (TTL): duration in seconds that DNS resolvers cache a resource record">TTL</abbr> to <code>3600</code> seconds.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Query</strong> the record from your terminal using <code>dig</code> or <code>nslookup</code> to confirm that authoritative servers and recursive resolvers return the correct IPv4 address:
+          <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># Query A record on Linux / macOS:
+dig example.com A +short
+
+# Query A record with remaining TTL countdown:
+dig example.com A +noall +answer
+
+# Query A record on Windows Command Prompt:
+nslookup -type=a example.com 1.1.1.1</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Confirm</strong> global DNS synchronization across international test checkpoints with our <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Running these lookup tools confirms proper IPv4 resolution across local devices and public resolvers. Maintaining accurate A records establishes the foundation for web accessibility, mail exchange reliability, and resilient domain routing across the global internet.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have multiple A records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. Publishing multiple A records on the exact same hostname with different IPv4 addresses distributes traffic across several servers (Round-Robin DNS). Leaving an old web host's A record active alongside a new server causes half of all visitors to route to the retired host.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I include a port number (like 198.51.100.10:8080) in an A record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No. An A record accepts only a 32-bit IPv4 address (four numbers from 0 to 255 separated by dots) with no field for port numbers. Deploying a reverse proxy (like NGINX or Cloudflare) on port 80/443 routes domain traffic to a custom backend port like 8080 or 3000 without exposing the port in the browser.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use an A record or a CNAME record for my www subdomain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In practice, we recommend using a CNAME record for www (www.example.com -> example.com) and keeping a single A record on the root domain (@). That architecture ensures that when the server IPv4 address changes, editing the single root A record automatically updates the www subdomain.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does an A record change take to update?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world cutovers, editing an existing A record takes as long as the previous record's TTL timer (such as 5 minutes for a 300-second TTL, or 1 hour for 3600 seconds). Creating a brand-new subdomain A record that was never queried before resolves almost instantly across global networks.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
