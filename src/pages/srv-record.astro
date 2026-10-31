@@ -1,104 +1,342 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "SRV",
- "title": "SRV Record: Locating Services with DNS",
- "description": "SRV records explained in depth: the _service._proto naming scheme, priority and weight mechanics, and real deployments from SIP to Minecraft.",
- "intro": "SRV records answer 'where is this service?' rather than 'where is this server?'. They carry priority, weight, and port alongside the target host, letting clients discover and load-balance a specific protocol on your domain.",
- "deepDive": [
-  "The owner name is a strict two-part prefix: underscored service, underscored protocol, then your domain. _sip._tcp.example.com says 'the SIP service over TCP on this domain'. The convention looks alien next to plain hostnames, but it is what every SRV-aware client searches for, character for character.",
-  "Priority and weight work together. Priority is a hard order: clients try lower numbers first, exactly like MX. Among targets of equal priority, weight distributes connections proportionally, a 60/40 split for two servers both at priority 10. The port rides in the record itself, so the service can live on a non-standard port without clients hardcoding anything.",
-  "In practice you meet SRV in three worlds: VoIP and XMPP, where handsets and clients discover the server from the domain alone; Active Directory, where domain-joined machines locate Kerberos and LDAP via _kerberos._tcp and friends; and gaming, where a single SRV lets players connect with play.example.com while the real server sits on a hidden host and port. The target must resolve via A/AAAA; pointing SRV at a CNAME is technically tolerated but pointless."
- ],
- "example": "_sip._tcp.example.com.   3600  IN  SRV  10 60 5060 sip1.example.com.\n_sip._tcp.example.com.   3600  IN  SRV  10 40 5060 sip2.example.com.\n_minecraft._tcp.example. 3600  IN  SRV  0  5 25565 play.example.com.",
- "anatomy": [
-  [
-   "_sip._tcp",
-   "Service and protocol prefix; both underscored, both mandatory."
-  ],
-  [
-   "priority",
-   "Lower tried first; equal priorities share traffic by weight."
-  ],
-  [
-   "weight",
-   "Relative share among same-priority targets (0-65535)."
-  ],
-  [
-   "5060",
-   "The port the service listens on."
-  ],
-  [
-   "sip1.example.com.",
-   "Target hostname; must have an A/AAAA record."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between Priority and Weight in an SRV record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Priority controls failover order (clients always try the server with the lowest Priority number first and only use higher numbers as backups). Weight controls load balancing among servers that share the exact same Priority number (a higher Weight receives a larger percentage of traffic)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my SRV lookup return empty when I query my domain name?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An SRV record is never published on the bare root domain (example.com); it always lives under the _service._proto prefix (such as _sip._tls.example.com or _minecraft._tcp.example.com). Always include the full _service._proto.domain.com string when running an SRV lookup."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use an SRV record to hide a port number (like :8080) on a website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in practice web browsers (Chrome, Safari, Firefox, Edge) do not check SRV records when loading http:// or https:// URLs. Deploying an NGINX reverse proxy or Cloudflare Tunnel in front of the server routes standard port 443 traffic to backend port 8080 or 3000 without showing the port number."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is my DNS provider rejecting my SRV record with a syntax error?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world setups, 90% of SRV panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record."
+      }
+    }
   ]
- ],
- "uses": [
-  "SIP/VoIP provisioning and XMPP server discovery",
-  "Active Directory service location",
-  "Game server aliases (Minecraft and friends)",
-  "Any client that supports DNS-based service discovery"
- ],
- "steps": [
-  [
-   "Confirm the prefix",
-   "Get the exact _service._proto string from your software's docs; one wrong character makes it invisible."
-  ],
-  [
-   "Create the record",
-   "Host field gets the prefix, then priority, weight, port, and target in your panel's SRV fields."
-  ],
-  [
-   "Resolve the target",
-   "Verify the target hostname has an A record; SRV does not chase CNAME chains helpfully."
-  ],
-  [
-   "Test with a client",
-   "Or run an SRV lookup here to see exactly what clients discover."
-  ]
- ],
- "mistakes": [
-  "Missing the leading underscores in the prefix",
-  "Target without an A/AAAA record",
-  "Confusing weight with priority when the goal is ordering, not distribution",
-  "Expecting browsers to use SRV; they famously do not"
- ],
- "faqs": [
-  [
-   "Do browsers use SRV records?",
-   "No. Mainstream browsers skip SRV for websites; it exists for protocols and clients built to query it."
-  ],
-  [
-   "How do priority and weight differ?",
-   "Priority orders groups absolutely; weight splits load within one priority level."
-  ],
-  [
-   "Why underscores in the name?",
-   "They prevent collisions with real hostnames a human might create."
-  ],
-  [
-   "Can SRV point to a different domain?",
-   "Yes. Cross-domain targets are common for hosted services."
-  ],
-  [
-   "How do I check SRV records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should SRV records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "MX records: mail's specialized cousin",
-   "/mx-record/"
-  ],
-  [
-   "Check SRV records",
-   "/dns-record-lookup/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["SRV Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="SRV Record: What DNS Service Records Are, Syntax, Priority, Weight, and Examples"
+  description="Learn what an SRV record is in DNS, how its 7 fields work, priority vs weight routing, production examples for Microsoft 365, Autodiscover, and Minecraft."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SRV Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      SRV Record: What DNS Service Records Are, Syntax, Priority, Weight, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An <abbr class="pd-term" data-tip="SRV record (DNS Type 33): resource record specifying hostname and port for a network service">SRV record</abbr> is <strong class="text-ink">a DNS resource record specifying the target hostname and network port of a service</strong>. Applications like VoIP <abbr class="pd-term" data-tip="SIP (Session Initiation Protocol): signaling protocol used for initiating real-time voice and video calls">SIP</abbr>, Microsoft Teams, Active Directory, and Minecraft query SRV records automatically during connection setup. The <abbr class="pd-term" data-tip="Priority: 16-bit integer setting server failover preference, with lower numbers attempted first">priority</abbr> and <abbr class="pd-term" data-tip="Weight: 16-bit integer distributing load proportionally among servers with equal priority">weight</abbr> fields govern primary server failover and proportional load distribution.
+      </p>
+    </div>
+
+    <Diagram name="resolution" caption="DNS resolution flow: how clients query SRV records for service port numbers and target hostnames" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-the-structure-of-an-srv-record-the-7-fields-explained">Structure of an SRV record (7 fields)</a></li>
+        <li><a href="#how-do-srv-priority-and-weight-work-together-failover-vs-load-balancing">Priority vs weight mechanics</a></li>
+        <li><a href="#6-real-world-srv-record-examples-microsoft-365-autodiscover-active-directory-and-minecraft">6 real-world SRV record examples</a></li>
+        <li><a href="#what-are-the-3-strict-rules-and-limitations-of-srv-records">3 strict rules &amp; limitations</a></li>
+        <li><a href="#how-to-add-an-srv-record-in-dns-control-panels-and-verify-it-dig-and-nslookup">Add &amp; verify SRV records (dig &amp; nslookup)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-the-structure-of-an-srv-record-the-7-fields-explained">What Is the Structure of an SRV Record? (The 7 Fields Explained)</h2>
+      <p>
+        Administrators asking what is an srv record discover that an SRV record (Service Locator, IANA Type 33, standardized in RFC 2782) is <strong class="text-ink">the only traditional DNS resource record that includes a network <abbr class="pd-term" data-tip="Port: 16-bit transport layer numerical address between 1 and 65535 directing traffic to a specific software service">port</abbr> number (1 to 65535) alongside a target hostname, allowing applications to connect to non-standard ports without requiring users to type <code>:port</code> manually</strong>. Every SRV record uses an underscore-prefixed owner name (<code>_service._proto.domain.com</code>) followed by 4 data values: priority, weight, port, and target. The table below defines all 7 fields of a standard SRV record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following annotated BIND zone file excerpt demonstrates production SRV syntax across primary and backup endpoints:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; _service._proto.name.       TTL   Class  Type  Priority  Weight  Port  Target Hostname
+_sip._tls.example.com.        3600  IN     SRV   10        60      443   sip1.example.com.
+_sip._tls.example.com.        3600  IN     SRV   10        40      443   sip2.example.com.
+_sip._tls.example.com.        3600  IN     SRV   20        100     443   sip-backup.example.com.</code></pre>
+
+      <section class="not-prose my-6" aria-label="SRV record fields table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Field Name</th>
+                <th>Example Value</th>
+                <th>Valid Range / Format</th>
+                <th>Function in Service Discovery</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">1. Service (<code>_service</code>)</td>
+                <td class="text-sm font-mono text-accent">_sip, _minecraft, _ldap</td>
+                <td class="text-sm text-ink-dim">IANA symbolic name prefixed with underscore</td>
+                <td class="text-sm text-ink-dim">Identifies the specific application protocol requesting discovery.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">2. Protocol (<code>_proto</code>)</td>
+                <td class="text-sm font-mono text-accent">_tcp, _udp, _tls</td>
+                <td class="text-sm text-ink-dim">Transport protocol prefixed with underscore</td>
+                <td class="text-sm text-ink-dim">Specifies the transport layer protocol used by the endpoint service.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">3. Domain Name (<code>name</code>)</td>
+                <td class="text-sm font-mono text-accent">example.com.</td>
+                <td class="text-sm text-ink-dim">Standard domain or subdomain name</td>
+                <td class="text-sm text-ink-dim">Sets the base domain name under which the network service operates.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">4. TTL &amp; Class</td>
+                <td class="text-sm font-mono text-accent">3600 IN SRV</td>
+                <td class="text-sm text-ink-dim">Seconds (<abbr class="pd-term" data-tip="Time to Live (TTL): resolver cache expiration lifetime in seconds">TTL</abbr>), IN (Type 33)</td>
+                <td class="text-sm text-ink-dim">Sets resolver caching duration (<a href="/what-is-ttl-in-dns/">DNS TTL Explained</a>) and IANA resource type.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">5. Priority</td>
+                <td class="text-sm font-mono text-accent">10</td>
+                <td class="text-sm text-ink-dim">16-bit unsigned integer (0 to 65535)</td>
+                <td class="text-sm text-ink-dim">Determines failover rank where lower integers indicate higher preference (<a href="/mx-record/">MX Record</a> style).</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">6. Weight</td>
+                <td class="text-sm font-mono text-accent">60</td>
+                <td class="text-sm text-ink-dim">16-bit unsigned integer (0 to 65535)</td>
+                <td class="text-sm text-ink-dim">Distributes client connections proportionally among servers sharing identical Priority.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">7. Port &amp; Target</td>
+                <td class="text-sm font-mono text-accent">443 sip1.example.com.</td>
+                <td class="text-sm text-ink-dim">Port 1-65535 plus canonical hostname</td>
+                <td class="text-sm text-ink-dim">Specifies destination transport port (<a href="/common-network-ports/">Common Network Ports</a>) and resolving target hostname.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        The DNS specification mandates leading underscores for <code>_service</code> and <code>_proto</code> labels to prevent naming collisions with traditional hostnames. An owner name like <code>_sip._tcp.example.com</code> avoids overlapping with a conventional web host named <code>sip.tcp.example.com</code>, preserving namespace isolation. System administrators inspect live service records across international DNS checkpoints using our <a href="/srv-record-lookup/">SRV Record Lookup</a>.
+      </p>
+
+      <h2 id="how-do-srv-priority-and-weight-work-together-failover-vs-load-balancing">How Do SRV Priority and Weight Work Together? (Failover vs Load Balancing)</h2>
+      <p>
+        Analyzing srv priority vs weight reveals a 2-stage selection process where <strong class="text-ink">Priority controls primary-to-backup failover tiers (lower numbers take precedence) and Weight controls proportional traffic balancing within the same tier (higher numbers receive more load)</strong>. The resolution process completes across 4 sequential stages:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Group</strong> all returned SRV records by their Priority value and order the groups from lowest integer to highest (Priority 10 first, Priority 20 second).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Select</strong> only the servers in the lowest-numbered active tier (Priority 10 containing <code>sip1.example.com</code> with Weight 60 and <code>sip2.example.com</code> with Weight 40), bypassing Priority 20 entirely while either Priority 10 host responds.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Calculate</strong> the sum of all Weight values inside that active Priority 10 tier (60 + 40 = 100) and distribute client connections proportionally: <code>sip1</code> (Weight 60) receives 60 percent of traffic and <code>sip2</code> (Weight 40) receives 40 percent.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Fail over</strong> to the next tier (Priority 20 containing <code>sip-backup.example.com</code>) only if both Priority 10 servers fail connection handshakes or time out.
+        </li>
+      </ol>
+
+      <p>
+        RFC 2782 defines two special edge-case values for advanced routing. Assigning a Weight of 0 indicates that no proportional load balancing applies, instructing clients to select that server with a very low baseline probability alongside positive peers, or sequentially when all weights equal 0. Assigning a single period (<code>.</code>) to the Target field explicitly informs querying applications that the requested service is completely unavailable at the domain, instructing clients to abort connection attempts immediately without testing fallback hosts. Review broader infrastructure routing principles in our comprehensive guide to <a href="/dns-load-balancing/">DNS Load Balancing</a>.
+      </p>
+
+      <h2 id="6-real-world-srv-record-examples-microsoft-365-autodiscover-active-directory-and-minecraft">6 Real-World SRV Record Examples (Microsoft 365, Autodiscover, Active Directory, and Minecraft)</h2>
+      <p>
+        Enterprise collaboration platforms, email clients, directory services, and gaming servers rely on <strong class="text-ink">standardized <code>_service._proto</code> SRV records to discover connection ports and endpoints automatically</strong>. The table below lists 6 production SRV record configurations with their standard service labels, ports, and target hostnames.
+      </p>
+
+      <section class="not-prose my-6" aria-label="Production SRV record examples table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Application / Service</th>
+                <th><code>_service._proto</code> Owner Label</th>
+                <th>Priority</th>
+                <th>Weight</th>
+                <th>Port</th>
+                <th>Target Hostname Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">Microsoft Teams / Skype SIP</td>
+                <td class="text-sm font-mono text-accent">_sip._tls</td>
+                <td class="text-sm text-ink-dim">100</td>
+                <td class="text-sm text-ink-dim">1</td>
+                <td class="text-sm font-mono text-accent">443</td>
+                <td class="text-sm font-mono text-accent">sipdir.online.lync.com</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Microsoft Teams Federation</td>
+                <td class="text-sm font-mono text-accent">_sipfederationtls._tcp</td>
+                <td class="text-sm text-ink-dim">100</td>
+                <td class="text-sm text-ink-dim">1</td>
+                <td class="text-sm font-mono text-accent">5061</td>
+                <td class="text-sm font-mono text-accent">sipfed.online.lync.com</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Outlook / Exchange <abbr class="pd-term" data-tip="Autodiscover: automated client protocol for discovering email server endpoints and settings">Autodiscover</abbr></td>
+                <td class="text-sm font-mono text-accent">_autodiscover._tcp</td>
+                <td class="text-sm text-ink-dim">0</td>
+                <td class="text-sm text-ink-dim">0</td>
+                <td class="text-sm font-mono text-accent">443</td>
+                <td class="text-sm font-mono text-accent">autodiscover.outlook.com</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Minecraft Java Server</td>
+                <td class="text-sm font-mono text-accent">_minecraft._tcp</td>
+                <td class="text-sm text-ink-dim">0</td>
+                <td class="text-sm text-ink-dim">5</td>
+                <td class="text-sm font-mono text-accent">25565</td>
+                <td class="text-sm font-mono text-accent">mc-node1.example.com</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Active Directory Domain Controller</td>
+                <td class="text-sm font-mono text-accent">_ldap._tcp.dc._msdcs</td>
+                <td class="text-sm text-ink-dim">0</td>
+                <td class="text-sm text-ink-dim">100</td>
+                <td class="text-sm font-mono text-accent">389</td>
+                <td class="text-sm font-mono text-accent">dc01.corp.example.com</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">XMPP / Jabber Federation</td>
+                <td class="text-sm font-mono text-accent">_xmpp-server._tcp</td>
+                <td class="text-sm text-ink-dim">5</td>
+                <td class="text-sm text-ink-dim">0</td>
+                <td class="text-sm font-mono text-accent">5269</td>
+                <td class="text-sm font-mono text-accent">xmpp.example.com</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        The minecraft srv record and email Autodiscover configurations eliminate manual port entry for end users. Multiplayer hosts assigning non-standard ports like 25580 publish <code>_minecraft._tcp.play.example.com</code> with Port set to 25580, enabling gamers to join using simply <code>play.example.com</code>. In desktop messaging, mail clients query <code>_autodiscover._tcp</code> alongside mail submission records to detect IMAP and SMTP configurations automatically. Validate your domain's email discovery records using our dedicated <a href="/autodiscover-checker/">Autodiscover / Autoconfig Checker</a>.
+      </p>
+
+      <h2 id="what-are-the-3-strict-rules-and-limitations-of-srv-records">What Are the 3 Strict Rules and Limitations of SRV Records?</h2>
+      <p>
+        System administrators investigating why srv target cannot be a cname or ip discover that DNS standards and client software enforce <strong class="text-ink">3 strict operational rules on SRV records covering target hostname resolution, raw IP address prohibition, and standard web browser limitations</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">The Target Field Never Points to a CNAME Alias:</strong> RFC 2782 mandates that the target hostname of an SRV record points directly to a canonical domain name containing an <a href="/a-record/">A Record</a> (IPv4) or <a href="/aaaa-record/">AAAA Record</a> (IPv6). Pointing an SRV target to a <a href="/cname-record/">CNAME Record</a> creates illegal nested alias chains that cause VoIP phones, email clients, and Active Directory authentication agents to reject the record.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">The Target Field Never Contains a Raw IPv4 or IPv6 Address:</strong> Entering a raw numeric IP address (such as <code>198.51.100.10</code>) directly into the SRV Target field constitutes invalid syntax. Zone administrators create a dedicated A record first (such as <code>sip1.example.com</code> pointing to <code>198.51.100.10</code>, confirmed via our <a href="/a-record-lookup/">A Record Lookup</a>) and assign that resolvable hostname as the SRV target.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Web Browsers Do Not Query SRV Records for HTTP or HTTPS Websites:</strong> Mainstream browsers (Chrome, Safari, Firefox, Edge) deliberately skip SRV lookups for standard web browsing. Web servers operating on custom ports like 8080 or 3000 still require visitors to type <code>:8080</code> explicitly in the URL bar unless managed through an upstream proxy.
+        </li>
+      </ol>
+
+      <p>
+        Administrators seeking to expose web applications running on port 3000 or 8080 over clean HTTPS URLs place a reverse proxy (such as NGINX, Apache, or Cloudflare Tunnel) in front of the application server to handle standard port 443 traffic. Modern web standards address service binding via dedicated SVCB (Type 64) and HTTPS (Type 65) records rather than legacy SRV records. Explore the characteristics of every resource record in our complete index of <a href="/dns-records/">DNS Record Types</a>.
+      </p>
+
+      <h2 id="how-to-add-an-srv-record-in-dns-control-panels-and-verify-it-dig-and-nslookup">How to Add an SRV Record in DNS Control Panels and Verify It (dig and nslookup)</h2>
+      <p>
+        DNS management interfaces structure SRV record forms across separate input boxes, requiring <strong class="text-ink">4 configuration and verification steps to deploy service records cleanly across your authoritative DNS provider and terminal</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Identify</strong> how your DNS control panel separates service labels: providers like Cloudflare, GoDaddy, and Namecheap offer distinct form fields for Service (enter <code>_sip</code>), Protocol (select <code>_tls</code> or <code>_tcp</code>), and Name / Host (enter <code>@</code> for root or <code>play</code> for a subdomain), whereas raw zone files and Route 53 accept the composite owner label <code>_sip._tls.example.com.</code> directly.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Populate</strong> the numerical Priority (<code>10</code>), Weight (<code>60</code>), and Port (<code>443</code> or <code>25565</code>) fields, entering the destination hostname (<code>sip1.example.com</code>) into the Target field.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Query</strong> the specific service prefix from your command line using <code>dig</code> or <code>nslookup</code>, remembering that querying the bare apex domain returns empty results because the record exists strictly under the <code>_service._proto</code> namespace:
+          <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># Query SRV record on Linux / macOS (specify _service._proto):
+dig _sip._tls.example.com SRV +short
+
+# Query SRV record on Windows Command Prompt:
+nslookup -type=srv _sip._tls.example.com 1.1.1.1</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Confirm</strong> that global nameservers return uniform SRV answers using our worldwide <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Executing these diagnostic queries validates accurate service discovery from recursive resolvers down to client endpoints. Maintaining correct SRV record configurations ensures smooth operation for VoIP SIP networks, Microsoft Teams federations, email autodiscovery routines, and multiplayer gaming clusters across the internet.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between Priority and Weight in an SRV record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Priority controls failover order (clients always try the server with the lowest Priority number first and only use higher numbers as backups). Weight controls load balancing among servers that share the exact same Priority number (a higher Weight receives a larger percentage of traffic).</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my SRV lookup return empty when I query my domain name?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">An SRV record is never published on the bare root domain (example.com); it always lives under the _service._proto prefix (such as _sip._tls.example.com or _minecraft._tcp.example.com). Always include the full _service._proto.domain.com string when running an SRV lookup.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use an SRV record to hide a port number (like :8080) on a website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, in practice web browsers (Chrome, Safari, Firefox, Edge) do not check SRV records when loading http:// or https:// URLs. Deploying an NGINX reverse proxy or Cloudflare Tunnel in front of the server routes standard port 443 traffic to backend port 8080 or 3000 without showing the port number.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is my DNS provider rejecting my SRV record with a syntax error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world setups, 90% of SRV panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
