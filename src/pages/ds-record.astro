@@ -1,99 +1,330 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "DS",
- "title": "DS Record: The DNSSEC Chain of Trust",
- "description": "DS records explained in depth: key tags, algorithms, digests, activation and rollover procedure, and the SERVFAIL outage class they cause.",
- "intro": "The DS record is the link in DNSSEC's chain of trust: published in the parent zone, it vouches for the child zone's key so validators can verify every signed answer below. It is also the record whose stale copy can take an entire domain offline with SERVFAIL.",
- "deepDive": [
-  "DNSSEC works by chains. Your zone signs its records with private keys and publishes the public halves as DNSKEY records. But a key you publish yourself proves nothing; something the verifier already trusts must vouch for it. That voucher is the DS record: a digest of your key-signing key, placed one level up. Validating resolvers walk root to TLD to your domain, checking each link's signature against the DS above it. Any break, and the safe response is to fail: not 'wrong answer' but 'no answer', domain-wide.",
-  "That severity explains the operational fear around DS. The classic outage: a provider rotates its DNSSEC keys, your registrar still publishes the DS of the old key, and every validating resolver on earth returns SERVFAIL for your domain. The fix discipline is strict ordering: when rotating, publish the DS for the new key first, let it propagate, then retire the old key. When disabling DNSSEC, delete the DS and wait before dropping signatures.",
-  "The record itself packs four values: the key tag (a shorthand for which DNSKEY), the algorithm number (8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519), the digest type (2 SHA-256), and the digest itself. Providers and registrars that integrate well surface a copy-paste tuple; when copying by hand, whitespace or truncation in the digest is the usual killer."
- ],
- "example": "example.com.  3600  IN  DS  2371 13 2 1F987CC6583B6E1FD8C7F2D6BCB6A9C4C6B6A9C4C6B6A9C4C6B6A9C4",
- "anatomy": [
-  [
-   "2371",
-   "Key tag identifying which DNSKEY this digest matches."
-  ],
-  [
-   "13",
-   "Algorithm: 8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519."
-  ],
-  [
-   "2",
-   "Digest type; 2 is SHA-256."
-  ],
-  [
-   "(hash)",
-   "The digest of the child's key. One bad character breaks validation."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between a DS record and a DNSKEY record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A DNSKEY record is published in your own child DNS zone and holds the full public cryptographic signing key (ZSK Flag 256 and KSK Flag 257). A DS record is published one level up in the parent TLD zone (via your registrar) and holds a short SHA-256 hash of your KSK so resolvers trust your DNSKEY."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why can't I add my domain's DS record inside my own DNS zone table?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because the purpose of a DS record is for the parent zone (.com) to vouch for your child zone (example.com), a DS record placed inside your own zone cannot vouch for itself. You always submit your root domain's DS record in your domain registrar's DNSSEC settings (only adding a DS record in your own DNS table when delegating a signed subdomain)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which Digest Type should I select when my registrar asks for a DS record: 1 (SHA-1), 2 (SHA-256), or 4 (SHA-384)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, always select Digest Type 2 (SHA-256), which produces a 64-character hexadecimal hash and is universally supported by every registrar and TLD registry. Never use Digest Type 1 (SHA-1), which is deprecated and rejected by modern registries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my website fail on Google DNS (8.8.8.8) and Cloudflare (1.1.1.1) after I changed my nameservers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world migrations, this happens when your previous DNS provider had DNSSEC enabled and you switched nameservers without deleting the old DS record at your registrar first. Validating resolvers like 1.1.1.1 and 8.8.8.8 see the stale DS record, detect missing child signatures, and return SERVFAIL; delete the old DS record at your registrar to restore access."
+      }
+    }
   ]
- ],
- "uses": [
-  "Activating DNSSEC at your registrar once your zone signs",
-  "Key rollovers, in the safe order",
-  "Root-causing domain-wide SERVFAIL incidents"
- ],
- "steps": [
-  [
-   "Enable signing at your DNS host",
-   "Cloudflare and major hosts toggle DNSSEC and display the DS tuple to publish."
-  ],
-  [
-   "Publish the DS at the registrar",
-   "Copy all four fields exactly; this is the chain link."
-  ],
-  [
-   "Wait, then validate",
-   "After propagation, a DS lookup should return your record, and validators (Quad9, Cloudflare) should resolve your domain normally."
-  ],
-  [
-   "Rotate in order",
-   "New key's DS first, propagate, then remove the old key."
-  ]
- ],
- "mistakes": [
-  "Rotating keys without updating the DS: domain-wide SERVFAIL",
-  "Truncated or whitespace-corrupted digests when copying manually",
-  "Deleting the DS while signatures still exist, or vice versa",
-  "Assuming DNSSEC validation failures show a nice error; users see timeouts and SERVFAIL"
- ],
- "faqs": [
-  [
-   "What is a DS record for?",
-   "It links a child zone's DNSSEC key to the parent zone, letting validators build an unbroken chain of trust from the root."
-  ],
-  [
-   "Where is the DS record published?",
-   "In the parent zone, configured through your registrar."
-  ],
-  [
-   "Why did my whole site go down after a DNSSEC change?",
-   "A broken chain, usually a stale DS after key rotation. Validators must refuse, so the domain SERVFAILs."
-  ],
-  [
-   "Is DNSSEC worth enabling?",
-   "It defeats cache-poisoning and answer tampering. With a well-integrated host and registrar it is a toggle; the danger zone is manual key handling."
-  ],
-  [
-   "How do I check DS records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should DS records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "DNSKEY records",
-   "/dnskey-record/"
-  ],
-  [
-   "What is DNSSEC",
-   "/what-is-dnssec/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["DS Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="DS Record: What a DNSSEC Delegation Signer Record Is, Fields, and Setup"
+  description="Learn what a DNS DS record is, how Key Tag, Algorithm, and Digest Type work, resolver validation, and how to configure or rotate DS records safely."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DS Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DS Record: What a DNSSEC Delegation Signer Record Is, Fields, and Setup
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A <abbr class="pd-term" data-tip="DS record (Type 43): parent zone record containing a cryptographic hash of a child zone's KSK">Delegation Signer (DS) record</abbr> is <strong class="text-ink">a DNSSEC resource record published in the parent zone storing a cryptographic hash of your <abbr class="pd-term" data-tip="Key Signing Key (KSK): public key (DNSKEY flag 257) used to sign other DNSKEY records">Key Signing Key</abbr></strong>. Validating recursive resolvers compare this parent digest against your child <abbr class="pd-term" data-tip="DNSKEY: resource record storing public cryptographic signing keys for DNSSEC">DNSKEY</abbr> record. The 4 fields of a DS record establish an unbroken chain of trust.
+      </p>
+    </div>
+
+    <Diagram name="resolution" caption="DNS resolution flow: how recursive resolvers query DS records from parent TLD zones to validate child DNSKEY records" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-a-ds-record-and-what-do-its-4-fields-mean-syntax-and-anatomy">What is a DS record &amp; 4 fields</a></li>
+        <li><a href="#which-ds-digest-type-and-algorithm-numbers-are-recommended-reference-matrix">Digest types &amp; algorithm matrix</a></li>
+        <li><a href="#how-do-validating-resolvers-use-a-ds-record-in-the-chain-of-trust-5-steps">Chain of trust validation (5 steps)</a></li>
+        <li><a href="#where-do-you-add-a-ds-record-domain-registrar-vs-your-own-dns-zone-panel">Where to add a DS record</a></li>
+        <li><a href="#how-to-add-rotate-or-remove-a-ds-record-safely-without-causing-a-servfail-outage">Safe addition, rotation &amp; removal</a></li>
+        <li><a href="#how-to-check-your-domains-ds-record-dig-nslookup-and-browser-doh">Check your DS record (dig &amp; nslookup)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-a-ds-record-and-what-do-its-4-fields-mean-syntax-and-anatomy">What Is a DS Record and What Do Its 4 Fields Mean? (Syntax and Anatomy)</h2>
+      <p>
+        In DNSSEC architecture, a ds record dns resource record (IANA Type 43, RFC 4034) <strong class="text-ink">differs from standard records by residing in the parent Top-Level Domain (TLD) zone (such as .com) via your registrar rather than your own zone file</strong>. Analyzing a ds record vs dnskey demonstrates that while DNSKEY holds the full public key, a DS record holds a 4-field cryptographic fingerprint (Key Tag, Algorithm, Digest Type, and Digest) of your child Key Signing Key (DNSKEY Flag 257). Every ds record key tag algorithm digest type tuple provides the parameters for resolver verification. The table below defines all 4 fields of a standard DS record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following production DS record example illustrates parent zone syntax holding a 64-character SHA-256 digest:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; Child Domain   TTL    Class  Type  Key Tag  Algorithm  Digest Type  SHA-256 Digest (64 Hex Characters)
+example.com.     86400  IN     DS    2371     13         2            1F987CC6583B6E1FD8C7F2D6BCB6A9C4C6B6A9C4C6B6A9C4C6B6A9C412345678</code></pre>
+
+      <section class="not-prose my-6" aria-label="DS record fields table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>DS Field</th>
+                <th>Example Value</th>
+                <th>Format / Bit Size</th>
+                <th>Function in DNSSEC Validation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">1. Key Tag</td>
+                <td class="text-sm font-mono text-accent">2371</td>
+                <td class="text-sm text-ink-dim">16-bit integer (0 to 65535)</td>
+                <td class="text-sm text-ink-dim">Short numerical identifier calculated from DNSKEY RDATA to locate which key to test quickly.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">2. Algorithm</td>
+                <td class="text-sm font-mono text-accent">13</td>
+                <td class="text-sm text-ink-dim">8-bit integer (8, 13, 15)</td>
+                <td class="text-sm text-ink-dim">Identifies the signing algorithm of the referenced child <a href="/dnskey-record/">DNSKEY Record</a> (13 = ECDSA P-256).</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">3. Digest Type</td>
+                <td class="text-sm font-mono text-accent">2</td>
+                <td class="text-sm text-ink-dim">8-bit integer (1, 2, 4)</td>
+                <td class="text-sm text-ink-dim">Specifies the hash function used to compute the Digest (2 = SHA-256 standard, 4 = SHA-384).</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">4. Digest</td>
+                <td class="text-sm font-mono text-accent">1F987CC6...</td>
+                <td class="text-sm text-ink-dim">Hex string (64 chars for SHA-256)</td>
+                <td class="text-sm text-ink-dim">One-way hash calculated over the concatenated child domain owner name and DNSKEY RDATA.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        The <abbr class="pd-term" data-tip="Key Tag: 16-bit integer computed as a checksum over DNSKEY RDATA to quickly identify candidate keys">Key Tag</abbr> and Digest operate as a cooperative pair: when a domain publishes multiple public keys during a scheduled key rollover, the 16-bit Key Tag lets resolving validators identify the candidate key instantly, and the 64-character <abbr class="pd-term" data-tip="SHA-256 Digest: 256-bit cryptographic hash rendered as a 64-character hexadecimal string">SHA-256 digest</abbr> supplies the unforgeable cryptographic proof. Inspect any domain's live parent delegation hash in the <a href="/ds-record-lookup/">DS Record Lookup (DNSSEC)</a>.
+      </p>
+
+      <h2 id="which-ds-digest-type-and-algorithm-numbers-are-recommended-reference-matrix">Which DS Digest Type and Algorithm Numbers Are Recommended? (Reference Matrix)</h2>
+      <p>
+        Modern DNSSEC deployments pair <strong class="text-ink">Digest Type 2 (SHA-256, 64 hexadecimal characters) or Digest Type 4 (SHA-384, 96 hexadecimal characters) with Algorithm 13 (ECDSAP256SHA256) or Algorithm 15 (Ed25519)</strong>, while retiring legacy SHA-1 digests. The table below lists official IANA Digest Types and Algorithm numbers with their exact character lengths and current security status.
+      </p>
+
+      <section class="not-prose my-6" aria-label="DS digest types and algorithm matrix">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Field Category</th>
+                <th>Number Code</th>
+                <th>Cryptographic Standard</th>
+                <th>Exact Digest Hex Length</th>
+                <th>Current IETF Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">Digest Type</td>
+                <td class="text-sm font-mono text-accent">2</td>
+                <td class="text-sm text-ink">SHA-256 (RFC 4509)</td>
+                <td class="text-sm font-mono text-accent">64 hex characters (32 bytes)</td>
+                <td class="text-sm text-ink-dim">Recommended Default; supported universally across all registrars and TLD registries.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Digest Type</td>
+                <td class="text-sm font-mono text-accent">4</td>
+                <td class="text-sm text-ink">SHA-384 (RFC 6605)</td>
+                <td class="text-sm font-mono text-accent">96 hex characters (48 bytes)</td>
+                <td class="text-sm text-ink-dim">Supported high-security standard; typically paired with P-384 elliptic curves.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Digest Type</td>
+                <td class="text-sm font-mono text-accent">1</td>
+                <td class="text-sm text-ink">SHA-1 (RFC 4034)</td>
+                <td class="text-sm font-mono text-accent">40 hex characters (20 bytes)</td>
+                <td class="text-sm text-ink-dim">Deprecated per RFC 8624; vulnerable to hash collision attacks.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Algorithm</td>
+                <td class="text-sm font-mono text-accent">13</td>
+                <td class="text-sm text-ink">ECDSAP256SHA256 (ECDSA P-256)</td>
+                <td class="text-sm text-ink-dim">Matches Digest Type (64 chars)</td>
+                <td class="text-sm text-ink-dim">Recommended Default; deployed by Cloudflare, AWS Route 53, and Google Cloud DNS.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Algorithm</td>
+                <td class="text-sm font-mono text-accent">15</td>
+                <td class="text-sm text-ink">Ed25519 (RFC 8080)</td>
+                <td class="text-sm text-ink-dim">Matches Digest Type (64 chars)</td>
+                <td class="text-sm text-ink-dim">Recommended Modern Curve; delivers compact signatures with fast validation.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Algorithm</td>
+                <td class="text-sm font-mono text-accent">8</td>
+                <td class="text-sm text-ink">RSASHA256 (2048-bit RSA)</td>
+                <td class="text-sm text-ink-dim">Matches Digest Type (64 chars)</td>
+                <td class="text-sm text-ink-dim">Supported Legacy Standard; generates larger cryptographic packets than Algorithm 13.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        When your DNS host displays a Digest Type 2 (SHA-256) hash for your registrar, the hexadecimal string contains exactly 64 characters without spaces. Truncating characters or pasting a 40-character SHA-1 string under Digest Type 2 causes immediate validation failure across resolvers.
+      </p>
+
+      <h2 id="how-do-validating-resolvers-use-a-ds-record-in-the-chain-of-trust-5-steps">How Do Validating Resolvers Use a DS Record in the Chain of Trust? (5 Steps)</h2>
+      <p>
+        A DNSSEC-validating recursive resolver (such as Cloudflare 1.1.1.1 or Google 8.8.8.8) uses the parent DS record to <strong class="text-ink">verify the authenticity of child signing keys across 5 cryptographic steps</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Query</strong> the parent TLD nameserver (such as <code>.com</code>) for the target domain's <a href="/ns-record/">NS Record</a> delegation and its DS record, which is signed by the parent TLD's private key.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Fetch</strong> the child domain's DNSKEY resource record set (via <a href="/dnskey-record-lookup/">DNSKEY Record Lookup</a>) from authoritative nameservers, locating the Key Signing Key (KSK, DNSKEY Flag 257) matching the DS record's Key Tag (2371) and Algorithm (13).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Calculate</strong> a fresh local cryptographic hash of the child domain's owner name and DNSKEY 257 public key using the hash function specified in Digest Type (2 = SHA-256).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Compare</strong> the locally calculated 64-character SHA-256 hash against the Digest string published in the parent DS record byte-for-byte.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Trust</strong> the child zone's DNSKEY records and set the Authenticated Data (AD=1) header flag if the digests match, or abort resolution and return <abbr class="pd-term" data-tip="SERVFAIL (Server Failure): DNS RCODE 2 indicating resolution failure, returned by validating resolvers when DNSSEC signatures are invalid or broken">SERVFAIL</abbr> (RCODE 2) to protect the visitor if the digests mismatch.
+        </li>
+      </ol>
+
+      <p>
+        Publishing DNSKEY records in a child zone without a corresponding DS record in the parent TLD leaves the domain in an insecure, unsigned state. The website resolves normally without error, but lacks cryptographic tamper resistance. Review complete validation fundamentals in <a href="/what-is-dnssec/">What Is DNSSEC</a> and test your domain with our <a href="/dnssec-checker/">DNSSEC Checker</a>.
+      </p>
+
+      <h2 id="where-do-you-add-a-ds-record-domain-registrar-vs-your-own-dns-zone-panel">Where Do You Add a DS Record? (Domain Registrar vs Your Own DNS Zone Panel)</h2>
+      <p>
+        Determining where is a ds record published depends on <strong class="text-ink">which zone you are securing across 3 distinct delegation scenarios</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Securing Your Root Domain (Publish at Your Domain Registrar):</strong> Administrators never add a root domain's DS record inside their own DNS zone table. The parent of <code>example.com</code> is the <code>.com</code> TLD registry, meaning you copy the 4 DS values from your DNS host and paste them into the DNSSEC management screen at your domain registrar, as demonstrated in <a href="/enable-dnssec-cloudflare/">How to Enable DNSSEC in Cloudflare</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Securing a Delegated Subdomain (Publish in Your Own Zone Panel):</strong> Selecting Type: DS inside your own DNS dashboard is reserved exclusively for delegating a child subdomain (like <code>sub.example.com</code>) to separate nameservers. In that architecture, <code>example.com</code> acts as the parent zone, hosting both NS and DS records for the child subdomain.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Automated Parent Updates via CDS and CDNSKEY:</strong> Several TLD registries scan child zones for <abbr class="pd-term" data-tip="CDS (Child DS, Type 59): record published in a child zone signaling parent registries to automatically publish or update corresponding DS records">CDS</abbr> (Child DS, Type 59) and CDNSKEY (Type 60) records, enabling authoritative DNS providers to publish and roll parent DS records automatically without manual intervention.
+        </li>
+      </ol>
+
+      <p>
+        Verifying parent-child delegation synchronization ensures that parent registries and authoritative nameservers agree on signing states, verifiable in our <a href="/delegation-checker/">DNS Delegation Checker</a>.
+      </p>
+
+      <h2 id="how-to-add-rotate-or-remove-a-ds-record-safely-without-causing-a-servfail-outage">How to Add, Rotate, or Remove a DS Record Safely Without Causing a SERVFAIL Outage</h2>
+      <p>
+        A stale ds record servfail outage occurs when a parent registry hash points to a missing or retired child key. Mastering how to add or remove a ds record at registrar requires <strong class="text-ink">3 strict operational procedures when enabling, rotating, or retiring keys</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Enabling DNSSEC (Sign Child Zone First, Add Parent DS Second):</strong> Turn on DNSSEC signing at your authoritative DNS host first and wait 15 minutes for DNSKEY and RRSIG records to propagate before submitting the DS record at your domain registrar.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Rotating a Key Signing Key (Publish Both DS Records in Parallel):</strong> During a KSK rollover, maintain both old and new KSKs in the child zone, add the new DS record alongside the old DS record at your registrar, wait 24 to 48 hours for the parent <abbr class="pd-term" data-tip="Time to Live (TTL): resolver cache expiration lifetime in seconds">TTL</abbr> (<a href="/what-is-ttl-in-dns/">DNS TTL Explained</a>) to expire, and then delete the old DS record.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Switching DNS Providers (Delete Parent DS First, Wait TTL, Change Nameservers Second):</strong> Before updating nameservers to a new provider, delete the DS record at your domain registrar first and wait 24 hours for parent TLD caches to clear before altering NS records.
+        </li>
+      </ol>
+
+      <p>
+        Failing to delete an old DS record before migrating nameservers causes resolvers to return SERVFAIL when the new host lacks matching keys. Immediate deletion of the DS record at the registrar restores resolution, as explained in <a href="/site-down-after-dns-change/">Site Down After a DNS Change?</a>.
+      </p>
+
+      <h2 id="how-to-check-your-domains-ds-record-dig-nslookup-and-browser-doh">How to Check Your Domain's DS Record (dig, nslookup, and Browser DoH)</h2>
+      <p>
+        Inspecting the live DS record published in your parent TLD zone confirms that public resolvers receive the correct trust anchor across <strong class="text-ink">3 diagnostic terminal checks</strong>:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># 1. Query the parent zone DS record on Linux / macOS:
+dig example.com DS +short
+# Output: 2371 13 2 1F987CC6583B6E1FD8C7F2D6BCB6A9C4...
+
+# 2. Query the child zone DNSKEYs (with computed Key Tags in comments):
+dig example.com DNSKEY +multiline
+
+# 3. Query DS record on Windows Command Prompt:
+nslookup -type=ds example.com 1.1.1.1</code></pre>
+
+      <p>
+        Running these diagnostic commands confirms that parent delegation records and child public keys align perfectly. Confirm global propagation using our <a href="/dns-propagation-checker/">DNS Propagation Checker</a>, and explore the complete standard specifications across all DNS record types in our directory of <a href="/dns-records/">DNS Record Types</a>.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between a DS record and a DNSKEY record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A DNSKEY record is published in your own child DNS zone and holds the full public cryptographic signing key (ZSK Flag 256 and KSK Flag 257). A DS record is published one level up in the parent TLD zone (via your registrar) and holds a short SHA-256 hash of your KSK so resolvers trust your DNSKEY.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why can't I add my domain's DS record inside my own DNS zone table?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because the purpose of a DS record is for the parent zone (.com) to vouch for your child zone (example.com), a DS record placed inside your own zone cannot vouch for itself. You always submit your root domain's DS record in your domain registrar's DNSSEC settings (only adding a DS record in your own DNS table when delegating a signed subdomain).</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which Digest Type should I select when my registrar asks for a DS record: 1 (SHA-1), 2 (SHA-256), or 4 (SHA-384)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In practice, always select Digest Type 2 (SHA-256), which produces a 64-character hexadecimal hash and is universally supported by every registrar and TLD registry. Never use Digest Type 1 (SHA-1), which is deprecated and rejected by modern registries.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my website fail on Google DNS (8.8.8.8) and Cloudflare (1.1.1.1) after I changed my nameservers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world migrations, this happens when your previous DNS provider had DNSSEC enabled and you switched nameservers without deleting the old DS record at your registrar first. Validating resolvers like 1.1.1.1 and 8.8.8.8 see the stale DS record, detect missing child signatures, and return SERVFAIL; delete the old DS record at your registrar to restore access.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
