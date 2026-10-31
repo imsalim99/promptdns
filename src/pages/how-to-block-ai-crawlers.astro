@@ -1,66 +1,202 @@
 ---
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Will blocking AI crawlers hurt my traffic?", "acceptedAnswer": { '@type': 'Answer', "text": "Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty." } },
-    {'@type': 'Question', 'name': "Which AI crawlers ignore robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds." } },
-    {'@type': 'Question', 'name': "Can I block AI crawlers in Cloudflare?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read." } }
-  ],
-};
 import BaseLayout from '../layouts/BaseLayout.astro';
 
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does blocking AI crawlers hurt my Google Search SEO rankings?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, blocking AI training crawlers (GPTBot, ClaudeBot, CCBot, and Google-Extended) has zero impact on your traditional Google Search rankings. Google Search relies on Googlebot, which operates independently from the Google-Extended training token."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do all AI bots respect robots.txt Disallow rules?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, robots.txt is a voluntary instruction. Reputable operators like OpenAI, Anthropic, Google, and Apple honor robots.txt for their training crawlers, whereas aggressive scrapers and spoofed bots ignore it unless you block their User-Agent and IP ranges with a Cloudflare WAF or NGINX HTTP 403 rule."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I block AI from training on my content while still appearing in ChatGPT Search and Perplexity?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, we recommend a split robots.txt policy: set Disallow: / for training crawlers (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot, Meta-ExternalAgent) while setting Allow: / for search indexers (OAI-SearchBot and PerplexityBot). This keeps your brand cited with clickable links in AI answers while opting out of model training."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why are AI bots still hitting my server after I blocked them in robots.txt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world server log audits, we see two culprits: first, CDN caching serving an old copy of your robots.txt file (purge your CDN cache after editing robots.txt), and second, non-compliant scrapers or user-triggered fetchers that ignore robots.txt and require a hard WAF or NGINX 403 block."
+      }
+    }
+  ]
+};
 ---
+
 <BaseLayout
-  schema={[faqSchema]}
-  title="How to Block AI Crawlers (robots.txt, WAF, and DNS)"
-  description="How to block AI crawlers: the exact robots.txt rules for GPTBot, ClaudeBot, Google-Extended and friends, plus WAF-level blocking for bots that ignore robots.txt."
-  
- breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Block AI Crawlers"]]}>
+  title="How to Block AI Crawlers: robots.txt, Cloudflare WAF, NGINX, and Server Rules"
+  description="Learn how to block AI crawlers: complete guide covering robots.txt rules for GPTBot, ClaudeBot, and Google-Extended, plus Cloudflare WAF, NGINX, and Apache blocks."
+  schema={[faq]}
+  breadcrumb={[
+    ["Home", "/"],
+    ["AI Web Infrastructure", "/ai-web-infrastructure/"],
+    ["Block AI Crawlers"]
+  ]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">Block AI Crawlers</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Block AI Crawlers</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      How to Block AI Crawlers: robots.txt, Cloudflare WAF, NGINX, and Server Rules
+    </h1>
+
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      Keeping AI systems off your content is a three-layer decision: robots.txt for the polite ones,
-      WAF rules for the ones that misbehave, and legal/technical walls for everything else. Here is
-      each layer, exactly.
-    </p>
+        Blocking AI crawlers <strong class="text-ink">prevents large language model (LLM) companies from scraping your website content for AI training or live answer generation</strong>. You declare opt-out rules in <code>robots.txt</code> for compliant bots (<code>GPTBot</code>, <code>ClaudeBot</code>, <code>Google-Extended</code>) and enforce hard <code>HTTP 403</code> blocks at your firewall or web server. The best blocking strategy separates training scrapers from AI search bots.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Block rules per crawler</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Crawler</th><th>Rule</th><th>Enforcement</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">GPTBot</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Honored</td></tr><tr><td class="font-medium text-ink">ClaudeBot</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Honored</td></tr><tr><td class="font-medium text-ink">Google-Extended</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Controls training only</td></tr><tr><td class="font-medium text-ink">Bytespider</td><td class="text-sm text-ink-dim">Disallow: /</td><td class="text-sm text-ink-dim">Reported unreliable; use edge rules</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#layer-1-robotstxt-works-for-compliant-bo">Layer 1: robots.txt (works for compliant bots)</a></li>
-        <li><a href="#layer-2-waf-and-network-rules-for-bots-t">Layer 2: WAF and network rules (for bots that ignore robots.txt)</a></li>
-        <li><a href="#layer-3-authentication-and-paywalls">Layer 3: authentication and paywalls</a></li>
-        <li><a href="#before-you-block-everything">Before you block everything</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#which-ai-crawlers-to-block">12 AI crawlers classified</a></li>
+        <li><a href="#method-1-how-to-block-ai-crawlers-in-robotstxt">robots.txt templates</a></li>
+        <li><a href="#method-2-how-to-block-ai-bots-at-the-server-level">NGINX and Apache 403</a></li>
+        <li><a href="#method-3-how-to-block-ai-scrapers-in-cloudflare-waf">Cloudflare WAF and IP blocks</a></li>
+        <li><a href="#method-4-page-level-x-robots-tag-headers-and-meta-tags">X-Robots-Tag and comparison</a></li>
+        <li><a href="#how-to-test-and-verify-that-ai-crawlers-are-blocked">Test and verify blocks</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
 
     <div class="rich-text mt-8">
-      <h2 id="layer-1-robotstxt-works-for-compliant-bo">Layer 1: robots.txt (works for compliant bots)</h2>
-      <p>Drop this block into your robots.txt to refuse the major AI training crawlers:</p>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: GPTBot
-Disallow: /
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="which-ai-crawlers-to-block">Which AI Crawlers to Block: Training Bots vs AI Search Bots vs Fetchers</h2>
+        <p>
+          An AI crawler is <strong class="text-ink">an automated bot that fetches web pages for an AI company across 3 separate jobs: LLM model training (<code>GPTBot</code>, <code>ClaudeBot</code>, <code>CCBot</code>), AI search citation indexing (<code>OAI-SearchBot</code>, <code>PerplexityBot</code>), and user-triggered live page fetching (<code>ChatGPT-User</code>)</strong>, while <code>Google-Extended</code> and <code>Applebot-Extended</code> act as training opt-out control tokens rather than standalone crawlers. Blocking every AI bot blindly removes your website from ChatGPT Search and Perplexity citations alongside training datasets. The table below classifies 12 primary AI user-agent tokens by operator, job type, and blocking effect.
+        </p>
 
-User-agent: OAI-SearchBot
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">User-Agent Token</th>
+                <th class="p-3 text-sm font-semibold text-ink">Operator</th>
+                <th class="p-3 text-sm font-semibold text-ink">Bot Category / Job</th>
+                <th class="p-3 text-sm font-semibold text-ink">Effect of Blocking (Disallow: /)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">GPTBot</td>
+                <td class="p-3 text-sm text-ink-dim">OpenAI</td>
+                <td class="p-3 text-sm font-medium text-accent">Training</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of OpenAI training.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">OAI-SearchBot</td>
+                <td class="p-3 text-sm text-ink-dim">OpenAI</td>
+                <td class="p-3 text-sm font-medium text-accent">AI Search</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Removes site from ChatGPT Search.</strong></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">ChatGPT-User</td>
+                <td class="p-3 text-sm text-ink-dim">OpenAI</td>
+                <td class="p-3 text-sm font-medium text-accent">Live Fetcher</td>
+                <td class="p-3 text-sm text-ink-dim">Blocks live queries in ChatGPT.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">ClaudeBot</td>
+                <td class="p-3 text-sm text-ink-dim">Anthropic</td>
+                <td class="p-3 text-sm font-medium text-accent">Training</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of Anthropic training.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">PerplexityBot</td>
+                <td class="p-3 text-sm text-ink-dim">Perplexity AI</td>
+                <td class="p-3 text-sm font-medium text-accent">AI Search</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Removes site from Perplexity search.</strong></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">Google-Extended</td>
+                <td class="p-3 text-sm text-ink-dim">Google</td>
+                <td class="p-3 text-sm font-medium text-accent">Control Token</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of Gemini training.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">Applebot-Extended</td>
+                <td class="p-3 text-sm text-ink-dim">Apple</td>
+                <td class="p-3 text-sm font-medium text-accent">Control Token</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of Apple training.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">Meta-ExternalAgent</td>
+                <td class="p-3 text-sm text-ink-dim">Meta</td>
+                <td class="p-3 text-sm font-medium text-accent">Training &amp; RAG</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of Meta Llama training.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">CCBot</td>
+                <td class="p-3 text-sm text-ink-dim">Common Crawl</td>
+                <td class="p-3 text-sm font-medium text-accent">Open Dataset</td>
+                <td class="p-3 text-sm text-ink-dim">Excludes site from Common Crawl.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">Bytespider</td>
+                <td class="p-3 text-sm text-ink-dim">ByteDance</td>
+                <td class="p-3 text-sm font-medium text-accent">Training Scraper</td>
+                <td class="p-3 text-sm text-ink-dim">Blocks ByteDance scraping.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">Amazonbot</td>
+                <td class="p-3 text-sm text-ink-dim">Amazon</td>
+                <td class="p-3 text-sm font-medium text-accent">Search &amp; AI</td>
+                <td class="p-3 text-sm text-ink-dim">Blocks Alexa and AWS indexing.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-medium text-ink">cohere-ai</td>
+                <td class="p-3 text-sm text-ink-dim">Cohere</td>
+                <td class="p-3 text-sm font-medium text-accent">Training &amp; RAG</td>
+                <td class="p-3 text-sm text-ink-dim">Opts out of Cohere training.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Blocking <code>GPTBot</code>, <code>ClaudeBot</code>, <a href="/google-extended/">Google-Extended</a>, or <a href="/applebot-extended/">Applebot-Extended</a> has zero negative impact on traditional Google Search or Bing rankings because Google Search uses Googlebot. Review operational nuances in <a href="/does-blocking-ai-crawlers-hurt-seo/">Does Blocking AI Crawlers Hurt SEO?</a> and inspect all cataloged bots in <a href="/ai-crawlers-list/">The Complete List of AI Crawlers and Bots</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-1-how-to-block-ai-crawlers-in-robotstxt">Method 1: How to Block AI Crawlers in robots.txt (2 Copy-Paste Templates)</h2>
+        <p>
+          To block compliant AI crawlers using your <abbr class="pd-term" data-tip="A standardized text file placed at the web root instructing web robots which URLs they are permitted to crawl.">robots.txt</abbr> file, paste <strong class="text-ink">1 of 2 rule templates at the root of your domain (<code>https://example.com/robots.txt</code>) depending on whether you want to block only AI model training or block all AI bots completely</strong>.
+        </p>
+
+        <p>
+          Operators select from 3 deployment options:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Template A: Block AI Training Scrapers Only, Allow AI Search Citations:</strong> This rule blocks <a href="/gptbot/">GPTBot</a>, <a href="/claudebot/">ClaudeBot</a>, Google-Extended, Applebot-Extended, CCBot, Meta-ExternalAgent, and <a href="/bytespider/">Bytespider</a> from model training, while allowing OAI-SearchBot and PerplexityBot to preserve search citations in AI answers:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>User-agent: GPTBot
 Disallow: /
 
 User-agent: ClaudeBot
@@ -69,60 +205,291 @@ Disallow: /
 User-agent: Google-Extended
 Disallow: /
 
-User-agent: PerplexityBot
+User-agent: Applebot-Extended
 Disallow: /
 
 User-agent: CCBot
 Disallow: /
 
+User-agent: Meta-ExternalAgent
+Disallow: /
+
 User-agent: Bytespider
 Disallow: /
 
-User-agent: Applebot-Extended
+User-agent: cohere-ai
 Disallow: /
 
-User-agent: meta-externalagent
-Disallow: /</pre>
-      <p>
-        Note what is deliberately absent: Googlebot. Blocking it removes you from Google Search and
-        AI Overviews alike, which almost no site wants. Verify your rules with the
-        <a href="/ai-crawler-checker/">AI Crawler Checker</a> after saving.
-      </p>
+User-agent: OAI-SearchBot
+Allow: /
 
-      <h2 id="layer-2-waf-and-network-rules-for-bots-t">Layer 2: WAF and network rules (for bots that ignore robots.txt)</h2>
-      <p>
-        robots.txt is a convention, not a fence. Bots with poor compliance reputations (Bytespider
-        historically among them) may fetch anyway. Cloudflare customers can enable managed AI-bot
-        rules or write a firewall rule on the user-agent string; any WAF can match
-        <code>User-Agent contains "Bytespider"</code> and issue a challenge or block. This layer
-        actually enforces.
-      </p>
+User-agent: PerplexityBot
+Allow: /</code></pre>
+            </div>
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Template B: Total AI Lockdown:</strong> This rule applies a blanket disallow across all AI agents, including OAI-SearchBot, ChatGPT-User, PerplexityBot, Amazonbot, and Diffbot while keeping search engines like Googlebot authorized:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+User-agent: Amazonbot
+User-agent: cohere-ai
+Disallow: /</code></pre>
+            </div>
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Template C: Block AI Crawlers From Specific Directories:</strong> Restricting access to sensitive paths protects documentation or premium sections while leaving marketing pages crawlable:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>User-agent: GPTBot
+User-agent: ClaudeBot
+Disallow: /blog/
+Disallow: /docs/
+Disallow: /pricing/</code></pre>
+            </div>
+          </li>
+        </ol>
 
-      <h2 id="layer-3-authentication-and-paywalls">Layer 3: authentication and paywalls</h2>
-      <p>
-        Content behind a login is not crawled, period. If your model is subscription content, the
-        reliable block is authentication plus rate limiting, with robots rules as the courtesy layer
-        on top.
-      </p>
+        <p class="mt-4">
+          The robots exclusion standard (<abbr class="pd-term" data-tip="RFC 9309 defines the syntax and parsing semantics of the robots.txt exclusion protocol.">RFC 9309</abbr>) operates as a voluntary instruction rather than an impenetrable security barrier. Reputable AI companies respect robots.txt rules, whereas unauthorized scrapers and spoofed agents ignore voluntary directives unless firewalls enforce hard rejections. Administrators explore standard directives in <a href="/robots-txt-guide/">robots.txt: The Complete Guide With Examples</a> and configure permissive policies in <a href="/how-to-allow-ai-crawlers/">How to Allow AI Crawlers</a>.
+        </p>
+      </section>
 
-      <h2 id="before-you-block-everything">Before you block everything</h2>
-      <ul>
-        <li>Blocking training crawlers does not remove you from search-style answers unless you also block their search bots (OAI-SearchBot, PerplexityBot).</li>
-        <li>Aggressive wildcard Disallow rules often take out legitimate crawlers with them; test changes with the <a href="/robots-txt-checker/">robots.txt checker</a>.</li>
-        <li>Vendors also run opt-out portals (OpenAI, Google) that operate independently of robots.txt.</li>
-      </ul>
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-2-how-to-block-ai-bots-at-the-server-level">Method 2: How to Block AI Bots at the Server Level (NGINX and Apache .htaccess HTTP 403)</h2>
+        <p>
+          To physically block AI crawlers that ignore robots.txt before they download your HTML or consume server CPU, configure <strong class="text-ink">an <abbr class="pd-term" data-tip="An HTTP status code indicating that the server understands the request but refuses to authorize it.">HTTP 403</abbr> Forbidden user-agent rejection rule inside NGINX (<code>nginx.conf</code>) or Apache (<code>.htaccess</code>)</strong>.
+        </p>
 
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/how-to-allow-ai-crawlers/">How to allow AI crawlers</a> (the other direction)</li>
-        <li><a href="/ai-crawlers-list/">The complete list of AI crawlers</a></li>
-        <li>Per-crawler guides: <a href="/gptbot/">GPTBot</a>, <a href="/claudebot/">ClaudeBot</a>, <a href="/google-extended/">Google-Extended</a>, <a href="/perplexitybot/">PerplexityBot</a>, <a href="/oai-searchbot/">OAI-SearchBot</a>, <a href="/ccbot/">CCBot</a>, <a href="/bytespider/">Bytespider</a></li>
-        <li><a href="/ai-crawler-verification/">Verify a crawler with reverse DNS</a></li>
-        <li><a href="/block-ai-crawlers-cloudflare/">Block AI crawlers with Cloudflare</a></li>
-      </ul>
+        <p>
+          Administrators enforce origin-level blocking through 2 configurations:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Block AI Crawlers in NGINX:</strong> The NGINX <code>map</code> directive matches user-agent strings via hash tables. Add this block to the <code>http &#123;&#125;</code> section of your configuration, then reject matching traffic inside your <code>server &#123;&#125;</code> block:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>map $http_user_agent $block_ai_bots &#123;
+    default 0;
+    "~*(GPTBot|ClaudeBot|CCBot|Bytespider|Meta-ExternalAgent|cohere-ai)" 1;
+&#125;
+
+if ($block_ai_bots) &#123;
+    return 403;
+&#125;</code></pre>
+            </div>
+            Validate syntax and reload NGINX with <code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Block AI Crawlers in Apache:</strong> Apache evaluates requests via the <code>mod_rewrite</code> module. Place these rewrite conditions at the head of your root <code>.htaccess</code> file to return immediate <code>403 Forbidden</code> headers:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>&lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine On
+    RewriteCond %&#123;HTTP_USER_AGENT&#125; (GPTBot|ClaudeBot|CCBot|Bytespider|Meta-ExternalAgent|cohere-ai) [NC]
+    RewriteRule .* - [F,L]
+&lt;/IfModule&gt;</code></pre>
+            </div>
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Policy tokens like Google-Extended and Applebot-Extended function as robots.txt directives rather than distinct HTTP <abbr class="pd-term" data-tip="A request header identifying the client browser or automated bot software to the server.">User-Agent</abbr> strings. Google crawls content using Googlebot while honoring Google-Extended in robots.txt, meaning origin firewall rules require maintaining robots.txt controls alongside user-agent blocks.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-3-how-to-block-ai-scrapers-in-cloudflare-waf">Method 3: How to Block AI Scrapers in Cloudflare WAF and by IP/ASN</h2>
+        <p>
+          Blocking AI crawlers at the CDN edge using <strong class="text-ink">Cloudflare AI Crawl Control, custom <abbr class="pd-term" data-tip="Web Application Firewall, a security system filtering malicious HTTP traffic and automated bots at the network edge.">WAF</abbr> expressions, and verified IP <abbr class="pd-term" data-tip="Classless Inter-Domain Routing, an IP address allocation method specifying network prefixes.">CIDR</abbr> ranges</strong> stops scraper traffic before it reaches origin servers or consumes bandwidth.
+        </p>
+
+        <p>
+          Edge protection deploys across 3 security layers:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Enable Cloudflare AI Crawl Control:</strong> Navigate in Cloudflare to Security &rarr; Bots &rarr; AI Crawl Control. Toggle automated blocking for scrapers operated by OpenAI, Anthropic, ByteDance, and Common Crawl. Enabling AI Labyrinth routes scrapers that violate robots.txt into synthetic loops that exhaust crawler budgets.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Deploy a Custom Cloudflare WAF Rule:</strong> Create a rule under Security &rarr; WAF &rarr; Custom rules with action Block using this compound expression:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code>(http.user_agent contains "GPTBot") or (http.user_agent contains "ClaudeBot") or (http.user_agent contains "CCBot") or (http.user_agent contains "Bytespider") or (http.user_agent contains "Meta-ExternalAgent")</code></pre>
+            </div>
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Block Stealth Scrapers by CIDR IP Ranges and Verify Reverse DNS:</strong> Scrapers that forge desktop user-agents are isolated by IP ranges. Operators publish JSON feeds of active IP blocks. Administrators audit scraper requests using the <a href="/ai-log-analyzer/">AI Crawler Log Analyzer</a> and confirm authenticity through forward-confirmed reverse DNS (<abbr class="pd-term" data-tip="Forward-Confirmed Reverse DNS, a verification method checking whether an IP matches its PTR and forward DNS records.">FCrDNS</abbr>) via the <a href="/reverse-ip-lookup/">Reverse IP Lookup</a> tool.
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Telemetry from Cloudflare Radar reveals automated bots represent 57.5% of internet traffic. Offloading bot filtering to edge firewalls preserves origin compute resources and shields hosting budgets.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-4-page-level-x-robots-tag-headers-and-meta-tags">Method 4: Page-Level X-Robots-Tag Headers and HTML Meta Tags (Plus 5-Method Comparison Table)</h2>
+        <p>
+          For granular page-by-page or PDF/image control, administrators add <strong class="text-ink"><abbr class="pd-term" data-tip="An HTTP header sent by web servers to instruct search engine and AI crawlers on indexing rules for non-HTML files.">X-Robots-Tag</abbr>: <code>noai, noimageai</code> HTTP response headers or HTML <code>&lt;meta&gt;</code> tags</strong>, though support across AI vendors varies compared to robots.txt and WAF blocks. The table below compares 5 AI crawler blocking methods by enforcement strength, granularity, and vendor support.
+        </p>
+
+        <p>
+          HTML documents restrict AI training via page-level meta directives:
+        </p>
+
+        <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+          <pre><code>&lt;!-- Inside HTML &lt;head&gt; on specific pages: --&gt;
+&lt;meta name="robots" content="noai, noimageai"&gt;</code></pre>
+        </div>
+
+        <p>
+          Non-HTML assets like PDF downloads and images enforce metadata protection through HTTP response headers emitted by NGINX:
+        </p>
+
+        <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+          <pre><code># Inside NGINX location block for downloadable assets:
+add_header X-Robots-Tag "noai, noimageai" always;</code></pre>
+        </div>
+
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">Blocking Method</th>
+                <th class="p-3 text-sm font-semibold text-ink">Enforcement Type</th>
+                <th class="p-3 text-sm font-semibold text-ink">Stops Non-Compliant Scrapers?</th>
+                <th class="p-3 text-sm font-semibold text-ink">Granularity</th>
+                <th class="p-3 text-sm font-semibold text-ink">Best Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-medium text-ink">1. /robots.txt (Disallow: /)</td>
+                <td class="p-3 text-sm text-ink-dim">Voluntary Policy (RFC 9309)</td>
+                <td class="p-3 text-sm font-medium text-ink">No (Reputable bots only)</td>
+                <td class="p-3 text-sm text-ink-dim">Domain or path</td>
+                <td class="p-3 text-sm text-ink-dim">Baseline for Google-Extended, Applebot-Extended, and GPTBot.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">2. Cloudflare WAF / AI Crawl Control</td>
+                <td class="p-3 text-sm text-ink-dim">Hard Edge Block (HTTP 403)</td>
+                <td class="p-3 text-sm font-medium text-accent">Yes (Blocks at CDN edge)</td>
+                <td class="p-3 text-sm text-ink-dim">Bot, path, ASN, IP</td>
+                <td class="p-3 text-sm text-ink-dim">Stopping bandwidth drain and edge scrapers.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">3. NGINX / Apache .htaccess (403)</td>
+                <td class="p-3 text-sm text-ink-dim">Hard Origin Block (HTTP 403)</td>
+                <td class="p-3 text-sm font-medium text-accent">Yes (Blocks matching User-Agents)</td>
+                <td class="p-3 text-sm text-ink-dim">Server or host</td>
+                <td class="p-3 text-sm text-ink-dim">VPS or servers without a CDN WAF.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">4. Operator CIDR IP / ASN Firewall</td>
+                <td class="p-3 text-sm text-ink-dim">Network Layer Block</td>
+                <td class="p-3 text-sm font-medium text-accent">Yes (Stops bots spoofing Chrome)</td>
+                <td class="p-3 text-sm text-ink-dim">IP subnet (/24, /48)</td>
+                <td class="p-3 text-sm text-ink-dim">Blocking known AI IP pools at iptables or security groups.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-ink">5. X-Robots-Tag / meta name="robots"</td>
+                <td class="p-3 text-sm text-ink-dim">Voluntary Page Directive</td>
+                <td class="p-3 text-sm font-medium text-ink">No (Not honored by all bots)</td>
+                <td class="p-3 text-sm text-ink-dim">Page, PDF, image</td>
+                <td class="p-3 text-sm text-ink-dim">Supplementary signal on PDFs and images.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          A two-layer defense architecture establishes the most reliable protection. Publishing explicit directives inside robots.txt ensures compliant bots respect your intellectual property, while edge firewall rules intercept bad-faith scrapers like Bytespider that disregard voluntary standards.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-to-test-and-verify-that-ai-crawlers-are-blocked">How to Test and Verify That AI Crawlers Are Blocked on Your Site (3 Steps)</h2>
+        <p>
+          After deploying robots.txt directives and server or WAF blocks, verify rules across <strong class="text-ink">3 live diagnostic tests</strong>.
+        </p>
+
+        <p>
+          Engineers verify crawler permissions through 3 diagnostic phases:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Audit Live Permissions Across Major AI User-Agents:</strong> Enter your domain into the <a href="/ai-crawler-checker/">AI Crawler Checker</a> to generate a status matrix covering GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot-Extended, CCBot, and Bytespider.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Validate robots.txt Syntax and Parser Formatting:</strong> Test your live file against syntax errors, wildcard conflicts, or missing end-of-line delimiters using the <a href="/robots-txt-checker/">robots.txt Checker and Validator</a> to prevent accidental disallow leaks.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Simulate Crawler Requests Directly From the Terminal:</strong> Send simulated requests with explicit user-agents using <code>curl -I -A</code> to confirm that server or WAF firewalls return <code>HTTP/2 403 Forbidden</code> for blocked scrapers while standard browser user-agents receive <code>HTTP/2 200 OK</code>:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code># Test GPTBot receives HTTP 403:
+curl -I -A "Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)" https://example.com
+
+# Test Googlebot receives HTTP 200:
+curl -I -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" https://example.com</code></pre>
+            </div>
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Establishing bot management forms an essential pillar of modern <a href="/ai-web-infrastructure/">AI Web Infrastructure</a>. Mastering how to block AI crawlers through balanced robots.txt Disallow rules, selective allowances for GPTBot, ClaudeBot, and Google-Extended, and enforceable Cloudflare WAF and NGINX 403 blocks maintains control over content distribution while keeping training scrapers separated from AI search bots.
+        </p>
+      </section>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will blocking AI crawlers hurt my traffic?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your Google rankings are unaffected. What changes is presence in AI answers, which is a business decision per vendor, not an SEO penalty.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which AI crawlers ignore robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Bytespider is reported to ignore it at times. For that one, edge-level blocking by autonomous system is the enforcement that holds.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I block AI crawlers in Cloudflare?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: the managed AI scraper blocking control, or a custom WAF rule on the user-agent token or ASN, blocks at the edge before robots.txt is even read.</p></details></div>
-      </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          Does blocking AI crawlers hurt my Google Search SEO rankings?
+          <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+        </summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+          No, blocking AI training crawlers (GPTBot, ClaudeBot, CCBot, and Google-Extended) has zero impact on your traditional Google Search rankings. Google Search relies on Googlebot, which operates independently from the Google-Extended training token.
+        </p>
+      </details>
+
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          Do all AI bots respect robots.txt Disallow rules?
+          <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+        </summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+          No, robots.txt is a voluntary instruction. Reputable operators like OpenAI, Anthropic, Google, and Apple honor robots.txt for their training crawlers, whereas aggressive scrapers and spoofed bots ignore it unless you block their User-Agent and IP ranges with a Cloudflare WAF or NGINX HTTP 403 rule.
+        </p>
+      </details>
+
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          How do I block AI from training on my content while still appearing in ChatGPT Search and Perplexity?
+          <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+        </summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+          In practice, we recommend a split robots.txt policy: set Disallow: / for training crawlers (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot, Meta-ExternalAgent) while setting Allow: / for search indexers (OAI-SearchBot and PerplexityBot). This keeps your brand cited with clickable links in AI answers while opting out of model training.
+        </p>
+      </details>
+
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          Why are AI bots still hitting my server after I blocked them in robots.txt?
+          <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+        </summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+          In real-world server log audits, we see two culprits: first, CDN caching serving an old copy of your robots.txt file (purge your CDN cache after editing robots.txt), and second, non-compliant scrapers or user-triggered fetchers that ignore robots.txt and require a hard WAF or NGINX 403 block.
+        </p>
+      </details>
+    </div>
+  </div>
 </BaseLayout>
