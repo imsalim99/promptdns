@@ -1,99 +1,343 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "TXT",
- "title": "TXT Record: The Workhorse of Modern DNS",
- "description": "TXT records explained in depth: the 255-character rule, SPF/DKIM/DMARC carriage, domain verification, and the mistakes that break email.",
- "intro": "TXT records attach arbitrary text to a DNS name, which sounds trivial until you realize they carry the entire email-authentication stack, domain-ownership proofs for hundreds of services, and assorted machine-to-machine config.",
- "deepDive": [
-  "Structurally, a TXT record is one or more quoted strings, each capped at 255 characters. Longer payloads, like DKIM public keys, are split into multiple strings that receivers concatenate in order. Providers usually handle the splitting; hand-editing zone files is where quoting bugs creep in.",
-  "The workhorse role: SPF lives at the apex as v=spf1..., DKIM public keys live at selector._domainkey subdomains, DMARC policy lives at _dmarc, and service verifications use their own prefixed names like _google-site-verify or _amazonses. This namespacing is why one domain can carry dozens of TXT records without collision, and it also means deleting a 'random string' record during cleanup can silently break email or a service integration months later.",
-  "SPF has a strict one-record rule: a name with two v=spf1 TXT strings evaluates to permerror, which receivers treat as no SPF at all. If two teams each added 'their' SPF, both are broken. The fix is always to merge mechanisms into one record, then re-check the 10-lookup budget."
- ],
- "example": "example.com.              IN  TXT  \"v=spf1 include:_spf.google.com include:sendgrid.net ~all\"\n_google-site-verify.  3600  IN  TXT  \"verification-token-here\"\ndefault._domainkey.   3600  IN  TXT  \"v=DKIM1; k=rsa; p=MIIBIjANBgkq...\"",
- "anatomy": [
-  [
-   "TXT",
-   "The record type. One or more quoted strings follow."
-  ],
-  [
-   "\"v=spf1 ...\"",
-   "The payload. v= prefixes mark machine-readable dialects: SPF, DKIM, DMARC."
-  ],
-  [
-   "_dmarc / selector._domainkey",
-   "Prefixed subdomains namespace TXT records per protocol or service."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why don't my DMARC or DKIM records show up when I run a TXT lookup on my domain?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Running a TXT lookup on your bare root domain (example.com) only returns TXT records published at @ (such as your SPF record and Google site verification). DMARC and DKIM policies live on specific subdomains, requiring queries targeted directly at _dmarc.example.com or selector._domainkey.example.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does adding a verification TXT record affect my website or email?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, adding a third-party ownership verification TXT record (such as google-site-verification= or MS=) produces zero effect on website traffic or email delivery, provided administrators add the value as a separate new TXT entry rather than modifying existing v=spf1 records."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it safe to delete Google Search Console or Microsoft verification TXT records after my domain is verified?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in practice you retain verification TXT records in your DNS zone for the entire lifecycle of the connected service. Google Search Console, Microsoft 365, and Google Workspace periodically re-check your DNS in the background and revoke administrative domain ownership if the verification token disappears."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if my TXT record is longer than 255 characters?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world DNS setups, a single continuous character-string cannot exceed 255 ASCII characters on the wire due to the 1-byte length prefix. Modern cloud DNS providers automatically split oversized values (such as 2048-bit DKIM keys) into multiple 255-character quoted strings, which validating resolvers concatenate without spaces."
+      }
+    }
   ]
- ],
- "uses": [
-  "SPF, DKIM public keys, and DMARC policy: the email-authentication stack",
-  "Domain ownership verification for Google, Microsoft, AWS, Stripe, and hundreds more",
-  "Machine-readable config: site verification, security policies like MTA-STS and TLS-RPT pointers"
- ],
- "steps": [
-  [
-   "Find what exists",
-   "A TXT lookup on your domain lists every record; the v= prefixes tell you which protocol each serves."
-  ],
-  [
-   "Check for duplicates",
-   "One v=spf1 per name, always. Two means both are broken."
-  ],
-  [
-   "Mind the 255 rule",
-   "Long values must split into quoted strings; our tools display the joined value receivers see."
-  ],
-  [
-   "Verify before deleting",
-   "Never remove an unexplained TXT record; it is probably a verification or authentication key something depends on."
-  ]
- ],
- "mistakes": [
-  "Two SPF records on one name: permerror, receivers ignore SPF entirely",
-  "Unquoted or mis-escaped strings that break parsing silently",
-  "Forgetting string splitting for keys longer than 255 characters",
-  "Cleanup sprees that delete verification records nobody could explain"
- ],
- "faqs": [
-  [
-   "How long can a TXT record be?",
-   "Each quoted string is capped at 255 characters, but a record can hold multiple strings that get concatenated, which is how long DKIM keys fit."
-  ],
-  [
-   "Can I have multiple TXT records on one name?",
-   "Yes for different purposes, no for SPF: exactly one v=spf1 record per name is valid."
-  ],
-  [
-   "Why did adding SPF break my email?",
-   "Most commonly a second v=spf1 record appeared, or the new include pushed past the 10-lookup limit. The SPF checker pinpoints both."
-  ],
-  [
-   "Do TXT records affect website speed?",
-   "No. They are only fetched by the systems that need them: mail servers and verification services."
-  ],
-  [
-   "How do I check TXT records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should TXT records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "SPF records",
-   "/spf-record/"
-  ],
-  [
-   "DKIM explained",
-   "/dkim/"
-  ],
-  [
-   "DMARC record syntax",
-   "/dmarc-record/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["TXT Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="TXT Record: What DNS Text Records Are, Uses, 255-Char Limit, and Examples"
+  description="Learn what a DNS TXT record is, inspect 7 production examples (SPF, DKIM, DMARC), master the 255-character limit, string splitting, and control panel syntax."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">TXT Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      TXT Record: What DNS Text Records Are, Uses, 255-Char Limit, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A DNS <abbr class="pd-term" data-tip="TXT record: DNS Type 16 resource record storing arbitrary text strings for email authentication and domain verification">TXT (Text) record</abbr> is <strong class="text-ink">a resource record that stores human-readable notes or machine-parsable text strings on a domain or subdomain</strong>. Automated services query TXT records to verify domain ownership and authenticate outbound email (<abbr class="pd-term" data-tip="SPF (Sender Policy Framework): email validation system specifying authorized sending mail servers in a TXT record">SPF</abbr>, <abbr class="pd-term" data-tip="DKIM (DomainKeys Identified Mail): cryptographic email signature verification method using public keys in TXT records">DKIM</abbr>, and <abbr class="pd-term" data-tip="DMARC: email authentication policy and reporting protocol published as a TXT record on _dmarc">DMARC</abbr>). The string format of a TXT record supports multiple key-value policies.
+      </p>
+    </div>
+
+    <Diagram name="authtrio" caption="How mail receivers authenticate inbound email by validating SPF, DKIM, and DMARC TXT records" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-a-dns-txt-record-and-what-does-its-structure-look-like">What is a DNS TXT record &amp; structure</a></li>
+        <li><a href="#7-real-world-uses-and-examples-of-dns-txt-records-reference-table">7 real-world uses and examples (table)</a></li>
+        <li><a href="#why-do-txt-records-have-a-255-character-limit-and-how-does-string-splitting-work">255-character limit &amp; string splitting</a></li>
+        <li><a href="#how-many-txt-records-can-a-domain-have-coexistence-rules-and-zone-hygiene">How many TXT records a domain can have</a></li>
+        <li><a href="#4-formatting-rules-for-adding-txt-records-in-dns-control-panels-quotes-and-spaces">4 DNS control panel formatting rules</a></li>
+        <li><a href="#how-to-check-and-verify-your-domains-txt-records-dig-nslookup-and-browser-doh">How to check &amp; verify TXT records</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-a-dns-txt-record-and-what-does-its-structure-look-like">What Is a DNS TXT Record and What Does Its Structure Look Like?</h2>
+      <p>
+        Originally introduced in 1987 (IANA Type 16) allowing system administrators to attach simple descriptive notes to a server hostname, the <strong class="text-ink">DNS TXT record has evolved into the primary machine-readable security and verification layer of the modern internet</strong>. Cloud platforms and mail receivers query structured <code>attribute=value</code> TXT strings published at your root domain (<code>@</code>) or dedicated underscore subdomains (<code>_dmarc</code>, <code>selector._domainkey</code>, <code>_mta-sts</code>) to prove domain control and enforce email authentication. The table below defines the core technical specifications and wire constraints of a DNS TXT record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following BIND zone file illustrates production TXT records across root domains and subdomains, including their assigned <abbr class="pd-term" data-tip="TTL (Time to Live): duration in seconds that resolvers cache a DNS record">TTL</abbr> values:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; Host / Owner Name            TTL   Class  Type  Quoted Text Value (RDATA Payload)
+example.com.                   3600  IN     TXT   "v=spf1 include:_spf.google.com -all"
+example.com.                   3600  IN     TXT   "google-site-verification=rXOxyZounnZasA8Z7oaD3c14JdjS9aKSW"
+_dmarc.example.com.            3600  IN     TXT   "v=DMARC1; p=reject; rua=mailto:dmarc@example.com;"
+google._domainkey.example.com. 3600  IN     TXT   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."</code></pre>
+
+      <section class="not-prose my-6" aria-label="DNS TXT record technical specifications table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Specification Field</th>
+                <th>Wire / Protocol Value</th>
+                <th>Standard Reference</th>
+                <th>Technical Function in DNS Architecture</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">1. IANA Record Type</td>
+                <td class="text-sm font-mono text-accent">Type 16 (0x0010)</td>
+                <td class="text-sm text-ink">RFC 1035 / RFC 1464</td>
+                <td class="text-sm text-ink-dim">Identifies the record as containing text or formatted character-string data.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">2. Storage Encoding</td>
+                <td class="text-sm font-mono text-accent">Binary Character-String</td>
+                <td class="text-sm text-ink">RFC 1035 Section 3.3.14</td>
+                <td class="text-sm text-ink-dim">Stores payload data as one or more discrete octet strings enclosed within quotes.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">3. String Chunk Limit</td>
+                <td class="text-sm font-mono text-accent">255 Bytes (Octets)</td>
+                <td class="text-sm text-ink">RFC 1035 Section 2.3.4</td>
+                <td class="text-sm text-ink-dim">Restricts each character-string segment due to the 1-byte length prefix counter.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">4. Maximum Record Size</td>
+                <td class="text-sm font-mono text-accent">Up to 4,096 Bytes</td>
+                <td class="text-sm text-ink">RFC 6891 (<abbr class="pd-term" data-tip="EDNS0: Extension Mechanisms for DNS allowing larger UDP packet payloads up to 4096 bytes">EDNS0</abbr>)</td>
+                <td class="text-sm text-ink-dim">Permits multi-string payloads up to UDP buffer limits before TCP fallback.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">5. Namespace Scope</td>
+                <td class="text-sm font-mono text-accent">Apex (@) &amp; Underscore</td>
+                <td class="text-sm text-ink">RFC 8552 / RFC 8553</td>
+                <td class="text-sm text-ink-dim">Isolates functional policies using underscore prefixes (_dmarc, _domainkey, _mta-sts).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Mail receivers and verification crawlers identify each record's purpose by evaluating its domain host label and opening prefix. Apex queries return policies like SPF and ownership tokens, while underscore subdomains return dedicated cryptographic keys and transport rules. Discover live text records using the <a href="/txt-record-lookup/">TXT Record Lookup</a>.
+      </p>
+
+      <h2 id="7-real-world-uses-and-examples-of-dns-txt-records-reference-table">7 Real-World Uses and Examples of DNS TXT Records (Reference Table)</h2>
+      <p>
+        Production domains deploy TXT records across <strong class="text-ink">7 standardized security, email, and identity workflows</strong>, avoiding specialized DNS wire types for emerging protocols. The table below lists the 7 primary uses of DNS TXT records with host labels and value examples.
+      </p>
+
+      <section class="not-prose my-6" aria-label="7 production DNS TXT record examples table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Use Case / Protocol</th>
+                <th>Host / Name Label</th>
+                <th>Opening Prefix</th>
+                <th>Real-World TXT Value Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">1. SPF (Sender Policy Framework)</td>
+                <td class="text-sm font-mono text-accent">@ (Apex Domain)</td>
+                <td class="text-sm font-mono text-accent">v=spf1</td>
+                <td class="text-xs font-mono text-ink-dim">v=spf1 ip4:198.51.100.10 include:_spf.google.com -all</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">2. DKIM Public Key</td>
+                <td class="text-sm font-mono text-accent">selector._domainkey</td>
+                <td class="text-sm font-mono text-accent">v=DKIM1;</td>
+                <td class="text-xs font-mono text-ink-dim">v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCg...</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">3. DMARC Policy</td>
+                <td class="text-sm font-mono text-accent">_dmarc</td>
+                <td class="text-sm font-mono text-accent">v=DMARC1;</td>
+                <td class="text-xs font-mono text-ink-dim">v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@example.com;</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">4. MTA-STS &amp; TLS-RPT</td>
+                <td class="text-sm font-mono text-accent">_mta-sts / _smtp._tls</td>
+                <td class="text-sm font-mono text-accent">v=STSv1; / v=TLSRPTv1;</td>
+                <td class="text-xs font-mono text-ink-dim">v=STSv1; id=2026103101; (and v=TLSRPTv1; rua=mailto:tls@example.com;)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">5. BIMI Brand Indicator</td>
+                <td class="text-sm font-mono text-accent">default._bimi</td>
+                <td class="text-sm font-mono text-accent">v=BIMI1;</td>
+                <td class="text-xs font-mono text-ink-dim">v=BIMI1; l=https://example.com/logo.svg; a=https://example.com/vmc.pem;</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">6. Domain Verification</td>
+                <td class="text-sm font-mono text-accent">@ (or Vendor Host)</td>
+                <td class="text-sm font-mono text-accent">Platform Token</td>
+                <td class="text-xs font-mono text-ink-dim">google-site-verification=abc12345, MS=ms12345678, stripe-verification=xyz</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">7. <abbr class="pd-term" data-tip="ACME: Automated Certificate Management Environment protocol powering automated SSL issuance like Let's Encrypt">ACME</abbr> DNS-01 SSL</td>
+                <td class="text-sm font-mono text-accent">_acme-challenge</td>
+                <td class="text-sm font-mono text-accent">Base64 Digest</td>
+                <td class="text-xs font-mono text-ink-dim">LPsIwTo7o8BoG0-vjCyGQGBWSVIPxI-i_X336e2Q90E (Let's Encrypt validation)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Deploying email authentication protocols requires syntax alignment across your zone. Analyze an <a href="/spf-record/">SPF Record</a> alongside our <a href="/spf-record-checker/">SPF Record Checker</a>, examine cryptographic signing in <a href="/dkim/">DKIM Explained</a> verified with the <a href="/dkim-record-checker/">DKIM Record Checker</a>, enforce inbox alignment through <a href="/dmarc/">DMARC</a> audited using the <a href="/dmarc-record-checker/">DMARC Record Checker</a>, secure transport encryption with <a href="/mta-sts/">MTA-STS</a>, and display verified inbox logos via <a href="/bimi/">BIMI</a>.
+      </p>
+
+      <h2 id="why-do-txt-records-have-a-255-character-limit-and-how-does-string-splitting-work">Why Do TXT Records Have a 255-Character Limit (And How Does String Splitting Work)?</h2>
+      <p>
+        A single character-string inside a DNS TXT record is capped at <strong class="text-ink">255 ASCII characters (bytes) because the DNS wire format precedes each text segment with a 1-byte unsigned length counter whose maximum binary value is 255 (11111111)</strong>. Handling values exceeding 255 characters (such as 2048-bit DKIM public keys) requires adhering to 3 string-splitting rules:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Split Long Payloads Into Multiple Quoted Segments Inside One TXT Record:</strong> A single TXT record accommodates multiple <code>&lt;character-string&gt;</code> elements placed side by side inside double quotes (<code>"chunk1" "chunk2"</code>). This architecture enables total payloads up to the standard 4,096-byte EDNS0 buffer.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Resolvers Join Multi-String Segments With Zero Intervening Spaces:</strong> Recursive resolvers and mail servers concatenate adjacent quoted strings directly together during wire parsing without inserting whitespace. A 2048-bit DKIM key splits cleanly into two smaller segments as shown below:
+          <pre class="my-3 rounded-lg border border-line bg-panel-2 p-3 font-mono text-xs text-accent-soft leading-relaxed"><code>; Splitting a 2048-bit DKIM key across two &lt;=255-char strings:
+google._domainkey.example.com. 3600 IN TXT (
+    "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890abcdef..."
+    "...ghijklmnopqrstuvwxyz0987654321IDAQAB"
+)</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Include Trailing Whitespace When Splitting Space-Delimited SPF Mechanisms:</strong> Concatenating strings without intervening spaces requires placing an explicit space at the boundary when breaking long SPF records. Omitting this space causes two mechanisms to merge into an invalid token like <code>google.cominclude:sendgrid.net</code>.
+        </li>
+      </ol>
+
+      <p>
+        Cloud platforms like Cloudflare and Route 53 automatically split oversized text strings on the wire when administrators paste 400-character keys into web consoles. Conversely, BIND zone files, PowerDNS, and cPanel require manual quoting partitions, detailed in our diagnostic guide on <a href="/spf-record-too-long/">SPF Record Too Long</a>.
+      </p>
+
+      <h2 id="how-many-txt-records-can-a-domain-have-coexistence-rules-and-zone-hygiene">How Many TXT Records Can a Domain Have? (Coexistence Rules and Zone Hygiene)</h2>
+      <p>
+        While the DNS protocol sets no hard count limit on how many TXT records a domain publishes, administrators follow <strong class="text-ink">4 critical coexistence, packet-size, and security rules</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Multiple Verification Tokens Coexist Safely on the Apex Domain, Except SPF:</strong> Administrators publish separate TXT records on the root domain (<code>@</code>) for Google Search Console, Microsoft 365, Apple, and Stripe simultaneously. However, RFC 7208 forbids publishing multiple <code>v=spf1</code> records on one hostname, which triggers immediate SPF PermError delivery failures.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">A TXT Record Cannot Coexist With a CNAME Record on the Same Subdomain:</strong> Publishing a <a href="/cname-record/">CNAME Record</a> on an alias like <code>app.example.com</code> prevents adding any TXT records to that exact hostname. Verification tokens for external platforms reside on the root domain or separate subdomains.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Keep Root Domain TXT Records Under 30 to 49 Entries to Prevent UDP Truncation:</strong> Resolvers query TXT records as an atomic <abbr class="pd-term" data-tip="RRset (Resource Record Set): collection of DNS resource records sharing identical owner name, class, and type">RRset</abbr>, returning every root record in a single packet. Exceeding 49 TXT records or 4,096 total bytes forces nameservers to set the Truncated (TC=1) bit, requiring fallback retries over TCP port 53.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Remove Deprecated Third-Party Verification Strings Regularly:</strong> Orphaned verification tokens left behind by former marketing agencies, retired analytics tools, or obsolete SaaS providers needlessly expand UDP packets and create security risks by permitting former account holders to re-claim administrative control.
+        </li>
+      </ol>
+
+      <p>
+        Performing routine quarterly zone audits ensures your root domain remains clean, preventing response payload bloating while preserving essential mail authentication records and active platform verifications.
+      </p>
+
+      <h2 id="4-formatting-rules-for-adding-txt-records-in-dns-control-panels-quotes-and-spaces">4 Formatting Rules for Adding TXT Records in DNS Control Panels (Quotes and Spaces)</h2>
+      <p>
+        Preventing syntax parsing errors when entering TXT values into DNS dashboards requires <strong class="text-ink">following 4 strict formatting rules regarding quotation marks, whitespace, and host namespacing</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Omit Outer Quotation Marks in Web Dashboards (Except BIND and Route 53):</strong> Web-based DNS consoles wrap text values in double quotes automatically during zone generation. Entering explicit quotes in dashboards like GoDaddy or Namecheap produces escaped literal quotation marks (<code>\"v=spf1...\"</code>) that break downstream parsers.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Never Paste Smart or Typographic Quotes From Word Processors:</strong> Text copied from word processors, chat applications, or formatted documents often contains curly quotes (<code>“ ”</code>) instead of standard ASCII straight quotes (<code>"</code>), invalidating the DNS record.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Preserve Single Spaces in SPF and DMARC While Removing Internal Spaces From DKIM Keys:</strong> Space characters separate distinct SPF mechanisms (<code>v=spf1 include:... -all</code>) and DMARC tags (<code>v=DMARC1; p=reject;</code>). Conversely, public DKIM Base64 keys (<code>p=MIIBIjAN...</code>) contain zero internal spaces or line breaks to pass cryptographic verification.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Exclude the Root Domain From Prefixed Host Input Fields:</strong> Modern DNS management interfaces append your root domain to the Host/Name box automatically. Entering <code>_dmarc.example.com</code> instead of typing <code>_dmarc</code> creates an unintended nested record at <code>_dmarc.example.com.example.com</code>.
+        </li>
+      </ol>
+
+      <p>
+        Understanding how text records function alongside address, mail routing, and delegation records provides comprehensive visibility into zone administration, detailed across our guide to <a href="/dns-records/">DNS Record Types</a>.
+      </p>
+
+      <h2 id="how-to-check-and-verify-your-domains-txt-records-dig-nslookup-and-browser-doh">How to Check and Verify Your Domain's TXT Records (dig, nslookup, and Browser DoH)</h2>
+      <p>
+        Inspecting live TXT values published across your root domain or targeted underscore subdomains confirms that external systems receive accurate policies across <strong class="text-ink">3 diagnostic terminal queries</strong>:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># 1. Query all root (@) TXT records (SPF and site verifications) on Linux / macOS:
+dig example.com TXT +short
+
+# 2. Query targeted underscore subdomains for DMARC and DKIM selectors:
+dig _dmarc.example.com TXT +short
+dig google._domainkey.example.com TXT +short
+
+# 3. Query TXT records on Windows Command Prompt:
+nslookup -type=txt example.com 1.1.1.1</code></pre>
+
+      <p>
+        Terminal diagnostics provide immediate confirmation of local resolver responses, while validating nameserver synchronization across global geographic regions requires monitoring through our <a href="/dns-propagation-checker/">DNS Propagation Checker</a>. Managing DNS Text resource record (Type 16) configurations properly safeguards SPF, DKIM, and DMARC authentication, preserves third-party domain ownership verification tokens, and respects the 255-character string limit through clean multi-string splitting.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why don't my DMARC or DKIM records show up when I run a TXT lookup on my domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Running a TXT lookup on your bare root domain (example.com) only returns TXT records published at @ (such as your SPF record and Google site verification). DMARC and DKIM policies live on specific subdomains, requiring queries targeted directly at _dmarc.example.com or selector._domainkey.example.com.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does adding a verification TXT record affect my website or email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, adding a third-party ownership verification TXT record (such as google-site-verification= or MS=) produces zero effect on website traffic or email delivery, provided administrators add the value as a separate new TXT entry rather than modifying existing v=spf1 records.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is it safe to delete Google Search Console or Microsoft verification TXT records after my domain is verified?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, in practice you retain verification TXT records in your DNS zone for the entire lifecycle of the connected service. Google Search Console, Microsoft 365, and Google Workspace periodically re-check your DNS in the background and revoke administrative domain ownership if the verification token disappears.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my TXT record is longer than 255 characters?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world DNS setups, a single continuous character-string cannot exceed 255 ASCII characters on the wire due to the 1-byte length prefix. Modern cloud DNS providers automatically split oversized values (such as 2048-bit DKIM keys) into multiple 255-character quoted strings, which validating resolvers concatenate without spaces.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
