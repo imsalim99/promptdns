@@ -1,107 +1,348 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "SOA",
- "title": "SOA Record: Start of Authority Explained",
- "description": "SOA records explained in depth: serial number discipline, refresh/retry/expire timers, negative caching, and transfer debugging.",
- "intro": "The SOA record is your zone's ID card and maintenance schedule in one: who runs it, its version number, and the timers secondaries use to stay synchronized. Every zone has exactly one, and it encodes more operational meaning than any other record.",
- "deepDive": [
-  "Two fields identify the zone: MNAME, the primary master nameserver, and RNAME, the responsible person's email written with a dot where the @ belongs. Nobody mails RNAME anymore, but tooling reads it, and it dates forgotten zones fascinatingly.",
-  "The serial number is the change counter. Secondaries compare serials to detect changes; a serial that fails to increase means your 'saved' edit propagates to exactly nowhere. The conventional format YYYYMMDDnn (date plus two-digit revision) keeps numbers monotonic and self-documenting. If a serial goes backwards, the standard recovery is jumping far forward, since secondaries only move up.",
-  "The four timers orchestrate secondary synchronization: refresh (how often secondaries poll for a new serial), retry (poll cadence after failure), expire (when secondaries give up and stop serving the zone), and minimum (the negative-caching TTL, how long resolvers may remember that a name doesn't exist). Defaults vary by software, and they are usually fine; they matter when zones are large, transfers are slow, or you are debugging why a secondary went rogue."
- ],
- "example": "example.com.  3600  IN  SOA  ns1.example.com. hostmaster.example.com. (\n                  2026082201 ; serial (YYYYMMDDnn)\n                  7200       ; refresh\n                  3600       ; retry\n                  1209600    ; expire\n                  3600 )     ; negative-cache minimum",
- "anatomy": [
-  [
-   "MNAME",
-   "The primary master nameserver for the zone."
-  ],
-  [
-   "RNAME",
-   "Admin contact, first dot read as @."
-  ],
-  [
-   "serial",
-   "Version counter; must increase on every change or secondaries ignore the update."
-  ],
-  [
-   "refresh",
-   "Seconds between secondary polls for a new serial."
-  ],
-  [
-   "retry / expire",
-   "Retry cadence after a failed refresh, and when a secondary drops the zone entirely."
-  ],
-  [
-   "minimum",
-   "Negative-caching TTL for NXDOMAIN answers."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How many SOA records can a DNS zone have?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Every DNS zone file has exactly one SOA record, which is always the very first record placed at the zone apex (@). A DNS server refuses to load a zone file that has zero SOA records or more than one SOA record."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does the email address in an SOA record (RNAME) use a dot instead of the @ symbol?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In DNS zone file syntax, the @ symbol is a reserved character that stands for the root domain name itself. The SOA RNAME field replaces the @ symbol in the email address with a period (so hostmaster@example.com is written as hostmaster.example.com.) to prevent syntax conflicts with the zone apex."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to manually update the SOA serial number when I edit DNS records in Cloudflare, Route 53, or GoDaddy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in practice managed web-based DNS providers increment the SOA serial number automatically every time you click Save on a record. You only need to update the YYYYMMDDnn serial number by hand when editing raw text zone files on self-hosted BIND, NSD, or PowerDNS servers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if my authoritative nameservers show different SOA serial numbers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world diagnostics, mismatched SOA serial numbers across your nameservers mean a zone transfer (AXFR/IXFR) failed between your primary and secondary servers. Visitors querying an out-of-date secondary server receive stale IP addresses or NXDOMAIN errors until administrators resolve firewall blocks or TSIG misconfigurations and synchronize the zone."
+      }
+    }
   ]
- ],
- "uses": [
-  "Zone transfer synchronization between primary and secondary servers",
-  "Debugging stale secondaries (the serial did not increase)",
-  "Tuning how long 'name does not exist' answers cache"
- ],
- "steps": [
-  [
-   "Read your SOA",
-   "An SOA lookup shows the current serial and timers; providers auto-manage serials on panel edits."
-  ],
-  [
-   "After any change, watch the serial",
-   "It must increase. If you edit zone files by hand, this is the one field you must never forget."
-  ],
-  [
-   "Check secondaries serve the same serial",
-   "A mismatch means a transfer problem, not a caching problem."
-  ],
-  [
-   "Use negative caching deliberately",
-   "A 3600 minimum softens load from non-existent names without hiding new subdomains for long."
-  ]
- ],
- "mistakes": [
-  "Hand edits that forget to bump the serial, silently blocking replication",
-  "Writing RNAME with an @ instead of a dot",
-  "Expecting registrar-level changes to respect zone timers; delegation TTLs run on their own clock",
-  "Aggressively low refresh values hammering the primary for no benefit"
- ],
- "faqs": [
-  [
-   "What happens if the SOA serial doesn't increase?",
-   "Secondaries conclude nothing changed and keep serving the old zone. Your edit exists only on the primary."
-  ],
-  [
-   "What is negative caching?",
-   "Resolvers remembering NXDOMAIN answers for 'minimum' seconds, so repeated lookups of dead names don't hit your servers."
-  ],
-  [
-   "Who manages the serial?",
-   "DNS panels increment it automatically. Only hand-maintained zone files put the burden on you."
-  ],
-  [
-   "Can a zone have two SOA records?",
-   "No. Exactly one SOA at the apex is mandatory and standard."
-  ],
-  [
-   "How do I check SOA records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should SOA records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "NS records",
-   "/ns-record/"
-  ],
-  [
-   "DNS propagation explained",
-   "/dns-propagation/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["SOA Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="SOA Record: What a Start of Authority Record Is, 7 Fields, and Serial Format"
+  description="Learn what a DNS SOA record is, what all 7 fields mean, how serial numbers synchronize secondary nameservers, and how to verify SOA timers."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">SOA Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      SOA Record: What a Start of Authority Record Is, 7 Fields, and Serial Format
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A <abbr class="pd-term" data-tip="SOA record: Start of Authority resource record (IANA Type 6) storing administrative zone metadata and synchronization timers">Start of Authority (SOA) record</abbr> is <strong class="text-ink">the mandatory administrative record at the top of every DNS zone file that defines the primary nameserver, administrator contact, version serial number, and refresh timers</strong>. Secondary nameservers check the SOA serial to sync updates. The final field controls negative <abbr class="pd-term" data-tip="NXDOMAIN: Non-Existent Domain DNS response code (RCODE 3) indicating a queried domain name does not exist">NXDOMAIN</abbr> caching.
+      </p>
+    </div>
+
+    <Diagram name="delegation" caption="DNS zone authority and replication: the SOA record designates the primary master nameserver responsible for synchronizing secondary nameservers" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-an-soa-record-and-what-do-its-7-fields-mean-syntax-and-anatomy">What is an SOA record and what do its 7 fields mean?</a></li>
+        <li><a href="#how-do-secondary-nameservers-use-the-soa-record-to-sync-zone-changes-5-steps">How secondary nameservers sync zone changes (5 steps)</a></li>
+        <li><a href="#how-to-format-the-soa-serial-number-yyyymmddnn-and-rname-email-address">Formatting the SOA serial number and RNAME email address</a></li>
+        <li><a href="#recommended-soa-timer-values-and-how-negative-caching-minimum-works">Recommended SOA timer values and negative caching</a></li>
+        <li><a href="#how-to-check-your-soa-record-and-detect-out-of-sync-nameservers-dig-nssearch">How to check your SOA record (dig +nssearch)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-an-soa-record-and-what-do-its-7-fields-mean-syntax-and-anatomy">What Is an SOA Record and What Do Its 7 Fields Mean? (Syntax and Anatomy)</h2>
+      <p>
+        Every valid DNS zone file in the world <strong class="text-ink">begins with exactly one Start of Authority (SOA) resource record (IANA Type 6) placed at the zone apex (@)</strong>. Standard records like A, MX, and CNAME route visitor traffic, whereas the SOA record governs the zone's internal administration across 7 data fields (<abbr class="pd-term" data-tip="MNAME: Fully Qualified Domain Name of the primary master authoritative nameserver for the zone">MNAME</abbr>, <abbr class="pd-term" data-tip="RNAME: email address of the zone administrator with the @ symbol encoded as a dot">RNAME</abbr>, Serial, Refresh, Retry, Expire, and Minimum Negative Cache <abbr class="pd-term" data-tip="TTL: Time to Live value controlling cache duration in seconds">TTL</abbr>). The table below defines all 7 fields inside a standard DNS SOA record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following zone excerpt demonstrates how production SOA records appear using standard multi-line BIND syntax with explanatory comments:
+      </p>
+
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel/60 p-4 font-mono text-xs text-ink leading-relaxed"><code>; Zone Apex   TTL    Class  Type  MNAME (Primary NS)      RNAME (Admin Email)
+example.com.  3600   IN     SOA   ns1.example.com.        hostmaster.example.com. (
+                                  2026103101 ; 1. Serial Number (YYYYMMDDnn)
+                                  7200       ; 2. Refresh (2 hours = 7,200s)
+                                  1800       ; 3. Retry (30 minutes = 1,800s)
+                                  1209600    ; 4. Expire (14 days = 1,209,600s)
+                                  3600       ; 5. Minimum / Negative Cache TTL (1 hour)
+                                  )</code></pre>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The table below details the 7 data fields comprising every standard DNS SOA record, their formats, and their specific administrative functions:
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">SOA Field Name</th>
+              <th class="py-2.5 px-3">Example Value</th>
+              <th class="py-2.5 px-3">Format / Unit</th>
+              <th class="py-2.5 px-3">Function in Zone Administration</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">1. MNAME (Primary Master NS)</td>
+              <td class="py-2.5 px-3 font-mono">ns1.example.com.</td>
+              <td class="py-2.5 px-3">Fully Qualified Domain Name</td>
+              <td class="py-2.5 px-3">Designates the primary master nameserver holding the authoritative editable zone file.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">2. RNAME (Responsible Person)</td>
+              <td class="py-2.5 px-3 font-mono">hostmaster.example.com.</td>
+              <td class="py-2.5 px-3">Email address with @ replaced by .</td>
+              <td class="py-2.5 px-3">Specifies the zone administrator email address (hostmaster@example.com encoded with a dot).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">3. Serial</td>
+              <td class="py-2.5 px-3 font-mono">2026103101</td>
+              <td class="py-2.5 px-3">32-bit unsigned integer (1 to 4,294,967,295)</td>
+              <td class="py-2.5 px-3">Revision counter incrementing on every zone file modification.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">4. Refresh</td>
+              <td class="py-2.5 px-3 font-mono">7200 (2 hours)</td>
+              <td class="py-2.5 px-3">Seconds</td>
+              <td class="py-2.5 px-3">Cadence at which secondary nameservers query the primary SOA serial for updates.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">5. Retry</td>
+              <td class="py-2.5 px-3 font-mono">1800 (30 minutes)</td>
+              <td class="py-2.5 px-3">Seconds</td>
+              <td class="py-2.5 px-3">Retry interval following an unsuccessful refresh attempt against the primary nameserver.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">6. Expire</td>
+              <td class="py-2.5 px-3 font-mono">1209600 (14 days)</td>
+              <td class="py-2.5 px-3">Seconds</td>
+              <td class="py-2.5 px-3">Upper time limit a secondary nameserver answers queries during prolonged primary server outages.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">7. Minimum (Negative Cache TTL)</td>
+              <td class="py-2.5 px-3 font-mono">3600 (1 hour)</td>
+              <td class="py-2.5 px-3">Seconds</td>
+              <td class="py-2.5 px-3">Cache duration for negative NXDOMAIN and NODATA resolver responses.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        DNS server daemons strictly require both an SOA record and at least two companion <a href="/ns-record/" class="text-accent underline hover:text-accent-hover">NS Record</a> entries before initializing an authoritative zone in memory. Administrators inspect all 7 parsed fields and live timer intervals across any domain in seconds using the <a href="/soa-record-lookup/" class="text-accent underline hover:text-accent-hover">SOA Record Lookup</a>.
+      </p>
+
+      <h2 id="how-do-secondary-nameservers-use-the-soa-record-to-sync-zone-changes-5-steps">How Do Secondary Nameservers Use the SOA Record to Sync Zone Changes? (5 Steps)</h2>
+      <p>
+        Primary and secondary authoritative nameservers use the SOA record's Serial number and timers to <strong class="text-ink">keep zone files synchronized across 5 automated replication steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Increment</strong> the SOA <strong class="text-ink">Serial</strong> number (<code>2026103101</code> to <code>2026103102</code>) on the primary (MNAME) server on any record modification.
+        </li>
+        <li>
+          <strong class="text-ink">Transmit</strong> an immediate <abbr class="pd-term" data-tip="DNS NOTIFY: push mechanism (RFC 1996) informing secondary nameservers immediately of zone updates"><strong class="text-ink">DNS NOTIFY</strong></abbr> push message (RFC 1996) to secondary nameservers, or await standard secondary polling upon <strong class="text-ink">Refresh</strong> timer expiration (<code>7,200</code> seconds).
+        </li>
+        <li>
+          <strong class="text-ink">Compare</strong> primary and secondary SOA serials; a higher primary serial initiates an incremental (IXFR) or full <abbr class="pd-term" data-tip="AXFR: Authoritative Zone Transfer protocol (DNS Type 252) used to replicate full zone files across nameservers">AXFR</abbr> <abbr class="pd-term" data-tip="Zone transfer: process of replicating DNS zone data between a primary master nameserver and secondary slave nameservers">zone transfer</abbr> to copy the updated records.
+        </li>
+        <li>
+          <strong class="text-ink">Wait</strong> for the <strong class="text-ink">Retry</strong> timer (<code>1,800</code> seconds) before re-querying the primary server following any failed refresh attempt.
+        </li>
+        <li>
+          <strong class="text-ink">Stop</strong> answering authoritative domain queries once primary unreachable duration exceeds the <strong class="text-ink">Expire</strong> timer (<code>1,209,600</code> seconds = 14 days), preventing indefinite serving of stale records.
+        </li>
+      </ol>
+
+      <p>
+        Editing raw BIND, NSD, or Knot DNS configurations without advancing the SOA serial causes replication failure: secondary nameservers observe an unchanged serial, presume zero edits occurred, and serve stale records indefinitely. Production deployments protect zone replication by restricting AXFR zone transfers with IP access lists and cryptographic TSIG keys, verifiable through the <a href="/axfr-checker/" class="text-accent underline hover:text-accent-hover">AXFR / Zone Transfer Leak Checker</a>.
+      </p>
+
+      <h2 id="how-to-format-the-soa-serial-number-yyyymmddnn-and-rname-email-address">How to Format the SOA Serial Number (YYYYMMDDnn) and RNAME Email Address</h2>
+      <p>
+        Two fields inside the SOA record follow <strong class="text-ink">special DNS formatting conventions that trip up administrators: the 10-digit YYYYMMDDnn serial number and the dot-encoded RNAME administrator email address</strong>:
+      </p>
+
+      <ol class="my-4 space-y-4 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">The YYYYMMDDnn Serial Number Convention (2026103101 vs Unix Epoch):</strong>
+          The DNS protocol defines the Serial field as a 32-bit unsigned integer (<code>1</code> to <code>4,294,967,295</code>) advancing monotonically. Industry standard (RFC 1912) formats this counter as a 10-digit date stamp: <strong class="text-ink">YYYY (4-digit year) + MM (2-digit month) + DD (2-digit day) + nn (2-digit revision counter from 01 to 99)</strong>. The initial edit on October 31, 2026 is <code>2026103101</code>, and the second edit on that date is <code>2026103102</code>. Cloud DNS platforms (such as Cloudflare and Route 53) often employ 10-digit Unix Epoch timestamps incrementing automatically on each change. RFC 1982 serial arithmetic uses modular comparison, handling 32-bit sequence wrapping.
+        </li>
+        <li>
+          <strong class="text-ink">Why RNAME Uses a Dot (.) Instead of @ (And How to Escape Dots in Usernames):</strong>
+          In BIND zone files, the <code>@</code> character represents a reserved symbol expanding to the origin domain apex. Inserting a raw <code>@</code> causes the parser to interpret the character as the zone apex rather than an email delimiter. The SOA RNAME convention substitutes the <code>@</code> delimiter with a dot (<code>hostmaster.example.com.</code>). Mailbox usernames containing dots (such as <code>john.doe@example.com</code>) require escaping that period with a backslash (<code>\</code>) so resolvers isolate the username from domain labels:
+          <pre class="mt-2 overflow-x-auto rounded border border-line bg-panel/60 p-3 font-mono text-xs text-ink leading-relaxed"><code>; Email: hostmaster@example.com  -->  RNAME: hostmaster.example.com.
+; Email: john.doe@example.com    -->  RNAME: john\.doe.example.com.</code></pre>
+        </li>
+      </ol>
+
+      <p>
+        Managed DNS platforms (including Cloudflare, Amazon Route 53, Google Cloud DNS, GoDaddy, and Namecheap) abstract these raw formatting complexities by incrementing serial numbers and translating administrative email addresses automatically during web console submissions. Understanding raw zone file mechanics clarifies foundational architecture detailed in <a href="/what-is-dns/" class="text-accent underline hover:text-accent-hover">What Is DNS</a>.
+      </p>
+
+      <h2 id="recommended-soa-timer-values-and-how-negative-caching-minimum-works">Recommended SOA Timer Values and How Negative Caching (MINIMUM) Works</h2>
+      <p>
+        Optimal SOA timer values depend on <strong class="text-ink">whether your domain runs on a modern Anycast cloud DNS network (synchronized via internal database replication) or a traditional primary/secondary BIND architecture</strong>. The table below compares recommended SOA timer settings across both environments:
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">SOA Timer Field</th>
+              <th class="py-2.5 px-3">Traditional Primary/Secondary (RIPE-203 / BIND)</th>
+              <th class="py-2.5 px-3">Modern Anycast Cloud DNS (Cloudflare / Route 53)</th>
+              <th class="py-2.5 px-3">Operational Purpose</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">Refresh</td>
+              <td class="py-2.5 px-3 font-mono">3600 to 86400 s (1 to 24 hours)</td>
+              <td class="py-2.5 px-3 font-mono">7200 to 10000 s (~2 to 3 hours)</td>
+              <td class="py-2.5 px-3">Polling cadence for secondaries when DNS NOTIFY push fails.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">Retry</td>
+              <td class="py-2.5 px-3 font-mono">900 to 7200 s (15 min to 2 hours)</td>
+              <td class="py-2.5 px-3 font-mono">1800 to 2400 s (30 to 40 minutes)</td>
+              <td class="py-2.5 px-3">Retry delay following failed refresh checks (always &lt; Refresh).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">Expire</td>
+              <td class="py-2.5 px-3 font-mono">1209600 to 2419200 s (14 to 28 days)</td>
+              <td class="py-2.5 px-3 font-mono">604800 to 1209600 s (7 to 14 days)</td>
+              <td class="py-2.5 px-3">Maximum zone service lifetime during primary outages (&gt;= 7 days).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">Minimum (Negative TTL)</td>
+              <td class="py-2.5 px-3 font-mono">300 to 3600 s (5 min to 1 hour)</td>
+              <td class="py-2.5 px-3 font-mono">300 to 3600 s (5 min to 1 hour)</td>
+              <td class="py-2.5 px-3">Cache duration for negative NXDOMAIN and NODATA responses (RFC 2308).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        The historical evolution of the 7th SOA field explains common operational confusion. RFC 1035 originally defined MINIMUM as the default zone TTL for records lacking explicit values. RFC 2308 redefined this parameter exclusively as the Negative Caching TTL. Resolvers querying non-existent names (such as <code>missing.example.com</code>) receive an NXDOMAIN answer containing the SOA record in the authority section. Resolvers cache this negative response for the duration specified in SOA MINIMUM, shielding authoritative nameservers from repeated query floods. Coordinating zone lifetimes requires balancing values in <a href="/what-is-ttl-in-dns/" class="text-accent underline hover:text-accent-hover">DNS TTL Explained</a>, tracking propagation velocity in <a href="/dns-propagation/" class="text-accent underline hover:text-accent-hover">DNS Propagation</a>, and verifying query pathways in <a href="/how-dns-works/" class="text-accent underline hover:text-accent-hover">How DNS Works</a>.
+      </p>
+
+      <h2 id="how-to-check-your-soa-record-and-detect-out-of-sync-nameservers-dig-nssearch">How to Check Your SOA Record and Detect Out-of-Sync Nameservers (dig +nssearch)</h2>
+      <p>
+        Inspection of your domain's live SOA record and verification that every authoritative nameserver serves the exact same zone version (Serial) requires <strong class="text-ink">a browser lookup or terminal dig check across 3 diagnostic steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Query</strong> your domain's SOA record with the <code>+multiline</code> flag in <code>dig</code> (which formats all 7 fields with human-readable comments showing the exact hours and days of each timer) or via <code>nslookup</code>:
+          <pre class="mt-2 overflow-x-auto rounded border border-line bg-panel/60 p-3 font-mono text-xs text-ink leading-relaxed"><code># 1. Inspect formatted SOA record with timer comments on Linux / macOS:
+dig example.com SOA +multiline
+
+# 2. Check that ALL authoritative nameservers have the exact same SOA Serial:
+dig example.com +nssearch
+# Output shows SOA and response time from every NS server in your zone!
+
+# 3. Query SOA record on Windows Command Prompt:
+nslookup -type=soa example.com 1.1.1.1</code></pre>
+        </li>
+        <li>
+          <strong class="text-ink">Audit</strong> parent-to-child nameserver delegation and SOA serial agreement in your browser using the <a href="/delegation-checker/" class="text-accent underline hover:text-accent-hover">DNS Delegation Checker</a> and <a href="/nameserver-lookup/" class="text-accent underline hover:text-accent-hover">Nameserver Lookup (Find NS + IPs)</a>.
+        </li>
+        <li>
+          <strong class="text-ink">Verify</strong> that a recent zone update has incremented the SOA serial across global recursive vantages in the <a href="/dns-propagation-checker/" class="text-accent underline hover:text-accent-hover">DNS Propagation Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Auditing SOA serial synchronization across every authoritative nameserver confirms operational health throughout the broader collection of <a href="/dns-records/" class="text-accent underline hover:text-accent-hover">DNS Record Types</a>. Every production Start of Authority record (Type 6) anchors zone administration by pairing the primary MNAME host with the administrator RNAME mailbox, advancing monotonically through the YYYYMMDDnn serial format, and governing secondary replication through explicit Refresh, Retry, Expire, and Minimum Negative Cache TTL parameters.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="space-y-4 my-6">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>How many SOA records can a DNS zone have?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Every DNS zone file has <strong class="text-ink">exactly one SOA record</strong>, which is always the very first record placed at the zone apex (<strong class="text-ink">@</strong>). A DNS server refuses to load a zone file that has zero SOA records or more than one SOA record.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why does the email address in an SOA record (RNAME) use a dot instead of the @ symbol?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In DNS zone file syntax, the <strong class="text-ink">@</strong> symbol is a reserved character that stands for the root domain name itself. The SOA <strong class="text-ink">RNAME</strong> field replaces the <strong class="text-ink">@</strong> symbol in the email address with a period (so <strong class="text-ink">hostmaster@example.com</strong> is written as <strong class="text-ink">hostmaster.example.com.</strong>) to prevent syntax conflicts with the zone apex.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Do I need to manually update the SOA serial number when I edit DNS records in Cloudflare, Route 53, or GoDaddy?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, in practice <strong class="text-ink">managed web-based DNS providers increment the SOA serial number automatically</strong> every time you click Save on a record. You only need to update the YYYYMMDDnn serial number by hand when editing raw text zone files on self-hosted <strong class="text-ink">BIND, NSD, or PowerDNS</strong> servers.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What happens if my authoritative nameservers show different SOA serial numbers?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world diagnostics, <strong class="text-ink">mismatched SOA serial numbers across your nameservers</strong> mean a zone transfer (AXFR/IXFR) failed between your primary and secondary servers. Visitors querying an out-of-date secondary server receive stale IP addresses or NXDOMAIN errors until administrators resolve firewall blocks or TSIG misconfigurations and synchronize the zone.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
