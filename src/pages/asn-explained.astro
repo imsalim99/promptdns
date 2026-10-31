@@ -2,42 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'What does ASN stand for in networking?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'ASN stands for Autonomous System Number, a globally unique 16-bit or 32-bit number (such as AS13335 for Cloudflare or AS15169 for Google) that identifies a large network of IP addresses for Border Gateway Protocol (BGP) routing on the internet.',
-      },
+      "@type": "Question",
+      "name": "What does ASN stand for in networking?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ASN stands for Autonomous System Number, a globally unique 16-bit or 32-bit number (such as AS13335 for Cloudflare or AS15169 for Google) that identifies a large network of IP addresses for Border Gateway Protocol (BGP) routing on the internet."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Is an ASN the same as an IP address?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, an IP address identifies an individual device or server (such as 1.1.1.1), whereas an ASN identifies the entire network organization (such as AS13335) that owns and routes one or more large blocks of IP addresses.',
-      },
+      "@type": "Question",
+      "name": "Is an ASN the same as an IP address?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, an IP address identifies an individual device or server (such as 1.1.1.1), whereas an ASN identifies the entire network organization (such as AS13335) that owns and routes one or more large blocks of IP addresses."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How many bits long is an Autonomous System Number (ASN)?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion.',
-      },
+      "@type": "Question",
+      "name": "How many bits long is an Autonomous System Number (ASN)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion. In production BGP routing deployments, network engineers ensure older core routers support 4-byte ASN capabilities (RFC 6793) or AS_TRANS mapping (AS 23456) to prevent BGP peering teardowns."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How do I find the ASN of an IP address?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "How do I find the ASN of an IP address?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal. In practice, automated security operations teams query ASN feeds via scriptable APIs to correlate incoming DDoS attacks with specific transit networks and automate autonomous system rate limiting."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -234,11 +234,11 @@ dig +short 1.1.1.1.origin.asn.cymru.com TXT
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many bits long is an Autonomous System Number (ASN)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Original ASNs are 16 bits long (2-byte format), supporting numbers from 1 to 65,534. Modern expanded ASNs are 32 bits long (4-byte format), supporting numbers up to 4,294,967,294 to prevent global pool exhaustion. In production BGP routing deployments, network engineers ensure older core routers support 4-byte ASN capabilities (RFC 6793) or AS_TRANS mapping (AS 23456) to prevent BGP peering teardowns.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find the ASN of an IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the IP address into the IP Lookup tool to see its ASN, network owner, and country immediately in your browser, or run whois -h whois.cymru.com 1.1.1.1 in your terminal. In practice, automated security operations teams query ASN feeds via scriptable APIs to correlate incoming DDoS attacks with specific transit networks and automate autonomous system rate limiting.</p>
       </details>
     </div>
   </div>

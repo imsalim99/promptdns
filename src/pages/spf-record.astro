@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Can a domain have more than one SPF record?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, the SPF specification strictly requires exactly one SPF TXT record per domain or subdomain. Publishing two or more v=spf1 records causes receiving mail servers to abort evaluation and return a PermError.',
-      },
+      "@type": "Question",
+      "name": "Can a domain have more than one SPF record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, the SPF specification strictly requires exactly one SPF TXT record per domain or subdomain. Publishing two or more v=spf1 records causes receiving mail servers to abort evaluation and return a PermError."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Should I end my SPF record with ~all or -all?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Use ~all (SoftFail) during initial deployment while auditing senders via DMARC aggregate reports, and switch to -all (HardFail) once every legitimate sending service is verified and aligned.',
-      },
+      "@type": "Question",
+      "name": "Should I end my SPF record with ~all or -all?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use ~all (SoftFail) during initial deployment while auditing senders via DMARC aggregate reports, and switch to -all (HardFail) once every legitimate sending service is verified and aligned."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How do I protect a parked domain that never sends email?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Publish the null SPF record v=spf1 -all at the domain apex alongside a v=DMARC1; p=reject; record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain.',
-      },
+      "@type": "Question",
+      "name": "How do I protect a parked domain that never sends email?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Publish the null SPF record v=spf1 -all at the domain apex alongside a v=DMARC1; p=reject; record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain. In real-world security audits, we recommend locking down unused defensive registrations immediately because attackers frequently impersonate dormant sister domains lacking published authentication records."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Which SPF mechanisms count toward the 10-DNS-lookup limit?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Six SPF terms count toward the 10-DNS-lookup limit: include, a, mx, ptr, exists, and the redirect= modifier (plus any nested lookups inside included domains). The v=spf1, ip4, ip6, and all mechanisms require 0 DNS lookups.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Which SPF mechanisms count toward the 10-DNS-lookup limit?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Six SPF terms count toward the 10-DNS-lookup limit: include, a, mx, ptr, exists, and the redirect= modifier (plus any nested lookups inside included domains). The v=spf1, ip4, ip6, and all mechanisms require 0 DNS lookups. In practice, the most common mistake organizations make is chaining multiple third-party marketing includes without monitoring total query depth, triggering permanent evaluation errors (PermError) and silent message drops."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -83,7 +83,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="how-does-an-spf-record-check-work-during-smtp-delivery">How Does an SPF Record Check Work During SMTP Delivery?</h2>
       <p>
-        To verify an inbound email with Sender Policy Framework, a receiving Mail Transfer Agent (MTA) executes <strong class="text-ink">6 sequential evaluation steps during the SMTP session</strong>.
+        The Internet Engineering Task Force created Sender Policy Framework (SPF) to <strong class="text-ink">supplement the Simple Mail Transfer Protocol (SMTP), which lacks built-in sender authentication of its own</strong>. During inbound message delivery, a receiving Mail Transfer Agent (MTA) evaluates sender authorization across <strong class="text-ink">6 sequential evaluation steps during the SMTP session</strong>.
       </p>
       <p>
         Receiving mail gateways evaluate sender authorization through 6 sequential operational phases:
@@ -272,11 +272,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I protect a parked domain that never sends email?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish the null SPF record <strong>v=spf1 -all</strong> at the domain apex alongside a <strong>v=DMARC1; p=reject;</strong> record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish the null SPF record v=spf1 -all at the domain apex alongside a v=DMARC1; p=reject; record at _dmarc to instruct receiving mail servers to reject all mail claiming to originate from that domain. In real-world security audits, we recommend locking down unused defensive registrations immediately because attackers frequently impersonate dormant sister domains lacking published authentication records.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which SPF mechanisms count toward the 10-DNS-lookup limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Six SPF terms count toward the 10-DNS-lookup limit: <strong>include, a, mx, ptr, exists, and the redirect= modifier</strong> (plus any nested lookups inside included domains). The <strong>v=spf1, ip4, ip6, and all</strong> mechanisms require 0 DNS lookups.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Six SPF terms count toward the 10-DNS-lookup limit: include, a, mx, ptr, exists, and the redirect= modifier (plus any nested lookups inside included domains). The v=spf1, ip4, ip6, and all mechanisms require 0 DNS lookups. In practice, the most common mistake organizations make is chaining multiple third-party marketing includes without monitoring total query depth, triggering permanent evaluation errors (PermError) and silent message drops.</p>
       </details>
     </div>
   </div>

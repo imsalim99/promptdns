@@ -2,42 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Is Round-Robin DNS the same as a load balancer?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, Round-Robin DNS simply rotates IP addresses in DNS responses without checking if servers are online or overloaded. A true application load balancer (or managed GSLB) actively monitors server health and removes failed servers automatically.',
-      },
+      "@type": "Question",
+      "name": "Is Round-Robin DNS the same as a load balancer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, Round-Robin DNS simply rotates IP addresses in DNS responses without checking if servers are online or overloaded. A true application load balancer (or managed GSLB) actively monitors server health and removes failed servers automatically."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What happens if one server goes down in Round-Robin DNS?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Round-Robin DNS continues sending visitors to the offline server IP in the absence of active health checks, causing connection timeouts for a portion of your users until an administrator manually deletes that A record and its TTL expires.',
-      },
+      "@type": "Question",
+      "name": "What happens if one server goes down in Round-Robin DNS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Round-Robin DNS continues sending visitors to the offline server IP in the absence of active health checks, causing connection timeouts for a portion of your users until an administrator manually deletes that A record and its TTL expires."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What TTL should I use for DNS load balancing and failover?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Use a low TTL of 30 to 60 seconds for active-passive DNS failover and health-checked pools so resolvers drop failed server IPs quickly. For static Round-Robin across stable servers without automated failover, 300 seconds (5 minutes) is standard.',
-      },
+      "@type": "Question",
+      "name": "What TTL should I use for DNS load balancing and failover?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use a low TTL of 30 to 60 seconds for active-passive DNS failover and health-checked pools so resolvers drop failed server IPs quickly. For static Round-Robin across stable servers without automated failover, 300 seconds (5 minutes) is standard. In real-world production migrations, we recommend pairing 30-second TTLs with aggressive health-check probing intervals (10 to 15 seconds) to achieve sub-minute failover without overwhelming authoritative nameservers."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can I use both DNS load balancing and an NGINX or AWS ALB load balancer together?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, combining both represents the industry standard for high availability. DNS load balancing (GSLB) routes users to the nearest healthy geographic data center, and local NGINX or AWS ALB instances balance traffic across individual backend servers inside each facility.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Can I use both DNS load balancing and an NGINX or AWS ALB load balancer together?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, combining both represents the industry standard for high availability. DNS load balancing (GSLB) routes users to the nearest healthy geographic data center, and local NGINX or AWS ALB instances balance traffic across individual backend servers inside each facility. In real-world enterprise deployments, we recommend combining both architectures: global DNS redirection shields against regional data center outages, while local load balancers handle per-server health failovers seamlessly."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -293,11 +293,11 @@ example.com.    60    IN    A    198.51.100.12   ; Web Server 3 (EU-Central)</co
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What TTL should I use for DNS load balancing and failover?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a low TTL of 30 to 60 seconds for active-passive DNS failover and health-checked pools so resolvers drop failed server IPs quickly. For static Round-Robin across stable servers without automated failover, 300 seconds (5 minutes) is standard.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a low TTL of 30 to 60 seconds for active-passive DNS failover and health-checked pools so resolvers drop failed server IPs quickly. For static Round-Robin across stable servers without automated failover, 300 seconds (5 minutes) is standard. In real-world production migrations, we recommend pairing 30-second TTLs with aggressive health-check probing intervals (10 to 15 seconds) to achieve sub-minute failover without overwhelming authoritative nameservers.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use both DNS load balancing and an NGINX or AWS ALB load balancer together?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, combining both represents the industry standard for high availability. DNS load balancing (GSLB) routes users to the nearest healthy geographic data center, and local NGINX or AWS ALB instances balance traffic across individual backend servers inside each facility.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, combining both represents the industry standard for high availability. DNS load balancing (GSLB) routes users to the nearest healthy geographic data center, and local NGINX or AWS ALB instances balance traffic across individual backend servers inside each facility. In real-world enterprise deployments, we recommend combining both architectures: global DNS redirection shields against regional data center outages, while local load balancers handle per-server health failovers seamlessly.</p>
       </details>
     </div>
   </div>

@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'How many DKIM records can a domain have?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'A domain can publish an unlimited number of DKIM records because each service or key pair lives under its own unique selector subdomain (<selector>._domainkey.example.com), avoiding any single-record or 10-lookup limit.',
-      },
+      "@type": "Question",
+      "name": "How many DKIM records can a domain have?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A domain can publish an unlimited number of DKIM records because each service or key pair lives under its own unique selector subdomain (selector._domainkey.example.com), avoiding any single-record or 10-lookup limit."
+      }
     },
     {
-      '@type': 'Question',
-      name: "How do I find my domain's DKIM selector?",
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Send a test email from your mail service, view the raw message source ("Show Original" in Gmail), and locate the s= tag inside the DKIM-Signature header, or paste the headers into the Email Header Analyzer.',
-      },
+      "@type": "Question",
+      "name": "How do I find my domain's DKIM selector?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Send a test email from your mail service, view the raw message source (\"Show Original\" in Gmail), and locate the s= tag inside the DKIM-Signature header, or paste the headers into the Email Header Analyzer."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Should I use a 1024-bit or 2048-bit DKIM key?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.',
-      },
+      "@type": "Question",
+      "name": "Should I use a 1024-bit or 2048-bit DKIM key?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers. In production email deployments, we recommend rotating DKIM key selectors every 6 to 12 months using overlapping dual-selector publishing to maintain continuous signature validation during key updates."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Why does Cloudflare break my DKIM CNAME record if proxied?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Enabling Cloudflare\'s HTTP proxy (Orange Cloud) on a _domainkey CNAME record rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to DNS Only (Grey Cloud).',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Why does Cloudflare break my DKIM CNAME record if proxied?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Enabling Cloudflare's HTTP proxy (Orange Cloud) on a _domainkey CNAME record rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to DNS Only (Grey Cloud). In practice, this represents one of the most common onboarding errors for organizations adopting third-party transactional email providers behind Cloudflare."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -83,7 +83,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="how-does-dkim-signing-and-verification-work-step-by-step">How Does DKIM Signing and Verification Work Step by Step?</h2>
       <p>
-        DKIM authentication operates across <strong class="text-ink">7 sequential cryptographic steps split between the outbound sending mail server (Steps 1 to 3) and the inbound receiving mail server (Steps 4 to 7)</strong>.
+        DomainKeys Identified Mail (DKIM) allows a domain owner to <strong class="text-ink">take cryptographic responsibility for a message, proving that the email body and attachments were not tampered with in transit</strong>. The validation workflow operates across <strong class="text-ink">7 sequential cryptographic steps split between the outbound sending mail server (Steps 1 to 3) and the inbound receiving mail server (Steps 4 to 7)</strong>.
       </p>
       <p>
         Mail transfer agents sign and verify messages through 7 sequential technical operations:
@@ -244,7 +244,7 @@ const faq = {
     <div class="mt-3 grid gap-3">
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many DKIM records can a domain have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A domain can publish <strong>an unlimited number of DKIM records</strong> because each service or key pair lives under its own unique selector subdomain (&lt;selector&gt;._domainkey.example.com), avoiding any single-record or 10-lookup limit.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A domain can publish an unlimited number of DKIM records because each service or key pair lives under its own unique selector subdomain (selector._domainkey.example.com), avoiding any single-record or 10-lookup limit.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find my domain's DKIM selector?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
@@ -252,11 +252,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use a 1024-bit or 2048-bit DKIM key?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a <strong>2048-bit RSA key</strong> (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Use a 2048-bit RSA key (or Ed25519 where supported) for all production domains. Keys shorter than 1024 bits (such as 512-bit) are permanently revoked and rejected by major mailbox providers. In production email deployments, we recommend rotating DKIM key selectors every 6 to 12 months using overlapping dual-selector publishing to maintain continuous signature validation during key updates.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does Cloudflare break my DKIM CNAME record if proxied?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enabling Cloudflare's HTTP proxy (Orange Cloud) on a <strong>_domainkey CNAME record</strong> rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to <strong>DNS Only (Grey Cloud)</strong>.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Enabling Cloudflare's HTTP proxy (Orange Cloud) on a _domainkey CNAME record rewrites the CNAME into Cloudflare A and AAAA IP addresses, hiding the target TXT public key. Always set DKIM CNAMEs to DNS Only (Grey Cloud). In practice, this represents one of the most common onboarding errors for organizations adopting third-party transactional email providers behind Cloudflare.</p>
       </details>
     </div>
   </div>

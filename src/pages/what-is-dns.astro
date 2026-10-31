@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'What does DNS stand for?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'DNS stands for Domain Name System, the internet naming protocol that translates human-readable domain names (such as example.com) into numerical IPv4 and IPv6 addresses required for network routing.',
-      },
+      "@type": "Question",
+      "name": "What does DNS stand for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DNS stands for Domain Name System, the internet naming protocol that translates human-readable domain names (such as example.com) into numerical IPv4 and IPv6 addresses required for network routing."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Is DNS the same as web hosting?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, DNS and web hosting are separate infrastructure services. DNS stores the zone records that direct traffic to an IP address, while a web host operates the origin server that stores and serves your website files.',
-      },
+      "@type": "Question",
+      "name": "Is DNS the same as web hosting?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, DNS and web hosting are separate infrastructure services. DNS stores the zone records that direct traffic to an IP address, while a web host operates the origin server that stores and serves your website files."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Who manages and operates the Domain Name System?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No single entity owns DNS. ICANN and IANA coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers.',
-      },
+      "@type": "Question",
+      "name": "Who manages and operates the Domain Name System?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No single entity owns DNS. ICANN and IANA coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers. In production infrastructure management, we recommend auditing registrar credentials and nameserver delegations annually to maintain administrative control."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Does DNS use TCP or UDP port 53?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Standard DNS uses UDP port 53 for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to TCP port 53 when responses are truncated (TC=1) or during AXFR zone transfers.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Does DNS use TCP or UDP port 53?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Standard DNS uses UDP port 53 for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to TCP port 53 when responses are truncated (TC=1) or during AXFR zone transfers. In practice, the most common operational failure occurs when edge firewalls block TCP port 53, which silently breaks large DNSSEC cryptographic responses and automated zone synchronization."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout title="What Is DNS? The Domain Name System Explained" description="DNS explained from first principles: what the Domain Name System is, how names resolve to IP addresses, and why every website and email depends on it." schema={[faq]} breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["What Is DNS"]]}>
@@ -80,7 +80,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-are-the-4-dns-servers-involved-in-loading-a-webpage">What Are the 4 DNS Servers Involved in Loading a Webpage?</h2>
       <p>
-        There are <strong class="text-ink">4 DNS server types</strong> involved in resolving an uncached domain name: <strong class="text-ink">the DNS <abbr class="pd-term" data-tip="A DNS server that tracks down IP addresses across the global hierarchy on behalf of client devices">recursive resolver</abbr>, the root nameserver, the Top-Level Domain (TLD) nameserver, and the <abbr class="pd-term" data-tip="The final DNS server that holds the definitive zone file and official IP addresses for a domain">authoritative nameserver</abbr></strong>.
+        The Domain Name System operates as a <strong class="text-ink">client-server distributed database across 3 namespace divisions (the root zone, generic and country-code Top-Level Domains, and inverse <code>.arpa</code> domains)</strong>. Resolving an uncached domain name coordinates <strong class="text-ink">4 DNS server types</strong>: <strong class="text-ink">the DNS <abbr class="pd-term" data-tip="A DNS server that tracks down IP addresses across the global hierarchy on behalf of client devices">recursive resolver</abbr>, the root nameserver, the Top-Level Domain (TLD) nameserver, and the <abbr class="pd-term" data-tip="The final DNS server that holds the definitive zone file and official IP addresses for a domain">authoritative nameserver</abbr></strong>.
       </p>
       <p>
         An uncached DNS lookup queries 4 server roles in sequential order:
@@ -281,11 +281,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who manages and operates the Domain Name System?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No single entity owns DNS. <strong>ICANN and IANA</strong> coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No single entity owns DNS. ICANN and IANA coordinate the root zone and Top-Level Domains (TLDs), registry operators manage TLD servers, DNS hosting providers run authoritative nameservers, and ISPs or public providers operate recursive resolvers. In production infrastructure management, we recommend auditing registrar credentials and nameserver delegations annually to maintain administrative control.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNS use TCP or UDP port 53?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Standard DNS uses <strong>UDP port 53</strong> for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to <strong>TCP port 53</strong> when responses are truncated (TC=1) or during AXFR zone transfers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Standard DNS uses UDP port 53 for routine queries up to 512 bytes (or 4,096 bytes with EDNS0) and switches to TCP port 53 when responses are truncated (TC=1) or during AXFR zone transfers. In practice, the most common operational failure occurs when edge firewalls block TCP port 53, which silently breaks large DNSSEC cryptographic responses and automated zone synchronization.</p>
       </details>
     </div>
   </div>

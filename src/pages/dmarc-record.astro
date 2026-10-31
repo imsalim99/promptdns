@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Can a domain have more than one DMARC record?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, a domain only publishes one DMARC TXT record at _dmarc. If you publish two or more v=DMARC1 records on the same hostname, receiving mail servers ignore DMARC completely. To send reports to multiple addresses, separate them with a comma inside a single rua= tag.',
-      },
+      "@type": "Question",
+      "name": "Can a domain have more than one DMARC record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, a domain only publishes one DMARC TXT record at _dmarc. If you publish two or more v=DMARC1 records on the same hostname, receiving mail servers ignore DMARC completely. To send reports to multiple addresses, separate them with a comma inside a single rua= tag."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Where do I add a DMARC record: at my domain registrar or my email host?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'You always publish your DMARC TXT record at your authoritative DNS provider (the company whose nameservers your domain points to, such as Cloudflare, Route 53, or Namecheap), which is separate from your email inbox provider.',
-      },
+      "@type": "Question",
+      "name": "Where do I add a DMARC record: at my domain registrar or my email host?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You always publish your DMARC TXT record at your authoritative DNS provider (the company whose nameservers your domain points to, such as Cloudflare, Route 53, or Namecheap), which is separate from your email inbox provider."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Do I need quotes around my DMARC record value in DNS?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) add quotation marks automatically, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file.',
-      },
+      "@type": "Question",
+      "name": "Do I need quotes around my DMARC record value in DNS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) add quotation marks automatically, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file. In practice, the most common formatting mistake administrators make is pasting outer quotes into web control panels, which results in doubled quotation marks that break parser evaluation."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What is the best DMARC record to start with?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Start with v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com; on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "What is the best DMARC record to start with?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Start with v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com; on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports. In real-world enterprise rollouts, we recommend operating at p=none for 2 to 4 weeks to identify all legitimate third-party sending services before advancing toward quarantine or reject enforcement."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -82,7 +82,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-does-a-dmarc-record-look-like-in-dns-host-type-and-tag-value-anatomy">What Does a DMARC Record Look Like in DNS? (Host, Type, and Tag-Value Anatomy)</h2>
       <p>
-        A published DMARC record consists of <strong class="text-ink">4 DNS zone fields (<code>Type</code>, <code>Host</code>, <code>TTL</code>, and <code>Value</code>) where the <code>Value</code> string contains semicolon-separated <code>tag=value</code> pairs beginning with <code>v=DMARC1</code> and <code>p=</code></strong>.
+        A published DMARC record serves as the technical mechanism that <strong class="text-ink">makes the visible <code>Header From</code> (<code>From:</code>) address trustworthy to human recipients</strong>. Structurally, the record consists of <strong class="text-ink">4 DNS zone fields (<code>Type</code>, <code>Host</code>, <code>TTL</code>, and <code>Value</code>) where the <code>Value</code> string contains semicolon-separated <code>tag=value</code> pairs beginning with <code>v=DMARC1</code> and <code>p=</code></strong>.
       </p>
       <p>
         In an authoritative DNS zone file or cloud management dashboard, a complete DMARC entry is formatted with these parameters:
@@ -262,11 +262,11 @@ Value:        v=DMARC1; p=quarantine; sp=reject; adkim=r; aspf=r; rua=mailto:dma
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need quotes around my DMARC record value in DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) <strong>add quotation marks automatically</strong>, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Most modern web-based DNS control panels (including Cloudflare, GoDaddy, and Namecheap) add quotation marks automatically, so you paste the raw string starting with v=DMARC1. Only wrap the value in straight double quotes if you are editing a raw BIND zone file. In practice, the most common formatting mistake administrators make is pasting outer quotes into web control panels, which results in doubled quotation marks that break parser evaluation.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the best DMARC record to start with?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Start with <strong>v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com;</strong> on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Start with v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com; on active email domains. This monitoring record satisfies Gmail, Yahoo, and Microsoft bulk-sender rules immediately without blocking any legitimate emails while you review daily XML reports. In real-world enterprise rollouts, we recommend operating at p=none for 2 to 4 weeks to identify all legitimate third-party sending services before advancing toward quarantine or reject enforcement.</p>
       </details>
     </div>
   </div>

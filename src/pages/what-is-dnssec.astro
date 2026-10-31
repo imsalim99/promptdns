@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Does DNSSEC encrypt my DNS traffic?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, DNSSEC authenticates the origin and integrity of DNS records using cryptographic digital signatures (RRSIG), but the records themselves remain plaintext. Pair DNSSEC with DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) to encrypt DNS queries in transit.',
-      },
+      "@type": "Question",
+      "name": "Does DNSSEC encrypt my DNS traffic?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, DNSSEC authenticates the origin and integrity of DNS records using cryptographic digital signatures (RRSIG), but the records themselves remain plaintext. Pair DNSSEC with DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) to encrypt DNS queries in transit."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Why did my website stop working with SERVFAIL after changing nameservers?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "Switching authoritative nameservers without first removing the old provider's DS (Delegation Signer) record at your domain registrar breaks the DNSSEC chain of trust. Validating resolvers (such as 1.1.1.1 and 8.8.8.8) treat the mismatch as tampering and return SERVFAIL (RCODE 2).",
-      },
+      "@type": "Question",
+      "name": "Why did my website stop working with SERVFAIL after changing nameservers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Switching authoritative nameservers without first removing the old provider's DS (Delegation Signer) record at your domain registrar breaks the DNSSEC chain of trust. Validating resolvers (such as 1.1.1.1 and 8.8.8.8) treat the mismatch as tampering and return SERVFAIL (RCODE 2)."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Does enabling DNSSEC slow down DNS lookups?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "With modern Algorithm 13 (ECDSAP256SHA256) keys, DNSSEC adds near-zero latency because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL.",
-      },
+      "@type": "Question",
+      "name": "Does enabling DNSSEC slow down DNS lookups?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "With modern Algorithm 13 (ECDSAP256SHA256) keys, DNSSEC adds near-zero latency because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL. In real-world performance benchmarks, recursive resolvers complete subsequent validated lookups directly from local memory without performing extra network round trips."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How do I check if DNSSEC is enabled and valid on my domain?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Run your domain through the DNSSEC Checker to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the Authenticated Data (AD=1) flag.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "How do I check if DNSSEC is enabled and valid on my domain?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Run your domain through the DNSSEC Checker to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the Authenticated Data (AD=1) flag. In practice, the most critical mistake during DNS provider migrations is forgetting to delete old DS records from your registrar before switching nameservers, which causes catastrophic global resolution failure (SERVFAIL) across all validating resolvers."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -84,7 +84,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="why-was-dnssec-created-solving-the-plaintext-dns-cache-poisoning-flaw">Why Was DNSSEC Created? (Solving the Plaintext DNS Cache Poisoning Flaw)</h2>
       <p>
-        DNSSEC was created because <strong class="text-ink">the original DNS protocol transmitted UDP port 53 responses without cryptographic origin verification, allowing attackers to inject forged IP addresses into recursive resolver caches</strong>.
+        DNSSEC was created to resolve plaintext DNS cache poisoning by establishing a foundational security triad: <strong class="text-ink">origin authentication of DNS data, data integrity, and authenticated denial of existence (<code>NSEC</code>/<code>NSEC3</code>)</strong>, all while maintaining backward compatibility with standard DNS. Original DNS protocol specifications transmitted UDP port 53 responses without cryptographic verification, allowing attackers to inject forged IP addresses into recursive resolver caches.
       </p>
       <p>
         In classic DNS architectures, a recursive resolver verified incoming response packets solely by checking whether the source IP address, UDP port, and 16-bit Transaction ID (representing 65,536 potential values) matched its pending query. In July 2008, security researcher Dan Kaminsky demonstrated that an off-path attacker could flood recursive resolvers with forged referral responses for randomized subdomains. Attackers guessed the 16-bit Transaction ID within seconds and poisoned parent NS records in cache to redirect entire domains. Once poisoned, the resolver routed all subsequent traffic for that domain to an attacker-controlled destination, facilitating credential theft and man-in-the-middle attacks as documented in <a href="/dns-cache-poisoning/">DNS Cache Poisoning</a> and <a href="/dns-hijacking/">DNS Hijacking</a>.
@@ -261,11 +261,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does enabling DNSSEC slow down DNS lookups?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">With modern <strong>Algorithm 13 (ECDSAP256SHA256)</strong> keys, DNSSEC adds <strong>near-zero latency</strong> because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">With modern Algorithm 13 (ECDSAP256SHA256) keys, DNSSEC adds near-zero latency because signatures are only 64 bytes and validating recursive resolvers cache both the verified resource records and the domain's DNSKEYs for the duration of their TTL. In real-world performance benchmarks, recursive resolvers complete subsequent validated lookups directly from local memory without performing extra network round trips.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check if DNSSEC is enabled and valid on my domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Run your domain through the <strong>DNSSEC Checker</strong> to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the <strong>Authenticated Data (AD=1)</strong> flag.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Run your domain through the DNSSEC Checker to verify that a parent DS record is present at the TLD registry, a matching KSK (Flag 257) and ZSK (Flag 256) exist in your DNSKEY RRset, and resolvers return the Authenticated Data (AD=1) flag. In practice, the most critical mistake during DNS provider migrations is forgetting to delete old DS records from your registrar before switching nameservers, which causes catastrophic global resolution failure (SERVFAIL) across all validating resolvers.</p>
       </details>
     </div>
   </div>

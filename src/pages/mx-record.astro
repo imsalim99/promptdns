@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Does a lower or higher MX priority number get used first?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'A lower number always has higher priority and is tried first. Sending mail servers contact priority 0 or 1 before priority 10, and only fall back to priority 20 or 50 if the lower-numbered primary server is offline.',
-      },
+      "@type": "Question",
+      "name": "Does a lower or higher MX priority number get used first?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A lower number always has higher priority and is tried first. Sending mail servers contact priority 0 or 1 before priority 10, and only fall back to priority 20 or 50 if the lower-numbered primary server is offline."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can I point an MX record directly to an IP address?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, DNS standards prohibit pointing an MX record directly to an IPv4 or IPv6 address. Always point your MX record to a hostname (such as mail.yourdomain.com), and create a separate A or AAAA record pointing that hostname to the IP address.',
-      },
+      "@type": "Question",
+      "name": "Can I point an MX record directly to an IP address?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, DNS standards prohibit pointing an MX record directly to an IPv4 or IPv6 address. Always point your MX record to a hostname (such as mail.yourdomain.com), and create a separate A or AAAA record pointing that hostname to the IP address."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How many MX records should a domain have?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Most domains publish between 1 and 5 MX records depending on their email provider. Modern Google Workspace (1 smtp.google.com) and Microsoft 365 require only 1 MX record, while providers like Proton Mail and Zoho use 2 to 3 records for backup failover.',
-      },
+      "@type": "Question",
+      "name": "How many MX records should a domain have?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most domains publish between 1 and 5 MX records depending on their email provider. Modern Google Workspace (1 smtp.google.com) and Microsoft 365 require only 1 MX record, while providers like Proton Mail and Zoho use 2 to 3 records for backup failover. In production email deployments, we recommend following your provider's exact MX hostname recommendations and avoiding adding legacy secondary hosts from previous mail platforms."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What happens if I have MX records from two different email providers at the same time?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Publishing MX records for two different inbox providers on the same domain splits or breaks your incoming email delivery. Sending servers route mail only to the lowest-priority provider (or randomly split messages if priorities match), causing lost emails.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "What happens if I have MX records from two different email providers at the same time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Publishing MX records for two different inbox providers on the same domain splits or breaks your incoming email delivery. Sending servers route mail only to the lowest-priority provider (or randomly split messages if priorities match), causing lost emails. In practice, the most common migration pitfall occurs when teams leave old hosting MX entries active alongside new cloud mailbox records, causing unpredictable delivery failures across sending MTAs."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -85,7 +85,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-is-the-structure-of-an-mx-record-in-dns-fields-and-syntax">What Is the Structure of an MX Record in DNS? (Fields and Syntax)</h2>
       <p>
-        An MX record (DNS Type 15) contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component.
+        An MX record (DNS Type 15) routes inbound messages <strong class="text-ink">in accordance with the Simple Mail Transfer Protocol (SMTP)</strong>, where backup MX servers require the exact same anti-spam filtering as the primary MX server so spammers cannot bypass filters via higher-numbered backup MX hosts. The record contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component.
       </p>
 
       <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code>example.com.    3600    IN    MX    10 mail1.example.com.
@@ -241,11 +241,11 @@ nslookup -type=mx example.com 1.1.1.1</code></pre>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many MX records should a domain have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Most domains publish between 1 and 5 MX records depending on their email provider. Modern Google Workspace (1 smtp.google.com) and Microsoft 365 require only 1 MX record, while providers like Proton Mail and Zoho use 2 to 3 records for backup failover.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Most domains publish between 1 and 5 MX records depending on their email provider. Modern Google Workspace (1 smtp.google.com) and Microsoft 365 require only 1 MX record, while providers like Proton Mail and Zoho use 2 to 3 records for backup failover. In production email deployments, we recommend following your provider's exact MX hostname recommendations and avoiding adding legacy secondary hosts from previous mail platforms.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I have MX records from two different email providers at the same time?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publishing MX records for two different inbox providers on the same domain splits or breaks your incoming email delivery. Sending servers route mail only to the lowest-priority provider (or randomly split messages if priorities match), causing lost emails.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publishing MX records for two different inbox providers on the same domain splits or breaks your incoming email delivery. Sending servers route mail only to the lowest-priority provider (or randomly split messages if priorities match), causing lost emails. In practice, the most common migration pitfall occurs when teams leave old hosting MX entries active alongside new cloud mailbox records, causing unpredictable delivery failures across sending MTAs.</p>
       </details>
     </div>
   </div>

@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'How many steps are in a DNS lookup?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'An uncached DNS lookup takes 8 network steps across 4 server tiers (client stub resolver, recursive resolver, root nameserver, TLD nameserver, and authoritative nameserver) after checking 4 local caches on the device.',
-      },
+      "@type": "Question",
+      "name": "How many steps are in a DNS lookup?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An uncached DNS lookup takes 8 network steps across 4 server tiers (client stub resolver, recursive resolver, root nameserver, TLD nameserver, and authoritative nameserver) after checking 4 local caches on the device."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Why does my computer not ask the root server every time?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Recursive resolvers cache both final resource records and intermediate TLD and authoritative NS referrals for the duration of their Time to Live (TTL), allowing subsequent lookups to bypass root servers during the 48-hour TLD referral window.',
-      },
+      "@type": "Question",
+      "name": "Why does my computer not ask the root server every time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Recursive resolvers cache both final resource records and intermediate TLD and authoritative NS referrals for the duration of their Time to Live (TTL), allowing subsequent lookups to bypass root servers during the 48-hour TLD referral window."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How long does a DNS lookup take in milliseconds?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'A cached DNS lookup completes in 1 to 15 milliseconds from a local or nearby Anycast recursive resolver, while a cold uncached lookup traversing root, TLD, and authoritative servers takes 40 to 250 milliseconds.',
-      },
+      "@type": "Question",
+      "name": "How long does a DNS lookup take in milliseconds?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A cached DNS lookup completes in 1 to 15 milliseconds from a local or nearby Anycast recursive resolver, while a cold uncached lookup traversing root, TLD, and authoritative servers takes 40 to 250 milliseconds. In real-world performance tuning, we recommend keeping intermediate TTLs between 300 and 3600 seconds so repeat visitors benefit from hot resolver caches without suffering protracted cache delays during migrations."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What happens if a DNS response is larger than 512 bytes?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'The server sets the Truncated (TC=1) header flag and prompts the client to retry over TCP port 53 if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "What happens if a DNS response is larger than 512 bytes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The server sets the Truncated (TC=1) header flag and prompts the client to retry over TCP port 53 if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer. In practice, the most common operational failure occurs when security teams drop TCP port 53 at the firewall perimeter, causing truncated DNSSEC responses or large TXT record queries to timeout indefinitely."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -262,11 +262,11 @@ example.com.            3600    IN  A   93.184.216.34
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does a DNS lookup take in milliseconds?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A cached DNS lookup completes in <strong>1 to 15 milliseconds</strong> from a local or nearby Anycast recursive resolver, while a cold uncached lookup traversing root, TLD, and authoritative servers takes <strong>40 to 250 milliseconds</strong>.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A cached DNS lookup completes in 1 to 15 milliseconds from a local or nearby Anycast recursive resolver, while a cold uncached lookup traversing root, TLD, and authoritative servers takes 40 to 250 milliseconds. In real-world performance tuning, we recommend keeping intermediate TTLs between 300 and 3600 seconds so repeat visitors benefit from hot resolver caches without suffering protracted cache delays during migrations.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if a DNS response is larger than 512 bytes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">The server sets the <strong>Truncated (TC=1) header flag</strong> and prompts the client to retry over <strong>TCP port 53</strong> if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">The server sets the Truncated (TC=1) header flag and prompts the client to retry over TCP port 53 if a DNS response exceeds the 512-byte UDP limit or 4,096-byte EDNS0 buffer. In practice, the most common operational failure occurs when security teams drop TCP port 53 at the firewall perimeter, causing truncated DNSSEC responses or large TXT record queries to timeout indefinitely.</p>
       </details>
     </div>
   </div>

@@ -2,42 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Why does my SSL certificate work on desktop computers but show an error on mobile phones?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Your web server is missing the Intermediate Certificate Authority (CA) bundle. Desktop browsers often download missing intermediate certificates automatically in the background, whereas Android and iOS browsers do not. Update your server config to use fullchain.pem instead of cert.pem.',
-      },
+      "@type": "Question",
+      "name": "Why does my SSL certificate work on desktop computers but show an error on mobile phones?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your web server is missing the Intermediate Certificate Authority (CA) bundle. Desktop browsers often download missing intermediate certificates automatically in the background, whereas Android and iOS browsers do not. Update your server config to use fullchain.pem instead of cert.pem."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can a DNS change cause an SSL certificate error?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "Yes, pointing an A or AAAA record to the wrong IP address (or leaving an old IPv6 AAAA record pointing to a previous web host) routes visitors to a server that does not have your domain's SSL certificate installed, triggering NET::ERR_CERT_COMMON_NAME_INVALID.",
-      },
+      "@type": "Question",
+      "name": "Can a DNS change cause an SSL certificate error?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, pointing an A or AAAA record to the wrong IP address (or leaving an old IPv6 AAAA record pointing to a previous web host) routes visitors to a server that does not have your domain's SSL certificate installed, triggering NET::ERR_CERT_COMMON_NAME_INVALID."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How long does it take for a new SSL certificate to start working?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching.',
-      },
+      "@type": "Question",
+      "name": "How long does it take for a new SSL certificate to start working?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching. In production DevOps workflows, we recommend automating renewal hooks within certbot (such as --deploy-hook 'systemctl reload nginx') to eliminate web server reload oversights."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, bypassing an SSL warning is only safe on a server that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Is it safe to click \"Advanced -> Proceed to site (unsafe)\" on an SSL error?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, bypassing an SSL warning is only safe on a server that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings. In practice, the most dangerous administrator habit is clicking past browser warnings on staging environments, which masks genuine certificate chain and trust store issues prior to production launch."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -287,11 +287,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for a new SSL certificate to start working?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching. In production DevOps workflows, we recommend automating renewal hooks within certbot (such as --deploy-hook 'systemctl reload nginx') to eliminate web server reload oversights.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, bypassing an SSL warning is only safe on a server that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, bypassing an SSL warning is only safe on a server that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings. In practice, the most dangerous administrator habit is clicking past browser warnings on staging environments, which masks genuine certificate chain and trust store issues prior to production launch.</p>
       </details>
     </div>
   </div>

@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'How long does DNS propagation take?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "Standard DNS record edits (A, AAAA, CNAME, MX, TXT) propagate in 5 minutes to 24 hours based on the previous record's TTL. Authoritative nameserver (NS) changes take 24 to 48 hours because TLD registries cache NS delegation for 172,800 seconds.",
-      },
+      "@type": "Question",
+      "name": "How long does DNS propagation take?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Standard DNS record edits (A, AAAA, CNAME, MX, TXT) propagate in 5 minutes to 24 hours based on the previous record's TTL. Authoritative nameserver (NS) changes take 24 to 48 hours because TLD registries cache NS delegation for 172,800 seconds."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can I speed up DNS propagation?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "Yes, before making the change: lower the record's TTL to 300 seconds at least 24 to 48 hours in advance so old caches expire. After making a change, purge Cloudflare (1.1.1.1) and Google (8.8.8.8) caches using their public flush tools.",
-      },
+      "@type": "Question",
+      "name": "Can I speed up DNS propagation?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, before making the change: lower the record's TTL to 300 seconds at least 24 to 48 hours in advance so old caches expire. After making a change, purge Cloudflare (1.1.1.1) and Google (8.8.8.8) caches using their public flush tools."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Why do I still see the old website when others see the new one?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Your local web browser, operating system stub resolver, or ISP recursive resolver still holds the previous IP address in cache until its TTL expires. Flush your local OS DNS cache and restart your browser to force a fresh lookup.',
-      },
+      "@type": "Question",
+      "name": "Why do I still see the old website when others see the new one?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your local web browser, operating system stub resolver, or ISP recursive resolver still holds the previous IP address in cache until its TTL expires. Flush your local OS DNS cache and restart your browser to force a fresh lookup. In real-world migrations, we recommend testing DNS resolution directly against public resolvers like 1.1.1.1 and 8.8.8.8 using command-line dig to verify whether discrepancies stem from local device caches or upstream recursive servers."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Does DNS propagation cause website or email downtime?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'DNS propagation causes zero downtime if both the old and new servers remain active during the TTL transition window and identical zone records (including MX, SPF, and DKIM) are pre-configured on the new DNS provider before switching nameservers.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Does DNS propagation cause website or email downtime?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DNS propagation causes zero downtime if both the old and new servers remain active during the TTL transition window and identical zone records (including MX, SPF, and DKIM) are pre-configured on the new DNS provider before switching nameservers. In practice, the most catastrophic migration mistake administrators make is decommissioning the old hosting server or cutting off mail services before the previous zone TTL has fully elapsed globally."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -82,7 +82,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="why-is-dns-propagation-not-instant-the-pull-cache-architecture">Why Is DNS Propagation Not Instant? (The Pull-Cache Architecture)</h2>
       <p>
-        DNS propagation is not instant because <strong class="text-ink">authoritative nameservers do not push updates to the internet; instead, 4 independent caching layers continue serving the old record until its <abbr class="pd-term" data-tip="Time to Live, the number of seconds DNS records are cached by resolvers">Time to Live (TTL)</abbr> expires</strong>.
+        Record publishing is <strong class="text-ink">instantaneous on your authoritative nameserver, but global DNS propagation is a staggered convergence window shaped by TTL timers, resolver caches, and negative caching</strong>. Authoritative servers never push updates proactively across the internet; instead, 4 independent caching layers continue serving cached records until their timers expire.
       </p>
       <p>
         Your authoritative nameserver serves the updated record within 5 to 60 seconds after you save a change in your DNS provider dashboard. The observed propagation delay stems from the <abbr class="pd-term" data-tip="Architecture where clients request and cache data locally rather than servers pushing updates">pull-cache</abbr> architecture of DNS: client devices and recursive resolvers store answered queries locally and refuse to query authoritative servers again until the cached record countdown timer reaches zero.
@@ -225,11 +225,11 @@ dig @8.8.8.8 example.com A +noall +answer</code></pre>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do I still see the old website when others see the new one?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Your local web browser, operating system stub resolver, or ISP recursive resolver <strong>still holds the previous IP address in cache</strong> until its TTL expires. Flush your local OS DNS cache and restart your browser to force a fresh lookup.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Your local web browser, operating system stub resolver, or ISP recursive resolver still holds the previous IP address in cache until its TTL expires. Flush your local OS DNS cache and restart your browser to force a fresh lookup. In real-world migrations, we recommend testing DNS resolution directly against public resolvers like 1.1.1.1 and 8.8.8.8 using command-line dig to verify whether discrepancies stem from local device caches or upstream recursive servers.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNS propagation cause website or email downtime?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS propagation causes <strong>zero downtime if both the old and new servers remain active</strong> during the TTL transition window and identical zone records (including MX, SPF, and DKIM) are pre-configured on the new DNS provider before switching nameservers.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS propagation causes zero downtime if both the old and new servers remain active during the TTL transition window and identical zone records (including MX, SPF, and DKIM) are pre-configured on the new DNS provider before switching nameservers. In practice, the most catastrophic migration mistake administrators make is decommissioning the old hosting server or cutting off mail services before the previous zone TTL has fully elapsed globally.</p>
       </details>
     </div>
   </div>

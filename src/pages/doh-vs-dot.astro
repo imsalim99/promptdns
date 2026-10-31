@@ -2,42 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Which is better for home users: DoH or DoT?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'DNS over HTTPS (DoH) on port 443 serves as the superior default for home users and mobile laptops on public Wi-Fi. Chrome, Firefox, Edge, and Windows 11 support DoH natively. Encapsulating queries within standard HTTPS traffic prevents local firewalls from blocking lookups without terminating general web connectivity.',
-      },
+      "@type": "Question",
+      "name": "Which is better for home users: DoH or DoT?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DNS over HTTPS (DoH) on port 443 serves as the superior default for home users and mobile laptops on public Wi-Fi. Chrome, Firefox, Edge, and Windows 11 support DoH natively. Encapsulating queries within standard HTTPS traffic prevents local firewalls from blocking lookups without terminating general web connectivity."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Does Android "Private DNS" use DoH or DoT?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "Android's built-in Private DNS setting uses DNS over TLS (DoT) on TCP port 853 (and DNS over QUIC on Android 13+ when available). That is why Android requires a TLS hostname like dns.google or one.one.one.one rather than an https:// URL.",
-      },
+      "@type": "Question",
+      "name": "Does Android \"Private DNS\" use DoH or DoT?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Android's built-in Private DNS setting uses DNS over TLS (DoT) on TCP port 853 (and DNS over QUIC on Android 13+ when available). That is why Android requires a TLS hostname like dns.google or one.one.one.one rather than an https:// URL."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can my ISP still see what websites I visit if I use DoH or DoT?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No, your ISP loses visibility into your plaintext DNS lookups under DoH or DoT. However, your ISP identifies destination IP addresses and unencrypted TLS SNI hostnames during initial connections unless Encrypted Client Hello is active. Masking all network traffic requires a full-tunnel VPN.',
-      },
+      "@type": "Question",
+      "name": "Can my ISP still see what websites I visit if I use DoH or DoT?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, your ISP loses visibility into your plaintext DNS lookups under DoH or DoT. However, your ISP identifies destination IP addresses and unencrypted TLS SNI hostnames during initial connections unless Encrypted Client Hello is active. In practice, full traffic privacy requires pairing encrypted DNS with Encrypted Client Hello (ECH) or routing connections through a trusted full-tunnel VPN."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can I use DoH or DoT together with DNSSEC?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, DoH, DoT, and DNSSEC operate together across separate security layers. DoH and DoT encrypt the connection between your device and the recursive resolver (such as 1.1.1.1), while the recursive resolver validates DNSSEC digital signatures to verify that authoritative records remain authentic.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "Can I use DoH or DoT together with DNSSEC?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, DoH, DoT, and DNSSEC operate together across separate security layers. DoH and DoT encrypt the connection between your device and the recursive resolver (such as 1.1.1.1), while the recursive resolver validates DNSSEC digital signatures to verify that authoritative records remain authentic. In production security architectures, we recommend enabling both protocols simultaneously: transport encryption shields the local last-mile link, while DNSSEC guarantees upstream zone data authenticity."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -78,7 +78,7 @@ const faq = {
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="doh-vs-dot-vs-doq-vs-plaintext-dns-side-by-side-comparison-table">DoH vs DoT vs DoQ vs Plaintext DNS: Side-by-Side Comparison Table</h2>
         <p>
-          Traditional DNS transmits every domain lookup (<abbr class="pd-term" data-tip="The fully qualified domain name field in a DNS query payload indicating the requested domain.">QNAME</abbr>) in cleartext over port 53, whereas <strong class="text-ink">DoT, DoH, and DNS over QUIC (DoQ) encrypt connections to recursive resolvers using distinct network ports and transport layers</strong>. The table compares all 4 DNS transport methods across 9 technical dimensions.
+          Traditional DNS transmits every domain lookup (<abbr class="pd-term" data-tip="The fully qualified domain name field in a DNS query payload indicating the requested domain.">QNAME</abbr>) in cleartext over port 53, whereas <strong class="text-ink">DoH applies encryption at the Application Layer (port 443 HTTPS), whereas DoT applies encryption directly at the Transport Layer (port 853 TLS)</strong>. The table below compares 4 DNS transport methods across 9 technical dimensions.
         </p>
 
         <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
@@ -168,12 +168,12 @@ const faq = {
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-does-dns-over-tls-dot-work-compared-to-dns-over-https-doh">How Does DNS over TLS (DoT) Work Compared to DNS over HTTPS (DoH)?</h2>
         <p>
-          Both protocols use identical TLS cryptographic ciphers to encrypt your DNS queries, but <strong class="text-ink">DoT encapsulates raw binary DNS messages directly inside a dedicated TCP port 853 TLS stream, whereas DoH formats each lookup as an HTTP GET or POST request sent to a URI endpoint on port 443</strong>. Protocol engineers distinguish the wire-level mechanics across 2 separate operational pipelines:
+          Both protocols use identical TLS cryptographic ciphers to encrypt your DNS queries, but <strong class="text-ink">DoT encapsulates raw binary DNS messages directly inside a dedicated TCP port 853 TLS stream, whereas DoH formats each lookup as an HTTP GET or POST request sent to a URI endpoint on port 443</strong>. Engineers distinguish the mechanics across 2 operational pipelines:
         </p>
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">How DNS over TLS (DoT) Works on TCP Port 853:</strong> Technical guides often mislabel DoT as using UDP, but DoT operates strictly over persistent TCP connections. The client stub resolver connects on port 853, negotiates ciphers via <a href="/tls-versions-explained/">TLS 1.0 to 1.3: Versions Compared</a>, and validates hostnames like <code>one.one.one.one</code> or <code>dns.google</code>. The client then pipelines binary DNS packets prefixed with two-byte length indicators.
+            <strong class="text-ink">How DNS over TLS (DoT) Works on TCP Port 853:</strong> Technical guides often mislabel DoT as using UDP, but DoT operates strictly over persistent TCP connections across two operating modes: <strong class="text-ink">Opportunistic mode</strong> (falls back to plaintext port 53 if TLS fails) and <strong class="text-ink">Strict mode</strong> (requires a verified TLS certificate or blocks the lookup). The client stub resolver connects on port 853, negotiates ciphers via <a href="/tls-versions-explained/">TLS 1.0 to 1.3: Versions Compared</a>, validates hostnames like <code>one.one.one.one</code> or <code>dns.google</code>, and pipelines binary DNS packets prefixed with two-byte length indicators.
           </li>
           <li class="leading-relaxed">
             <strong class="text-ink">How DNS over HTTPS (DoH) Works on Port 443 (/dns-query):</strong> DoH connects to an HTTPS URI endpoint on port 443, such as <code>https://cloudflare-dns.com/dns-query</code>. The client transmits queries via HTTP GET or POST using MIME type <code>application/dns-message</code> (or <code>application/dns-json</code> for browser tools), multiplexing lookups over established HTTP/2 or HTTP/3 sessions.
@@ -190,30 +190,30 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
         </div>
 
         <p>
-          Browser diagnostic tools use HTTPS networking to query DoH endpoints directly from JavaScript. This enables utilities like the <a href="/dns-propagation-checker/">DNS Propagation Checker</a> and <a href="/dns-resolver-tester/">DNS Resolver Tester</a> to test global resolvers without intermediary proxies.
+          Browser diagnostic tools query DoH endpoints directly from JavaScript. This enables utilities like the <a href="/dns-propagation-checker/">DNS Propagation Checker</a> and <a href="/dns-resolver-tester/">DNS Resolver Tester</a> to test global resolvers directly.
         </p>
       </section>
 
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="doh-vs-dot-performance-and-speed-which-protocol-is-faster">DoH vs DoT Performance and Speed: Which Protocol Is Faster?</h2>
         <p>
-          In real-world benchmarks, <strong class="text-ink">DoT and DoH deliver near-identical lookup speeds within 2 to 8 milliseconds of each other</strong>, with performance determined by <strong class="text-ink">3 transport factors: HTTP framing overhead, connection reuse, and HTTP/3 QUIC multiplexing</strong>:
+          In real-world benchmarks, <strong class="text-ink">DoT and DoH deliver near-identical lookup speeds within 2 to 8 milliseconds of each other</strong>, shaped by <strong class="text-ink">3 transport factors: HTTP framing overhead, connection reuse, and HTTP/3 QUIC multiplexing</strong>:
         </p>
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">Raw Protocol Framing Overhead (DoT Is Slightly Leaner Over TCP):</strong> DoT transmits binary packets over TLS without HTTP headers. This minimal framing requires fewer server parsing cycles than HTTP/2 DoH requests.
+            <strong class="text-ink">Raw Protocol Framing Overhead (DoT Is Slightly Leaner Over TCP):</strong> DoT transmits binary packets over TLS without HTTP headers, requiring fewer server parsing cycles than HTTP/2 DoH requests.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Persistent Connection Reuse and Query Pipelining (Ties DoT and DoH):</strong> Initial TCP and TLS handshakes add round-trip overhead. Both protocols eliminate this penalty by maintaining persistent connections, pipelining lookups, and resuming sessions via TLS 1.3 0-RTT.
+            <strong class="text-ink">Persistent Connection Reuse and Query Pipelining (Ties DoT and DoH):</strong> Initial handshakes add round-trip overhead. Both protocols eliminate this penalty by maintaining persistent connections, pipelining lookups, and resuming sessions via TLS 1.3 0-RTT.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">HTTP/3 and DNS over QUIC (DoQ) Eliminate TCP Head-of-Line Blocking:</strong> Dropping a TCP packet on lossy wireless networks stalls queued lookups on that socket. Modern DoH over HTTP/3 and DNS over QUIC (DoQ on UDP port 853) run over QUIC streams, resolving lookups concurrently without head-of-line blocking.
+            <strong class="text-ink">HTTP/3 and DNS over QUIC (DoQ) Eliminate TCP Head-of-Line Blocking:</strong> Dropping a TCP packet on lossy wireless networks stalls queued lookups on that socket. DoH over HTTP/3 and DNS over QUIC (DoQ on UDP port 853) run over QUIC streams, resolving lookups concurrently.
           </li>
         </ol>
 
         <p>
-          Network proximity to the nearest <abbr class="pd-term" data-tip="A network addressing method where multiple physical servers share a single IP address, routing users to the topologically nearest node.">Anycast</abbr> edge node drives real-world latency more than framing differences. Administrators benchmark local resolution latency across public resolvers using the <a href="/dns-speed-test/">DNS Speed Test</a>.
+          Network proximity to the nearest <abbr class="pd-term" data-tip="A network addressing method where multiple physical servers share a single IP address, routing users to the topologically nearest node.">Anycast</abbr> node drives real-world latency more than framing differences. Administrators benchmark resolution latency across public resolvers using the <a href="/dns-speed-test/">DNS Speed Test</a>.
         </p>
       </section>
 
@@ -225,10 +225,10 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">Why End Users, Journalists, and Browsers Prefer DoH (Port 443 Stealth):</strong> Restrictive networks often block DoT by dropping outbound TCP port 853, forcing clients toward unencrypted DNS. DoH shares port 443 with standard HTTPS traffic, preventing firewalls from blocking DNS lookups without breaking web browsing. Deploying <abbr class="pd-term" data-tip="Encrypted Client Hello, a TLS 1.3 extension that encrypts the entire handshake payload, concealing the SNI from network observers.">ECH</abbr> encrypts the <abbr class="pd-term" data-tip="Server Name Indication, a TLS extension where the client specifies the target hostname in plaintext during the handshake.">SNI</abbr> header, shielding visited domains from network inspection appliances.
+            <strong class="text-ink">Why End Users, Journalists, and Browsers Prefer DoH (Port 443 Stealth):</strong> Restrictive networks often block DoT by dropping outbound TCP port 853. DoH shares port 443 with standard HTTPS traffic, preventing firewalls from blocking DNS lookups without breaking general web browsing. Deploying <abbr class="pd-term" data-tip="Encrypted Client Hello, a TLS 1.3 extension that encrypts the entire handshake payload, concealing the SNI from network observers.">ECH</abbr> encrypts the <abbr class="pd-term" data-tip="Server Name Indication, a TLS extension where the client specifies the target hostname in plaintext during the handshake.">SNI</abbr> header, shielding visited domains.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Why Corporate IT and Security Teams Prefer DoT (Port 853 Governance):</strong> Enterprise security teams rely on internal resolvers to filter malware, log threats, and resolve private records. Unmanaged browser DoH connections bypass corporate controls. Dedicated port 853 assignments allow firewalls to identify encrypted DNS traffic, block unauthorized resolvers, and direct queries exclusively through audited DoT forwarders.
+            <strong class="text-ink">Why Corporate IT and Security Teams Prefer DoT (Port 853 Governance):</strong> Enterprise security teams rely on internal resolvers to filter malware and log threats. Unmanaged browser DoH connections bypass corporate controls. Dedicated port 853 assignments allow firewalls to identify encrypted DNS traffic and direct queries exclusively through audited DoT forwarders.
           </li>
         </ol>
 
@@ -240,30 +240,30 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="what-neither-doh-nor-dot-protects-against-3-critical-security-boundaries">What Neither DoH Nor DoT Protects Against (3 Critical Security Boundaries)</h2>
         <p>
-          Enabling DoH or DoT encrypts the link between your device and your <abbr class="pd-term" data-tip="A DNS server that traverses the root, TLD, and authoritative hierarchy on behalf of client devices.">recursive resolver</abbr>, but <strong class="text-ink">3 security boundaries remain outside the scope of both protocols: upstream authoritative queries, cryptographic record authenticity (<abbr class="pd-term" data-tip="Domain Name System Security Extensions, a cryptographic validation suite ensuring DNS record authenticity.">DNSSEC</abbr>), and full-traffic IP masking (VPN)</strong>:
+          Enabling DoH or DoT encrypts the link to your <abbr class="pd-term" data-tip="A DNS server that traverses the root, TLD, and authoritative hierarchy on behalf of client devices.">recursive resolver</abbr>, but <strong class="text-ink">3 security boundaries remain outside both protocols: upstream authoritative queries, cryptographic record authenticity (<abbr class="pd-term" data-tip="Domain Name System Security Extensions, a cryptographic validation suite ensuring DNS record authenticity.">DNSSEC</abbr>), and full-traffic IP masking (VPN)</strong>:
         </p>
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">Neither Protocol Encrypts DNS End-to-End (Stub-to-Recursive Only):</strong> DoH and DoT protect only the first hop between the client <abbr class="pd-term" data-tip="A minimal DNS client library on an operating system or application that forwards queries to recursive resolvers.">stub resolver</abbr> and the recursive resolver. Upstream queries travel over unencrypted port 53 UDP when the resolver queries authoritative servers as explained in <a href="/how-dns-works/">How DNS Works</a>, unless authorities support experimental authoritative DoT. The resolver operator retains visibility into client IP addresses and requested domains.
+            <strong class="text-ink">Neither Protocol Encrypts DNS End-to-End (Stub-to-Recursive Only):</strong> DoH and DoT protect only the first hop between the client <abbr class="pd-term" data-tip="A minimal DNS client library on an operating system or application that forwards queries to recursive resolvers.">stub resolver</abbr> and the recursive resolver. Upstream queries travel over unencrypted port 53 UDP when the resolver queries authoritative servers as explained in <a href="/how-dns-works/">How DNS Works</a>. The resolver operator retains visibility into client IP addresses and requested domains.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">DoH and DoT Do Not Replace DNSSEC (Confidentiality vs Authenticity):</strong> Transport encryption shields lookups from local eavesdroppers, but provides zero validation of upstream zone accuracy. A compromised resolver returns forged records over encrypted sessions unless authoritative zones deploy <a href="/what-is-dnssec/">What Is DNSSEC</a>. DNSSEC signs records cryptographically, enabling resolvers to verify authenticity independently of transport encryption.
+            <strong class="text-ink">DoH and DoT Do Not Replace DNSSEC (Confidentiality vs Authenticity):</strong> Transport encryption shields lookups from local eavesdroppers, but provides zero validation of upstream zone accuracy. A compromised resolver returns forged records over encrypted sessions unless authoritative zones deploy <a href="/what-is-dnssec/">What Is DNSSEC</a>. DNSSEC signs records cryptographically, enabling resolvers to verify authenticity independently.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">DoH and DoT Do Not Replace a VPN (DNS Lookups vs Full IP Traffic):</strong> Encrypted DNS conceals domain lookups, but devices connect directly to destination IP addresses. Network operators inspect destination IPs, packet volumes, and unencrypted SNI headers. Full traffic masking requires a virtual private network.
+            <strong class="text-ink">DoH and DoT Do Not Replace a VPN (DNS Lookups vs Full IP Traffic):</strong> Encrypted DNS conceals domain lookups, but devices connect directly to destination IP addresses. Network operators inspect destination IPs and unencrypted SNI headers. Full traffic masking requires a virtual private network.
           </li>
         </ol>
 
         <p>
-          Designing robust domain perimeters requires layering transport encryption alongside zone-level signing records, documented thoroughly in our guide to <a href="/dns-security/">DNS Security</a>.
+          Designing robust domain perimeters requires layering transport encryption alongside zone signing records, documented in <a href="/dns-security/">DNS Security</a>.
         </p>
       </section>
 
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="public-doh-and-dot-resolver-endpoints-and-how-to-enable-them-on-your-device">Public DoH and DoT Resolver Endpoints and How to Enable Them on Your Device</h2>
         <p>
-          Major public DNS providers operate <strong class="text-ink">free, DNSSEC-validating DoH (port 443) and DoT (port 853) endpoints</strong> configured using TLS hostnames or HTTPS /dns-query URLs. The table below lists configuration values for 4 leading public resolvers.
+          Major public DNS providers operate <strong class="text-ink">free, DNSSEC-validating DoH (port 443) and DoT (port 853) endpoints</strong> using TLS hostnames or HTTPS URLs. The table below lists configuration values for 4 leading public resolvers.
         </p>
 
         <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
@@ -279,25 +279,25 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
             <tbody>
               <tr>
                 <td class="p-3 font-medium text-ink">Cloudflare (1.1.1.1)</td>
-                <td class="p-3 text-sm font-mono text-ink-dim">1.1.1.1, 1.0.0.1<br />2606:4700:4700::1111</td>
+                <td class="p-3 text-sm font-mono text-ink-dim">1.1.1.1, 1.0.0.1 / 2606:4700:4700::1111</td>
                 <td class="p-3 text-sm font-mono text-accent">one.one.one.one</td>
                 <td class="p-3 text-sm font-mono text-accent">https://cloudflare-dns.com/dns-query</td>
               </tr>
               <tr>
                 <td class="p-3 font-medium text-ink">Google Public DNS</td>
-                <td class="p-3 text-sm font-mono text-ink-dim">8.8.8.8, 8.8.4.4<br />2001:4860:4860::8888</td>
+                <td class="p-3 text-sm font-mono text-ink-dim">8.8.8.8, 8.8.4.4 / 2001:4860:4860::8888</td>
                 <td class="p-3 text-sm font-mono text-accent">dns.google</td>
                 <td class="p-3 text-sm font-mono text-accent">https://dns.google/dns-query</td>
               </tr>
               <tr>
                 <td class="p-3 font-medium text-ink">Quad9 (Malware Blocking)</td>
-                <td class="p-3 text-sm font-mono text-ink-dim">9.9.9.9, 149.112.112.112<br />2620:fe::fe</td>
+                <td class="p-3 text-sm font-mono text-ink-dim">9.9.9.9, 149.112.112.112 / 2620:fe::fe</td>
                 <td class="p-3 text-sm font-mono text-accent">dns.quad9.net</td>
                 <td class="p-3 text-sm font-mono text-accent">https://dns.quad9.net/dns-query</td>
               </tr>
               <tr>
                 <td class="p-3 font-medium text-ink">AliDNS</td>
-                <td class="p-3 text-sm font-mono text-ink-dim">223.5.5.5, 223.6.6.6<br />2400:3200::1</td>
+                <td class="p-3 text-sm font-mono text-ink-dim">223.5.5.5, 223.6.6.6 / 2400:3200::1</td>
                 <td class="p-3 text-sm font-mono text-accent">dns.alidns.com</td>
                 <td class="p-3 text-sm font-mono text-accent">https://dns.alidns.com/dns-query</td>
               </tr>
@@ -311,25 +311,25 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
 
         <ol class="list-decimal space-y-3 pl-6">
           <li class="leading-relaxed">
-            <strong class="text-ink">Web Browsers (Chrome, Edge, Brave, Firefox):</strong> Open settings under Privacy and Security, enable Secure DNS, and select Cloudflare (1.1.1.1) or enter a custom DoH URI endpoint from the table above.
+            <strong class="text-ink">Web Browsers (Chrome, Edge, Brave, Firefox):</strong> Open Privacy settings, enable Secure DNS, and select Cloudflare (1.1.1.1) or enter a custom DoH endpoint URI from the table above.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Windows 11 (Native System-Wide DoH):</strong> Open Settings &rarr; Network &amp; internet, edit DNS assignments under Wi-Fi or Ethernet, enter <code>1.1.1.1</code>, and select On (automatic template) under DNS over HTTPS.
+            <strong class="text-ink">Windows 11 (Native System-Wide DoH):</strong> Open Network settings, edit DNS assignments under Wi-Fi or Ethernet, enter <code>1.1.1.1</code>, and select On (automatic template) under DNS over HTTPS.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Android 9+ (Native System-Wide DoT via Private DNS):</strong> Open Settings &rarr; Network &amp; internet &rarr; Private DNS, choose Private DNS provider hostname, and enter a DoT hostname like <code>one.one.one.one</code> or <code>dns.google</code>.
+            <strong class="text-ink">Android 9+ (Native System-Wide DoT via Private DNS):</strong> Open Network settings &rarr; Private DNS, choose Private DNS provider hostname, and enter a DoT hostname like <code>one.one.one.one</code> or <code>dns.google</code>.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Apple Devices (iOS 14+, macOS 11+) and Linux:</strong> Install an encrypted configuration profile on Apple devices, or enable DoT on Linux by setting <code>DNSOverTLS=yes</code> inside <code>/etc/systemd/resolved.conf</code>.
+            <strong class="text-ink">Apple Devices (iOS 14+, macOS 11+) and Linux:</strong> Install an encrypted mobileconfig profile on Apple devices, or set <code>DNSOverTLS=yes</code> inside <code>/etc/systemd/resolved.conf</code> on Linux.
           </li>
         </ol>
 
         <p>
-          Configuring operating system resolvers alongside browser settings ensures complete encrypted DNS coverage across all endpoints.
+          Configuring operating system resolvers alongside browser settings ensures complete encrypted DNS coverage.
         </p>
 
         <p>
-          Deploying encrypted DNS via DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) upgrades legacy plaintext port 53 traffic into secure channels. Choosing between port 443 HTTPS encapsulation and dedicated port 853 TLS tunnels balances privacy against network visibility. Modern transport protocols like DNS over QUIC (DoQ) eliminate latency penalties, delivering confidentiality across enterprise and consumer networks.
+          Deploying encrypted DNS via DNS-over-HTTPS (DoH) or DNS-over-TLS (DoT) upgrades legacy plaintext traffic into secure channels. Choosing between port 443 HTTPS encapsulation and port 853 TLS tunnels balances privacy against network visibility, while DNS over QUIC (DoQ) eliminates latency penalties across modern networks.
         </p>
       </section>
     </div>
@@ -346,11 +346,11 @@ curl -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?nam
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can my ISP still see what websites I visit if I use DoH or DoT?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, your ISP loses visibility into your plaintext DNS lookups under DoH or DoT. However, your ISP identifies destination IP addresses and unencrypted TLS SNI hostnames during initial connections unless Encrypted Client Hello is active. Masking all network traffic requires a full-tunnel VPN.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, your ISP loses visibility into your plaintext DNS lookups under DoH or DoT. However, your ISP identifies destination IP addresses and unencrypted TLS SNI hostnames during initial connections unless Encrypted Client Hello is active. In practice, full traffic privacy requires pairing encrypted DNS with Encrypted Client Hello (ECH) or routing connections through a trusted full-tunnel VPN.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use DoH or DoT together with DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, DoH, DoT, and DNSSEC operate together across separate security layers. DoH and DoT encrypt the connection between your device and the recursive resolver (such as 1.1.1.1), while the recursive resolver validates DNSSEC digital signatures to verify that authoritative records remain authentic.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, DoH, DoT, and DNSSEC operate together across separate security layers. DoH and DoT encrypt the connection between your device and the recursive resolver (such as 1.1.1.1), while the recursive resolver validates DNSSEC digital signatures to verify that authoritative records remain authentic. In production security architectures, we recommend enabling both protocols simultaneously: transport encryption shields the local last-mile link, while DNSSEC guarantees upstream zone data authenticity.</p>
       </details>
     </div>
   </div>

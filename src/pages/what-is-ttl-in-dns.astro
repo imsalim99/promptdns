@@ -3,42 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
 
 const faq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'Is DNS TTL measured in seconds or minutes?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "DNS TTL is always measured and stored in seconds inside DNS zone files. For example, a 5-minute TTL is written as 300, a 1-hour TTL is 3600, and a 24-hour TTL is 86400, even if your DNS provider's web dashboard displays a dropdown in minutes or hours.",
-      },
+      "@type": "Question",
+      "name": "Is DNS TTL measured in seconds or minutes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DNS TTL is always measured and stored in seconds inside DNS zone files. For example, a 5-minute TTL is written as 300, a 1-hour TTL is 3600, and a 24-hour TTL is 86400, even if your DNS provider's web dashboard displays a dropdown in minutes or hours."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What does "Auto" TTL mean in Cloudflare?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "In Cloudflare DNS, setting a record's TTL to Auto assigns a default TTL of 300 seconds (5 minutes) for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers. Cloudflare provides a minimum custom TTL of 60 seconds on standard plans and 30 seconds on Enterprise plans.",
-      },
+      "@type": "Question",
+      "name": "What does \"Auto\" TTL mean in Cloudflare?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In Cloudflare DNS, setting a record's TTL to Auto assigns a default TTL of 300 seconds (5 minutes) for unproxied (DNS-only) records. For proxied (Orange Cloud) records, Cloudflare automatically manages edge caching and serves a short 300-second TTL to external resolvers. Cloudflare provides a minimum custom TTL of 60 seconds on standard plans and 30 seconds on Enterprise plans."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Does lowering my DNS TTL clear caches that already have the old record?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: "No, lowering a record's TTL only applies to new lookups fetched after you save the change. Any recursive resolver that cached your record earlier continues counting down the previous TTL timer until it expires naturally.",
-      },
+      "@type": "Question",
+      "name": "Does lowering my DNS TTL clear caches that already have the old record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, lowering a record's TTL only applies to new lookups fetched after you save the change. Any recursive resolver that cached your record earlier continues counting down the previous TTL timer until it expires naturally. In real-world migration planning, we recommend lowering record TTLs to 300 seconds at least 24 to 48 hours in advance so cached entries expire before server cutovers."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What is a good default TTL for A and MX records?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'A TTL of 3600 seconds (1 hour) is the ideal everyday default for production A and AAAA web records, balancing fast cached lookups with 1-hour recovery if an IP changes. For stable MX mail records, 3600 to 14400 seconds (1 to 4 hours) is standard.',
-      },
-    },
-  ],
+      "@type": "Question",
+      "name": "What is a good default TTL for A and MX records?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A TTL of 3600 seconds (1 hour) is the ideal everyday default for production A and AAAA web records, balancing fast cached lookups with 1-hour recovery if an IP changes. For stable MX mail records, 3600 to 14400 seconds (1 to 4 hours) is standard. In practice, the most common mistake administrators make is setting TTLs to days or weeks on frequently changing records, causing protracted outages when server IP addresses migrate."
+      }
+    }
+  ]
 };
 ---
 <BaseLayout
@@ -170,7 +170,7 @@ const faq = {
 
       <h2 id="how-does-soa-negative-cache-ttl-work-for-non-existent-domains-nxdomain">How Does SOA Negative Cache TTL Work for Non-Existent Domains (NXDOMAIN)?</h2>
       <p>
-        Caching for non-existent domain names (<abbr class="pd-term" data-tip="NXDOMAIN (Non-Existent Domain): a DNS response code indicating that the queried domain name does not exist">NXDOMAIN</abbr>) is governed by <strong class="text-ink">the <code>MINIMUM</code> negative cache timer at the end of your domain's <abbr class="pd-term" data-tip="Start of Authority (SOA): a foundational DNS record containing administrative parameters and zone transfer timers">Start of Authority (SOA)</abbr> record</strong> rather than a standard resource record TTL.
+        Caching for non-existent domain names (<abbr class="pd-term" data-tip="NXDOMAIN (Non-Existent Domain): a DNS response code indicating that the queried domain name does not exist">NXDOMAIN</abbr>) is governed by <strong class="text-ink">the <code>MINIMUM</code> negative cache timer at the end of your domain's <abbr class="pd-term" data-tip="Start of Authority (SOA): a foundational DNS record containing administrative parameters and zone transfer timers">Start of Authority (SOA)</abbr> record</strong> rather than a standard resource record TTL. Many administrators mistakenly confuse the <strong class="text-ink">SOA record's <code>Expire</code> and <code>Minimum Negative Cache</code> fields</strong> with their main record TTL, whereas positive caching always uses each individual record's own TTL value.
       </p>
       <p>
         Authoritative zone files format SOA timers according to this structure:
@@ -215,11 +215,11 @@ const faq = {
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does lowering my DNS TTL clear caches that already have the old record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, lowering a record's TTL <strong>only applies to new lookups fetched after you save the change</strong>. Any recursive resolver that cached your record earlier continues counting down the previous TTL timer until it expires naturally.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, lowering a record's TTL only applies to new lookups fetched after you save the change. Any recursive resolver that cached your record earlier continues counting down the previous TTL timer until it expires naturally. In real-world migration planning, we recommend lowering record TTLs to 300 seconds at least 24 to 48 hours in advance so cached entries expire before server cutovers.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a good default TTL for A and MX records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A TTL of <strong>3600 seconds (1 hour)</strong> is the ideal everyday default for production <strong>A and AAAA</strong> web records, balancing fast cached lookups with 1-hour recovery if an IP changes. For stable <strong>MX</strong> mail records, <strong>3600 to 14400 seconds (1 to 4 hours)</strong> is standard.</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A TTL of 3600 seconds (1 hour) is the ideal everyday default for production A and AAAA web records, balancing fast cached lookups with 1-hour recovery if an IP changes. For stable MX mail records, 3600 to 14400 seconds (1 to 4 hours) is standard. In practice, the most common mistake administrators make is setting TTLs to days or weeks on frequently changing records, causing protracted outages when server IP addresses migrate.</p>
       </details>
     </div>
   </div>
