@@ -1,55 +1,358 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Is TLS 1.3 backward compatible?", "acceptedAnswer": { '@type': 'Answer', "text": "It has a compatibility mode so middleboxes tolerate it, but 1.3-only servers drop ancient clients by design." } },
-    {'@type': 'Question', 'name': "What is a cipher suite?", "acceptedAnswer": { '@type': 'Answer', "text": "The negotiated recipe: key exchange, bulk encryption, and hash algorithms. Modern suites are all forward-secret." } },
-    {'@type': 'Question', 'name': "How do I check my server's TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "SSL Labs Server Test grades protocol and cipher configuration, or openssl s_client with -tls1_2/-tls1_3 flags." } },
-    {'@type': 'Question', 'name': "Does DNSSEC affect TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "No: different layers. DNSSEC authenticates addresses; TLS authenticates and encrypts the session." } },
-    {'@type': 'Question', 'name': "Why did old TLS die?", "acceptedAnswer": { '@type': 'Answer', "text": "POODLE, BEAST, and downgrade attacks against design flaws that cannot be patched, only retired." } }
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the latest version of TLS and when was it released?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The latest version of Transport Layer Security is TLS 1.3, which was officially standardized and released by the IETF in August 2018 (RFC 8446). As of 2026, TLS 1.3 is the fastest and most secure protocol version available."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is TLS 1.2 still secure or is disabling it recommended to use only TLS 1.3?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, TLS 1.2 remains secure when configured with modern ECDHE and AES-GCM ciphers. Keep both TLS 1.2 and TLS 1.3 enabled on public websites and mail servers, enabling clients that do not yet support TLS 1.3 to connect securely, while disabling TLS 1.0 and 1.1."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to buy a new SSL certificate to upgrade from TLS 1.2 to TLS 1.3?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, your existing SSL/TLS certificate already works with TLS 1.3. TLS version support is controlled by your web server software (such as NGINX, Apache, or Cloudflare) and OpenSSL library version (OpenSSL 1.1.1+), not by the certificate file itself."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does disabling TLS 1.0 and 1.1 sometimes break older email clients or API scripts?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world server upgrades, legacy systems running outdated operating systems (such as Windows Server 2008, Java 7, or old Python 2 scripts) lack TLS 1.2/1.3 libraries and fail to connect once TLS 1.0/1.1 are turned off. Upgrade the client runtime or route legacy internal devices through a modern TLS proxy."
+      }
+    }
   ]
-}
+};
 ---
+
 <BaseLayout
-  title="TLS Versions Explained: 1.0 to 1.3"
-  description="TLS versions explained: what changed from SSL 3.0 and TLS 1.0 through TLS 1.3, which to disable, and how to test your server."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["SSL/TLS Guides", "/ssl-tls/"], ["TLS Versions"]]}>
+  title="TLS Versions Explained: TLS 1.0, 1.1, 1.2, and TLS 1.3 Compared"
+  description="Compare TLS 1.0, 1.1, 1.2, and TLS 1.3: explore release dates, 1-RTT vs 2-RTT handshake speed, deprecated ciphers, and modern NGINX/Apache configuration."
+  schema={[faq]}
+  breadcrumb={[
+    ["Home", "/"],
+    ["SSL/TLS and Web Security Basics", "/ssl-tls/"],
+    ["TLS Versions Explained"]
+  ]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <a href="/ssl-tls/" class="hover:text-accent">SSL/TLS Guides</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">TLS Versions</span>
+      <span aria-hidden="true">/</span>
+      <a href="/ssl-tls/" class="hover:text-accent">SSL/TLS and Web Security Basics</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">TLS Versions Explained</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">TLS Versions Explained</h1>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      TLS Versions Explained: TLS 1.0, 1.1, 1.2, and TLS 1.3 Compared
+    </h1>
+
     <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">Every TLS version is a security generation. SSL 3.0 and TLS 1.0/1.1 are broken and retired; TLS 1.2 is the workhorse; TLS 1.3 is the modern protocol: faster, simpler, and more secure. Your server should offer 1.2 and 1.3, and nothing else.</p>
+      <p class="text-lg leading-relaxed text-ink-dim">
+        <strong class="text-ink">TLS 1.3 (released in August 2018) is the latest and fastest version of Transport Layer Security</strong>, operating alongside <strong class="text-ink">TLS 1.2 (2008)</strong> as the only two secure protocols for modern HTTPS websites and email servers. Browsers permanently block legacy TLS 1.0 and 1.1. The handshake design of TLS 1.3 cuts connection time in half.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-versions">The versions</a></li>
-        <li><a href="#why-13-matters">Why 1.3 matters</a></li>
-        <li><a href="#server-configuration">Server configuration</a></li>
+        <li><a href="#all-ssl-and-tls-versions-compared-release-dates-and-security-status-1995-to-2026">All SSL and TLS versions compared</a></li>
+        <li><a href="#tls-13-vs-tls-12-what-are-the-5-speed-and-security-upgrades">TLS 1.3 vs TLS 1.2 upgrades</a></li>
+        <li><a href="#why-were-tls-10-and-tls-11-deprecated-attacks-and-compliance-bans">Why TLS 1.0 and 1.1 were deprecated</a></li>
+        <li><a href="#why-do-tls-versions-matter-for-email-mta-sts-starttls-and-encrypted-dns-doh-dot">TLS versions for email and DNS</a></li>
+        <li><a href="#how-to-check-supported-tls-versions-and-enable-tls-12-13-nginx-apache-and-cli">Check and configure TLS versions</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-versions">The versions</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td class="text-sm text-ink-dim">SSL 3.0</td><td class="text-sm text-ink-dim">Dead (POODLE)</td><td class="text-sm text-ink-dim">Retired 2015; disable everywhere</td></tr><tr><td class="text-sm text-ink-dim">TLS 1.0</td><td class="text-sm text-ink-dim">Dead (BEAST, weak ciphers)</td><td class="text-sm text-ink-dim">Retired 2020/2021 by browsers</td></tr><tr><td class="text-sm text-ink-dim">TLS 1.1</td><td class="text-sm text-ink-dim">Dead (weak integrity)</td><td class="text-sm text-ink-dim">Retired 2020/2021 by browsers</td></tr><tr><td class="text-sm text-ink-dim">TLS 1.2</td><td class="text-sm text-ink-dim">Workhorse</td><td class="text-sm text-ink-dim">Secure with modern cipher suites; still widely required</td></tr><tr><td class="text-sm text-ink-dim">TLS 1.3</td><td class="text-sm text-ink-dim">Modern</td><td class="text-sm text-ink-dim">Faster handshake (1-RTT), removed legacy ciphers, forward secrecy mandatory</td></tr></tbody></table></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="why-13-matters">Why 1.3 matters</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li>One round-trip handshake instead of two: measurably faster connections.</li><li>Removed every legacy cipher, compression, and renegotiation: a smaller attack surface.</li><li>Forward secrecy on every connection: past traffic stays past even if keys leak later.</li><li>0-RTT resumption exists but carries replay caveats: use for GETs only.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="server-configuration">Server configuration</h2>
-      <p>Enable TLS 1.2 + 1.3, disable everything older, and prefer modern cipher suites (Cloudflare and major CDNs do this by default). Test with SSL Labs or <code>openssl s_client -tls1_2 -connect host:443</code>. PCI DSS and every modern compliance framework require disabling 1.0/1.1.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is TLS 1.3 backward compatible?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It has a compatibility mode so middleboxes tolerate it, but 1.3-only servers drop ancient clients by design.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a cipher suite?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The negotiated recipe: key exchange, bulk encryption, and hash algorithms. Modern suites are all forward-secret.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check my server's TLS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SSL Labs Server Test grades protocol and cipher configuration, or openssl s_client with -tls1_2/-tls1_3 flags.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DNSSEC affect TLS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: different layers. DNSSEC authenticates addresses; TLS authenticates and encrypts the session.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why did old TLS die?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">POODLE, BEAST, and downgrade attacks against design flaws that cannot be patched, only retired.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/what-is-ssl-tls/" class="text-accent hover:text-accent-soft">What is SSL/TLS →</a></li><li><a href="/hsts-explained/" class="text-accent hover:text-accent-soft">HSTS explained →</a></li><li><a href="/ssl-certificate-errors/" class="text-accent hover:text-accent-soft">SSL errors →</a></li></ul>
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="all-ssl-and-tls-versions-compared-release-dates-and-security-status-1995-to-2026">All SSL and TLS Versions Compared: Release Dates and Security Status (1995 to 2026)</h2>
+        <p>
+          Transport Layer Security (TLS) evolved through <strong class="text-ink">4 official IETF versions: TLS 1.0 (January 1999), TLS 1.1 (April 2006), TLS 1.2 (August 2008), and TLS 1.3 (August 2018)</strong>, succeeding Netscape's vulnerable Secure Sockets Layer (<code>SSL 2.0</code> and <code>SSL 3.0</code>). Today, only <strong class="text-ink">TLS 1.3 and properly configured TLS 1.2</strong> meet security and compliance standards for HTTPS web traffic, encrypted DNS, and SMTP email delivery. The table below compares every SSL and TLS protocol version by release date, RFC standard, handshake speed, and current status:
+        </p>
+
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">Protocol</th>
+                <th class="p-3 text-sm font-semibold text-ink">Release</th>
+                <th class="p-3 text-sm font-semibold text-ink">RFC Standard</th>
+                <th class="p-3 text-sm font-semibold text-ink">Handshake RTT</th>
+                <th class="p-3 text-sm font-semibold text-ink">Vulnerabilities</th>
+                <th class="p-3 text-sm font-semibold text-ink">Status (2026)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-semibold text-ink">SSL 2.0 &amp; SSL 3.0</td>
+                <td class="p-3 text-sm text-ink-dim">Feb 1995 / Nov 1996</td>
+                <td class="p-3 font-mono text-xs text-ink-dim">RFC 6101</td>
+                <td class="p-3 text-sm text-ink-dim">2-RTT</td>
+                <td class="p-3 text-sm text-ink-dim">DROWN, POODLE, MD5/RC4 weaknesses</td>
+                <td class="p-3 text-sm font-medium text-amber-400">Prohibited (RFC 6176 &amp; 7568); removed everywhere.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">TLS 1.0</td>
+                <td class="p-3 text-sm text-ink-dim">January 1999</td>
+                <td class="p-3 font-mono text-xs text-ink-dim">RFC 2246</td>
+                <td class="p-3 text-sm text-ink-dim">2-RTT</td>
+                <td class="p-3 text-sm text-ink-dim">BEAST (CBC IV flaw), CRIME, weak SHA-1 and RC4 support</td>
+                <td class="p-3 text-sm font-medium text-amber-400">Deprecated (RFC 8996); blocked by browsers and PCI DSS.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">TLS 1.1</td>
+                <td class="p-3 text-sm text-ink-dim">April 2006</td>
+                <td class="p-3 font-mono text-xs text-ink-dim">RFC 4346</td>
+                <td class="p-3 text-sm text-ink-dim">2-RTT</td>
+                <td class="p-3 text-sm text-ink-dim">Lacks modern AEAD (GCM/ChaCha20) ciphers and SHA-256 PRF</td>
+                <td class="p-3 text-sm font-medium text-amber-400">Deprecated (RFC 8996); disabled across major browsers.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">TLS 1.2</td>
+                <td class="p-3 text-sm text-ink-dim">August 2008</td>
+                <td class="p-3 font-mono text-xs text-ink-dim">RFC 5246</td>
+                <td class="p-3 text-sm text-ink-dim">2-RTT</td>
+                <td class="p-3 text-sm text-ink-dim">Secure with static RSA and CBC disabled (RFC 9325)</td>
+                <td class="p-3 text-sm font-medium text-accent">Secure (Compatibility Baseline); supported by 99.9% of clients.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">TLS 1.3</td>
+                <td class="p-3 text-sm font-semibold text-accent">August 2018</td>
+                <td class="p-3 font-mono text-xs text-ink-dim">RFC 8446</td>
+                <td class="p-3 text-sm text-ink-dim"><abbr class="pd-term" data-tip="1 Round-Trip Time, where data exchange begins after a single network round trip between client and server.">1-RTT</abbr> (<abbr class="pd-term" data-tip="0 Round-Trip Time, allowing early application data transmission inside the initial handshake packet during session resumption.">0-RTT</abbr> resumption)</td>
+                <td class="p-3 text-sm text-ink-dim">None (Enforces PFS and AEAD; supports Post-Quantum ML-KEM)</td>
+                <td class="p-3 text-sm font-medium text-accent">Recommended Standard (Latest Version); fastest and most secure.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4">
+          The term SSL certificate persists despite the retirement of SSL 3.0 in 2015. The digital certificate file (an X.509 public key) operates independently from transport protocol versions. The exact same certificate functions across both TLS 1.2 and TLS 1.3 depending on web server configuration, as detailed in <a href="/what-is-ssl-tls/">What Is SSL/TLS</a> and automated deployment via <a href="/free-ssl-lets-encrypt/">Let's Encrypt: Free Certificates and ACME Automation</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="tls-13-vs-tls-12-what-are-the-5-speed-and-security-upgrades">TLS 1.3 vs TLS 1.2: What Are the 5 Speed and Security Upgrades?</h2>
+        <p>
+          TLS 1.3 (published in August 2018 after 28 IETF drafts) represents <strong class="text-ink">a redesign over TLS 1.2 that cuts handshake latency in half (1-RTT) and eliminates legacy cryptographic flaws exploited over the preceding 20 years</strong>. The table below compares TLS 1.2 and TLS 1.3 head to head across technical dimensions:
+        </p>
+
+        <div class="my-6 overflow-x-auto rounded-xl border border-line bg-panel/60">
+          <table class="pdns-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="p-3 text-sm font-semibold text-ink">Technical Feature</th>
+                <th class="p-3 text-sm font-semibold text-ink">TLS 1.2 (August 2008)</th>
+                <th class="p-3 text-sm font-semibold text-ink">TLS 1.3 (August 2018)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="p-3 font-semibold text-ink">Full Handshake Speed</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">2 Round-Trips (2-RTT)</strong> after TCP connection</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">1 Round-Trip (1-RTT)</strong> (saves 30 to 100 ms per connection)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">Resumed Session Speed</td>
+                <td class="p-3 text-sm text-ink-dim">1-RTT (via Session IDs or Session Tickets)</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">0 Round-Trips (0-RTT Early Data)</strong> (transmits data on initial packet)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink"><abbr class="pd-term" data-tip="A cryptographic property ensuring session keys remain secure even if the server private key is compromised in the future.">Perfect Forward Secrecy</abbr> (PFS)</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Optional</strong> (allows static RSA if misconfigured)</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Mandatory on 100% of sessions</strong> (enforces ephemeral Diffie-Hellman <abbr class="pd-term" data-tip="Elliptic Curve Diffie-Hellman Ephemeral, a key-agreement protocol using temporary elliptic curve keys for every session.">ECDHE</abbr> only)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">Supported Cipher Suites</td>
+                <td class="p-3 text-sm text-ink-dim">37+ suites (includes CBC, RC4, 3DES if not disabled)</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">5 strict <abbr class="pd-term" data-tip="Authenticated Encryption with Associated Data, combining confidentiality and data authenticity in a single cryptographic operation.">AEAD</abbr> cipher suites only</strong> (AES-GCM, AES-CCM, ChaCha20-Poly1305)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">Server Certificate &amp; <abbr class="pd-term" data-tip="Server Name Indication, a TLS extension indicating which hostname the client attempts to connect to at the start of the handshake.">SNI</abbr> Privacy</td>
+                <td class="p-3 text-sm text-ink-dim">Transmitted in <strong class="text-ink">cleartext</strong> during handshake</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Encrypted</strong> after ServerHello key share, hiding identity from observers</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-ink">Renegotiation &amp; Compression</td>
+                <td class="p-3 text-sm text-ink-dim">Permitted (source of CRIME attacks)</td>
+                <td class="p-3 text-sm text-ink-dim"><strong class="text-ink">Completely removed</strong> from the protocol specification</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Engineering teams prioritize TLS 1.3 adoption based on 3 distinct cryptographic breakthroughs:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">1-RTT Handshake and 0-RTT Session Resumption:</strong> Standard TLS 1.2 handshakes require two network round trips after TCP establishment. TLS 1.3 cuts latency in half by sending speculative key shares (such as X25519 or P-256) inside the initial ClientHello packet. The server accepts the key share and returns encrypted parameters immediately, establishing data transfer in a single round trip (1-RTT). Returning clients leverage 0-RTT resumption to include encrypted requests in the opening packet, eliminating latency entirely.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Mandatory Perfect Forward Secrecy (PFS):</strong> TLS 1.3 deletes static RSA key exchange entirely. Every connection generates ephemeral throwaway keys using ECDHE. Compromising a server private key in the future grants an attacker zero capability to decrypt historical traffic recorded months or years prior.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Only 5 Approved AEAD Cipher Suites and Post-Quantum Readiness:</strong> Protocol designers replaced vulnerable ciphers with 5 streamlined AEAD suites: <code>TLS_AES_128_GCM_SHA256</code>, <code>TLS_AES_256_GCM_SHA384</code>, <code>TLS_CHACHA20_POLY1305_SHA256</code>, <code>TLS_AES_128_CCM_SHA256</code>, and <code>TLS_AES_128_CCM_8_SHA256</code>. Implementations also support post-quantum hybrid key exchange (<code>X25519MLKEM768</code>), safeguarding traffic against future quantum decryption.
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Maintaining TLS 1.2 alongside TLS 1.3 represents the recommended posture for public servers. Restricting TLS 1.2 to secure ECDHE ciphers ensures strong security while preventing connection drops on older clients and mail servers.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="why-were-tls-10-and-tls-11-deprecated-attacks-and-compliance-bans">Why Were TLS 1.0 and TLS 1.1 Deprecated? (Attacks and Compliance Bans)</h2>
+        <p>
+          The IETF deprecated TLS 1.0 and TLS 1.1 in March 2021 under RFC 8996 due to <strong class="text-ink">3 cryptographic flaws and mandatory bans across PCI DSS, NIST, and web browsers</strong>:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Vulnerable Cipher Block Chaining (CBC) and BEAST or POODLE Exploits:</strong> Early protocols used predictable Initialization Vectors (IVs) in CBC mode, enabling BEAST attacks to decrypt session cookies. Neither protocol supported native AEAD ciphers, leaving servers vulnerable to POODLE and Lucky13 padding exploits.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Reliance on Broken MD5 and SHA-1 Hash Functions for Handshake Integrity:</strong> The pseudo-random function (PRF) authenticating handshake integrity in TLS 1.0 and 1.1 relied on hardcoded MD5 and SHA-1 hashes. Cryptographic collisions in MD5 and SHA-1 compromised transcript validation, exposing connections to man-in-the-middle downgrade attacks.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Mandatory Removal by PCI DSS 4.0, NIST SP 800-52r2, and Web Browsers:</strong> The PCI Security Standards Council prohibited TLS 1.0 and 1.1 under PCI DSS 4.0. The National Institute of Standards and Technology (NIST) enforced identical bans under SP 800-52r2. Chrome, Firefox, Safari, and Edge permanently eliminated protocol fallbacks in 2020.
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Servers offering only TLS 1.0 or 1.1 trigger immediate browser connection terminations with <code>ERR_SSL_VERSION_OR_CIPHER_MISMATCH</code>, as detailed in our guide on <a href="/ssl-certificate-errors/">SSL Certificate Errors</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="why-do-tls-versions-matter-for-email-mta-sts-starttls-and-encrypted-dns-doh-dot">Why Do TLS Versions Matter for Email (MTA-STS &amp; STARTTLS) and Encrypted DNS (DoH &amp; DoT)?</h2>
+        <p>
+          Beyond HTTPS on port 443, TLS version negotiation dictates security across <strong class="text-ink">3 core domain protocols: SMTP email encryption, MTA-STS enforcement, and encrypted DNS resolution</strong>:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">SMTP <abbr class="pd-term" data-tip="An email protocol command that upgrades an existing plaintext connection to encrypted TLS.">STARTTLS</abbr> Email Encryption Across Ports 25, 465, and 587:</strong> Mail servers establish encrypted connections on ports 25, 465, and 587 using STARTTLS. Outdated servers supporting only TLS 1.0 or 1.1 force receivers to drop to cleartext or reject delivery. Administrators verify mail server cipher compatibility using the <a href="/smtp-tester/">SMTP Connectivity and STARTTLS Tester</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink"><abbr class="pd-term" data-tip="Mail Transfer Agent Strict Transport Security, enforcing TLS encryption and valid certificates on inbound SMTP email.">MTA-STS</abbr> and TLS-RPT Mandatory TLS 1.2 or 1.3 Enforcement:</strong> The <a href="/mta-sts/">MTA-STS</a> standard (RFC 8461) prevents downgrade attacks by requiring mail servers to negotiate TLS 1.2 or TLS 1.3 with a trusted certificate. Handshake failures trigger automated reports delivered through <a href="/tls-rpt/">TLS-RPT</a> (RFC 8460). Domain owners audit policy deployment with the <a href="/mta-sts-checker/">MTA-STS Record Checker</a> and verify reporting via the <a href="/tls-rpt-checker/">TLS-RPT Record Checker</a>.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Encrypted DNS Transport (DoH, DoT, and DoQ):</strong> Privacy-focused DNS protocols encapsulate domain lookups inside encrypted tunnels to block eavesdropping. DNS-over-HTTPS (DoH) and DNS-over-TLS (DoT) rely on TLS 1.2 and TLS 1.3. Modern transports like DNS over QUIC (DoQ) and DoH over HTTP/3 require TLS 1.3 exclusively for zero-latency handshakes and multiplexed queries, as examined in <a href="/doh-vs-dot/">DNS-over-HTTPS vs DNS-over-TLS</a>.
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Publishing strict policies like <a href="/hsts-explained/">HSTS: HTTP Strict Transport Security</a> on web endpoints and MTA-STS on mail hosts ensures active attackers cannot strip encryption or force connections onto obsolete ciphers.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-to-check-supported-tls-versions-and-enable-tls-12-13-nginx-apache-and-cli">How to Check Supported TLS Versions and Enable TLS 1.2 &amp; 1.3 (NGINX, Apache, and CLI)</h2>
+        <p>
+          Verify supported TLS versions and disable legacy protocols through <strong class="text-ink">browser inspection, terminal probes, and server configuration updates across 3 steps</strong>:
+        </p>
+
+        <ol class="list-decimal space-y-4 pl-6">
+          <li class="leading-relaxed">
+            <strong class="text-ink">Inspect Active TLS Versions via Browser Developer Tools:</strong> Open Developer Tools in Chrome or Edge with <code>F12</code>, select the <strong class="text-ink">Security</strong> tab, and reload the page. The panel displays the active protocol version (<code>TLS 1.3</code>), key exchange (<code>X25519</code>), and cipher suite.
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Probe Handshake Responses Using Terminal CLI Utilities:</strong> Test whether your production server accepts TLS 1.3 connections and rejects obsolete TLS 1.1 handshakes using <code>curl</code> and <code>openssl</code>:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code># Verify TLS 1.3 handshake succeeds:
+curl -I -v --tlsv1.3 --tls-max 1.3 https://example.com
+
+# Confirm deprecated TLS 1.1 is rejected (handshake failure expected):
+openssl s_client -connect example.com:443 -servername example.com -tls1_1</code></pre>
+            </div>
+          </li>
+          <li class="leading-relaxed">
+            <strong class="text-ink">Configure Web Servers to Enforce Only TLS 1.2 and TLS 1.3:</strong> Update your NGINX or Apache configuration files to prohibit legacy protocols, and reload the server service:
+            <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
+              <pre><code># NGINX (/etc/nginx/nginx.conf or site configuration):
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers off;
+
+# Apache (/etc/apache2/mods-enabled/ssl.conf):
+SSLProtocol -all +TLSv1.2 +TLSv1.3</code></pre>
+            </div>
+            Validate syntax and reload the server with <code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code> or <code>sudo apachectl configtest &amp;&amp; sudo systemctl reload apache2</code>.
+          </li>
+        </ol>
+
+        <p class="mt-4">
+          Securing web and email infrastructure begins with cryptography fundamentals in <a href="/ssl-tls/">SSL/TLS and Web Security Basics</a>. Understanding TLS versions explained from SSL 3.0 through modern protocols clarifies why the TLS 1.3 release date August 2018 established a benchmark for speed. Evaluating TLS 1.2 vs TLS 1.3 demonstrates the value of 1-RTT handshake and Perfect Forward Secrecy designs, while retiring deprecated TLS 1.0 and TLS 1.1 guarantees compliance with modern standards.
+        </p>
+      </section>
+
+      <section class="mt-12">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink" id="frequently-asked-questions">
+          Frequently Asked Questions
+        </h2>
+        <div class="mt-4 space-y-3">
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              What is the latest version of TLS and when was it released?
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+              The latest version of Transport Layer Security is <strong class="text-ink">TLS 1.3</strong>, which was officially standardized and released by the IETF in <strong class="text-ink">August 2018 (RFC 8446)</strong>. As of 2026, TLS 1.3 is the fastest and most secure protocol version available.
+            </p>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              Is TLS 1.2 still secure or is disabling it recommended to use only TLS 1.3?
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+              Yes, <strong class="text-ink">TLS 1.2 remains secure when configured with modern ECDHE and AES-GCM ciphers</strong>. Keep <strong class="text-ink">both TLS 1.2 and TLS 1.3 enabled</strong> on public websites and mail servers, enabling clients that do not yet support TLS 1.3 to connect securely, while disabling TLS 1.0 and 1.1.
+            </p>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              Do I need to buy a new SSL certificate to upgrade from TLS 1.2 to TLS 1.3?
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+              In practice, <strong class="text-ink">your existing SSL/TLS certificate already works with TLS 1.3</strong>. TLS version support is controlled by your web server software (such as NGINX, Apache, or Cloudflare) and OpenSSL library version (OpenSSL 1.1.1+), not by the certificate file itself.
+            </p>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              Why does disabling TLS 1.0 and 1.1 sometimes break older email clients or API scripts?
+              <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-ink-dim">
+              In real-world server upgrades, legacy systems running outdated operating systems (such as Windows Server 2008, Java 7, or old Python 2 scripts) lack TLS 1.2/1.3 libraries and fail to connect once TLS 1.0/1.1 are turned off. Upgrade the client runtime or route legacy internal devices through a modern TLS proxy.
+            </p>
+          </details>
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>
