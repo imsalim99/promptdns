@@ -4,1258 +4,635 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Dashboard"
-  description="Your PromptDNS dashboard: monitored domains, alerts, and DMARC sources."
+  description="Your PromptDNS dashboard: monitored domains, DMARC reports, enforcement, alerts, and deliverability."
   noindex
   chrome={false}
 >
   <div id="dash-app">
-    <div id="dash-loading" class="pd-loading">Checking sign-in…</div>
+    <div id="dash-loading" class="dv-center">Checking sign-in…</div>
 
-    <div id="dash-signed-out" class="pd-signedout" hidden>
-      <h1>You are not signed in</h1>
-      <p>Sign in with an email link to open your dashboard.</p>
-      <a href="/login/" class="pd-btn pd-btn-primary">Go to sign in</a>
+    <div id="dash-signed-out" class="dv-center" hidden>
+      <div class="dv-card">
+        <h1 style="font-size:21px;margin:0 0 6px">You are not signed in</h1>
+        <p class="sub" style="margin:0 0 14px">Sign in with an email link to open your dashboard.</p>
+        <a class="btn p" href="/login/">Go to sign in</a>
+      </div>
     </div>
 
-    <div id="dash-shell" class="pd-shell" hidden>
-      <aside class="pd-sidebar">
-        <a href="/" class="pd-logo" title="Back to promptdns.com">
-          <span class="pd-logo-badge">DNS</span>
-          <span>Prompt<span class="pd-logo-accent">DNS</span></span>
-        </a>
-        <nav class="pd-nav" aria-label="Dashboard">
-          <button type="button" class="pd-nav-item" data-screen="overview"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Overview</button>
-          <button type="button" class="pd-nav-item" data-screen="domains"><i data-lucide="globe" aria-hidden="true"></i>Domains</button>
-          <button type="button" class="pd-nav-item" data-screen="dmarc"><i data-lucide="mail-check" aria-hidden="true"></i>Email (DMARC)</button>
-          <button type="button" class="pd-nav-item" data-screen="alerts"><i data-lucide="bell" aria-hidden="true"></i>Alerts<span class="pd-nav-badge" id="nav-alert-count" hidden>0</span></button>
-          <button type="button" class="pd-nav-item is-planned" disabled title="Ships after launch"><i data-lucide="file-bar-chart" aria-hidden="true"></i>Reports<span class="pd-planned-chip">planned</span></button>
-          <button type="button" class="pd-nav-item is-planned" disabled title="Ships after launch"><i data-lucide="bot" aria-hidden="true"></i>AI Access<span class="pd-planned-chip">planned</span></button>
-          <div class="pd-nav-sep" aria-hidden="true"></div>
-          <a href="/tools/" class="pd-nav-item"><i data-lucide="wrench" aria-hidden="true"></i>All tools</a>
-          <a href="/dns/" class="pd-nav-item"><i data-lucide="book-open" aria-hidden="true"></i>Guides</a>
-          <div class="pd-nav-sep" aria-hidden="true"></div>
-          <button type="button" class="pd-nav-item" data-screen="settings"><i data-lucide="settings" aria-hidden="true"></i>Settings</button>
-          <button type="button" class="pd-nav-item" id="nav-theme-toggle" title="Switch between dark and light">
-            <i data-lucide="sun-medium" aria-hidden="true"></i><span id="nav-theme-label">Light mode</span>
-          </button>
-        </nav>
-        <div class="pd-sidebar-foot">
-          <div class="pd-plan-card">
-            <p class="pd-plan-name">Early access</p>
-            <p class="pd-plan-desc">Free during development.</p>
-          </div>
-          <div class="pd-user-wrap">
-            <button type="button" class="pd-user" id="nav-user-btn" aria-expanded="false">
-              <span class="pd-avatar" aria-hidden="true">S</span>
-              <div><p class="pd-user-mail" id="nav-user-mail"></p><p class="pd-user-role">Owner</p></div>
-            </button>
-            <div id="nav-user-menu" class="pd-user-menu" hidden>
-              <button type="button" class="pd-menu-item" data-menu-goto="settings">Settings</button>
-              <button type="button" class="pd-menu-item" data-menu-goto="settings" data-menu-scroll="billing-panel">Billing</button>
-              <a href="/" class="pd-menu-item">Open website</a>
-              <a href="/tools/" class="pd-menu-item">All tools</a>
-              <button type="button" id="nav-signout" class="pd-menu-item pd-menu-signout">Sign out</button>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      <main class="pd-main">
-        <header class="pd-topbar">
-          <div>
-            <h1 class="pd-page-title" id="page-title">Overview</h1>
-            <p class="pd-page-sub" id="page-sub"></p>
-          </div>
-          <button type="button" class="pd-btn pd-btn-primary" id="topbar-add"><i data-lucide="plus" aria-hidden="true"></i>Add domain</button>
-        </header>
-
-        <div id="pd-toast" class="pd-toast" role="status" aria-live="polite"></div>
-
-        <!-- ============ OVERVIEW ============ -->
-        <section class="pd-screen" id="screen-overview" hidden>
-          <div class="pd-hero-head">
-            <div>
-              <p class="font-mono text-xs uppercase tracking-widest" style="color:var(--pd-ink-faint)">Your domains</p>
-              <h2 class="pd-hero-heading">Live security scores, checked every 6 hours</h2>
-            </div>
-            <button type="button" class="pd-btn pd-btn-primary" id="ov-add"><i data-lucide="plus" aria-hidden="true"></i>Add domain</button>
-          </div>
-          <div id="ov-hero" class="pd-hero-grid"></div>
-
-          <div id="ov-activity" class="pd-panel" hidden></div>
-
-          <div class="pd-stat-grid">
-            <div class="pd-stat"><p class="pd-stat-label">Open alerts</p><p class="pd-stat-value" id="ov-alerts">-</p><p class="pd-stat-note">unread, newest first on Alerts</p></div>
-            <div class="pd-stat"><p class="pd-stat-label">DMARC pass rate</p><p class="pd-stat-value" id="ov-passrate">-</p><p class="pd-stat-note" id="ov-passrate-note">across your domains</p></div>
-            <div class="pd-stat"><p class="pd-stat-label">Domains</p><p class="pd-stat-value" id="ov-domains">-</p><p class="pd-stat-note" id="ov-domains-note"></p></div>
-          </div>
-
-          <div class="pd-grid-2">
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Next step</h2></div>
-              <div id="ov-action"></div>
-            </div>
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Latest check results</h2><button type="button" class="pd-link" data-goto="domains">All domains →</button></div>
-              <div id="ov-health" class="pd-health-list"></div>
-            </div>
-          </div>
-
-          <div class="pd-panel" id="ov-chart-panel" hidden>
-            <div class="pd-panel-head"><h2>DMARC volume</h2><span class="pd-legend"><span class="pd-legend-dot pd-dot-pass"></span>passing <span class="pd-legend-dot pd-dot-fail"></span>failing</span></div>
-            <svg class="pd-chart" id="ov-chart" viewBox="0 0 640 150" role="img" aria-label="Daily DMARC message volume, passing versus failing"><g class="pd-chart-bars"></g></svg>
-          </div>
-        </section>
-
-        <!-- ============ DOMAINS ============ -->
-        <section class="pd-screen" id="screen-domains" hidden>
-          <div class="pd-panel" id="add-panel" hidden>
-            <div class="pd-panel-head"><h2>Add a domain</h2><button type="button" class="pd-link" id="add-close">Close</button></div>
-            <form id="dom-form" class="pd-add-row">
-              <label class="sr-only" for="dom-input">Domain</label>
-              <input id="dom-input" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="yourdomain.com" class="pd-input" />
-              <button type="submit" id="dom-submit" class="pd-btn pd-btn-primary">Add &amp; scan</button>
-            </form>
-            <p class="pd-panel-note">Adding runs an instant scan. Up to <span id="dom-max" class="pd-mono">3</span> domains while monitoring is in development.</p>
-          </div>
-
-          <div class="pd-panel">
-            <div class="pd-panel-head"><h2>Your domains</h2></div>
-            <div id="dom-list"></div>
-            <p class="pd-panel-note">Every domain is re-checked every 6 hours. Pause a domain from its detail view.</p>
-          </div>
-        </section>
-
-        <!-- ============ DOMAIN DETAIL ============ -->
-        <section class="pd-screen" id="screen-domain" hidden>
-          <div id="domain-head"></div>
-          <div class="pd-tabs" role="tablist" aria-label="Domain sections">
-            <button type="button" class="pd-tab is-active" data-tab="auth" aria-selected="true">Authentication</button>
-            <button type="button" class="pd-tab" data-tab="records" aria-selected="false">Records</button>
-            <button type="button" class="pd-tab" data-tab="activity" aria-selected="false">Activity</button>
-          </div>
-          <div class="pd-tabpanel" id="tab-auth"></div>
-          <div class="pd-tabpanel" id="tab-records" hidden></div>
-          <div class="pd-tabpanel" id="tab-activity" hidden></div>
-        </section>
-
-        <!-- ============ DMARC ============ -->
-        <section class="pd-screen" id="screen-dmarc" hidden>
-          <div class="pd-domain-picker">
-            <label class="pd-picker-label" for="dmarc-domain">Domain</label>
-            <select id="dmarc-domain" class="pd-select"></select>
-          </div>
-          <div id="dmarc-content"></div>
-        </section>
-
-        <!-- ============ ALERTS ============ -->
-        <section class="pd-screen" id="screen-alerts" hidden>
-          <div class="pd-panel">
-            <div class="pd-panel-head"><h2>Alerts</h2><button type="button" class="pd-btn pd-btn-sm" id="alerts-read">Mark all read</button></div>
-            <div id="alerts-list" class="pd-alert-list"></div>
-            <p class="pd-panel-note">New alerts are also emailed to your account address. This inbox always works, even without email.</p>
-          </div>
-        </section>
-
-        <!-- ============ SETTINGS ============ -->
-        <section class="pd-screen" id="screen-settings" hidden>
-          <div class="pd-grid-2">
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Appearance</h2></div>
-              <div class="pd-form-row">
-                <span class="pd-form-label">Dashboard theme</span>
-                <span style="display:flex;gap:8px">
-                  <button type="button" class="pd-btn pd-btn-xs" data-theme-set="dark" aria-pressed="true">Dark</button>
-                  <button type="button" class="pd-btn pd-btn-xs" data-theme-set="light" aria-pressed="false">Light</button>
-                </span>
-              </div>
-            </div>
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Account</h2></div>
-              <div class="pd-form-row"><span class="pd-form-label">Email</span><span class="pd-mono" id="set-email"></span></div>
-              <div class="pd-form-row"><span class="pd-form-label">Plan</span><span>Early access (free) <span class="pd-planned-chip">paid plans at launch</span></span></div>
-              <div class="pd-form-row"><span class="pd-form-label">Sign-in</span><span>Email link, no password</span></div>
-            </div>
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Notifications</h2></div>
-              <div class="pd-toggle-row"><span>Email alerts (when delivery is configured)</span><span class="pd-planned-chip">soon</span></div>
-              <div class="pd-toggle-row pd-is-planned"><span>Slack / Teams webhooks</span><span class="pd-planned-chip">planned</span></div>
-              <div class="pd-toggle-row pd-is-planned"><span>Weekly summary</span><span class="pd-planned-chip">planned</span></div>
-            </div>
-            <div class="pd-panel" id="billing-panel">
-              <div class="pd-panel-head"><h2>Billing</h2><span class="pd-planned-chip">at launch</span></div>
-              <p class="pd-panel-note">Paid plans start when monitoring launches - processed by Dodo Payments, our merchant of record. Early-access members keep the launch free tier.</p>
-            </div>
-            <div class="pd-panel">
-              <div class="pd-panel-head"><h2>Danger zone</h2></div>
-              <div class="pd-form-row"><span class="pd-form-label">Remove a domain</span><span class="pd-form-label">From its detail view → Remove</span></div>
-              <div class="pd-form-row"><span class="pd-form-label">Delete account</span><span class="pd-form-label">Contact support@promptdns.com</span></div>
-            </div>
-          </div>
-        </section>
-      </main>
+    <div id="dash-shell" hidden>
+      <div class="app"><aside id="side"></aside><main id="main"></main></div>
+      <p class="sub" style="padding:0 26px 28px;margin:0">Provider logos: Simple Icons (CC0) and Font Awesome Free (CC BY 4.0). All trademarks belong to their owners and are shown only to identify providers.</p>
+      <div id="ly"></div>
     </div>
   </div>
 
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
   <style is:global>
-
-    #dash-app {
-      --pd-bg: #050810;
-      --pd-panel: #0b1222;
-      --pd-panel-2: #0d1526;
-      --pd-line: #1c2a47;
-      --pd-ink: #e6edf7;
-      --pd-ink-dim: #94a3b8;
-      --pd-ink-faint: #64748b;
-      --pd-accent: #22d3ee;
-      --pd-violet: #8b5cf6;
-      --pd-pass: #4ade80;
-      --pd-warn: #fbbf24;
-      --pd-fail: #f87171;
-      --pd-font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
-      --pd-font-body: 'Inter', 'Segoe UI', sans-serif;
-      --pd-font-mono: 'JetBrains Mono', Consolas, monospace;
-      --pd-sidebar-grad: linear-gradient(180deg, #0a0f1e, #070c18);
-      --pd-on-accent: #04121a;
-      font-family: var(--pd-font-body);
-      color: var(--pd-ink);
-      background: var(--pd-bg);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    #dash-app[data-theme='light'] {
-      --pd-bg: #f5f7fb;
-      --pd-panel: #ffffff;
-      --pd-panel-2: #eef2f9;
-      --pd-line: #d9e1ee;
-      --pd-ink: #101828;
-      --pd-ink-dim: #4a5568;
-      --pd-ink-faint: #8792a3;
-      --pd-accent: #0e7490;
-      --pd-violet: #6d28d9;
-      --pd-pass: #15803d;
-      --pd-warn: #b45309;
-      --pd-fail: #b91c1c;
-      --pd-sidebar-grad: linear-gradient(180deg, #ffffff, #f5f7fb);
-      --pd-on-accent: #ffffff;
-    }
-    #dash-app *, #dash-app *::before, #dash-app *::after { box-sizing: border-box; }
-    #dash-app h1, #dash-app h2, #dash-app h3 { font-family: var(--pd-font-display); font-weight: 600; }
-    #dash-app button { cursor: pointer; }
-    #dash-app .pd-mono { font-family: var(--pd-font-mono); font-size: 12px; }
-    #dash-app .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    #dash-app a.pd-link { text-decoration: none; }
-
-    .pd-loading, .pd-signedout { text-align: center; padding: 80px 20px; color: var(--pd-ink-dim); }
-    .pd-signedout h1 { font-size: 24px; color: var(--pd-ink); margin-bottom: 8px; }
-    .pd-signedout .pd-btn { margin-top: 16px; display: inline-flex; }
-
-    .pd-shell { display: flex; min-height: 100vh; }
-    .pd-sidebar { width: 212px; flex-shrink: 0; border-right: 1px solid var(--pd-line); background: var(--pd-sidebar-grad); display: flex; flex-direction: column; padding: 16px 12px; }
-    .pd-logo { display: flex; align-items: center; gap: 10px; font-family: var(--pd-font-display); font-weight: 700; font-size: 17px; padding: 2px 8px 14px; color: var(--pd-ink); text-decoration: none; letter-spacing: -0.01em; }
-    .pd-logo-badge { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--pd-accent), var(--pd-violet)); font-family: var(--pd-font-mono); font-size: 10px; font-weight: 700; color: var(--pd-on-accent); }
-    .pd-hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
-    .pd-hero-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .pd-hero-heading { font-size: 15px; margin-top: 2px; }
-    .pd-roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    @media (max-width: 760px) { .pd-roadmap { grid-template-columns: 1fr; } }
-    .pd-roadmap-step { border: 1px solid var(--pd-line); border-radius: 10px; padding: 12px 14px; }
-    .pd-roadmap-step.is-current { border-color: rgba(34,211,238,.5); background: rgba(34,211,238,.05); }
-    .pd-roadmap-step.is-done { border-color: rgba(74,222,128,.4); }
-    .pd-roadmap-name { font-family: var(--pd-font-display); font-weight: 600; font-size: 13px; }
-    .pd-roadmap-desc { font-size: 11.5px; color: var(--pd-ink-dim); margin-top: 4px; }
-    .pd-roadmap-status { font-size: 10.5px; color: var(--pd-ink-faint); margin-top: 7px; font-family: var(--pd-font-mono); }
-    .pd-act-head { font-family: var(--pd-font-display); font-weight: 600; font-size: 14px; }
-    .pd-act-expl { font-size: 12px; color: var(--pd-ink-dim); margin: 6px 0 0; max-width: 60ch; }
-    .pd-act-table { margin-top: 14px; }
-    .pd-act-close { position: absolute; top: 10px; right: 12px; font-size: 16px; line-height: 1; color: var(--pd-ink-faint); }
-    .pd-act-close:hover { color: var(--pd-ink); }
-    @keyframes pd-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-    .pd-act-anim { animation: pd-fade-in .25s ease-out; }
-    @media (prefers-reduced-motion: reduce) { .pd-act-anim { animation: none; } }
-    .pd-hero-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-    .pd-hero-actions .pd-link { font-size: 11px; }
-    .pd-hero-card { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; }
-    .pd-hero-score { font-family: var(--pd-font-display); font-weight: 700; font-size: 46px; line-height: 1; }
-    .pd-hero-score small { font-size: 14px; color: var(--pd-ink-faint); font-weight: 500; }
-    .pd-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-    .pd-hero-domain { font-family: var(--pd-font-mono); font-size: 15px; font-weight: 500; }
-    .pd-hero-meta { font-size: 11px; color: var(--pd-ink-faint); font-family: var(--pd-font-mono); }
-    .pd-user-wrap { position: relative; }
-    .pd-user { width: 100%; text-align: left; }
-    .pd-user-menu { position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; background: var(--pd-panel-2); border: 1px solid var(--pd-line); border-radius: 10px; padding: 5px; box-shadow: 0 10px 30px color-mix(in srgb, var(--pd-ink) 22%, transparent); z-index: 40; }
-    .pd-menu-item { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--pd-ink-dim); text-decoration: none; }
-    .pd-menu-item:hover { background: color-mix(in srgb, var(--pd-accent) 8%, transparent); color: var(--pd-ink); }
-    .pd-theme-active { border-color: var(--pd-accent); color: var(--pd-accent); }
-    .pd-menu-signout:hover { color: var(--pd-fail); }
-    .pd-dd-status { margin-top: 10px; border-radius: 9px; padding: 9px 13px; font-size: 12.5px; border: 1px solid; }
-    .pd-logo-accent { color: var(--pd-accent); }
-    .pd-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-    .pd-nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; color: var(--pd-ink-dim); font-size: 13px; text-align: left; transition: background .15s, color .15s; }
-    .pd-nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
-    .pd-nav-item:hover { background: color-mix(in srgb, var(--pd-accent) 7%, transparent); color: var(--pd-ink); }
-    .pd-nav-item.is-active { background: color-mix(in srgb, var(--pd-accent) 12%, transparent); color: var(--pd-accent); }
-    .pd-nav-item.is-planned { opacity: .45; cursor: not-allowed; }
-    .pd-nav-badge { margin-left: auto; background: color-mix(in srgb, var(--pd-fail) 15%, transparent); color: var(--pd-fail); border: 1px solid color-mix(in srgb, var(--pd-fail) 35%, transparent); border-radius: 99px; font-size: 10px; padding: 0 7px; font-family: var(--pd-font-mono); }
-    .pd-planned-chip { font-family: var(--pd-font-mono); font-size: 9px; color: var(--pd-ink-faint); border: 1px solid var(--pd-line); border-radius: 99px; padding: 1px 7px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-    .pd-nav-item .pd-planned-chip { margin-left: auto; }
-    .pd-nav-sep { height: 1px; background: var(--pd-line); margin: 8px 6px; }
-    .pd-sidebar-foot { display: flex; flex-direction: column; gap: 8px; }
-    .pd-plan-card { border: 1px dashed var(--pd-line); border-radius: 10px; padding: 10px 12px; }
-    .pd-plan-name { font-size: 12px; font-weight: 600; }
-    .pd-plan-desc { font-size: 11px; color: var(--pd-ink-faint); margin-top: 2px; }
-    .pd-user { display: flex; align-items: center; gap: 9px; padding: 4px 8px; }
-    .pd-avatar { width: 28px; height: 28px; border-radius: 99px; background: linear-gradient(135deg, var(--pd-accent), var(--pd-violet)); color: var(--pd-on-accent); display: grid; place-items: center; font-weight: 600; font-size: 13px; }
-    .pd-user-mail { font-size: 11px; color: var(--pd-ink-dim); max-width: 118px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pd-user-role { font-size: 10px; color: var(--pd-ink-faint); }
-    .pd-signout { padding: 2px 8px; text-align: left; }
-
-    .pd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
-    .pd-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-bottom: 1px solid var(--pd-line); flex-wrap: wrap; }
-    .pd-page-title { font-size: 19px; }
-    .pd-page-sub { font-size: 12px; color: var(--pd-ink-faint); margin-top: 1px; }
-    .pd-topbar .pd-btn svg { width: 13px; height: 13px; }
-
-    .pd-toast { position: fixed; bottom: 20px; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; pointer-events: none; }
-    .pd-toast:empty { display: none; }
-    .pd-toast > div { pointer-events: auto; }
-    .pd-toast > div { max-width: 480px; margin: 0 auto; border-radius: 10px; padding: 10px 14px; font-size: 13px; box-shadow: 0 8px 30px color-mix(in srgb, var(--pd-ink) 20%, transparent); display: flex; align-items: center; gap: 10px; border: 1px solid; }
-    .pd-toast > .pd-toast-pass { border-color: color-mix(in srgb, var(--pd-pass) 40%, transparent); background: color-mix(in srgb, var(--pd-pass) 10%, transparent); color: var(--pd-pass); }
-    .pd-toast > .pd-toast-warn { border-color: color-mix(in srgb, var(--pd-warn) 40%, transparent); background: color-mix(in srgb, var(--pd-warn) 10%, transparent); color: var(--pd-warn); }
-    .pd-toast > .pd-toast-fail { border-color: color-mix(in srgb, var(--pd-fail) 40%, transparent); background: color-mix(in srgb, var(--pd-fail) 10%, transparent); color: var(--pd-fail); }
-    .pd-toast .pd-toast-x { margin-left: auto; color: var(--pd-ink-faint); font-size: 15px; }
-    .pd-toast .pd-toast-x:hover { color: var(--pd-ink); }
-
-    .pd-screen { padding: 20px 22px 30px; display: flex; flex-direction: column; gap: 16px; }
-    .pd-screen[hidden] { display: none; }
-    #dmarc-content { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
-    .pd-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-    .pd-stat { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 12px; padding: 13px 15px; }
-    .pd-stat-label { font-size: 11px; color: var(--pd-ink-faint); text-transform: uppercase; letter-spacing: .05em; }
-    .pd-stat-value { font-family: var(--pd-font-display); font-size: 26px; font-weight: 700; margin-top: 3px; }
-    .pd-stat-note { font-size: 11px; color: var(--pd-ink-faint); margin-top: 2px; }
-    .pd-text-pass { color: var(--pd-pass); }
-    .pd-text-warn { color: var(--pd-warn); }
-    .pd-text-fail { color: var(--pd-fail); }
-
-    .pd-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
-    @media (max-width: 860px) { .pd-grid-2 { grid-template-columns: 1fr; } }
-    .pd-panel { background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 12px; padding: 15px 17px; }
-    .pd-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 11px; }
-    .pd-panel-head h2 { font-size: 14px; }
-    .pd-panel-note { font-size: 11px; color: var(--pd-ink-faint); margin-top: 10px; }
-    .pd-link { color: var(--pd-accent); font-size: 12px; }
-
-    .pd-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--pd-line); background: var(--pd-panel-2); color: var(--pd-ink); border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 500; transition: border-color .15s; }
-    .pd-btn:hover { border-color: color-mix(in srgb, var(--pd-accent) 45%, transparent); }
-    .pd-btn svg { width: 13px; height: 13px; }
-    .pd-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: linear-gradient(100deg, var(--pd-accent), var(--pd-violet)); color: var(--pd-on-accent); border: 0; font-family: var(--pd-font-display); font-weight: 600; position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 8px 30px -10px color-mix(in srgb, var(--pd-accent) 60%, transparent); }
-    .pd-btn-primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%); transform: translateX(-120%); transition: transform .7s ease; }
-    .pd-btn-primary:hover::after { transform: translateX(120%); }
-    .pd-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 34px -8px color-mix(in srgb, var(--pd-accent) 70%, transparent); }
-    .pd-btn-danger:hover { border-color: color-mix(in srgb, var(--pd-fail) 50%, transparent); color: var(--pd-fail); }
-    .pd-btn-sm { padding: 5px 11px; font-size: 12px; }
-    .pd-btn-xs { padding: 3px 9px; font-size: 11px; border-radius: 6px; }
-    .pd-btn.is-me { border-color: color-mix(in srgb, var(--pd-pass) 45%, transparent); color: var(--pd-pass); background: color-mix(in srgb, var(--pd-pass) 8%, transparent); }
-
-    .pd-input { flex: 1; background: transparent; border: 1px solid var(--pd-line); border-radius: 8px; padding: 8px 12px; font-family: var(--pd-font-mono); font-size: 13px; color: var(--pd-ink); min-width: 0; }
-    .pd-input:focus { outline: none; border-color: var(--pd-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pd-accent) 20%, transparent); }
-    .pd-add-row { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    .pd-health-list { display: flex; flex-direction: column; }
-    .pd-health-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 8px; border-radius: 9px; border-top: 1px solid var(--pd-line); transition: background .15s; }
-    .pd-health-row:first-child { border-top: 0; }
-    .pd-health-row:hover { background: color-mix(in srgb, var(--pd-accent) 5%, transparent); }
-    .pd-score { font-family: var(--pd-font-display); font-weight: 700; font-size: 15px; color: var(--pd-ink); }
-    .pd-score-a, .pd-score-b { color: var(--pd-pass); }
-    .pd-score-c, .pd-score-d { color: var(--pd-warn); }
-    .pd-score-f { color: var(--pd-fail); }
-    .pd-health-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-    .pd-domain-name { font-family: var(--pd-font-mono); font-size: 13px; font-weight: 500; }
-    .pd-health-meta { display: flex; gap: 5px; flex-wrap: wrap; }
-    .pd-health-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-    .pd-grade { font-family: var(--pd-font-display); font-weight: 700; font-size: 15px; }
-    .pd-grade-a, .pd-grade-b { color: var(--pd-pass); }
-    .pd-grade-c, .pd-grade-d { color: var(--pd-warn); }
-    .pd-grade-f { color: var(--pd-fail); }
-    .pd-health-checked { font-size: 10px; color: var(--pd-ink-faint); }
-
-    .pd-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 8px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
-    .pd-chip-pass { color: var(--pd-pass); border-color: color-mix(in srgb, var(--pd-pass) 35%, transparent); background: color-mix(in srgb, var(--pd-pass) 8%, transparent); }
-    .pd-chip-warn { color: var(--pd-warn); border-color: color-mix(in srgb, var(--pd-warn) 35%, transparent); background: color-mix(in srgb, var(--pd-warn) 8%, transparent); }
-    .pd-chip-fail { color: var(--pd-fail); border-color: color-mix(in srgb, var(--pd-fail) 35%, transparent); background: color-mix(in srgb, var(--pd-fail) 8%, transparent); }
-    .pd-chip-info { color: var(--pd-accent); border-color: color-mix(in srgb, var(--pd-accent) 35%, transparent); background: color-mix(in srgb, var(--pd-accent) 8%, transparent); }
-
-    .pd-action-card { border: 1px solid color-mix(in srgb, var(--pd-accent) 30%, transparent); background: color-mix(in srgb, var(--pd-accent) 5%, transparent); border-radius: 10px; padding: 13px 15px; }
-    .pd-action-card h3 { font-size: 13.5px; margin-top: 8px; }
-    .pd-action-card p { font-size: 12px; color: var(--pd-ink-dim); margin-top: 4px; }
-    .pd-action-card .pd-btn { margin-top: 10px; }
-    .pd-action-card.is-fix { border-color: color-mix(in srgb, var(--pd-fail) 30%, transparent); background: color-mix(in srgb, var(--pd-fail) 5%, transparent); }
-
-    .pd-chart { width: 100%; height: auto; display: block; }
-    .pd-chart-bars rect:hover { opacity: .8; }
-    .pd-legend { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--pd-ink-dim); }
-    .pd-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
-    .pd-dot-pass { background: var(--pd-pass); }
-    .pd-dot-fail { background: var(--pd-fail); }
-
-    .pd-table-wrap { overflow-x: auto; }
-    .pd-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .pd-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--pd-ink-faint); font-weight: 500; padding: 7px 10px; border-bottom: 1px solid var(--pd-line); white-space: nowrap; }
-    .pd-table td { padding: 9px 10px; border-bottom: 1px solid color-mix(in srgb, var(--pd-line) 60%, transparent); vertical-align: middle; }
-    .pd-table tr:last-child td { border-bottom: 0; }
-    .pd-cell-dim { color: var(--pd-ink-dim); }
-
-    .pd-domain-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--pd-panel); border: 1px solid var(--pd-line); border-radius: 12px; padding: 15px 17px; }
-    .pd-domain-head-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .pd-domain-title { font-size: 18px; font-family: var(--pd-font-mono); }
-    .pd-domain-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .pd-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--pd-line); }
-    .pd-tab { padding: 8px 14px; font-size: 12.5px; color: var(--pd-ink-dim); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-    .pd-tab:hover { color: var(--pd-ink); }
-    .pd-tab.is-active { color: var(--pd-accent); border-bottom-color: var(--pd-accent); }
-    .pd-tabpanel { display: flex; flex-direction: column; gap: 12px; }
-    .pd-tabpanel[hidden] { display: none; }
-
-    .pd-meter-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--pd-ink-dim); margin-top: 12px; }
-    .pd-meter { height: 5px; border-radius: 99px; background: var(--pd-panel-2); margin-top: 5px; overflow: hidden; }
-    .pd-meter-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--pd-accent), var(--pd-violet)); }
-    .pd-check-list { list-style: none; margin-top: 11px; display: flex; flex-direction: column; gap: 6px; }
-    .pd-check-list li { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: var(--pd-ink-dim); }
-    .pd-check-list li svg { width: 13px; height: 13px; color: var(--pd-pass); flex-shrink: 0; margin-top: 2px; }
-
-    .pd-timeline { display: flex; flex-direction: column; gap: 12px; }
-    .pd-tl-item { display: flex; gap: 10px; }
-    .pd-tl-dot { width: 9px; height: 9px; border-radius: 99px; margin-top: 4px; flex-shrink: 0; }
-    .pd-dot-warn { background: var(--pd-warn); }
-    .pd-tl-title { font-size: 12.5px; font-weight: 500; }
-    .pd-tl-meta { font-size: 11px; color: var(--pd-ink-faint); font-family: var(--pd-font-mono); }
-
-    .pd-domain-picker { display: flex; align-items: center; gap: 9px; }
-    .pd-picker-label { font-size: 12px; color: var(--pd-ink-faint); }
-    .pd-select { background: var(--pd-panel); color: var(--pd-ink); border: 1px solid var(--pd-line); border-radius: 8px; padding: 7px 11px; font: inherit; font-size: 12.5px; }
-
-    .pd-alert-list { display: flex; flex-direction: column; gap: 9px; }
-    .pd-alert { border: 1px solid var(--pd-line); border-radius: 10px; padding: 12px 15px; background: var(--pd-panel-2); }
-    .pd-alert[data-sev="fail"] { border-left: 3px solid var(--pd-fail); }
-    .pd-alert[data-sev="warn"] { border-left: 3px solid var(--pd-warn); }
-    .pd-alert[data-sev="info"] { border-left: 3px solid var(--pd-accent); }
-    .pd-alert.is-unread { background: color-mix(in srgb, var(--pd-accent) 4%, transparent); }
-    .pd-alert-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; }
-    .pd-alert-title { font-size: 13px; font-weight: 500; flex: 1; min-width: 200px; }
-    .pd-alert-time { font-size: 10.5px; color: var(--pd-ink-faint); font-family: var(--pd-font-mono); }
-    .pd-alert-body { margin-top: 9px; display: none; }
-    .pd-alert.is-open .pd-alert-body { display: block; }
-    .pd-alert-diff { font-family: var(--pd-font-mono); font-size: 12px; background: color-mix(in srgb, var(--pd-ink) 7%, transparent); border-radius: 7px; padding: 7px 11px; color: var(--pd-ink-dim); white-space: pre-wrap; }
-
-    .pd-form-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(28,42,71,.5); font-size: 12.5px; flex-wrap: wrap; }
-    .pd-form-row:last-child { border-bottom: 0; }
-    .pd-form-label { color: var(--pd-ink-dim); }
-    .pd-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(28,42,71,.5); font-size: 12.5px; }
-    .pd-toggle-row:last-child { border-bottom: 0; }
-    .pd-toggle-row.pd-is-planned { color: var(--pd-ink-faint); }
-
-    .pd-empty { border: 1px dashed var(--pd-line); border-radius: 10px; padding: 22px; text-align: center; font-size: 12.5px; color: var(--pd-ink-faint); }
-    .pd-empty a { color: var(--pd-accent); }
-
-    @media (max-width: 720px) {
-      .pd-shell { flex-direction: column; }
-      .pd-sidebar { width: 100%; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 4px; }
-      .pd-nav { flex-direction: row; flex-wrap: wrap; }
-      .pd-sidebar-foot { display: none; }
-      .pd-logo { padding-bottom: 4px; width: 100%; }
-      .pd-toast { margin: 0 12px; }
-      .pd-screen { padding: 14px 12px 24px; }
-    }
+    :root{--bg:#F4F5F9;--cd:#fff;--ink:#12161F;--so:#5A6378;--ln:#E3E6EE;--ac:#5B4FE8;--as:#EEECFD;--ad:#2E2599;--ok:#0F766E;--os:#E1F3F1;--wn:#B45309;--ws:#FDF0DC;--bd:#B42318;--bs:#FCE9E7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+    :root[data-theme=dark]{--bg:#0F1219;--cd:#171B26;--ink:#E8EBF3;--so:#98A1B8;--ln:#2A3042;--ac:#8F85FF;--as:#242048;--ad:#CFCBFF;--ok:#4FD1C5;--os:#10302D;--wn:#F6AD55;--ws:#3A2A10;--bd:#FC8181;--bs:#3D1A1A}
+    #dash-app *{box-sizing:border-box}
+    html,body{height:100%}
+    html:has(#dash-app){background:var(--bg)}
+    html:has(#dash-app) body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Plus Jakarta Sans',system-ui,sans-serif}
+    #dash-app button,#dash-app select,#dash-app input{font:inherit;color:inherit}
+    #dash-app button{cursor:pointer}
+    .app{display:grid;grid-template-columns:208px minmax(0,1fr);min-height:100%}
+    #side{background:var(--cd);border-right:1px solid var(--ln);padding:16px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh}
+    .logo{font-weight:800;font-size:16px;padding:4px 10px 14px;display:flex;gap:8px;align-items:center;color:var(--ink);text-decoration:none}
+    .logo i{width:22px;height:22px;border-radius:7px;background:var(--ac)}
+    .nv{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:0;border-radius:9px;background:none;color:var(--so);font-weight:600;text-align:left;width:100%}
+    .nv:hover{background:var(--bg)}.nv.on{background:var(--as);color:var(--ad)}
+    .nv[disabled]{cursor:not-allowed;opacity:.6}
+    .lab{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--so);padding:12px 10px 4px}
+    #main{padding:20px 26px 40px;min-width:0}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    #dash-app h1{font-size:21px;margin:0}#dash-app h3{margin:0;font-size:14.5px}
+    .sub{color:var(--so);font-size:12.5px}
+    .fx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
+    .btn,.sel,.in{border:1px solid var(--ln);background:var(--cd);border-radius:9px;padding:7px 12px;font-weight:600;text-decoration:none;display:inline-block}
+    .btn.p{background:var(--ac);border-color:var(--ac);color:#fff}
+    .in{font-weight:500;min-width:200px}
+    .btn:focus-visible,.nv:focus-visible,.sel:focus-visible,.in:focus-visible,.seg button:focus-visible,.lk:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+    .g{display:grid;gap:14px;margin-bottom:14px}
+    .g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+    .cd{background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:16px 18px;min-width:0}
+    .k{font:700 26px 'JetBrains Mono',monospace}.m{font-family:'JetBrains Mono',monospace;font-size:12px}
+    .seg{display:inline-flex;border:1px solid var(--ln);border-radius:9px;overflow:hidden}
+    .seg button{border:0;background:none;padding:6px 12px;font-weight:700;color:var(--so)}
+    .seg .on{background:var(--as);color:var(--ad)}
+    #dash-app table{width:100%;border-collapse:collapse;font-size:13px}
+    #dash-app th{text-align:left;font-size:11.5px;color:var(--so);padding:8px 10px;background:var(--bg);font-weight:600;white-space:nowrap}
+    #dash-app th button{border:0;background:none;font-weight:600;color:var(--so);padding:0}
+    #dash-app td{padding:9px 10px;border-bottom:1px solid var(--ln)}
+    tr.cl{cursor:pointer}tr.cl:hover td{background:var(--bg)}
+    .pl{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:9px;white-space:nowrap}
+    .ok{background:var(--os);color:var(--ok)}.wn{background:var(--ws);color:var(--wn)}.bd{background:var(--bs);color:var(--bd)}.in2{background:var(--as);color:var(--ad)}
+    .lk{border:0;background:none;color:var(--ac);font-weight:700;padding:0}
+    .tabs{display:flex;gap:18px;border-bottom:1px solid var(--ln);margin-bottom:10px}
+    .tabs button{border:0;background:none;padding:8px 0;font-weight:700;color:var(--so);border-bottom:2px solid transparent}
+    .tabs .on{color:var(--ac);border-color:var(--ac)}
+    .bar{height:7px;border-radius:4px;background:var(--ln);overflow:hidden;min-width:70px}.bar b{display:block;height:100%}
+    .rad{border:2px solid var(--ln);border-radius:12px;padding:12px 14px;background:var(--cd);text-align:left;flex:1;min-width:150px}
+    .rad.on{border-color:var(--ac);background:var(--as)}.rad b{display:block}
+    .sw{width:38px;height:22px;border-radius:12px;border:0;background:var(--ln);position:relative;flex:none}
+    .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+    .sw.on{background:var(--ok)}.sw.on::after{left:19px}
+    .li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln)}
+    .li small{display:block;color:var(--so)}
+    .wrap{position:relative}
+    .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:8px;font-size:12px;white-space:nowrap;display:none;z-index:3}
+    .ov{position:fixed;inset:0;background:#0007;z-index:5}
+    .dr{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--cd);z-index:6;padding:20px;overflow:auto;box-shadow:-8px 0 30px #0004}
+    .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:9;font-weight:600;max-width:min(480px,90vw)}
+    .sc{overflow-x:auto}
+    #dash-app pre{background:var(--bg);padding:12px;border-radius:10px;font:12px/1.5 'JetBrains Mono',monospace;margin:0;overflow:auto}
+    .dv-center{display:grid;place-items:center;min-height:60vh;padding:20px}
+    .dv-card{background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:26px;max-width:380px;text-align:center}
+    .foot-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--ln);margin-top:auto}
+    .foot-user .av{width:26px;height:26px;border-radius:50%;background:var(--as);color:var(--ad);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none}
+    .foot-user .em{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .plan{margin:8px 10px 6px;padding:9px 10px;border:1px dashed var(--ln);border-radius:10px;font-size:11.5px;color:var(--so)}
+    .plan b{display:block;color:var(--ink)}
+    @media(max-width:900px){.app{grid-template-columns:1fr}#side{position:static;height:auto;flex-direction:row;overflow-x:auto;align-items:center}.lab,.logo,.plan,.foot-user{display:none}.nv{white-space:nowrap;width:auto}.g4,.g2,.g21{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.g4,.g2,.g21{grid-template-columns:1fr}#main{padding:14px}}
   </style>
 
   <script>
-    import { lookup, RESOLVERS } from '../lib/doh';
-
-    type ScanCheck = { id: string; label: string; status: string; value: string; earned: number; weight: number };
-    type ScanRecord = { type: string; name: string; value: string };
-    type DomainRow = { id: number; domain: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: ScanCheck[] | null; records: ScanRecord[] | null };
-    type AlertRow = { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string };
-    type DmarcSource = { ip: string; volume: number; dmarcPass: number; spfPass: number; dkimPass: number; disposition: string; lastReport: string | null };
-    type DailyPoint = { date: string; total: number; passing: number };
-
-    const state = { domains: [] as DomainRow[], currentDomainId: null as number | null, dmarcDomainId: null as number | null, max: 3 };
-
-    let currentTheme: 'dark' | 'light' = 'dark';
-    function applyTheme(t: 'dark' | 'light') {
-      currentTheme = t;
-      const app = document.getElementById('dash-app')!;
-      if (t === 'light') app.setAttribute('data-theme', 'light');
-      else app.removeAttribute('data-theme');
-      try { localStorage.setItem('pd-theme', t); } catch { /* private mode */ }
-      document.querySelectorAll('[data-theme-set]').forEach((b) => {
-        const active = (b as HTMLElement).dataset.themeSet === t;
-        b.setAttribute('aria-pressed', String(active));
-        b.classList.toggle('pd-theme-active', active);
-      });
-      const label = document.getElementById('nav-theme-label');
-      if (label) label.textContent = t === 'light' ? 'Dark mode' : 'Light mode';
-      const toggle = document.getElementById('nav-theme-toggle');
-      if (toggle) toggle.title = t === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
-    }
-    try {
-      const savedTheme = localStorage.getItem('pd-theme');
-      if (savedTheme === 'light' || savedTheme === 'dark') applyTheme(savedTheme);
-    } catch { /* ignore */ }
-
-    const GRADE_CLASS: Record<string, string> = { A: 'pd-score-a', B: 'pd-score-b', C: 'pd-score-c', D: 'pd-score-d', F: 'pd-score-f' };
-    const AUTO_DISMISS_MS = 6000;
-    const dismissTimers = new WeakMap<HTMLElement, number>();
-
-    function toast(cls: 'pass' | 'warn' | 'fail', text: string) {
-      const el = document.getElementById('pd-toast')!;
-      el.innerHTML = '<div class="pd-toast-' + cls + '">' + text + '<button type="button" class="pd-toast-x" aria-label="Dismiss">×</button></div>';
-      el.querySelector('.pd-toast-x')!.addEventListener('click', () => { el.innerHTML = ''; });
-      const prev = dismissTimers.get(el);
-      if (prev) clearTimeout(prev);
-      const wait = cls === 'pass' ? AUTO_DISMISS_MS : AUTO_DISMISS_MS * 2;
-      dismissTimers.set(el, window.setTimeout(() => { el.innerHTML = ''; }, wait));
-    }
-
-    function showDomainTab(tab: string) {
-      document.querySelectorAll('.pd-tab').forEach((t) => {
-        const active = t.getAttribute('data-tab') === tab;
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
-      document.querySelectorAll('#screen-domain .pd-tabpanel').forEach((p) => { p.hidden = p.id !== 'tab-' + tab; });
-    }
-
-    function show(screen: string, sub?: string) {
-      document.querySelectorAll('#dash-shell .pd-screen').forEach((s) => { (s as HTMLElement).hidden = s.id !== 'screen-' + screen; });
-      document.querySelectorAll('#dash-shell .pd-nav-item').forEach((n) => n.classList.toggle('is-active', (n as HTMLElement).dataset.screen === screen));
-      const t = document.getElementById('page-title')!;
-      const titles: Record<string, string> = { overview: 'Overview', domains: 'Domains', domain: 'Domain detail', dmarc: 'Email (DMARC)', alerts: 'Alerts', settings: 'Settings' };
-      t.textContent = titles[screen] ?? '';
-      document.getElementById('page-sub')!.textContent = sub ?? ({
-        overview: 'Everything watched, at a glance.',
-        domains: 'All domains on the account.',
-        domain: 'One domain, in depth.',
-        dmarc: 'Who is sending email as your domains.',
-        alerts: 'Changes and problems, newest first.',
-        settings: 'Account, notifications, and billing.',
-      } as Record<string, string>)[screen] ?? '';
-      document.getElementById('topbar-add')!.style.display = screen === 'domains' ? '' : 'none';
-    }
-
-    function chip(status: string): string {
-      const cls = status === 'pass' ? 'pd-chip-pass' : status === 'warn' ? 'pd-chip-warn' : 'pd-chip-fail';
-      const icon = status === 'pass' ? '✔' : status === 'warn' ? '▲' : '✕';
-      return '<span class="pd-chip ' + cls + '">' + icon + ' ' + status + '</span>';
-    }
-    function gradeClass(g: string | null): string { return GRADE_CLASS[(g ?? 'F').toUpperCase()] ?? 'pd-score-f'; }
-    function esc(s: string): string { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-    // ---------- domains ----------
-    async function loadDomains(): Promise<DomainRow[]> {
-      const res = await fetch('/api/domains');
-      if (!res.ok) return [];
-      const data = await res.json() as { domains: DomainRow[]; max: number };
-      state.domains = data.domains;
-      state.max = data.max;
-      const maxEl = document.getElementById('dom-max');
-      if (maxEl) maxEl.textContent = String(data.max);
-      renderDomainTable();
-      renderHealthRows(document.getElementById('ov-health')!);
-      return data.domains;
-    }
-
-    function domainChips(d: DomainRow, max = 3): string {
-      const order = ['spf', 'dmarc', 'dkim', 'dnssec', 'mx', 'website', 'ns'];
-      const chips: string[] = [];
-      for (const id of order) {
-        const c = d.checks?.find((x) => x.id === id);
-        if (c && c.status !== 'pass') chips.push('<span class="pd-chip ' + (c.status === 'fail' ? 'pd-chip-fail' : 'pd-chip-warn') + '">' + esc(c.label) + '</span>');
-        if (chips.length >= max) break;
+    // ================= helpers =================
+    const $ = (s, e) => (e || document).querySelector(s);
+    const H = (s) => { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstChild; };
+    const E = (t, a, ...k) => {
+      const e = document.createElement(t);
+      for (const [n, v] of Object.entries(a || {})) {
+        if (n === 'class') e.className = v;
+        else if (n.startsWith('on')) e.addEventListener(n.slice(2), v);
+        else if (v !== false && v != null) e.setAttribute(n, v);
       }
-      if (!chips.length && d.checks?.length) chips.push('<span class="pd-chip pd-chip-pass">✔ all checks pass</span>');
-      return chips.join(' ');
-    }
+      k.flat(9).filter((c) => c !== false && c != null).forEach((c) => e.append(c.nodeType ? c : document.createTextNode(c)));
+      return e;
+    };
+    const f = (n) => Math.round(n).toLocaleString('en');
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const toast = (m) => { const t = E('div', { class: 'toast', role: 'status' }, m); document.body.append(t); setTimeout(() => t.remove(), 2600); };
+    const pill = (t, c) => E('span', { class: 'pl ' + c }, t);
+    const prev = () => pill('Preview', 'in2');
+    const col = (v) => (v >= 90 ? 'ok' : v >= 60 ? 'wn' : 'bd');
+    const cv = (v) => `var(--${col(v)})`;
+    const seg = (opts, cur, fn) => E('div', { class: 'seg' }, opts.map(([v, l]) => E('button', { class: cur === v ? 'on' : '', 'aria-pressed': cur === v, onclick: () => fn(v) }, l)));
+    const bar = (v, w) => E('div', { class: 'bar' }, E('b', { style: `width:${v}%;background:${cv(v)}` }));
+    const ring = (v) => v == null ? E('span', { class: 'sub' }, 'N/A') : H(`<svg width="34" height="34" viewBox="0 0 36 36" role="img" aria-label="Health ${v} of 100"><circle cx="18" cy="18" r="14" fill="none" stroke="var(--ln)" stroke-width="4"/><circle cx="18" cy="18" r="14" fill="none" stroke="${cv(v)}" stroke-width="4" stroke-dasharray="${v * .88} 88" transform="rotate(-90 18 18)" stroke-linecap="round"/><text x="18" y="22" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">${v}</text></svg>`);
+    const sp = (p) => p.map((q, i) => i ? `C${(p[i - 1][0] + q[0]) / 2},${p[i - 1][1]} ${(p[i - 1][0] + q[0]) / 2},${q[1]} ${q[0]},${q[1]}` : `M${q[0]},${q[1]}`).join('');
+    const fmtWhen = (iso) => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return iso; return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 
-    function renderDomainTable() {
-      const list = document.getElementById('dom-list')!;
-      list.innerHTML = '';
-      if (!state.domains.length) {
-        list.innerHTML = '<div class="pd-empty">No domains yet. Click "Add domain" and the first scan runs immediately.</div>';
-        return;
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'pd-table-wrap';
-      wrap.innerHTML = '<table class="pd-table"><thead><tr><th>Domain</th><th>Score</th><th>Status</th><th>Last check</th><th></th></tr></thead><tbody></tbody></table>';
-      const tbody = wrap.querySelector('tbody')!;
-      for (const d of state.domains) {
-        const tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td class="pd-domain-name">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</td>' +
-          '<td><span class="pd-score ' + gradeClass(d.grade) + '" style="font-size:14px">' + (d.score ?? '-') + '</span></td>' +
-          '<td>' + domainChips(d, 2) + '</td>' +
-          '<td class="pd-cell-dim pd-mono">' + (d.checkedAt ? d.checkedAt.slice(0, 16).replace('T', ' ') : '-') + '</td>' +
-          '<td style="white-space:nowrap"><button type="button" class="pd-btn pd-btn-xs" data-scan-row="' + d.id + '">Scan</button> <button type="button" class="pd-link" data-open="' + d.id + '">Open →</button></td>';
-        tbody.appendChild(tr);
-      }
-      const statusLine = document.createElement('div');
-      statusLine.id = 'dom-scan-status';
-      statusLine.className = 'pd-panel';
-      statusLine.hidden = true;
-      list.appendChild(wrap);
-      list.appendChild(statusLine);
-      list.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openDomain(Number((b as HTMLElement).dataset.open))));
-      list.querySelectorAll('[data-scan-row]').forEach((b) => {
-        const el = b as HTMLButtonElement;
-        el.addEventListener('click', () => {
-          el.disabled = true;
-          el.textContent = 'Scanning…';
-          void doRescan(Number(el.dataset.scanRow), statusLine).finally(() => { el.disabled = false; el.textContent = 'Scan'; });
-        });
-      });
-    }
+    // provider logos (Simple Icons CC0 / Font Awesome Free CC BY 4.0)
+    const LG = {"cloudflare":["0 0 24 24","M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727","#F38020"],"openai":["0 0 24 24","M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z",null],"anthropic":["0 0 24 24","M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z",null],"perplexity":["0 0 24 24","M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z","#1FB8CD"],"amazon":["0 0 448 512","M257.2 162.7c-48.7 1.8-169.5 15.5-169.5 117.5 0 109.5 138.3 114 183.5 43.2 6.5 10.2 35.4 37.5 45.3 46.8l56.8-56S341 288.9 341 261.4V114.3C341 89 316.5 32 228.7 32 140.7 32 94 87 94 136.3l73.5 6.8c16.3-49.5 54.2-49.5 54.2-49.5 40.7-.1 35.5 29.8 35.5 69.1zm0 86.8c0 80-84.2 68-84.2 17.2 0-47.2 50.5-56.7 84.2-57.8v40.6zm136 163.5c-7.7 10-70 67-174.5 67S34.2 408.5 9.7 379c-6.8-7.7 1-11.3 5.5-8.3C88.5 415.2 203 488.5 387.7 401c7.5-3.7 13.3 2 5.5 12zm39.8 2.2c-6.5 15.8-16 26.8-21.2 31-5.5 4.5-9.5 2.7-6.5-3.8s19.3-46.5 12.7-55c-6.5-8.3-37-4.3-48-3.2-10.8 1-13 2-14-.3-2.3-5.7 21.7-15.5 37.5-17.5 15.7-1.8 41-.8 46 5.7 3.7 5.1 0 27.1-6.5 43.1z",null],"google":["0 0 24 24","M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z","#4285F4"]};
+    const LK = [['openai','openai'],['gptbot','openai'],['chatgpt','openai'],['claude','anthropic'],['anthropic','anthropic'],['perplexity','perplexity'],['google-extended','google'],['google','google'],['amazonbot','amazon'],['amazon','amazon'],['gpt','openai']];
+    const lg = (n, s) => {
+      s = s || 20;
+      const l = String(n).toLowerCase(), k = (LK.find(([a]) => l.includes(a)) || [])[1];
+      if (!k) return null;
+      if (k === 'anthropic') return H('<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + LG.anthropic[1] + '"/></svg>');
+      const [vb, d, c] = LG[k];
+      return H('<svg width="' + s + '" height="' + s + '" viewBox="' + vb + '" aria-hidden="true" style="flex:none"><path fill="' + (c || 'currentColor') + '" d="' + d + '"/></svg>');
+    };
+    const nm = (n, b) => E('span', { class: 'fx', style: 'gap:8px;flex-wrap:nowrap' }, lg(n) || '', b ? E('b', {}, n) : n);
 
-    function renderHealthRows(container: HTMLElement) {
-      container.innerHTML = '';
-      if (!state.domains.length) {
-        container.innerHTML = '<div class="pd-empty">No domains yet. Add one from the Domains screen.</div>';
-        return;
-      }
-      for (const d of state.domains) {
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'pd-health-row';
-        row.innerHTML =
-          '<span class="pd-score ' + gradeClass(d.grade) + '">' + (d.score ?? '-') + '</span>' +
-          '<span class="pd-health-main"><span class="pd-domain-name">' + esc(d.domain) + '</span><span class="pd-health-meta">' + domainChips(d, 2) + '</span></span>' +
-          '<span class="pd-health-side"><span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '">' + (d.grade ?? '-') + '</span><span class="pd-health-checked">' + (d.checkedAt ? 'checked ' + d.checkedAt.slice(11, 16) + ' UTC' : '') + '</span></span>';
-        row.addEventListener('click', () => openDomain(d.id));
-        container.appendChild(row);
-      }
-    }
+    // ================= data =================
+    type DRow = { id: number; n: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
+    let DOMS: DRow[] = [];
+    let OV: any = null;
+    let ALERTS: { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string }[] = [];
+    let MAXD = 3;
+    const dmarcCache = new Map<number, any>();
+    let histCache = new Map<number, any>();
 
-    function nextAction(): { cls: string; tag: string; tagCls: string; title: string; body: string; cta?: string; go?: string } | null {
-      for (const d of state.domains) {
-        const spf = d.checks?.find((c) => c.id === 'spf');
-        if (spf && spf.status === 'fail') {
-          return { cls: 'is-fix', tag: 'Fix first', tagCls: 'pd-chip-fail', title: 'SPF on ' + d.domain + ' is failing', body: 'The record has errors or exceeds the lookup limit - receivers may be ignoring your policy entirely.', cta: 'Open the domain', go: String(d.id) };
-        }
-      }
-      for (const d of state.domains) {
-        const dm = d.checks?.find((c) => c.id === 'dmarc');
-        if (dm && dm.status === 'warn') {
-          return { cls: '', tag: 'Roadmap', tagCls: 'pd-chip-pass', title: 'Move ' + d.domain + ' toward p=quarantine', body: 'DMARC is in monitoring mode. Read the sources on the Email screen, mark every sender, and advance when they all pass.', cta: 'See DMARC sources', go: 'dmarc:' + d.id };
-        }
-      }
-      for (const d of state.domains) {
-        const ds = d.checks?.find((c) => c.id === 'dnssec');
-        if (ds && ds.status === 'warn') {
-          return { cls: '', tag: 'Harden', tagCls: 'pd-chip-warn', title: 'Enable DNSSEC on ' + d.domain, body: 'No DS record at the parent. Enable DNSSEC at your DNS provider, then publish the DS record at your registrar.', cta: 'Open the domain', go: String(d.id) };
-        }
-      }
-      return null;
-    }
+    const S = { v: 'overview', d: 0, rng: 'MO', kind: 'area', tab: 'all', q: '', sort: ['n', 1] as [string, number], dt: 'rec', sel: null as number | null, hide: new Set<string>(), pol: 'quarantine', pct: 50, ruf: false, flat: false, mta: 'enforce', pf: [] as any[], atab: 'feed', asev: 'all', ai: { GPTBot: 'block', ClaudeBot: 'allow', PerplexityBot: 'allow', 'Google-Extended': 'block', Amazonbot: 'unset' } as Record<string, string> };
 
-    const lastScan: { id: number; cls: string; text: string } | null = null;
-    function renderHeroCard(d: DomainRow): HTMLElement {
-      const card = document.createElement('div');
-      card.className = 'pd-hero-card';
-      card.dataset.hero = String(d.id);
-      card.innerHTML =
-        '<div class="pd-hero-score ' + gradeClass(d.grade) + '">' + (d.score ?? '-') + '</div>' +
-        '<div class="pd-hero-main">' +
-        '<p class="pd-hero-domain">' + esc(d.domain) + (d.paused ? ' <span class="pd-chip pd-chip-warn">paused</span>' : '') + '</p>' +
-        '<div class="pd-health-meta">' + domainChips(d, 3) + '</div>' +
-        '<p class="pd-hero-meta">Grade ' + (d.grade ?? '-') + (d.checkedAt ? ' · checked ' + d.checkedAt.slice(11, 16) + ' UTC' : '') + '</p>' +
-        '</div>' +
-        '<div class="pd-hero-actions">' +
-        '<button type="button" class="pd-btn pd-btn-sm" data-scan="' + d.id + '">Scan now</button>' +
-        '<button type="button" class="pd-link" data-open="' + d.id + '">Details →</button>' +
-        '</div>';
-      card.querySelector('[data-scan]')!.addEventListener('click', (e) => {
-        const b = e.currentTarget as HTMLButtonElement;
-        b.disabled = true;
-        b.textContent = 'Scanning…';
-        void doRescan(d.id, document.getElementById('ov-activity') as HTMLElement).finally(() => { b.disabled = false; b.textContent = 'Scan now'; });
-      });
-      card.querySelector('[data-open]')!.addEventListener('click', () => openDomain(d.id));
-      return card;
-    }
-
-    function renderHero() {
-      const hero = document.getElementById('ov-hero')!;
-      hero.innerHTML = '';
-      if (!state.domains.length) {
-        hero.innerHTML = '<div class="pd-empty" style="grid-column:1/-1">No domains monitored yet. Click "Add domain" above and its live health score appears here.</div>';
-        return;
-      }
-      for (const d of state.domains) hero.appendChild(renderHeroCard(d));
-    }
-
-    function renderOverview(o: { domains: number; max: number; alertsOpen: number; avgScore: number | null; dmarc: { reports: number; messages: number; passRate: number | null; daily: DailyPoint[] } }) {
-      (document.getElementById('ov-domains') as HTMLElement).textContent = String(o.domains);
-      (document.getElementById('ov-domains-note') as HTMLElement).textContent = 'of ' + o.max + ' on Early access';
-      (document.getElementById('ov-alerts') as HTMLElement).textContent = String(o.alertsOpen);
-      const pr = document.getElementById('ov-passrate') as HTMLElement;
-      pr.textContent = o.dmarc.passRate === null ? '-' : o.dmarc.passRate + '%';
-      (document.getElementById('ov-passrate-note') as HTMLElement).textContent = o.dmarc.reports > 0 ? o.dmarc.reports + ' report(s), ' + o.dmarc.messages.toLocaleString() + ' messages' : 'no reports yet';
-
-      renderHero();
-      renderHealthRows(document.getElementById('ov-health')!);
-
-      const action = nextAction();
-      const box = document.getElementById('ov-action')!;
-      if (!action) {
-        box.innerHTML = '<div class="pd-action-card"><span class="pd-chip pd-chip-pass">All clear</span><h3>Nothing needs your attention</h3><p>Monitoring keeps watching every domain every 6 hours.</p></div>';
-      } else {
-        box.innerHTML = '<div class="pd-action-card ' + action.cls + '"><span class="pd-chip ' + action.tagCls + '">' + action.tag + '</span><h3>' + esc(action.title) + '</h3><p>' + esc(action.body) + '</p>' + (action.cta ? '<button type="button" class="pd-btn pd-btn-sm" id="action-go">' + action.cta + '</button>' : '') + '</div>';
-        const go = document.getElementById('action-go');
-        if (go) go.addEventListener('click', () => {
-          if (!action.go) return;
-          if (action.go.startsWith('dmarc:')) { state.dmarcDomainId = Number(action.go.split(':')[1]); show('dmarc'); void loadDmarcScreen(); }
-          else openDomain(Number(action.go));
-        });
-      }
-
-      const chartPanel = document.getElementById('ov-chart-panel')!;
-      if (o.dmarc.daily.length > 1) {
-        chartPanel.hidden = false;
-        (chartPanel.querySelector('h2') as HTMLElement).textContent = 'DMARC volume';
-        (chartPanel.querySelector('.pd-legend') as HTMLElement).hidden = false;
-        drawBars(document.getElementById('ov-chart') as SVGSVGElement, o.dmarc.daily);
-      } else if (o.activity && o.activity.length > 1) {
-        chartPanel.hidden = false;
-        (chartPanel.querySelector('h2') as HTMLElement).textContent = 'Your scores, last 14 days';
-        (chartPanel.querySelector('.pd-legend') as HTMLElement).hidden = true;
-        drawScoreBars(document.getElementById('ov-chart') as SVGSVGElement, o.activity);
-      } else {
-        chartPanel.hidden = true;
-      }
-    }
-
-    function drawScoreBars(svg: SVGSVGElement, activity: { date: string; runs: number; avgScore: number }[]) {
-      const g = svg.querySelector('.pd-chart-bars');
-      if (!g) return;
-      const W = 640, H = 150, padL = 6, padB = 16, padT = 6;
-      const n = Math.max(activity.length, 1);
-      const slot = (W - padL * 2) / n;
-      const bw = Math.min(slot, 46);
-      const offsetX = (W - padL * 2 - bw * n) / 2;
-      let out = '<line x1="' + padL + '" y1="' + (padT + 1) + '" x2="' + (W - padL) + '" y2="' + (padT + 1) + '" stroke="var(--pd-line)" stroke-width="1"/>';
-      activity.forEach((a, i) => {
-        const x = padL + offsetX + i * slot;
-        const h = Math.max(2, (H - padB - padT) * (a.avgScore / 100));
-        out += '<rect x="' + (x + 1).toFixed(1) + '" y="' + (H - padB - h).toFixed(1) + '" width="' + Math.max(1.5, bw - 2.5).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="1.5" fill="var(--pd-accent)" opacity="0.8"><title>' + a.date + ': avg score ' + a.avgScore + ' across ' + a.runs + ' run(s)</title></rect>';
-        if (i % Math.ceil(n / 8) === 0) out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 4) + '" font-size="9" fill="var(--pd-ink-faint)" text-anchor="middle" font-family="JetBrains Mono, monospace">' + a.date.slice(5) + '</text>';
-      });
-      g.innerHTML = out;
-    }
-
-    async function loadOverview() {
+    const getJSON = async (u: string) => { try { const r = await fetch(u); const j = await r.json(); return j; } catch { return null; } };
+    const postJSON = async (u: string, body?: any) => {
       try {
-        const res = await fetch('/api/overview');
-        if (!res.ok) return;
-        const o = await res.json() as { ok: boolean; domains: number; max: number; alertsOpen: number; avgScore: number | null; dmarc: { reports: number; messages: number; passRate: number | null; daily: DailyPoint[] } };
-        if (o.ok) renderOverview(o);
-      } catch { /* overview is best-effort */ }
+        const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+        return await r.json();
+      } catch { return { ok: false, error: 'Could not reach the server.' }; }
+    };
+
+    async function refreshAll() {
+      const [d, o, a] = await Promise.all([getJSON('/api/domains'), getJSON('/api/overview'), getJSON('/api/alerts')]);
+      if (d && d.ok) {
+        DOMS = (d.domains || []).map((x: any) => ({ id: x.id, n: x.domain, paused: !!x.paused, score: x.score, grade: x.grade, checkedAt: x.checkedAt, checks: x.checks || [], records: x.records || [] }));
+        MAXD = d.max || 3;
+      }
+      OV = o && o.ok ? o : null;
+      if (a && a.ok) ALERTS = a.alerts || [];
+      dmarcCache.clear(); histCache.clear();
+      if (S.d >= DOMS.length) S.d = 0;
+      go();
     }
 
-    // ---------- domain detail ----------
-    function renderAuthTab(d: DomainRow) {
-      const auth = document.getElementById('tab-auth')!;
-      const cards = (d.checks ?? []).map((c) => {
-        let extra = '';
-        if (c.id === 'spf') {
-          const m = c.value.match(/(\d+)\/10/);
-          if (m) {
-            const pct = Math.min(100, Number(m[1]) * 10);
-            extra = '<div class="pd-meter-head"><span>DNS lookup terms</span><span class="pd-mono">' + m[1] + '/10</span></div><div class="pd-meter"><div class="pd-meter-fill" style="width:' + pct + '%"></div></div>';
-          }
-        }
-        return '<div class="pd-panel"><div class="pd-panel-head"><h2>' + esc(c.label) + '</h2>' + chip(c.status) + '</div><p class="pd-mono" style="color:var(--pd-ink-dim)">' + esc(c.value) + '</p>' + extra + '</div>';
-      }).join('');
-      auth.innerHTML = '<div class="pd-grid-2">' + cards + '</div><p class="pd-panel-note">Checks and weights follow the methodology. Values are from the latest scan.</p>';
+    const curDom = () => DOMS[S.d] || null;
+    const chk = (d: DRow, id: string) => (d.checks || []).find((c) => c.id === id);
+    const insightCount = (d: DRow) => (d.checks || []).filter((c) => c.status !== 'pass').length;
+    const failCount = (d: DRow) => (d.checks || []).filter((c) => c.status === 'fail').length;
+
+    async function loadDmarc(force?: boolean) {
+      const d = curDom();
+      if (!d) return null;
+      if (!dmarcCache.has(d.id) || force) {
+        const j = await getJSON('/api/domains/dmarc?id=' + d.id);
+        dmarcCache.set(d.id, j && j.ok ? j : null);
+      }
+      return dmarcCache.get(d.id);
+    }
+    async function loadHist(id: number) {
+      if (!histCache.has(id)) {
+        const j = await getJSON('/api/domains/history?id=' + id);
+        histCache.set(id, j && j.ok ? j : null);
+      }
+      return histCache.get(id);
     }
 
-    function renderRecordsTab(d: DomainRow) {
-      const recBox = document.getElementById('tab-records')!;
-      if (d.records && d.records.length) {
-        recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records as seen in the last scan</h2><span class="pd-chip pd-chip-info">' + d.records.length + ' record(s)</span></div><div class="pd-table-wrap"><table class="pd-table"><thead><tr><th>Type</th><th>Name</th><th>Value</th></tr></thead><tbody>' +
-          d.records.map((r) => '<tr><td class="pd-mono">' + esc(r.type) + '</td><td class="pd-mono">' + esc(r.name) + '</td><td class="pd-mono" style="word-break:break-all">' + esc(r.value) + '</td></tr>').join('') +
-          '</tbody></table></div><p class="pd-panel-note">Captured during the most recent scan. TXT records include the SPF and DMARC policies.</p></div>';
+    // ================= chart =================
+    function chart(daily: { date: string; total: number; passing: number }[]) {
+      const nTake = { DY: 7, WK: 14, MO: 30 }[S.rng] || 30;
+      const pts = daily.slice(-nTake);
+      const n = pts.length;
+      if (!n) return E('p', { class: 'sub' }, 'No aggregate reports yet. Forward your rua reports to PromptDNS and the chart fills in here.');
+      const pass = pts.map((p) => p.passing || 0);
+      const fail = pts.map((p) => Math.max(0, (p.total || 0) - (p.passing || 0)));
+      const labels = pts.map((p) => { const d = new Date(p.date + 'T00:00:00'); return isNaN(d) ? p.date : MON[d.getMonth()] + ' ' + d.getDate(); });
+      const sers = [['Compliant', pass, '#0F766E'], ['Non-compliant', fail, '#B45309']] as [string, number[], string][];
+      const W = 640, Ht = 230, L = 44, B = 26, pw = W - L - 10, ph = Ht - B - 10;
+      const vis = sers.filter((a) => !S.hide.has(a[0]));
+      const mx = Math.max(1, ...(S.kind === 'bar' ? labels.map((_, i) => vis.reduce((a, b) => a + b[1][i], 0)) : vis.flatMap((a) => a[1]))) * 1.1;
+      const X = (i: number) => L + i * pw / Math.max(1, n - 1);
+      const Y = (v: number) => 10 + ph - v / mx * ph;
+      let g = '';
+      for (let k = 0; k <= 4; k++) { const y = 10 + ph * k / 4; g += `<line x1="${L}" x2="${W - 10}" y1="${y}" y2="${y}" stroke="var(--ln)" stroke-dasharray="4 4"/><text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--so)">${f(mx * (1 - k / 4))}</text>`; }
+      labels.forEach((t, i) => { if (i % Math.ceil(n / 8) === 0 || i === n - 1) g += `<text x="${X(i)}" y="${Ht - 8}" text-anchor="middle" font-size="10" fill="var(--so)">${t}</text>`; });
+      if (S.kind === 'bar') {
+        const bw = pw / n * .6;
+        labels.forEach((_, i) => { let b = 0; vis.forEach((a) => { const h = a[1][i] / mx * ph; b += h; g += `<rect x="${X(i) - bw / 2}" y="${10 + ph - b}" width="${bw}" height="${h}" fill="${a[2]}" rx="2"/>`; }); });
       } else {
-        recBox.innerHTML = '<div class="pd-panel"><div class="pd-panel-head"><h2>DNS records</h2></div><div class="pd-empty">No record values captured yet. Run a scan and they will appear here.</div></div>';
+        vis.forEach((a) => { const p = a[1].map((v, i) => [X(i), Y(v)]); g += `<path d="${sp(p)} L${X(n - 1)},${10 + ph} L${X(0)},${10 + ph}Z" fill="${a[2]}" opacity=".14"/><path d="${sp(p)}" fill="none" stroke="${a[2]}" stroke-width="2.5"/>`; });
       }
+      const svg = H(`<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Message volume by DMARC compliance over time">${g}<line id="cl" y1="10" y2="${10 + ph}" stroke="var(--so)" opacity="0"/></svg>`);
+      const tip = E('div', { class: 'tip' });
+      const w = E('div', { class: 'wrap' }, svg, tip);
+      svg.addEventListener('mousemove', (e: MouseEvent) => {
+        const r = svg.getBoundingClientRect();
+        const i = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width * W - L) / (pw / Math.max(1, n - 1)))));
+        const x = X(i);
+        const cl = $('#cl', svg); if (cl) { cl.setAttribute('x1', String(x)); cl.setAttribute('x2', String(x)); cl.setAttribute('opacity', '.6'); }
+        tip.style.display = 'block';
+        tip.style.left = Math.min(x / W * r.width + 10, r.width - 170) + 'px';
+        tip.style.top = '10px';
+        tip.innerHTML = `<b>${labels[i]}</b><br>` + vis.map((a) => `${a[0]}: ${f(a[1][i])}`).join('<br>');
+      });
+      svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; const cl = $('#cl', svg); if (cl) cl.setAttribute('opacity', '0'); });
+      return w;
     }
 
-    async function renderActivityTab(d: DomainRow): Promise<void> {
-      const act = document.getElementById('tab-activity')!;
-      act.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Loading activity…</p></div>';
-      try {
-        const res = await fetch('/api/domains/history?id=' + d.id);
-        const data = await res.json() as { runs: { outcome: string; score: number | null; changes: number; ran_at: string }[]; alerts: { severity: string; title: string; detail: string; created_at: string }[] };
-        const runs = data.runs.length
-          ? '<table class="pd-table pd-table-sm" style="width:100%"><thead><tr><th>Time (UTC)</th><th>Result</th><th>Score</th></tr></thead><tbody>' +
-            data.runs.map((r) => '<tr><td class="pd-mono">' + r.ran_at.slice(0, 16).replace('T', ' ') + '</td><td>' + (r.outcome === 'changed' ? '<span class="pd-text-warn">changed (' + r.changes + ')</span>' : r.outcome === 'unresolvable' ? '<span class="pd-text-fail">unresolvable</span>' : '<span class="pd-text-pass">no changes</span>') + '</td><td class="pd-mono">' + (r.score === null ? 'n/a' : r.score) + '</td></tr>').join('') +
-            '</tbody></table>'
-          : '<div class="pd-empty">No runs logged yet. Automatic runs appear here every 6 hours.</div>';
-        const changes = data.alerts.length
-          ? data.alerts.map((a) => '<div class="pd-tl-item"><span class="pd-tl-dot ' + (a.severity === 'fail' ? 'pd-dot-fail' : 'pd-dot-warn') + '"></span><div><p class="pd-tl-title">' + esc(a.title) + '</p><p class="pd-tl-meta">' + esc(a.detail.split('\n').join(' / ')) + '</p><p class="pd-tl-meta">' + a.created_at.slice(0, 16).replace('T', ' ') + ' UTC</p></div></div>').join('')
-          : '<div class="pd-empty">No changes detected since monitoring started.</div>';
-        act.innerHTML =
-          '<div class="pd-panel"><div class="pd-panel-head"><h2>Scan activity</h2><span class="pd-chip pd-chip-pass">every 6 hours</span></div>' + runs + '</div>' +
-          '<div class="pd-panel"><div class="pd-panel-head"><h2>Changes detected</h2></div><div class="pd-timeline">' + changes + '</div></div>';
-      } catch {
-        act.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Could not load activity.</p></div>';
-      }
+    // ================= overview =================
+    function checkChips(d: DRow, max = 2) {
+      const bad = (d.checks || []).filter((c) => c.status !== 'pass');
+      if (!bad.length) return (d.checks || []).length ? pill('all checks pass', 'ok') : E('span', { class: 'sub' }, '-');
+      return E('span', { class: 'fx' }, bad.slice(0, max).map((c) => pill(c.label, c.status === 'fail' ? 'bd' : 'wn')));
+    }
+    function dnssecPill(d: DRow) {
+      const s = chk(d, 'dnssec');
+      if (!s) return pill('Unknown', 'in2');
+      return pill(s.status === 'pass' ? 'Enabled' : s.status === 'warn' ? 'Partial' : 'Disabled', s.status === 'pass' ? 'ok' : s.status === 'warn' ? 'wn' : 'in2');
+    }
+    function tbl() {
+      const q = S.q.toLowerCase(), [k, dir] = S.sort;
+      const rows = DOMS.filter((d) => d.n.includes(q)).sort((a, b) => {
+        const av = k === 'score' ? (a.score ?? -1) : a.n, bv = k === 'score' ? (b.score ?? -1) : b.n;
+        return (av > bv ? 1 : -1) * dir;
+      });
+      const th = (key: string, l: string) => E('th', {}, E('button', { onclick: () => { S.sort = [key, S.sort[0] === key ? -S.sort[1] : 1]; rt(); } }, l + (S.sort[0] === key ? (S.sort[1] > 0 ? ' ▲' : ' ▼') : '')));
+      return E('div', { class: 'sc', id: 'tb' }, E('table', {}, E('thead', {}, E('tr', {}, th('n', 'Domain'), E('th', {}, 'Checks'), th('score', 'Health'), E('th', {}, 'DNSSEC'), E('th', {}, 'Last check'), E('th', {}, ''))),
+        E('tbody', {}, rows.length ? rows.map((d) => {
+          const i = DOMS.indexOf(d);
+          return E('tr', { class: 'cl' },
+            E('td', {}, E('button', { class: 'lk', onclick: () => openDr(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
+            E('td', {}, checkChips(d)),
+            E('td', {}, ring(d.score)),
+            E('td', {}, dnssecPill(d)),
+            E('td', { class: 'sub' }, d.checkedAt ? fmtWhen(d.checkedAt) : '-'),
+            E('td', {}, E('div', { class: 'fx' },
+              E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doRescan(d.id); } }, 'Rescan'),
+              E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doPause(d); } }, d.paused ? 'Resume' : 'Pause'))));
+        }) : E('tr', {}, E('td', { colspan: 6, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
+    }
+    const rt = () => { const o = $('#tb'); if (o) o.replaceWith(tbl()); };
+
+    function ov() {
+      const avg = OV && OV.avgScore != null ? OV.avgScore : null;
+      const fails = DOMS.reduce((a, d) => a + failCount(d), 0);
+      const kpis = [
+        ['Total domains', String(DOMS.length) + ' of ' + MAXD, ''],
+        ['Average health score', avg != null ? avg + ' / 100' : '-', avg != null && avg >= 80 ? 'color:var(--ok)' : avg != null && avg < 60 ? 'color:var(--bd)' : ''],
+        ['DMARC messages', OV ? f(OV.dmarc?.messages || 0) : '-', ''],
+        ['Failing checks', String(fails), fails ? 'color:var(--bd)' : 'color:var(--ok)'],
+      ];
+      return E('div', {},
+        E('div', { class: 'g g4' }, kpis.map(([l, v, s]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: s }, v)))),
+        E('div', { class: 'cd' },
+          E('div', { class: 'fx sp', style: 'margin-bottom:10px' },
+            E('input', { class: 'in', type: 'search', 'aria-label': 'Search domains', placeholder: 'Search domains', value: S.q, oninput: (e: any) => { S.q = e.target.value; rt(); } }),
+            E('button', { class: 'btn p', onclick: addDomainFlow }, '+ Add domain')),
+          tbl()));
     }
 
-    async function openDomain(id: number) {
-      const d = state.domains.find((x) => x.id === id);
+    // ================= drawer =================
+    const cdr = () => { $('#ly').replaceChildren(); S.sel = null; };
+    function openDr(i: number) { S.sel = i; S.dt = 'rec'; drw(); }
+    async function drw() {
+      const d = DOMS[S.sel];
       if (!d) return;
-      state.currentDomainId = id;
-      show('domain', d.domain);
-
-      renderDomainHead(d);
-      document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
-      document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
-
-      renderAuthTab(d);
-      renderRecordsTab(d);
-      showDomainTab('auth');
-      await renderActivityTab(d);
-    }
-
-    const SCAN_EXPLANATION = 'Every scan checks website DNS, nameservers, mail routing (MX), SPF, DMARC, DKIM, and DNSSEC - the same seven checks as the homepage scanner. "No changes" means none of those values moved since the previous snapshot; the run is still logged.';
-
-    async function showActivityCard(domainId: number, container: HTMLElement): Promise<void> {
-      container.hidden = false;
-      container.className = 'pd-panel';
-      container.style.position = 'relative';
-      // Overview's container sits inside the screen flex-gap; the others need
-      // their own breathing room from the element above.
-      container.style.marginTop = container.id === 'ov-activity' ? '' : '14px';
-      container.innerHTML = '<div class="pd-act-anim"><p class="pd-panel-note" style="margin:0">Loading activity…</p></div>';
-      try {
-        const res = await fetch('/api/domains/history?id=' + domainId);
-        const data = await res.json() as { runs: { outcome: string; score: number | null; changes: number; ran_at: string }[] };
-        const runs = (data.runs ?? []).slice(0, 4);
-        const latest = runs[0];
-        const headline = !latest ? 'Scan complete - first run logged.'
-          : latest.outcome === 'changed' ? 'Something changed during this scan.'
-          : latest.outcome === 'unresolvable' ? 'The domain did not resolve on this run.'
-          : 'No changes since the previous snapshot.';
-        const color = !latest || latest.outcome === 'ok' ? 'var(--pd-pass)' : latest.outcome === 'changed' ? 'var(--pd-warn)' : 'var(--pd-fail)';
-        container.innerHTML =
-          '<div class="pd-act-anim">' +
-          '<button type="button" class="pd-act-close" aria-label="Dismiss activity">×</button>' +
-          '<div class="pd-act-head" style="color:' + color + '">' + headline + '</div>' +
-          '<p class="pd-act-expl">' + esc(SCAN_EXPLANATION) + '</p>' +
-          (runs.length
-            ? '<table class="pd-table pd-act-table" style="width:100%"><thead><tr><th>Time (UTC)</th><th>Result</th><th>Score</th></tr></thead><tbody>' +
-              runs.map((r) => '<tr><td class="pd-mono">' + r.ran_at.slice(0, 16).replace('T', ' ') + '</td><td>' + (r.outcome === 'changed' ? '<span class="pd-text-warn">changed (' + r.changes + ')</span>' : r.outcome === 'unresolvable' ? '<span class="pd-text-fail">unresolvable</span>' : '<span class="pd-text-pass">no changes</span>') + '</td><td class="pd-mono">' + (r.score === null ? 'n/a' : r.score) + '</td></tr>').join('') +
-              '</tbody></table>'
-            : '') +
-          '</div>';
-        container.style.borderLeft = '3px solid ' + color;
-        container.querySelector('.pd-act-close')!.addEventListener('click', () => {
-          container.hidden = true;
-          container.innerHTML = '';
-        });
-      } catch {
-        container.innerHTML = '<p class="pd-panel-note">Could not load activity.</p>';
+      let body: HTMLElement;
+      if (S.dt === 'rec') {
+        const recs = d.records || [];
+        body = E('div', {},
+          E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, recs.length + ' records seen at last scan'), E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(drw) }, 'Rescan now')),
+          recs.length ? E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Type', 'Name', 'Value'].map((x) => E('th', {}, x)))),
+            E('tbody', {}, recs.map((r) => E('tr', {}, E('td', {}, r.type), E('td', { class: 'm' }, r.name), E('td', { class: 'm' }, r.value)))))) : E('p', { class: 'sub' }, 'No records captured yet. Run a scan.'));
+      } else if (S.dt === 'chg') {
+        body = E('div', { class: 'sub' }, 'Loading timeline…');
+        const h = await loadHist(d.id);
+        const rows = h ? h.runs.map((r: any) => ({ when: r.ran_at, what: r.outcome === 'changed' ? r.changes + ' record change' + (r.changes === 1 ? '' : 's') + ' detected' : 'No changes', meta: 'score ' + (r.score ?? '-') })) : [];
+        body = rows.length ? E('div', {}, rows.map((r: any) => E('div', { class: 'li' }, E('div', {}, r.what, E('small', { class: 'm' }, r.meta)), E('span', { class: 'sub' }, fmtWhen(r.when))))) : E('p', { class: 'sub' }, 'No scans recorded yet for this domain.');
+      } else {
+        const bad = (d.checks || []).filter((c) => c.status !== 'pass');
+        body = bad.length ? E('div', {}, bad.map((c) => E('div', { class: 'li' }, E('div', {}, E('b', {}, c.label), E('small', { class: 'm' }, c.value || '')), pill(c.status, c.status === 'fail' ? 'bd' : 'wn')))) : E('p', { class: 'sub' }, 'Everything passed on the last scan. New insights appear after each 6 hour check.');
       }
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': d.n },
+          E('div', { class: 'fx sp' }, E('h1', {}, d.n), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          E('div', { class: 'sub fx', style: 'margin:4px 0 12px' }, 'health ' + (d.score ?? 'N/A') + ' / 100' + (d.paused ? ' · monitoring paused' : '')),
+          E('div', { class: 'tabs' }, [['rec', 'DNS zone records'], ['chg', 'Changes timeline'], ['ins', 'Insights']].map(([v, l]) => E('button', { class: S.dt === v ? 'on' : '', onclick: () => { S.dt = v; drw(); } }, l))),
+          body));
     }
 
-    async function doRescan(id: number, container?: HTMLElement): Promise<void> {
-      if (container) { container.hidden = false; container.className = 'pd-panel'; container.style.position = 'relative'; container.style.borderLeft = '3px solid var(--pd-accent)'; container.style.marginTop = container.id === 'ov-activity' ? '' : '14px'; container.innerHTML = '<div class="pd-act-anim"><p class="pd-panel-note" style="margin:0">Scanning…</p></div>'; }
-      try {
-        const res = await fetch('/api/domains/rescan?id=' + id, { method: 'POST' });
-        const data = await res.json() as { ok: boolean; error?: string; changed?: boolean };
-        await Promise.all([loadDomains(), loadOverview()]);
-        // Refresh the detail tabs with the fresh scan data.
-        const fresh = state.domains.find((x) => x.id === id);
-        if (fresh && state.currentDomainId === id && state.screen === 'domain') {
-          renderAuthTab(fresh);
-          renderRecordsTab(fresh);
-          void renderActivityTab(fresh);
-        }
-        // loadDomains rebuilds the list; re-resolve the container by id so we
-        // are not writing into a detached node.
-        if (container && container.id) {
-          const live = document.getElementById(container.id);
-          if (live) container = live;
-        }
-        if (!data.ok) {
-          if (container) { container.innerHTML = '<p class="pd-panel-note">' + esc(data.error ?? 'Rescan failed.') + '</p>'; container.style.borderLeft = '3px solid var(--pd-fail)'; }
-          else toast('fail', data.error ?? 'Rescan failed.');
-          return;
-        }
-        if (container) await showActivityCard(id, container);
-        else toast('pass', 'Scan complete.');
-        if (state.dmarcDomainId === id) void loadDmarcScreen();
-      } catch {
-        if (container) { container.innerHTML = '<p class="pd-panel-note">Could not reach the server.</p>'; container.style.borderLeft = '3px solid var(--pd-fail)'; }
-        else toast('fail', 'Could not reach the server.');
+    // ================= actions =================
+    async function doRescan(id: number) {
+      toast('Scanning ' + (DOMS.find((x) => x.id === id)?.n || 'domain') + '…');
+      const j = await postJSON('/api/domains/rescan?id=' + id);
+      if (j && j.ok) { toast(j.changed ? 'Scan complete: ' + j.score + ' / 100, changes detected' : 'Scan complete: ' + j.score + ' / 100, no changes'); await refreshAll(); }
+      else toast((j && j.error) || 'Scan failed. Try again.');
+    }
+    async function doPause(d: DRow) {
+      const j = await postJSON('/api/domains/pause', { id: d.id, paused: !d.paused });
+      if (j && j.ok) { toast(d.paused ? 'Monitoring resumed for ' + d.n : 'Monitoring paused for ' + d.n); await refreshAll(); }
+      else toast((j && j.error) || 'Could not update the domain.');
+    }
+    async function doDelete(d: DRow) {
+      if (!confirm('Remove ' + d.n + ' from monitoring? This cannot be undone.')) return;
+      const j = await postJSON('/api/domains/delete?id=' + d.id);
+      if (j && j.ok) { toast(d.n + ' removed'); cdr(); await refreshAll(); }
+      else toast((j && j.error) || 'Could not remove the domain.');
+    }
+    async function addDomainFlow() {
+      const name = prompt('Domain to monitor, for example example.com');
+      if (!name) return;
+      const dom = name.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+      if (!/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(dom)) return toast('That does not look like a domain name.');
+      toast('Adding ' + dom + ' and running the first scan…');
+      const j = await postJSON('/api/domains', { domain: dom });
+      if (j && j.ok) { toast(dom + ' added. First scan complete.'); await refreshAll(); }
+      else toast((j && j.error) || 'Could not add the domain.');
+    }
+
+    // ================= DMARC reports =================
+    async function rep() {
+      const d = curDom();
+      if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain on the Overview screen to see its DMARC reports.'));
+      const DM = await loadDmarc();
+      const sum = DM ? DM.summary : { reports: 0, messages: 0, orgs: 0, passRate: null };
+      const tot = sum.messages || 0, rate = sum.passRate;
+      const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
+        E('h3', {}, 'Volume distribution by DMARC compliance'),
+        E('span', { class: 'sub' }, 'Compliance rate: ', E('b', { style: rate != null ? 'color:' + cv(rate) : '' }, rate != null ? rate + '%' : 'N/A'), '   Messages: ', E('b', {}, f(tot)), '   Reports: ', E('b', {}, String(sum.reports))));
+      const ctl = E('div', { class: 'fx sp', style: 'margin-bottom:6px' },
+        E('div', { class: 'fx' },
+          seg([['DY', '7D'], ['WK', '14D'], ['MO', '30D']], S.rng, (v) => { S.rng = v; go(); }),
+          seg([['area', 'Line'], ['bar', 'Bar']], S.kind, (v) => { S.kind = v; go(); })));
+      const legend = E('div', { class: 'fx', style: 'margin-bottom:6px' }, [['Compliant', '#0F766E'], ['Non-compliant', '#B45309']].map(([n, c]) => E('button', { class: 'btn', 'aria-pressed': !S.hide.has(n as string), style: 'border-left:4px solid ' + c + ';' + (S.hide.has(n as string) ? 'opacity:.45' : ''), onclick: () => { const k = n as string; S.hide.has(k) ? S.hide.delete(k) : S.hide.add(k); go(); } }, n)));
+      const daily = DM && DM.daily ? DM.daily : [];
+      const chartCard = E('div', { class: 'cd' }, head, ctl, legend, E('div', { style: 'margin-top:6px' }, chart(daily)));
+      const side = E('div', { class: 'cd' },
+        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Top sending sources'), E('span', { class: 'sub' }, (DM ? DM.sources.length : 0) + ' total')),
+        (DM && DM.sources.length ? DM.sources.slice(0, 6).map((r: any) => E('div', { class: 'li' }, E('span', { class: 'm' }, r.headerFrom ? r.headerFrom + ' (' + r.ip + ')' : r.ip), E('b', { class: 'm' }, f(r.volume || 0)))) : E('p', { class: 'sub' }, 'Sources appear here as reports arrive.')));
+      const marks = new Map<string, string>((DM ? DM.marks : []).map((m: any) => [m.source_ip, m.mark]));
+      const rows = DM ? DM.sources.filter((r: any) => S.tab === 'all' || (S.tab === 'comp' ? (r.volume > 0 && r.dmarcPass >= r.volume) : (r.volume === 0 || r.dmarcPass < r.volume))) : [];
+      const cnt = (k: string) => !DM ? 0 : k === 'all' ? DM.sources.length : DM.sources.filter((r: any) => k === 'comp' ? (r.volume > 0 && r.dmarcPass >= r.volume) : (r.volume === 0 || r.dmarcPass < r.volume)).length;
+      const tabs = E('div', { class: 'tabs' }, [['all', 'All'], ['comp', 'Compliant'], ['non', 'Non-compliant']].map(([v, l]) => E('button', { class: S.tab === v ? 'on' : '', onclick: () => { S.tab = v; go(); } }, l + ' ', pill(String(cnt(v)), v === 'non' ? 'wn' : 'ok'))));
+      const table = E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Source', 'Volume', 'SPF pass', 'DKIM pass', 'Action'].map((x) => E('th', {}, x)))),
+        E('tbody', {}, rows.length ? rows.map((r: any) => {
+          const mk = marks.get(r.ip);
+          return E('tr', {}, E('td', {}, E('span', { class: 'm' }, r.ip), r.headerFrom ? E('div', { class: 'sub' }, r.headerFrom) : ''),
+            E('td', { class: 'm' }, f(r.volume || 0)),
+            E('td', {}, E('div', { class: 'fx' }, bar(r.volume ? Math.round(r.spfPass / r.volume * 100) : 0), E('span', { class: 'sub' }, (r.volume ? Math.round(r.spfPass / r.volume * 100) : 0) + '%'))),
+            E('td', {}, E('div', { class: 'fx' }, bar(r.volume ? Math.round(r.dkimPass / r.volume * 100) : 0), E('span', { class: 'sub' }, (r.volume ? Math.round(r.dkimPass / r.volume * 100) : 0) + '%'))),
+            E('td', {}, E('button', { class: 'btn' + (mk === 'me' ? ' p' : ''), onclick: async (e: Event) => {
+              const next = mk === 'me' ? 'notme' : 'me';
+              const j = await postJSON('/api/domains/dmarc/mark', { id: d.id, ip: r.ip, mark: next });
+              if (j && j.ok) { toast(next === 'me' ? r.ip + ' marked as your sender' : r.ip + ' marked as not yours'); await loadDmarc(true); go(); }
+              else toast('Could not save the mark.');
+            } }, mk === 'me' ? 'This is me' : mk === 'notme' ? 'Not me' : 'Mark')));
+        }) : E('tr', {}, E('td', { colspan: 5, class: 'sub' }, 'No sources in this view yet.')))));
+      return E('div', {}, E('div', { class: 'g g21' }, chartCard, side), E('div', { class: 'cd' }, tabs, table));
+    }
+
+    // ================= enforcement =================
+    async function pol() {
+      const d = curDom();
+      const dmarcChk = d ? chk(d, 'dmarc') : null;
+      const recVal = dmarcChk && dmarcChk.value ? dmarcChk.value : '';
+      const pm = recVal.match(/p=([a-z]+)/i);
+      const cur = pm ? pm[1].toLowerCase() : null;
+      const P = [['none', 'None', 'Failing messages still deliver to the inbox'], ['quarantine', 'Quarantine', 'Failing messages are marked as spam'], ['reject', 'Reject', 'Failing messages are rejected']];
+      const policyCard = E('div', { class: 'cd' },
+        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC policy rollout'), cur ? pill('current: p=' + cur, cur === 'reject' ? 'ok' : cur === 'quarantine' ? 'wn' : 'in2') : prev()),
+        E('p', { class: 'sub', style: 'margin:0 0 10px' }, recVal ? E('span', { class: 'm' }, recVal) : 'No DMARC record found on ' + (d ? d.n : 'this domain') + ' yet. Managed records publish one for you.'),
+        P.map(([v, t, dd]) => E('button', { class: 'rad' + (S.pol === v ? ' on' : ''), 'aria-pressed': S.pol === v, onclick: () => { S.pol = v; go(); } }, E('b', {}, t), E('span', { class: 'sub' }, dd))),
+        E('div', { class: 'fx', style: 'margin-top:10px' },
+          E('label', { for: 'pc' }, 'Apply to ', E('b', {}, S.pct + '%'), ' of failing mail'),
+          E('input', { id: 'pc', type: 'range', min: 10, max: 100, step: 10, value: S.pct, oninput: (e: any) => { S.pct = +e.target.value; e.target.previousSibling.children[0].textContent = S.pct + '%'; } }),
+          E('button', { class: 'btn p', onclick: () => toast('Preview: hosted DMARC records ship with managed enforcement.') }, 'Publish change')),
+        E('div', { class: 'li', style: 'margin-top:8px' },
+          E('div', {}, 'Aggregate (RUA) reporting', E('small', { class: 'm' }, recVal.includes('rua=') ? recVal.match(/rua=([^;]+)/i)[1].trim() : 'forward rua mail to your PromptDNS inbox')), pill('Active', 'ok')),
+        E('div', { class: 'li' }, E('div', {}, 'Failure (RUF) reporting', E('small', {}, 'Forensic copies of failing messages')), E('button', { class: 'sw' + (S.ruf ? ' on' : ''), role: 'switch', 'aria-checked': S.ruf, 'aria-label': 'Failure reporting', onclick: () => { S.ruf = !S.ruf; go(); } })));
+      const spfCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Managed SPF'), prev()),
+        E('div', { class: 'fx sp', style: 'margin:8px 0' }, E('span', { class: 'k' }, '9 / 10'), E('button', { class: 'btn p', onclick: () => { S.flat = !S.flat; toast('Preview: flattening ships with managed records.'); go(); } }, S.flat ? 'Undo flatten' : 'Flatten SPF')),
+        bar(90), E('div', { class: 'sub', style: 'margin-top:8px' }, 'Sample data. The managed record refreshes every 6 hours and alerts you if a provider changes its ranges.'));
+      const dkimCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Managed DKIM'), prev()),
+        E('table', {}, E('tbody', {}, [['s1', 'SendGrid', '41 days'], ['mte1', 'Postmark', '410 days'], ['google', 'Google Workspace', '92 days']].map(([s2, n, a]) => E('tr', {}, E('td', { class: 'm' }, s2), E('td', {}, n), E('td', { class: 'sub' }, a), E('td', {}, E('button', { class: 'btn', onclick: () => toast('Preview: key rotation ships with managed records.') }, 'Rotate')))))),
+        E('div', { class: 'sub', style: 'margin-top:8px' }, 'Sample data.'));
+      const mtaCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'MTA-STS'), prev()),
+        E('div', { class: 'fx', style: 'margin-top:8px' }, E('label', { for: 'mt' }, 'Mode'), E('select', { id: 'mt', class: 'sel', onchange: () => toast('Preview: MTA-STS hosting ships with managed records.') }, ['none', 'testing', 'enforce'].map((o) => E('option', { selected: S.mta === o }, o)))));
+      const pfCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Pre-flight check'), E('button', { class: 'btn p', onclick: preflight }, 'Run check')),
+        E('div', { id: 'pf', style: 'margin-top:8px' }, S.pf.length ? S.pf.map((x) => E('div', { class: 'li' }, x[0], x[1])) : E('p', { class: 'sub' }, 'Runs a live scan of ' + (d ? d.n : 'your domain') + ' and reports conflicts.')));
+      return E('div', {}, policyCard, E('div', { class: 'g g2' }, spfCard, dkimCard, mtaCard, pfCard));
+    }
+    async function preflight() {
+      const d = curDom();
+      if (!d) return toast('Add a domain first.');
+      const box = $('#pf'); if (box) box.replaceChildren(E('p', { class: 'sub' }, 'Scanning ' + d.n + '…'));
+      const j = await postJSON('/api/domains/rescan?id=' + d.id);
+      if (!j || !j.ok) { if (box) box.replaceChildren(E('p', { class: 'sub' }, (j && j.error) || 'Scan failed. Try again.')); return; }
+      S.pf = j.checks.map((c: any) => [c.label + (c.value ? ': ' + c.value.slice(0, 60) : ''), pill(c.status, c.status === 'pass' ? 'ok' : c.status === 'warn' ? 'wn' : 'bd')]);
+      await refreshAll();
+    }
+
+    // ================= deliverability =================
+    async function dlv() {
+      const d = curDom();
+      if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain to see its outbound deliverability waterfall.'));
+      const DM = await loadDmarc();
+      const sources = DM ? DM.sources : [];
+      const rootRate = DM && DM.summary.passRate != null ? DM.summary.passRate : null;
+      const rows: any[] = [];
+      rows.push([E('b', {}, d.n), 'Root domain', DM ? DM.summary.messages : 0, rootRate, null]);
+      for (const r of sources.slice(0, 12)) {
+        const rate = r.volume ? Math.round((r.dmarcPass || 0) / r.volume * 100) : null;
+        rows.push([nm(r.headerFrom || r.ip, 1), 'Sending source', r.volume, rate, rate != null && rate < 50 && r.volume >= 100 ? 'Root cause' : null]);
       }
+      const bad = sources.filter((r: any) => r.volume >= 100 && (r.dmarcPass || 0) / r.volume < .5).slice(0, 5);
+      return E('div', { class: 'g g21' },
+        E('div', { class: 'cd' },
+          E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Outbound waterfall: domain, then each sending source')),
+          E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Name', 'Sent', 'DMARC pass'].map((x) => E('th', {}, x)))),
+            E('tbody', {}, rows.map(([name, kind, sent, rate, rc], i) => E('tr', {},
+              E('td', { style: 'padding-left:' + (10 + (i ? 22 : 0)) + 'px' }, name, ' ', rc ? pill(rc, 'bd') : '', E('div', { class: 'sub' }, kind)),
+              E('td', { class: 'm' }, f(sent || 0)),
+              E('td', {}, rate == null ? E('span', { class: 'sub' }, 'N/A') : E('div', { class: 'fx' }, bar(rate), rate + '%'))))))),
+          sources.length ? '' : E('p', { class: 'sub' }, 'Sources appear here as aggregate reports arrive.')),
+        E('div', { class: 'cd' }, E('h3', {}, 'Top problems'), E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Sources failing DMARC on real volume'),
+          bad.length ? bad.map((r: any) => E('div', { class: 'li' }, E('div', {}, E('b', {}, r.headerFrom || r.ip), E('small', {}, f(r.volume) + ' sent')), E('b', { style: 'color:var(--bd)' }, (r.volume ? Math.round((r.dmarcPass || 0) / r.volume * 100) : 0) + '%'))) : E('p', { class: 'sub' }, 'Nothing failing on meaningful volume. Nice.')));
     }
 
-    function renderDomainHead(d: DomainRow) {
-      const head = document.getElementById('domain-head')!;
-      head.innerHTML =
-        '<div class="pd-domain-head"><div class="pd-domain-head-main">' +
-        '<h2 class="pd-domain-title">' + esc(d.domain) + '</h2>' +
-        '<span class="pd-chip ' + (d.paused ? 'pd-chip-warn' : 'pd-chip-pass') + '">● ' + (d.paused ? 'paused' : 'monitored') + '</span>' +
-        '<span class="pd-score ' + gradeClass(d.grade) + '" style="font-size:26px">' + (d.score ?? '-') + '</span>' +
-        '<span class="pd-grade pd-grade-' + (d.grade ?? 'f').toLowerCase() + '" style="font-size:24px">' + (d.grade ?? '-') + '</span>' +
-        '</div><div class="pd-domain-head-actions">' +
-        '<button type="button" class="pd-btn pd-btn-sm" id="dd-rescan">Scan now</button>' +
-        '<button type="button" class="pd-btn pd-btn-sm" id="dd-pause">' + (d.paused ? 'Resume' : 'Pause') + '</button>' +
-        '<button type="button" class="pd-btn pd-btn-sm pd-btn-danger" id="dd-remove">Remove</button>' +
-        '</div></div>' +
-        '<div id="dd-status" hidden></div>';
-      document.getElementById('dd-rescan')!.addEventListener('click', () => void doRescan(d.id, document.getElementById('dd-status') as HTMLElement));
-      document.getElementById('dd-pause')!.addEventListener('click', () => void doPause(d, async () => { await loadDomains(); await openDomain(d.id); }));
-      document.getElementById('dd-remove')!.addEventListener('click', () => void doRemove(d));
+    // ================= DNS monitor + AI access =================
+    function ai() {
+      const st = S.ai;
+      const cd = curDom();
+      const domAlerts = cd ? ALERTS.filter((a) => a.domain === cd.n) : ALERTS;
+      const BOTS: [string, string, string][] = [['GPTBot', 'OpenAI', 'Training'], ['ClaudeBot', 'Anthropic', 'Training'], ['PerplexityBot', 'Perplexity', 'Search index'], ['Google-Extended', 'Google', 'Training opt-out'], ['Amazonbot', 'Amazon', 'Search and assistant']];
+      const ex = Object.values(st).filter((v) => v !== 'unset').length;
+      const score = Math.min(100, 50 + ex * 6);
+      const txt = BOTS.map(([b]) => st[b] === 'unset' ? '' : `User-agent: ${b}\n${st[b] === 'allow' ? 'Allow: /' : 'Disallow: /'}\n`).filter(Boolean).join('\n') || '# No AI crawler rules yet';
+      return E('div', {},
+        E('div', { class: 'g g4' }, [['Domain expiry', '212 days', ''], ['SSL certificates', '1 expiring', ''], ['Blocklists', '0 of 62', ''], ['AI readiness', score + ' / 100', '']].map(([l, v, s]) => E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('div', { class: 'sub' }, l), prev()), E('div', { class: 'k', style: s }, v)))),
+        E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access'), prev()),
+            E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Set a rule per crawler. robots.txt hosting ships with managed records.'),
+            BOTS.map(([b, o, p]) => E('div', { class: 'li' }, E('div', { class: 'fx', style: 'flex-wrap:nowrap;gap:10px' }, lg(o, 22) || '', E('div', {}, E('b', {}, b), E('small', {}, o + ' · ' + p))), seg([['unset', 'Unset'], ['allow', 'Allow'], ['block', 'Block']], st[b], (v) => { st[b] = v; go(); })))),
+          E('div', { class: 'cd' },
+            E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Generated robots.txt'), E('button', { class: 'btn', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(txt); toast('Copied to clipboard'); } }, 'Copy')),
+            E('pre', {}, txt),
+            E('h3', { style: 'margin:14px 0 4px' }, 'Recent alerts for ' + (curDom() ? curDom()!.n : 'your domains')),
+            (domAlerts.length ? domAlerts.map((a) => E('div', { class: 'li' }, E('div', {}, a.title, E('small', { class: 'm' }, a.domain)), pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2'))) : E('p', { class: 'sub' }, 'No alerts for this domain yet.')))));
     }
 
-    async function doPause(d: DomainRow, after: () => Promise<void>) {
-      try {
-        const res = await fetch('/api/domains/pause', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, paused: !d.paused }) });
-        const data = await res.json() as { ok: boolean };
-        if (data.ok) await after();
-      } catch {
-        toast('fail', 'Could not reach the server.');
+    // ================= alerts =================
+    const sevC = { critical: 'bd', warning: 'wn', info: 'in2' } as Record<string, string>;
+    function adr(a: any) {
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Alert details' },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'Alert details'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          E('div', { class: 'fx', style: 'margin:10px 0' }, pill(a.severity, sevC[a.severity] || 'in2'), E('b', {}, a.title)),
+          E('div', { class: 'sub' }, a.domain + ' · ' + fmtWhen(a.created_at)),
+          E('div', { class: 'cd', style: 'margin:14px 0' }, E('b', {}, 'Detail'), E('p', {}, a.detail || 'No further detail was recorded for this alert.')),
+          E('div', { class: 'fx' }, E('button', { class: 'btn p', onclick: () => { cdr(); S.v = 'overview'; go(); scrollTo(0, 0); } }, 'Open Overview'),
+            E('button', { class: 'btn', onclick: async () => { const j = await postJSON('/api/alerts/read'); if (j && j.ok) { cdr(); toast('All alerts marked as read'); await refreshAll(); } } }, 'Mark all as read'))));
+    }
+    function alr() {
+      const live = ALERTS;
+      const cnt = (s2: string) => live.filter((a) => s2 === 'all' || a.severity === s2).length;
+      const un = live.filter((a) => !a.read_at).length;
+      const tabs = E('div', { class: 'tabs' }, [['feed', 'Alert feed' + (un ? ' (' + un + ' new)' : '')], ['rules', 'Rules'], ['ch', 'Channels and digest']].map(([v, l]) => E('button', { class: S.atab === v ? 'on' : '', onclick: () => { S.atab = v; go(); } }, l)));
+      let body: HTMLElement;
+      if (S.atab === 'feed') {
+        const rows = live.filter((a) => S.asev === 'all' || a.severity === S.asev);
+        body = E('div', {},
+          E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
+            seg([['all', 'All ' + cnt('all')], ['critical', 'Critical ' + cnt('critical')], ['warning', 'Warning ' + cnt('warning')], ['info', 'Info ' + cnt('info')]], S.asev, (v) => { S.asev = v; go(); }),
+            E('button', { class: 'btn', onclick: async () => { const j = await postJSON('/api/alerts/read'); if (j && j.ok) { toast('All alerts marked as read'); await refreshAll(); } } }, 'Mark all read')),
+            rows.length ? rows.map((a) => E('div', { class: 'li' },
+              E('div', {}, E('div', { class: 'fx' }, pill(a.severity, sevC[a.severity] || 'in2'), a.read_at ? E('span', {}, a.title) : E('b', {}, a.title)), E('small', {}, a.domain + ' · ' + fmtWhen(a.created_at))),
+              E('div', { class: 'fx' }, E('button', { class: 'btn', onclick: () => adr(a) }, 'Details')))) : E('p', { class: 'sub' }, 'No alerts in this view. New alerts appear as the 6 hour checks run.')));
+      } else if (S.atab === 'rules') {
+        const RL = [
+          ['DMARC pass rate below 95%', 'All domains', ['Email']],
+          ['Any DNS record changed', 'All domains', ['Email']],
+          ['New unclassified sender', 'All domains', ['Email', 'Webhook']],
+          ['Certificate or domain expiring', 'All domains', ['Email']],
+        ];
+        body = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, 'Built-in rules are watching your domains'), prev()),
+          E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels'].map((x) => E('th', {}, x)))),
+            E('tbody', {}, RL.map((r) => E('tr', {}, E('td', {}, E('b', {}, r[0] as string)), E('td', {}, r[1] as string), E('td', {}, E('div', { class: 'fx' }, (r[2] as string[]).map((c) => pill(c, 'in2'))))))))),
+          E('p', { class: 'sub', style: 'margin-top:10px' }, 'Custom rules with per-rule channels arrive with the managed enforcement release.'));
+      } else {
+        const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
+        body = E('div', { class: 'g g2' }, CHN.map((c) => E('div', { class: 'cd' },
+          E('div', { class: 'fx sp' }, E('h3', {}, c), pill(c === 'Email' ? 'Active' : 'Coming soon', c === 'Email' ? 'ok' : 'in2')),
+          E('div', { class: 'sub', style: 'margin:6px 0 10px' }, c === 'Email' ? 'Alerts go to your account email.' : 'Connect ' + c + ' after the managed release.'),
+          E('div', { class: 'fx' }, c === 'Email' ? '' : E('button', { class: 'btn', onclick: () => toast('Preview: channel connections ship with the managed release.') }, 'Connect')))));
       }
+      return E('div', {}, E('div', { class: 'cd', style: 'padding-bottom:0;margin-bottom:14px' }, tabs), body);
     }
 
-    async function doRemove(d: DomainRow) {
-      try {
-        const res = await fetch('/api/domains/delete?id=' + d.id, { method: 'POST' });
-        const data = await res.json() as { ok: boolean; error?: string };
-        if (data.ok) {
-          toast('pass', esc(d.domain) + ' removed from monitoring. You can add it again anytime.');
-          state.currentDomainId = null;
-          await loadDomains();
-          await loadOverview();
-          show('domains');
-          void loadAlerts();
-        } else {
-          toast('fail', data.error ?? 'Could not remove the domain.');
-        }
-      } catch {
-        toast('fail', 'Could not reach the server.');
-      }
+    // ================= reports =================
+    const SECS = ['Health score', 'DMARC results', 'Sources', 'SPF and DKIM changes', 'AI access', 'Recommendations'];
+    const RP = { type: 'Security summary', per: 'Last 30 days', sc: 'All domains', sec: new Set(['Health score', 'DMARC results', 'Sources', 'Recommendations']), brand: 'Your brand', color: '#5B4FE8', pw: 1, fr: 'Monthly', to: 'clients@example.com', hist: [] as any[], sch: [] as any[] };
+    const fg = (c) => { const n = parseInt(c.slice(1), 16), l = .299 * (n >> 16) + .587 * ((n >> 8) & 255) + .114 * (n & 255); return l > 150 ? '#12161F' : '#fff'; };
+    function pvw() {
+      const c = RP.color, s = RP.sec;
+      const blk = (t, ...k) => E('div', { style: 'margin-top:14px' }, E('div', { style: 'font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:' + (fg(c) === '#fff' ? c : '#12161F') }, t), ...k);
+      const rate = OV && OV.dmarc && OV.dmarc.passRate != null ? OV.dmarc.passRate : null;
+      const msgs = OV ? OV.dmarc?.messages || 0 : 0;
+      return E('div', { id: 'pv', style: 'background:#fff;color:#12161F;border:1px solid #D9DCE6;border-radius:10px;overflow:hidden;font-size:12.5px' },
+        E('div', { style: 'background:' + c + ';color:' + fg(c) + ';padding:14px 16px;display:flex;gap:10px;align-items:center' },
+          E('span', { style: 'width:30px;height:30px;border-radius:8px;background:' + fg(c) + ';color:' + c + ';display:inline-flex;align-items:center;justify-content:center;font-weight:800' }, (RP.brand || '?').charAt(0).toUpperCase()),
+          E('div', {}, E('b', {}, RP.brand || 'Your brand'), E('div', { style: 'opacity:.85' }, RP.type + ' · ' + RP.sc + ' · ' + RP.per))),
+        E('div', { style: 'padding:6px 16px 16px' },
+          s.size ? SECS.filter((x) => s.has(x)).map((x) =>
+            x === 'Health score' ? blk(x, E('div', { style: 'font:700 30px JetBrains Mono,monospace' }, OV && OV.avgScore != null ? String(OV.avgScore) : '-', E('span', { style: 'font-size:13px;color:#5A6378' }, ' / 100')))
+              : x === 'DMARC results' ? blk(x, E('div', { style: 'margin-top:6px' }, 'Pass rate ' + (rate != null ? rate + '%' : 'N/A') + ' of ' + f(msgs) + ' messages'), E('div', { style: 'height:7px;border-radius:4px;background:#E3E6EE;margin-top:6px' }, E('div', { style: 'height:100%;width:' + (rate ?? 0) + '%;border-radius:4px;background:' + c })))
+                : x === 'Sources' ? blk(x, E('div', { style: 'margin-top:6px' }, OV ? f(OV.dmarc?.messages || 0) + ' messages across ' + DOMS.length + ' domain' + (DOMS.length === 1 ? '' : 's') : 'No data yet'))
+                  : x === 'SPF and DKIM changes' ? blk(x, E('div', { style: 'margin-top:6px' }, ALERTS.slice(0, 2).map((a) => a.title).join('. ') || 'No changes recorded.'))
+                    : x === 'AI access' ? blk(x, E('div', { style: 'margin-top:6px' }, 'AI readiness ' + Math.min(100, 50 + Object.values(S.ai).filter((v) => v !== 'unset').length * 6) + ' / 100.'))
+                      : blk(x, E('div', { style: 'margin-top:6px' }, '1. Classify every sending source. 2. Move DMARC to quarantine when all pass. 3. Enable DNSSEC.'))) : E('div', { style: 'margin-top:14px;color:#5A6378' }, 'Select at least one section.'),
+          RP.pw ? E('div', { style: 'margin-top:16px;color:#5A6378;font-size:11px' }, 'Powered by PromptDNS') : ''));
+    }
+    const pv = () => { const o = $('#pv'); if (o) o.replaceWith(pvw()); };
+    function rpt() {
+      const u = (k, v) => { RP[k] = v; pv(); };
+      const sel = (id, opts, cur, k) => E('select', { id, class: 'sel', style: 'width:100%', onchange: (e: any) => u(k, e.target.value) }, opts.map((o) => E('option', { selected: o === cur }, o)));
+      const row = (l, id, el) => E('div', { style: 'margin:10px 0' }, E('label', { class: 'sub', for: id, style: 'display:block' }, l), el);
+      const bld = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Report builder'), prev()),
+        E('div', { class: 'g g2', style: 'margin:0' }, row('Report type', 'rt', sel('rt', ['Security summary', 'DMARC progress', 'Executive summary'], RP.type, 'type')), row('Period', 'rp', sel('rp', ['Last 7 days', 'Last 30 days', 'Last quarter'], RP.per, 'per'))),
+        row('Domains', 'rd', sel('rd', ['All domains'].concat(DOMS.map((d) => d.n)), RP.sc, 'sc')),
+        E('div', { class: 'sub' }, 'Sections'),
+        E('div', { class: 'fx', style: 'margin:6px 0 12px' }, SECS.map((x) => E('label', { class: 'btn' }, E('input', { type: 'checkbox', checked: RP.sec.has(x), onchange: (e: any) => { e.target.checked ? RP.sec.add(x) : RP.sec.delete(x); pv(); } }), ' ' + x))),
+        E('div', { class: 'fx sp' }, E('h3', {}, 'White-label'), pill('Business', 'in2')),
+        E('div', { class: 'g g2', style: 'margin:0' }, row('Brand name', 'bn', E('input', { id: 'bn', class: 'in', style: 'width:100%', value: RP.brand, oninput: (e: any) => u('brand', e.target.value) })), row('Brand colour', 'bc', E('input', { id: 'bc', type: 'color', value: RP.color, style: 'width:100%;height:38px', oninput: (e: any) => u('color', e.target.value) }))),
+        E('label', { class: 'btn' }, E('input', { type: 'checkbox', checked: !!RP.pw, onchange: (e: any) => u('pw', e.target.checked ? 1 : 0) }), ' Show "Powered by PromptDNS"'),
+        E('div', { class: 'fx', style: 'margin-top:14px' },
+          E('button', { class: 'btn p', onclick: () => { if (!RP.sec.size) return toast('Pick at least one section'); RP.hist.unshift({ n: RP.type + ' · ' + RP.sc, per: RP.per, ts: 'Just now', sz: (160 + RP.sec.size * 55) + ' KB' }); toast('Preview: PDF delivery ships with the managed release.'); go(); } }, 'Generate PDF'),
+          E('button', { class: 'btn', onclick: () => toast('Preview: share links ship with the managed release.') }, 'Copy share link')));
+      const sch = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Scheduled reports'), prev()),
+        E('div', { class: 'fx', style: 'margin:10px 0' },
+          E('select', { class: 'sel', 'aria-label': 'Frequency', onchange: (e: any) => { RP.fr = e.target.value; } }, ['Weekly', 'Monthly', 'Quarterly'].map((o) => E('option', { selected: o === RP.fr }, o))),
+          E('input', { class: 'in', 'aria-label': 'Recipients', value: RP.to, oninput: (e: any) => { RP.to = e.target.value; } }),
+          E('button', { class: 'btn p', onclick: () => { RP.sch.push({ n: RP.type, fr: RP.fr, to: RP.to, nx: 'next ' + RP.fr.toLowerCase(), on: 1 }); toast('Preview: scheduling ships with the managed release.'); go(); } }, 'Add schedule')),
+        RP.sch.length ? E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Report', 'Repeats', 'Sent to', 'Active', ''].map((x) => E('th', {}, x)))),
+          E('tbody', {}, RP.sch.map((s2, i) => E('tr', {}, E('td', {}, E('b', {}, s2.n)), E('td', {}, s2.fr), E('td', { class: 'm' }, s2.to), E('td', {}, E('button', { class: 'sw' + (s2.on ? ' on' : ''), role: 'switch', 'aria-checked': !!s2.on, 'aria-label': 'Toggle ' + s2.n, onclick: () => { s2.on = s2.on ? 0 : 1; go(); } })), E('td', {}, E('button', { class: 'lk', 'aria-label': 'Delete schedule', onclick: () => { RP.sch.splice(i, 1); go(); } }, '✕'))))))) : E('p', { class: 'sub' }, 'No schedules yet.'));
+      const his = E('div', { class: 'cd' }, E('h3', {}, 'Report history'), RP.hist.length ? E('div', { class: 'sc', style: 'margin-top:10px' }, E('table', {}, E('thead', {}, E('tr', {}, ['Report', 'Period', 'Created', 'Size', ''].map((x) => E('th', {}, x)))),
+        E('tbody', {}, RP.hist.map((h) => E('tr', {}, E('td', {}, E('b', {}, h.n)), E('td', {}, h.per), E('td', {}, h.ts), E('td', { class: 'm' }, h.sz), E('td', {}, E('button', { class: 'btn', onclick: () => toast('Preview: PDF delivery ships with the managed release.') }, 'Download'))))))) : E('p', { class: 'sub' }, 'Generated reports land here.'));
+      return E('div', {}, E('div', { class: 'g g21' }, bld, E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:10px' }, 'Live preview'), pvw())), E('div', { class: 'g g2' }, sch, his));
     }
 
-    // ---------- dmarc screen ----------
-    async function loadDmarcScreen() {
-      const picker = document.getElementById('dmarc-domain') as HTMLSelectElement;
-      if (!state.domains.length) {
-        picker.innerHTML = '';
-        document.getElementById('dmarc-content')!.innerHTML = '<div class="pd-empty">Add and monitor a domain first - reports are matched to monitored domains.</div>';
+    // ================= router =================
+    const V: Record<string, [string, () => HTMLElement | Promise<HTMLElement>]> = {
+      overview: ['Overview', ov],
+      reports: ['DMARC reports', rep],
+      policy: ['Enforcement and managed records', pol],
+      deliver: ['Deliverability', dlv],
+      dns: ['DNS monitor and AI access', ai],
+      alerts: ['Alerts', alr],
+      rpt: ['Reports', rpt],
+    };
+    function go() {
+      const y = scrollY;
+      const userMail = (document.getElementById('dv-mail') as HTMLElement)?.dataset.mail || '';
+      $('#side').replaceChildren(
+        E('a', { class: 'logo', href: '/' }, E('i'), 'PromptDNS'),
+        E('div', { class: 'lab' }, 'MONITOR'),
+        ...Object.entries(V).map(([k, [t]]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), 'aria-current': S.v === k ? 'page' : null, onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t)),
+        E('div', { class: 'lab' }, 'COMING NEXT'),
+        ...['Workspaces', 'Billing'].map((t) => E('button', { class: 'nv', disabled: true, title: 'Ships after launch', onclick: () => toast(t + ' ships after launch.') }, t)),
+        E('div', { class: 'plan' }, E('b', {}, 'Early access'), 'Free during development.'),
+        E('div', { class: 'foot-user' }, E('span', { class: 'av', 'aria-hidden': 'true' }, (userMail || '?').charAt(0).toUpperCase()), E('span', { class: 'em' }, userMail),
+          E('button', { class: 'btn', style: 'padding:4px 8px;font-size:11.5px;white-space:nowrap', onclick: async () => { await postJSON('/api/auth/logout'); location.reload(); } }, 'Sign out')));
+      const sel = DOMS.length ? E('select', { id: 'dm', class: 'sel', 'aria-label': 'Domain', onchange: (e: any) => { S.d = +e.target.value; go(); } }, DOMS.map((d, i) => E('option', { value: i, selected: S.d === i }, d.n))) : null;
+      $('#main').replaceChildren(
+        E('div', { class: 'top' }, E('h1', {}, V[S.v][0]),
+          E('div', { class: 'fx' }, sel || '', E('button', { class: 'btn', 'aria-label': 'Toggle theme', onclick: () => { const r = document.documentElement; setTheme(r.dataset.theme === 'dark' ? 'light' : 'dark'); } }, 'Theme'))),
+        E('div', { id: 'dv-screen' }, ''));
+      const out = V[S.v][1]();
+      Promise.resolve(out).then((el) => { const holder = $('#dv-screen'); if (holder) holder.replaceChildren(el); });
+      scrollTo(0, y);
+    }
+
+    // ================= theme =================
+    function setTheme(t: 'dark' | 'light') {
+      const r = document.documentElement;
+      if (t === 'dark') r.dataset.theme = 'dark'; else delete r.dataset.theme;
+      try { localStorage.setItem('pd-theme', t); } catch { /* private mode */ }
+    }
+
+    // ================= boot =================
+    (async function boot() {
+      let t: string | null = null;
+      try { t = localStorage.getItem('pd-theme'); } catch { /* private mode */ }
+      setTheme((t === 'light' || t === 'dark') ? t : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      const me = await getJSON('/api/auth/me');
+      if (!me || !me.ok || !me.authenticated || !me.email) {
+        $('#dash-loading').hidden = true;
+        $('#dash-signed-out').hidden = false;
         return;
       }
-      if (state.dmarcDomainId === null || !state.domains.some((d) => d.id === state.dmarcDomainId)) {
-        state.dmarcDomainId = state.domains[0].id;
-      }
-      picker.innerHTML = state.domains.map((d) => '<option value="' + d.id + '"' + (d.id === state.dmarcDomainId ? ' selected' : '') + '>' + esc(d.domain) + '</option>').join('');
-      picker.onchange = () => { state.dmarcDomainId = Number(picker.value); void renderDmarc(); };
-      await renderDmarc();
-    }
-
-    async function renderDmarc() {
-      const box = document.getElementById('dmarc-content')!;
-      const id = state.dmarcDomainId;
-      if (id === null) return;
-      box.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Loading…</p></div>';
-      try {
-        const res = await fetch('/api/domains/dmarc?id=' + id);
-        const data = await res.json() as {
-          ok: boolean; error?: string; domain?: string;
-          summary?: { reports: number; messages: number; orgs: number; passRate: number | null };
-          sources?: DmarcSource[];
-          reports?: { org_name: string; date_begin: string | null; date_end: string | null; messages_total: number }[];
-          daily?: DailyPoint[];
-          marks?: { source_ip: string; mark: string }[];
-        };
-        if (!data.ok) { box.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">' + esc(data.error ?? 'Could not load DMARC data.') + '</p></div>'; return; }
-        const markMap = new Map((data.marks ?? []).map((m) => [m.source_ip, m.mark]));
-        const parts: string[] = [];
-
-        // Enforcement roadmap - always visible: it is the journey, reports or not.
-        const drow = state.domains.find((x) => x.id === id);
-        const policyMatch = drow?.checks?.find((c) => c.id === 'dmarc')?.value.match(/p=(none|quarantine|reject)/);
-        const policy = policyMatch ? policyMatch[1] : null;
-        const stepCls = (name: string) => policy === name ? 'is-current' : (name === 'none' ? 'is-done' : '');
-        const stepStatus = (name: string) => {
-          if (policy === name) return 'You are here';
-          if (name === 'none') return 'Complete - the record is live';
-          if (name === 'quarantine') return policy === 'reject' ? 'Complete' : 'Ready when every source is marked and passing';
-          return 'After a clean stretch on quarantine';
-        };
-        const roadmapHtml = '<div class="pd-panel"><div class="pd-panel-head"><h2>Enforcement roadmap</h2><span class="pd-chip ' + (policy === 'reject' ? 'pd-chip-pass' : 'pd-chip-warn') + '">currently p=' + (policy ?? 'unknown') + '</span></div>' +
-          '<div class="pd-roadmap">' +
-          '<div class="pd-roadmap-step ' + stepCls('none') + '"><p class="pd-roadmap-name">1 · p=none</p><p class="pd-roadmap-desc">Monitor only. Read reports, mark every source, fix legitimate senders that fail.</p><p class="pd-roadmap-status">' + stepStatus('none') + '</p></div>' +
-          '<div class="pd-roadmap-step ' + stepCls('quarantine') + '"><p class="pd-roadmap-name">2 · p=quarantine</p><p class="pd-roadmap-desc">Failing mail goes to spam. Ramp with pct=25 → 100 while watching the reports.</p><p class="pd-roadmap-status">' + stepStatus('quarantine') + '</p></div>' +
-          '<div class="pd-roadmap-step ' + stepCls('reject') + '"><p class="pd-roadmap-name">3 · p=reject</p><p class="pd-roadmap-desc">Failing mail is rejected outright. The end goal.</p><p class="pd-roadmap-status">' + stepStatus('reject') + '</p></div>' +
-          '</div><p class="pd-panel-note">PromptDNS never changes your policy automatically. Each step is a record edit this screen prepares for you, with a rollback plan.</p></div>';
-
-        if (!data.summary || data.summary.reports === 0) {
-          parts.push('<div class="pd-panel"><div class="pd-panel-head"><h2>No reports yet</h2></div>' +
-            '<div class="pd-empty" style="text-align:left">Setup:<br><br>1. Publish your DMARC record with <span class="pd-mono">rua=mailto:reports@promptdns.com</span> - the <a href="/dmarc-record-generator/">record generator</a> builds it.<br><br>2. First aggregate reports from Gmail, Microsoft, and Yahoo typically arrive within 24-48 hours of the record going live; give it up to 72.<br><br>3. If nothing arrives after 72 hours: confirm the rua= address matches, and that the Email Routing rule for reports@ is Active.<br><br>4. Reports show up here automatically.</div></div>');
-          parts.push(roadmapHtml);
-          box.innerHTML = parts.join('');
-          return;
-        }
-        const sum = data.summary;
-        parts.push('<div class="pd-stat-grid">' +
-          '<div class="pd-stat"><p class="pd-stat-label">Reports received</p><p class="pd-stat-value">' + sum.reports + '</p></div>' +
-          '<div class="pd-stat"><p class="pd-stat-label">Messages analyzed</p><p class="pd-stat-value">' + sum.messages.toLocaleString() + '</p></div>' +
-          '<div class="pd-stat"><p class="pd-stat-label">Pass rate</p><p class="pd-stat-value ' + (sum.passRate !== null && sum.passRate >= 90 ? 'pd-text-pass' : sum.passRate === null ? '' : 'pd-text-warn') + '">' + (sum.passRate === null ? '-' : sum.passRate + '%') + '</p></div>' +
-          '<div class="pd-stat"><p class="pd-stat-label">Reporting providers</p><p class="pd-stat-value">' + sum.orgs + '</p></div></div>');
-
-        if (data.daily && data.daily.length > 1) {
-          parts.push('<div class="pd-panel"><div class="pd-panel-head"><h2>Message volume</h2><span class="pd-legend"><span class="pd-legend-dot pd-dot-pass"></span>passing <span class="pd-legend-dot pd-dot-fail"></span>failing</span></div><svg class="pd-chart" id="dmarc-chart" viewBox="0 0 640 150" role="img" aria-label="Daily DMARC volume, passing versus failing"><g class="pd-chart-bars"></g></svg></div>');
-        }
-
-        const srcs = data.sources ?? [];
-        parts.push('<div class="pd-panel"><div class="pd-panel-head"><h2>Sources</h2><span class="pd-panel-note" style="margin-top:0">Mark each sender so reports can tell legitimate mail from spoofing.</span></div><div class="pd-table-wrap"><table class="pd-table"><thead><tr><th>Source IP</th><th>Host (PTR)</th><th>Volume</th><th>SPF</th><th>DKIM</th><th>DMARC</th><th>Marked</th></tr></thead><tbody id="dmarc-src-rows"></tbody></table></div></div>');
-
-        parts.push(roadmapHtml);
-
-        parts.push('<div class="pd-panel"><div class="pd-panel-head"><h2>Recent reports</h2></div><div class="pd-timeline">' +
-          (data.reports ?? []).map((r) => '<div class="pd-tl-item"><span class="pd-tl-dot pd-dot-pass" style="background:var(--pd-accent)"></span><div><p class="pd-tl-title">' + esc(r.org_name) + ': ' + r.messages_total.toLocaleString() + ' messages</p><p class="pd-tl-meta">' + (r.date_begin ?? '?') + ' to ' + (r.date_end ?? '?') + '</p></div></div>').join('') +
-          '</div></div>');
-
-        box.innerHTML = parts.join('');
-        if (data.daily && data.daily.length > 1) drawBars(document.getElementById('dmarc-chart') as SVGSVGElement, data.daily);
-
-        const tbody = document.getElementById('dmarc-src-rows')!;
-        for (const src of srcs) {
-          const tr = document.createElement('tr');
-          const mark = markMap.get(src.ip);
-          tr.innerHTML =
-            '<td class="pd-mono">' + esc(src.ip) + '</td>' +
-            '<td class="pd-mono pd-cell-dim" data-ptr="pending">…</td>' +
-            '<td class="pd-mono">' + src.volume.toLocaleString() + '</td>' +
-            '<td>' + (src.spfPass > 0 ? '<span class="pd-text-pass">pass</span>' : '<span class="pd-text-fail">fail</span>') + '</td>' +
-            '<td>' + (src.dkimPass > 0 ? '<span class="pd-text-pass">pass</span>' : '<span class="pd-text-fail">fail</span>') + '</td>' +
-            '<td>' + (src.dmarcPass > 0 ? '<span class="pd-text-pass">pass</span>' : '<span class="pd-text-fail">fail</span>') + '</td>' +
-            '<td><button type="button" class="pd-btn pd-btn-xs ' + (mark === 'me' ? 'is-me' : '') + '" data-ip="' + esc(src.ip) + '" data-mark="' + (mark ?? '') + '">' + (mark === 'me' ? 'This is me' : mark === 'notme' ? 'Not me' : 'Mark') + '</button></td>';
-          tbody.appendChild(tr);
-        }
-        tbody.querySelectorAll('button[data-ip]').forEach((b) => {
-          b.addEventListener('click', async () => {
-            const el = b as HTMLElement;
-            const ip = el.dataset.ip!;
-            const cur = el.dataset.mark;
-            const next = cur === 'me' ? 'notme' : 'me';
-            try {
-              const res = await fetch('/api/domains/dmarc/mark', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ip, mark: next }) });
-              const resp = await res.json() as { ok: boolean };
-              if (resp.ok) {
-                el.dataset.mark = next;
-                b.textContent = next === 'me' ? 'This is me' : 'Not me';
-                el.classList.toggle('is-me', next === 'me');
-              }
-            } catch { toast('fail', 'Could not reach the server.'); }
-          });
-        });
-        const ptrCells = Array.from(tbody.querySelectorAll<HTMLTableCellElement>('td[data-ptr="pending"]'));
-        await Promise.allSettled(srcs.slice(0, 20).map(async (src, i) => {
-          const cell = ptrCells[i];
-          if (!cell) return;
-          if (src.ip.includes(':')) { cell.textContent = '-'; return; }
-          const arpa = src.ip.split('.').reverse().join('.') + '.in-addr.arpa';
-          try {
-            const r = await lookup(arpa, 'PTR', RESOLVERS[0]);
-            const host = r.answers.find((a) => a.type === 12)?.data.replace(/^"|"$/g, '').replace(/\.$/, '');
-            cell.textContent = host || '-';
-          } catch { cell.textContent = '-'; }
-        }));
-      } catch {
-        box.innerHTML = '<div class="pd-panel"><p class="pd-panel-note">Could not load DMARC data.</p></div>';
-      }
-    }
-
-    // ---------- alerts ----------
-    async function loadAlerts() {
-      const list = document.getElementById('alerts-list')!;
-      const readBtn = document.getElementById('alerts-read') as HTMLButtonElement;
-      list.innerHTML = '';
-      const res = await fetch('/api/alerts');
-      if (!res.ok) return;
-      const data = await res.json() as { alerts: AlertRow[] };
-      const alerts = data.alerts;
-      const unread = alerts.filter((a) => !a.read_at).length;
-      const badge = document.getElementById('nav-alert-count') as HTMLElement;
-      badge.hidden = unread === 0;
-      badge.textContent = String(unread);
-      if (!alerts.length) {
-        list.innerHTML = '<div class="pd-empty">No alerts. You will see one here the moment a monitored domain changes.</div>';
-        readBtn.hidden = true;
-        return;
-      }
-      readBtn.hidden = false;
-      for (const a of alerts) {
-        const box = document.createElement('div');
-        box.className = 'pd-alert' + (a.read_at ? '' : ' is-unread');
-        box.dataset.sev = a.severity;
-        const sevChip = a.severity === 'fail' ? '<span class="pd-chip pd-chip-fail">fail</span>' : a.severity === 'warn' ? '<span class="pd-chip pd-chip-warn">warn</span>' : '<span class="pd-chip pd-chip-info">info</span>';
-        box.innerHTML =
-          '<div class="pd-alert-head">' + sevChip + '<span class="pd-alert-title">' + (a.read_at ? '' : '● ') + esc(a.title) + '</span><time class="pd-alert-time">' + a.created_at.slice(0, 16).replace('T', ' ') + ' UTC</time></div>' +
-          '<div class="pd-alert-body"><p class="pd-alert-diff">' + esc(a.detail) + '</p></div>';
-        box.querySelector('.pd-alert-head')!.addEventListener('click', () => box.classList.toggle('is-open'));
-        list.appendChild(box);
-      }
-    }
-
-    // ---------- charts ----------
-    function drawBars(svg: SVGSVGElement, daily: DailyPoint[]) {
-      const g = svg.querySelector('.pd-chart-bars');
-      if (!g) return;
-      const W = 640, H = 150, padL = 6, padB = 16, padT = 6;
-      const n = Math.max(daily.length, 1);
-      const slot = (W - padL * 2) / n;
-      const bw = Math.min(slot, 46);
-      const offsetX = (W - padL * 2 - bw * n) / 2;
-      const maxTotal = Math.max(...daily.map((d) => d.total), 1);
-      let out = '';
-      daily.forEach((d, i) => {
-        const x = padL + offsetX + i * slot;
-        const scale = (H - padB - padT) / maxTotal;
-        const hp = d.passing * scale;
-        const hf = (d.total - d.passing) * scale;
-        out += '<rect x="' + (x + 1).toFixed(1) + '" y="' + (H - padB - hp - hf).toFixed(1) + '" width="' + Math.max(1.5, bw - 2.5).toFixed(1) + '" height="' + Math.max(0.5, hp).toFixed(1) + '" rx="1.5" fill="var(--pd-pass)" opacity="0.75"><title>' + d.date + ': ' + d.passing.toLocaleString() + ' passing</title></rect>';
-        if (hf > 0.5) out += '<rect x="' + (x + 1).toFixed(1) + '" y="' + (H - padB - hf).toFixed(1) + '" width="' + Math.max(1.5, bw - 2.5).toFixed(1) + '" height="' + hf.toFixed(1) + '" rx="1.5" fill="var(--pd-fail)" opacity="0.8"><title>' + d.date + ': ' + (d.total - d.passing).toLocaleString() + ' failing</title></rect>';
-        if (i % Math.ceil(n / 8) === 0) out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 4) + '" font-size="9" fill="#64748b" text-anchor="middle" font-family="JetBrains Mono, monospace">' + d.date.slice(5) + '</text>';
-      });
-      g.innerHTML = out;
-    }
-
-    // ---------- wiring ----------
-    document.querySelectorAll('#dash-shell [data-screen]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const screen = (b as HTMLElement).dataset.screen!;
-        show(screen);
-        if (screen === 'overview') void loadOverview();
-        if (screen === 'domains') void loadDomains();
-        if (screen === 'dmarc') void loadDmarcScreen();
-        if (screen === 'alerts') void loadAlerts();
-      });
-    });
-    document.querySelectorAll('#dash-shell [data-goto]').forEach((b) => {
-      b.addEventListener('click', () => show((b as HTMLElement).dataset.goto!));
-    });
-
-    document.querySelectorAll('.pd-tab').forEach((tab) => {
-      tab.addEventListener('click', () => showDomainTab(tab.getAttribute('data-tab') ?? 'auth'));
-    });
-
-    document.getElementById('topbar-add')!.addEventListener('click', () => {
-      show('domains');
-      document.getElementById('add-panel')!.hidden = false;
-      (document.getElementById('dom-input') as HTMLInputElement).focus();
-    });
-    document.getElementById('add-close')!.addEventListener('click', () => { document.getElementById('add-panel')!.hidden = true; });
-
-    const form = document.getElementById('dom-form') as HTMLFormElement;
-    const input = document.getElementById('dom-input') as HTMLInputElement;
-    const domSubmit = document.getElementById('dom-submit') as HTMLButtonElement;
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      domSubmit.disabled = true;
-      domSubmit.textContent = 'Scanning…';
-      try {
-        const res = await fetch('/api/domains', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: input.value }) });
-        const data = await res.json() as { ok: boolean; error?: string; domain?: DomainRow };
-        if (data.ok && data.domain) {
-          const row: DomainRow = { ...data.domain, paused: false };
-          toast('pass', row.domain + ' added and scanned.');
-          input.value = '';
-          document.getElementById('add-panel')!.hidden = true;
-          await loadDomains();
-          await loadOverview();
-          await openDomain(row.id);
-        } else {
-          toast('fail', data.error ?? 'Could not add the domain.');
-        }
-      } catch {
-        toast('fail', 'Could not reach the server.');
-      }
-      domSubmit.disabled = false;
-      domSubmit.textContent = 'Add & scan';
-    });
-
-    document.getElementById('alerts-read')!.addEventListener('click', async () => {
-      await fetch('/api/alerts/read', { method: 'POST' });
-      await loadAlerts();
-    });
-
-    document.querySelectorAll('[data-theme-set]').forEach((b) => {
-      b.addEventListener('click', () => applyTheme((b as HTMLElement).dataset.themeSet as 'dark' | 'light'));
-    });
-    document.getElementById('nav-theme-toggle')!.addEventListener('click', () => applyTheme(currentTheme === 'light' ? 'dark' : 'light'));
-
-    document.querySelectorAll('#nav-user-menu [data-menu-goto]').forEach((b) => {
-      b.addEventListener('click', () => {
-        userMenu.hidden = true;
-        userBtn.setAttribute('aria-expanded', 'false');
-        show((b as HTMLElement).dataset.menuGoto!);
-        void loadDomains();
-        const target = (b as HTMLElement).dataset.menuScroll;
-        if (target) document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    });
-
-    document.getElementById('ov-add')!.addEventListener('click', () => {
-      show('domains');
-      document.getElementById('add-panel')!.hidden = false;
-      (document.getElementById('dom-input') as HTMLInputElement).focus();
-    });
-
-    const userBtn = document.getElementById('nav-user-btn')!;
-    const userMenu = document.getElementById('nav-user-menu')!;
-    userBtn.addEventListener('click', () => {
-      const open = userMenu.hidden;
-      userMenu.hidden = !open;
-      userBtn.setAttribute('aria-expanded', String(open));
-    });
-    document.addEventListener('click', (e) => {
-      if (!userMenu.hidden && !userMenu.contains(e.target as Node) && !userBtn.contains(e.target as Node)) {
-        userMenu.hidden = true;
-        userBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.getElementById('nav-signout')!.addEventListener('click', async () => {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/login/';
-    });
-
-    fetch('/api/auth/me')
-      .then((r) => r.json())
-      .then(async (d: { authenticated: boolean; email: string | null }) => {
-        document.getElementById('dash-loading')!.hidden = true;
-        if (d.authenticated) {
-          (document.getElementById('nav-user-mail') as HTMLElement).textContent = d.email ?? '';
-          (document.getElementById('set-email') as HTMLElement).textContent = d.email ?? '';
-          document.getElementById('dash-shell')!.hidden = false;
-          const lucideGlobal = (window as unknown as { lucide?: { createIcons(o: { attrs: { width: number; height: number } }): void } }).lucide;
-          if (lucideGlobal) lucideGlobal.createIcons({ attrs: { width: 15, height: 15 } });
-          show('overview');
-          await loadDomains();
-          await loadOverview();
-          void loadAlerts();
-        } else {
-          document.getElementById('dash-signed-out')!.hidden = false;
-        }
-      })
-      .catch(() => {
-        (document.getElementById('dash-loading') as HTMLElement).textContent = 'Could not reach the server.';
-      });
+      await refreshAll();
+      $('#dash-loading').hidden = true;
+      $('#dash-shell').hidden = false;
+      const mailEl = E('span', { id: 'dv-mail', 'data-mail': me.email || '', style: 'display:none' });
+      document.getElementById('dash-shell')!.append(mailEl);
+      go();
+      addEventListener('keydown', (e) => { if (e.key === 'Escape') cdr(); });
+    })();
   </script>
-</div>
+</BaseLayout>
