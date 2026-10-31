@@ -1,99 +1,374 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "CNAME",
- "title": "CNAME Record: Canonical Names Explained",
- "description": "CNAME records explained in depth: aliasing, the apex restriction, flattening, chaining risks, and how to audit your aliases.",
- "intro": "A CNAME record aliases one hostname to another. Instead of saying 'www lives at this IP', it says 'www is whatever example.com is', so one change at the target updates every alias that follows it.",
- "deepDive": [
-  "CNAME stands for Canonical Name, and the mechanics are exactly that: the alias is not an answer, it is a pointer to the canonical (real) name. When a resolver chasing www hits the CNAME, it restarts the lookup against the target and returns that answer, with a note that it arrived via alias. The client never notices unless it inspects the chain.",
-  "The famous restriction: a CNAME cannot coexist with other records at the same name, which bans it from the zone apex, because the apex must carry SOA and NS records to be a zone at all. Providers paper over this with ALIAS/ANAME pseudo-records or CNAME flattening, where the provider resolves the target server-side and publishes the resulting A record. Functionally similar, but the mechanisms differ enough to matter during debugging.",
-  "CNAME chains (alias to alias to target) multiply lookup latency and failure surface, and some resolvers cap the chase. Keep chains one hop deep, point at stable targets, and remember that a CNAME imports the target's availability: if the target stops resolving, every alias under it breaks with it."
- ],
- "example": "www.example.com.  3600  IN  CNAME  example.com.\ndocs                3600  IN  CNAME  yourname.getgridea.pages.hosted.",
- "anatomy": [
-  [
-   "www.example.com.",
-   "The alias: the name users actually type or that services verify."
-  ],
-  [
-   "CNAME",
-   "The record type. A canonical hostname follows, never an IP."
-  ],
-  [
-   "example.com.",
-   "The target. The alias inherits whatever A/AAAA answers this name has."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Which side of a CNAME record is the \"Canonical Name\"?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The right-hand target value (the destination domain the record points to, such as example.com) is the Canonical Name (\"true name\"). The left-hand Host/Name field (such as www.example.com) is the alias (nickname)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does a CNAME record redirect a URL or change the address bar in the browser?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, a CNAME record only resolves the domain name to the target's IP address at the DNS layer. The visitor's browser address bar continues showing the alias URL they typed. Changing the URL in the browser bar requires an HTTP 301 or 302 redirect on the web server."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does using a CNAME record instead of an A record slow down my website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, if your CNAME points to a target inside the same DNS zone (like www.example.com -> example.com), there is zero extra latency because your authoritative server returns both records in a single packet. Pointing to an external domain adds only 5 to 25 ms on the first uncached lookup."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why won't my DNS provider let me add a TXT record on a subdomain that already has a CNAME?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world setups, this happens because DNS rules strictly prohibit a CNAME from sharing a hostname with any other record type. Ask the vendor for a root-domain TXT token or replace the CNAME with an A/ALIAS record whenever a third-party service requests a verification TXT string on an existing CNAME subdomain."
+      }
+    }
   ]
- ],
- "uses": [
-  "Pointing subdomains at hosted services: CDNs, GitHub Pages, helpdesks, landing page hosts",
-  "Keeping www automatically in sync with the apex",
-  "Managing many vanity hostnames that must always match one moving target"
- ],
- "steps": [
-  [
-   "Identify the target",
-   "Your service's DNS setup page gives you the exact hostname to point at. Copy it verbatim."
-  ],
-  [
-   "Create the CNAME",
-   "In your DNS panel, host 'www' (or the subdomain), type CNAME, value the target hostname."
-  ],
-  [
-   "Watch propagation",
-   "CNAME changes respect TTL like everything else; confirm with the propagation checker."
-  ],
-  [
-   "Verify the full chain",
-   "The lookup tool shows the alias resolving through to a final address; if the chain dead-ends, the target moved."
-  ]
- ],
- "mistakes": [
-  "Placing a CNAME at the apex; it is technically illegal and most providers reject it (use ALIAS/flattening)",
-  "Pointing a CNAME at an IP address; that is an A record's job",
-  "Long alias chains that add latency and break when an intermediate hop moves",
-  "Forgetting that a CNAME at a name blocks all other record types at that same name, including TXT verification records on that subdomain"
- ],
- "faqs": [
-  [
-   "Why can't I use CNAME at the root domain?",
-   "The apex must hold SOA and NS records, and CNAME cannot coexist with any other record type. Use ALIAS/ANAME or a provider that flattens."
-  ],
-  [
-   "Does a CNAME redirect traffic?",
-   "No. It aliases DNS resolution, not HTTP. Visitors still see the original hostname; changing the visible URL is an HTTP redirect."
-  ],
-  [
-   "Can a CNAME point to another domain I don't own?",
-   "Yes, and that is exactly how SaaS DNS verification works. The trade-off is you inherit their availability."
-  ],
-  [
-   "What is CNAME flattening?",
-   "A provider feature that resolves the CNAME target server-side and answers with plain A records, making CNAME-style pointing legal at the apex."
-  ],
-  [
-   "How do I check CNAME records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should CNAME records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "ALIAS/ANAME records",
-   "/alias-record/"
-  ],
-  [
-   "CNAME flattening explained",
-   "/cname-flattening/"
-  ],
-  [
-   "A records",
-   "/a-record/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["CNAME Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="CNAME Record: What a Canonical Name Is, Syntax, Rules, and Examples"
+  description="Learn what a DNS CNAME (Canonical Name) record is, how resolution works, the 4 protocol rules, real-world examples, and CNAME vs A vs ALIAS vs 301 redirects."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">CNAME Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      CNAME Record: What a Canonical Name Is, Syntax, Rules, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A Canonical Name (CNAME) record is <strong class="text-ink">a DNS resource record that maps an alias subdomain (such as <code>www.example.com</code>) to another target domain name (such as <code>example.com</code>) instead of an IP address</strong>. Resolvers follow the target name to find its IP. The rules of a CNAME prohibit root-domain placement.
+      </p>
+    </div>
+
+    <Diagram name="resolution" caption="CNAME alias resolution: the recursive resolver follows the alias pointer to fetch the canonical target's IP address" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-a-canonical-name-and-what-does-a-cname-record-look-like">What is a canonical name &amp; CNAME syntax</a></li>
+        <li><a href="#how-does-a-cname-record-lookup-work-step-by-step-5-steps">How a CNAME lookup works (5 steps)</a></li>
+        <li><a href="#what-are-the-4-strict-rules-and-restrictions-of-a-cname-record">4 strict rules &amp; restrictions</a></li>
+        <li><a href="#5-real-world-examples-of-how-websites-and-email-use-cname-records">5 real-world CNAME examples</a></li>
+        <li><a href="#cname-record-vs-a-record-vs-alias-vs-http-301-redirect-comparison-table">CNAME vs A vs ALIAS vs 301 redirect</a></li>
+        <li><a href="#security-warning-how-dangling-cname-records-cause-subdomain-takeovers">Security: dangling CNAMEs &amp; takeovers</a></li>
+        <li><a href="#how-to-check-and-verify-a-cname-record-dig-nslookup-and-browser-doh">How to check &amp; verify a CNAME</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-a-canonical-name-and-what-does-a-cname-record-look-like">What Is a Canonical Name and What Does a CNAME Record Look Like?</h2>
+      <p>
+        In DNS terminology, a <abbr class="pd-term" data-tip="Canonical Name: the true, authoritative domain name to which alias records point"><strong>Canonical Name</strong></abbr> is <strong class="text-ink">the true, authoritative target hostname on the right-hand side of the record (<code>example.com</code>), whereas the subdomain label on the left-hand side (<code>www.example.com</code>) is the alias (nickname) being redirected</strong>. A CNAME record (IANA Type 5) contains 4 zone fields (<code>Host/Alias</code>, <code>Type</code>, <code>TTL</code>, and <code>Target/Canonical Name</code>) that instruct recursive resolvers to substitute the target domain's DNS records whenever a client queries the alias. The table below defines the technical specifications of a CNAME record.
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; Alias (Left)             TTL   Class  Type   Canonical Name (Right)
+www.example.com.           3600  IN     CNAME  example.com.
+shop.example.com.          3600  IN     CNAME  shops.myshopify.com.</code></pre>
+
+      <section class="not-prose my-6" aria-label="CNAME record specification table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Zone Field</th>
+                <th>Format</th>
+                <th>Example</th>
+                <th>Protocol Constraint</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">Host / Alias</td>
+                <td class="text-sm font-mono text-accent">Subdomain String</td>
+                <td class="text-sm font-mono text-accent">www, shop</td>
+                <td class="text-sm text-ink-dim">Alias label; prohibited at zone apex (@).</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Record Type</td>
+                <td class="text-sm font-mono text-accent">Type 5</td>
+                <td class="text-sm font-mono text-accent">CNAME</td>
+                <td class="text-sm text-ink-dim">Aliases all records to canonical target.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink"><abbr class="pd-term" data-tip="Time to Live (TTL): cache retention duration in seconds">TTL</abbr></td>
+                <td class="text-sm font-mono text-accent">Integer Seconds</td>
+                <td class="text-sm font-mono text-accent">3600</td>
+                <td class="text-sm text-ink-dim">Cache retention duration in seconds.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Class</td>
+                <td class="text-sm font-mono text-accent">IN (Internet)</td>
+                <td class="text-sm font-mono text-accent">IN</td>
+                <td class="text-sm text-ink-dim">Standard Internet class.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Target / Points To</td>
+                <td class="text-sm font-mono text-accent">FQDN Hostname</td>
+                <td class="text-sm font-mono text-accent">example.com</td>
+                <td class="text-sm text-ink-dim">Canonical destination hostname.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Distinguishing the alias from the canonical name governs DNS setup: the <code>Name</code> input holds the alias subdomain (<code>www</code> or <code>shop</code>), while the <code>Target</code> input holds the canonical destination name (<code>example.com</code> or <code>shops.myshopify.com</code>). Verify any live target instantly using our <a href="/cname-record-lookup/">CNAME Record Lookup</a>.
+      </p>
+
+      <h2 id="how-does-a-cname-record-lookup-work-step-by-step-5-steps">How Does a CNAME Record Lookup Work Step by Step? (5 Steps)</h2>
+      <p>
+        Resolving a subdomain that uses a CNAME record requires <strong class="text-ink">5 lookup steps where the recursive resolver follows the alias pointer to fetch the canonical target's <code>A</code> or <code>AAAA</code> IP address</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Request</strong> the IPv4 or IPv6 address for <code>www.example.com</code> from the browser to the recursive resolver.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Query</strong> the authoritative nameserver for <code>example.com</code> and receive the <code>CNAME</code> record pointing <code>www.example.com</code> to <code>example.com</code>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Restart</strong> the query at the recursive resolver for the canonical target (<code>example.com</code>) to retrieve its <a href="/a-record/">A Record</a> or <a href="/aaaa-record/">AAAA Record</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Return</strong> the <code>CNAME</code> chain and final IP address (<code>93.184.216.34</code>) in the answer section, caching each entry by its <a href="/what-is-ttl-in-dns/">DNS TTL Explained</a> value.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Open</strong> the TCP connection and TLS handshake to <code>93.184.216.34</code> while sending <code>Host: www.example.com</code> and keeping <code>www.example.com</code> in the browser bar.
+        </li>
+      </ol>
+
+      <p>
+        Resolvers execute an additional external query when the target resides on another domain (such as <code>shop.example.com</code> pointing to <code>shops.myshopify.com</code>), resolving external nameservers before delivering the web server IP via <a href="/a-record-lookup/">A Record Lookup</a>.
+      </p>
+
+      <h2 id="what-are-the-4-strict-rules-and-restrictions-of-a-cname-record">What Are the 4 Strict Rules and Restrictions of a CNAME Record?</h2>
+      <p>
+        The DNS protocol enforces <strong class="text-ink">4 strict architectural rules covering coexisting records, the root domain (<code>@</code>), <code>MX</code>/<code>NS</code> targets, and multi-hop CNAME chains</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">A CNAME Record Never Coexists With Other Records on the Same Hostname:</strong> Aliasing a hostname redirects all queries to the target, prohibiting <code>TXT</code>, <code>MX</code>, or <code>A</code> records on that label (except DNSSEC <code>RRSIG</code> and <code>NSEC</code> records).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">A Standard CNAME Record Cannot Sit at the <abbr class="pd-term" data-tip="Zone Apex: the root or apex level of a DNS domain without any subdomain prefix, represented by @">Zone Apex</abbr> (@ Root Domain):</strong> Root domains (<code>example.com</code>) mandate <code>SOA</code> and <code>NS</code> records. Placing a CNAME at <code>@</code> breaks delegation, requiring <a href="/alias-record/">ALIAS and ANAME Records</a> or <abbr class="pd-term" data-tip="CNAME Flattening: an authoritative DNS technique that resolves CNAME targets and serves synthesized A/AAAA records at the root domain"><a href="/cname-flattening/">CNAME Flattening</a></abbr>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">MX and NS Records Never Point to a CNAME Target:</strong> Hostnames in an <a href="/mx-record/">MX Record</a> and nameservers in an <a href="/ns-record/">NS Record</a> point strictly to address records. Mail servers reject MX records pointing to CNAME aliases.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Avoid Chaining One CNAME to Another CNAME (A -> B -> C):</strong> Pointing <code>blog.example.com</code> to <code>www.example.com</code> while <code>www.example.com</code> points to <code>app.cloud.net</code> creates multi-hop lookups that increase latency. Point every alias directly to the final canonical hostname.
+        </li>
+      </ol>
+
+      <p>
+        Organizations needing to alias an entire subtree of subdomains simultaneously deploy a <abbr class="pd-term" data-tip="DNAME (Type 39): delegates an entire subtree of domain names to another domain"><strong>DNAME (Delegation Name, Type 39)</strong></abbr> record, redirecting entire hierarchical namespace branches rather than individual labels.
+      </p>
+
+      <h2 id="5-real-world-examples-of-how-websites-and-email-use-cname-records">5 Real-World Examples of How Websites and Email Use CNAME Records</h2>
+      <p>
+        Production domains rely on <code>CNAME</code> records across <strong class="text-ink">5 common use cases: <code>www</code> subdomain routing, SaaS custom domains, CDN edge endpoints, delegated DKIM keys, and automated SSL validation</strong>:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Pointing <code>www</code> to Your Root Domain (<code>www.example.com -> example.com</code>):</strong> Routes web traffic destined for <code>www</code> to root domain address records, updating <code>www</code> automatically when apex IPs change.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Connecting Subdomains to SaaS Platforms (Shopify, HubSpot, Vercel):</strong> Maps subdomains like <code>shop.example.com</code> to <code>shops.myshopify.com</code>, letting cloud providers rotate load-balancer IPs dynamically without customer DNS edits.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Delegating Outbound Email Keys via <a href="/dkim/">DKIM Explained</a>:</strong> Email platforms like Microsoft 365 and SendGrid publish CNAMEs in customer zones, rotating 2048-bit signing keys on provider infrastructure.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Routing Static Assets Through a CDN (<code>cdn.example.com -> d111111abcdef8.cloudfront.net</code>):</strong> Directs asset delivery to global Anycast edge networks like Amazon CloudFront, managing edge caching transparently.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Automating ACME DNS-01 SSL Renewals (<code>_acme-challenge</code>):</strong> Directs validation queries to dedicated validation endpoints, allowing certificate authorities to verify domain control and issue wildcard certificates automatically.
+        </li>
+      </ol>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code>; 1. www alias
+www.example.com.              3600  IN  CNAME  example.com.
+
+; 2. SaaS custom domain
+shop.example.com.             3600  IN  CNAME  shops.myshopify.com.
+
+; 3. Delegated DKIM
+s1._domainkey.example.com.    3600  IN  CNAME  s1.domainkey.u1234567.wl001.sendgrid.net.
+
+; 4. CDN endpoint
+cdn.example.com.              3600  IN  CNAME  d111111abcdef8.cloudfront.net.
+
+; 5. ACME challenge
+_acme-challenge.example.com.  300   IN  CNAME  _acme-challenge.example.com.dcv.cloudflare.com.</code></pre>
+
+      <p>
+        Cloudflare users configure proxy settings attentively: enable Orange Cloud on web CNAMEs (<code>www</code> or <code>shop</code>) for CDN caching, but keep DKIM (<code>_domainkey</code>) and SSL validation (<code>_acme-challenge</code>) CNAMEs strictly DNS Only (Grey Cloud) so external verifiers inspect the raw target.
+      </p>
+
+      <h2 id="cname-record-vs-a-record-vs-alias-vs-http-301-redirect-comparison-table">CNAME Record vs A Record vs ALIAS vs HTTP 301 Redirect (Comparison Table)</h2>
+      <p>
+        Beginners frequently confuse a <strong class="text-ink">DNS <code>CNAME</code> record</strong> with an <strong class="text-ink"><code>A</code> record</strong>, an <strong class="text-ink"><code>ALIAS</code> record</strong>, or an <strong class="text-ink">HTTP <code>301</code>/<code>302</code> URL Redirect</strong>, even though DNS records only resolve IP addresses and never rewrite URLs in browser address bars. The table below compares all 4 mechanisms side by side.
+      </p>
+
+      <section class="not-prose my-6" aria-label="CNAME vs A vs ALIAS vs HTTP 301 comparison table">
+        <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Feature / Behavior</th>
+                <th>CNAME Record</th>
+                <th>A / AAAA Record</th>
+                <th>ALIAS / ANAME Record</th>
+                <th>HTTP 301 / 302 URL Redirect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink">Layer of Operation</td>
+                <td class="text-sm font-mono text-accent">DNS Layer (Type 5)</td>
+                <td class="text-sm font-mono text-accent">DNS Layer (Type 1 / 28)</td>
+                <td class="text-sm font-mono text-accent">DNS Layer (Virtual Type 1/28)</td>
+                <td class="text-sm font-mono text-accent">HTTP Server (Port 80/443)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Target Value Format</td>
+                <td class="text-sm text-ink-dim">Another domain (<code>example.com</code>)</td>
+                <td class="text-sm text-ink-dim">IPv4/IPv6 (<code>93.184.216.34</code>)</td>
+                <td class="text-sm text-ink-dim">Another domain (<code>app.paas.com</code>)</td>
+                <td class="text-sm text-ink-dim">Full URL (<code>https://example.com/new</code>)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Changes Browser URL Bar?</td>
+                <td class="text-sm font-semibold text-rose-400">No (Keeps typed subdomain)</td>
+                <td class="text-sm font-semibold text-rose-400">No (Keeps typed hostname)</td>
+                <td class="text-sm font-semibold text-rose-400">No (Keeps typed root domain)</td>
+                <td class="text-sm font-semibold text-emerald-400">Yes (Redirects address bar)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Redirects URL Paths (/path)?</td>
+                <td class="text-sm font-semibold text-rose-400">No (DNS is path-unaware)</td>
+                <td class="text-sm font-semibold text-rose-400">No (DNS is path-unaware)</td>
+                <td class="text-sm font-semibold text-rose-400">No (DNS is path-unaware)</td>
+                <td class="text-sm font-semibold text-emerald-400">Yes (/old-path -> /new-path)</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink">Permitted at Zone Apex (@)?</td>
+                <td class="text-sm font-semibold text-rose-400">No (Conflicts with SOA/NS)</td>
+                <td class="text-sm font-semibold text-emerald-400">Yes</td>
+                <td class="text-sm font-semibold text-emerald-400">Yes (Synthesizes A/AAAA)</td>
+                <td class="text-sm font-semibold text-emerald-400">Yes (Requires underlying DNS)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Pointing <code>olddomain.com</code> to <code>newdomain.com</code> via CNAME does not forward visitors to <code>https://newdomain.com/</code> in the address bar. DNS only resolves domain names to IP addresses; the web server serves an <code>HTTP 301 Moved Permanently</code> header and matching TLS certificate. Review our guide to <a href="/dns-records/">DNS Record Types</a> for full specifications.
+      </p>
+
+      <h2 id="security-warning-how-dangling-cname-records-cause-subdomain-takeovers">Security Warning: How Dangling CNAME Records Cause Subdomain Takeovers</h2>
+      <p>
+        A <abbr class="pd-term" data-tip="Dangling CNAME: an orphaned DNS record pointing to a deprovisioned external cloud resource"><strong>dangling CNAME record</strong></abbr> occurs when <strong class="text-ink">a subdomain (<code>promo.example.com</code>) points via CNAME to an external cloud service (such as GitHub Pages, AWS S3, or Azure) after deleting the cloud resource</strong>, exposing the subdomain to a <abbr class="pd-term" data-tip="Subdomain Takeover: a vulnerability where an attacker claims an abandoned external service and controls the subdomain"><strong>Subdomain Takeover attack</strong></abbr>. Threat actors exploit orphaned pointers to impersonate legitimate brands.
+      </p>
+      <p>
+        Subdomain takeover exploitation follows an automated 3-step sequence:
+      </p>
+
+      <ol class="list-decimal space-y-4 pl-6">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Discover</strong> the abandoned <code>CNAME</code> record (<code>promo.example.com -> oldcampaign.github.io</code>) using public DNS scanners after canceling cloud hosting without cleaning up DNS zones.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Register</strong> that exact unclaimed project name (<code>oldcampaign</code>) on the cloud platform, hijacking <code>promo.example.com</code> to host phishing pages, steal cookies, and bypass brand filters.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Prevent</strong> subdomain takeovers by deleting every CNAME pointer before deprovisioning cloud services, while auditing zones regularly for dangling records.
+        </li>
+      </ol>
+
+      <p>
+        A dangling CNAME returning <code>NXDOMAIN</code> indicates an active takeover risk. Security teams remove orphaned CNAME pointers immediately to protect corporate namespace integrity.
+      </p>
+
+      <h2 id="how-to-check-and-verify-a-cname-record-dig-nslookup-and-browser-doh">How to Check and Verify a CNAME Record (dig, nslookup, and Browser DoH)</h2>
+      <p>
+        Inspect the canonical target and TTL of any <code>CNAME</code> record using our browser lookup tool or running a <code>dig</code> or <code>nslookup</code> command in your terminal:
+      </p>
+
+      <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># Query only the CNAME target on Linux / macOS:
+dig www.example.com CNAME +short
+
+# Query the full CNAME -> A resolution chain:
+dig www.example.com A +noall +answer
+
+# Query CNAME on Windows Command Prompt:
+nslookup -type=cname www.example.com 1.1.1.1</code></pre>
+
+      <p>
+        Output from these diagnostics reveals the complete delegation path from alias to IP address. Verify worldwide resolution synchronization across global checkpoints with our <a href="/dns-propagation-checker/">DNS Propagation Checker</a> whenever updating records. Understanding CNAME record architecture, canonical destination mappings, zone apex coexistence restrictions, and differences between CNAME records, address records, and HTTP redirects ensures resilient infrastructure across modern networks.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which side of a CNAME record is the "Canonical Name"?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">The right-hand target value (the destination domain the record points to, such as example.com) is the Canonical Name ("true name"). The left-hand Host/Name field (such as www.example.com) is the alias (nickname).</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a CNAME record redirect a URL or change the address bar in the browser?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, a CNAME record only resolves the domain name to the target's IP address at the DNS layer. The visitor's browser address bar continues showing the alias URL they typed. Changing the URL in the browser bar requires an HTTP 301 or 302 redirect on the web server.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does using a CNAME record instead of an A record slow down my website?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In practice, if your CNAME points to a target inside the same DNS zone (like www.example.com -> example.com), there is zero extra latency because your authoritative server returns both records in a single packet. Pointing to an external domain adds only 5 to 25 ms on the first uncached lookup.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why won't my DNS provider let me add a TXT record on a subdomain that already has a CNAME?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world setups, this happens because DNS rules strictly prohibit a CNAME from sharing a hostname with any other record type. Ask the vendor for a root-domain TXT token or replace the CNAME with an A/ALIAS record whenever a third-party service requests a verification TXT string on an existing CNAME subdomain.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
