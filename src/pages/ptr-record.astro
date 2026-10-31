@@ -35,7 +35,7 @@ const faq = {
       "name": "Is a PTR record the same thing as the \"ptr\" mechanism inside an SPF record?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No, in real-world email setups these represent two distinct concepts: publishing a DNS PTR record on your sending server IP address is mandatory for inbox delivery, whereas using the ptr mechanism inside an SPF record (v=spf1 ptr) is deprecated by RFC 7208 due to severe performance overhead. Production SPF records specify ip4: or a: mechanisms instead."
+        "text": "No, in real-world email setups this is a critical distinction: publishing a DNS PTR record on your sending server IP address is mandatory for inbox delivery, whereas using the ptr mechanism inside an SPF record (v=spf1 ptr) is deprecated by RFC 7208 due to severe performance overhead. Production SPF records specify ip4: or a: mechanisms instead."
       }
     }
   ]
@@ -93,7 +93,7 @@ const breadcrumb = [
     <div class="rich-text mt-8">
       <h2 id="how-do-ptr-records-work-in-in-addrarpa-and-ip6arpa-reverse-zones">How Do PTR Records Work in .in-addr.arpa and .ip6.arpa Reverse Zones?</h2>
       <p>
-        A Pointer (PTR) record (IANA Type 12) <strong class="text-ink">executes a <abbr class="pd-term" data-tip="Reverse DNS: the process of resolving an IP address back to its canonical domain hostname">reverse DNS</abbr> lookup by resolving a numerical IP address back to a human-readable hostname inside the special .arpa (Address and Routing Parameter Area) top-level domain</strong>. Standard forward DNS queries resolve domain labels from right to left (<code>mail.example.com</code>), whereas IP addresses allocate network hierarchy from left to right (<code>198.51.100.25</code>, where <code>198.51.100</code> is the network subnet and <code>.25</code> is the host). Traversal of the DNS tree in hierarchical order requires reversing the IP address segments and appending <abbr class="pd-term" data-tip="in-addr.arpa: special top-level domain dedicated to IPv4 reverse DNS resolution">.in-addr.arpa</abbr> (for IPv4) or <abbr class="pd-term" data-tip="ip6.arpa: special top-level domain dedicated to IPv6 reverse DNS resolution">.ip6.arpa</abbr> (for IPv6). The table below defines the structure and reversal rules of IPv4 and IPv6 PTR records.
+        A Pointer (PTR) record (IANA Type 12) <strong class="text-ink">executes a <abbr class="pd-term" data-tip="Reverse DNS: the process of resolving an IP address back to its canonical domain hostname">reverse DNS</abbr> lookup (rDNS) by resolving a numerical IP address back to a human-readable hostname inside the special .arpa (Address and Routing Parameter Area) top-level domain</strong>. Standard forward DNS queries resolve domain labels from right to left (<code>mail.example.com</code>), whereas IP addresses allocate network hierarchy from left to right (<code>198.51.100.25</code>, where <code>198.51.100</code> is the network subnet and <code>.25</code> is the host). Traversal of the DNS tree in hierarchical order requires reversing the IP address segments and appending <abbr class="pd-term" data-tip="in-addr.arpa: special top-level domain dedicated to IPv4 reverse DNS resolution">.in-addr.arpa</abbr> (for IPv4) or <abbr class="pd-term" data-tip="ip6.arpa: special top-level domain dedicated to IPv6 reverse DNS resolution">.ip6.arpa</abbr> (for IPv6). The table below defines the structure and reversal rules of IPv4 and IPv6 PTR records.
       </p>
 
       <p class="text-sm font-medium text-ink-dim">
@@ -203,7 +203,7 @@ const breadcrumb = [
       </section>
 
       <p>
-        Distinguishing provider control boundaries prevents common reverse DNS misconceptions. Administrators hosting a virtual server on AWS, DigitalOcean, or Hetzner while managing domain records in Cloudflare configure PTR records inside the hosting console, never inside Cloudflare. Conversely, organizations sending email through Google Workspace or Microsoft 365 require no PTR setup because the platform maintains reverse records across its outbound gateways. Identify the organization operating any public network block using our <a href="/ip-lookup/">IP Lookup</a>.
+        Distinguishing provider control boundaries prevents common reverse DNS misconceptions. Administrators hosting virtual servers on AWS, DigitalOcean, or Hetzner while managing domain records in Cloudflare configure PTR records inside the hosting console, never inside Cloudflare. Conversely, organizations sending email through Google Workspace or Microsoft 365 require no PTR setup because providers maintain reverse records across outbound gateways. Identify the network operator of any public IP block using our <a href="/ip-lookup/">IP Lookup</a>.
       </p>
 
       <h2 id="what-is-forward-confirmed-reverse-dns-fcrdns-and-why-does-email-require-it">What Is Forward-Confirmed Reverse DNS (FCrDNS) and Why Does Email Require It?</h2>
@@ -241,12 +241,12 @@ SMTP Banner (In Mail Software): EHLO mail.example.com          (All 3 Match = FC
 
       <h2 id="5-common-ptr-record-rules-and-mistakes-that-cause-email-bounces">5 Common PTR Record Rules and Mistakes That Cause Email Bounces</h2>
       <p>
-        Eliminating <code>550-5.7.25</code> and <code>550 5.7.1</code> delivery errors requires <strong class="text-ink">following 5 essential operational rules across multi-tenant servers, dual-stack networks, and cloud infrastructure</strong>:
+        Eliminating <code>550-5.7.25</code> and <code>550 5.7.1</code> delivery errors requires <strong class="text-ink">following 5 operational rules across multi-tenant servers, dual-stack networks, and cloud infrastructure</strong>:
       </p>
 
       <ol class="list-decimal space-y-4 pl-6">
         <li class="leading-relaxed">
-          <strong class="text-ink">Assign Exactly One PTR Record Per IP Address:</strong> Multiple forward domain names route to one server IP address, yet each IP address requires exactly one PTR record pointing to the primary server mail hostname. Configuring multiple PTR records on a single IP generates randomized round-robin responses that break FCrDNS validation.
+          <strong class="text-ink">Assign Exactly One PTR Record Per IP Address:</strong> Multiple forward domain names route to one server IP address, yet each IP address requires exactly one PTR record pointing to the primary mail hostname. Configuring multiple PTR records on a single IP generates randomized responses that break FCrDNS validation.
         </li>
         <li class="leading-relaxed">
           <strong class="text-ink">Replace Default Generic Cloud Provider Hostnames:</strong> Cloud platforms assign generic fallback PTR hostnames like <code>ec2-198-51-100-25.compute-1.amazonaws.com</code> by default. Major inbox providers classify generic cloud patterns as residential or unconfigured hosts, requiring custom domain replacement (<code>mail.example.com</code>).
@@ -268,7 +268,7 @@ SMTP Banner (In Mail Software): EHLO mail.example.com          (All 3 Match = FC
 
       <h2 id="how-to-check-any-ips-ptr-record-dig--x-nslookup-and-browser-doh">How to Check Any IP's PTR Record (dig -x, nslookup, and Browser DoH)</h2>
       <p>
-        Verifying live PTR records and validating two-way FCrDNS synchronization requires executing <strong class="text-ink">3 diagnostic steps across terminal queries and browser-based lookups</strong>:
+        Checking the live PTR record for any IPv4 or IPv6 address and verifying Forward-Confirmed Reverse DNS (FCrDNS) requires <strong class="text-ink">running a browser lookup or terminal dig -x command across 3 steps</strong>:
       </p>
 
       <pre class="my-4 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft leading-relaxed"><code># 1. Reverse DNS query using dig -x on Linux / macOS (automatically handles octet reversal):
@@ -314,7 +314,7 @@ nslookup 198.51.100.25 1.1.1.1</code></pre>
         </details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is a PTR record the same thing as the "ptr" mechanism inside an SPF record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, in real-world email setups these represent two distinct concepts: publishing a DNS PTR record on your sending server IP address is mandatory for inbox delivery, whereas using the ptr mechanism inside an SPF record (v=spf1 ptr) is deprecated by RFC 7208 due to severe performance overhead. Production SPF records specify ip4: or a: mechanisms instead.</p>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, in real-world email setups this is a critical distinction: publishing a DNS PTR record on your sending server IP address is mandatory for inbox delivery, whereas using the ptr mechanism inside an SPF record (v=spf1 ptr) is deprecated by RFC 7208 due to severe performance overhead. Production SPF records specify ip4: or a: mechanisms instead.</p>
         </details>
       </div>
     </div>
