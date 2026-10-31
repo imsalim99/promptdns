@@ -105,12 +105,12 @@ example.com.    300     IN    ALIAS myapp.herokuapp.com.   ; <-- Synthesizes A /
         Modern cloud platforms like Vercel, Netlify, Heroku, Shopify, and AWS Elastic Load Balancing provide dynamic target hostnames rather than fixed IP addresses. Infrastructure providers rotate underlying IP addresses frequently during scaling cycles. Entering a static IP in a standard address record creates brittleness, while publishing a CNAME at the apex breaks domain delegation. An ALIAS record resolves this dilemma by delivering dynamic hostname tracking while preserving compatibility with all apex records.
       </p>
       <p>
-        Authoritative nameservers enforce precise coexistence rules for synthesized aliasing: an ALIAS record coexists alongside SOA, NS, MX, and TXT records, but conflicts with CNAME or HTTP Web Redirect records configured on the exact same hostname. Furthermore, DNS providers support publishing multiple ALIAS records under a single hostname, enabling administrators to combine multiple dynamic targets for automated round-robin traffic distribution.
+        Authoritative nameservers enforce precise coexistence rules for synthesized aliasing: an ALIAS record coexists alongside SOA, NS, MX, and TXT records, but conflicts with CNAME or HTTP Web Redirect records configured on the exact same hostname. 
       </p>
 
       <h2 id="how-does-an-alias-or-aname-record-work-behind-the-scenes-5-steps">How Does an ALIAS or ANAME Record Work Behind the Scenes? (5 Steps)</h2>
       <p>
-        An ALIAS or ANAME record works across <strong class="text-ink">5 server-side resolution steps where your authoritative DNS provider resolves the target hostname internally and returns synthesized <code>A</code> or <code>AAAA</code> records to the visitor</strong>. Authoritative servers <strong class="text-ink">continue serving the most recently cached IP address</strong> to prevent visitor downtime whenever a target fails to resolve transiently, while publishing multiple ALIAS records on the same domain name supports Round-Robin traffic distribution.
+        An ALIAS or ANAME record works across <strong class="text-ink">5 server-side resolution steps where your authoritative DNS provider resolves the target hostname internally and returns synthesized <code>A</code> or <code>AAAA</code> records to the visitor</strong>. Authoritative servers <strong class="text-ink">continue serving the most recently cached IP address</strong> to prevent visitor downtime whenever a target fails to resolve transiently, while pointing an ALIAS record to a target hostname that resolves to multiple A or AAAA addresses preserves Round-Robin traffic distribution.
       </p>
       <p>
         Server-side record synthesis follows this sequential 5-step process:

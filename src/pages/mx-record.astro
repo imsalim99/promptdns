@@ -85,7 +85,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-is-the-structure-of-an-mx-record-in-dns-fields-and-syntax">What Is the Structure of an MX Record in DNS? (Fields and Syntax)</h2>
       <p>
-        An MX record (DNS Type 15) routes inbound messages <strong class="text-ink">in accordance with the Simple Mail Transfer Protocol (SMTP)</strong>, where backup MX servers require the exact same anti-spam filtering as the primary MX server so spammers cannot bypass filters via higher-numbered backup MX hosts. The record contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component.
+        An MX record (DNS Type 15) routes inbound messages <strong class="text-ink">in accordance with the Simple Mail Transfer Protocol (SMTP)</strong> by mapping a domain name to one or more prioritized mail exchange hostnames. The record contains <strong class="text-ink">5 zone fields: the domain host (<code>@</code>), record type (<code>MX</code>), Time to Live (<code>TTL</code>), a priority integer (<code>0</code> to <code>65535</code>), and the target mail server hostname</strong>. The table below defines each component.
       </p>
 
       <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code>example.com.    3600    IN    MX    10 mail1.example.com.
@@ -136,7 +136,7 @@ example.com.    3600    IN    MX    20 mail2.example.com.</code></pre>
         Organizations utilize these 3 architectural priority layouts:
       </p>
       <ol>
-        <li><strong>Primary and Backup Failover (Distinct Priority Numbers, e.g., <code>10</code> and <code>20</code>):</strong> Senders query priority <code>10</code> first and contact priority <code>20</code> only if the primary server is offline. Numerical increments allow inserting intermediate gateways later without renumbering existing records.</li>
+        <li><strong>Primary and Backup Failover (Distinct Priority Numbers, e.g., <code>10</code> and <code>20</code>):</strong> Senders query priority <code>10</code> first and contact priority <code>20</code> only if the primary server is offline. Numerical increments allow inserting intermediate gateways later without renumbering existing records, and backup MX servers require the exact same anti-spam filtering as the primary MX server so spammers cannot bypass filters via higher-numbered hosts.</li>
         <li><strong>Equal-Priority Load Distribution (Identical Priority Numbers, e.g., <code>10</code> and <code>10</code>):</strong> Assigning identical priority numbers directs senders to randomize selection, distributing inbound mail evenly across multiple mail processing nodes.</li>
         <li><strong>Single Anycast MX Endpoint (Modern Cloud Providers, e.g., Priority <code>0</code> or <code>1</code>):</strong> Providers like Microsoft 365 and Google Workspace manage redundancy at the global Anycast layer behind a single hostname.</li>
       </ol>

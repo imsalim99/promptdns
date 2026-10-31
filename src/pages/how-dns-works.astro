@@ -84,7 +84,7 @@ const faq = {
     <div class="rich-text mt-8">
       <h2 id="what-happens-on-your-device-before-a-dns-query-enters-the-network">What Happens on Your Device Before a DNS Query Enters the Network?</h2>
       <p>
-        A client device executes <strong class="text-ink">4 local pre-resolution checks across the application, browser cache, operating system <abbr class="pd-term" data-tip="A client-side DNS cache that stores recent lookups directly on your computer or smartphone">stub resolver</abbr>, and local hosts file</strong> before transmitting a DNS packet over the network.
+        A client device executes <strong class="text-ink">4 local pre-resolution checks across the application, browser cache, local hosts file, and operating system <abbr class="pd-term" data-tip="A client-side DNS cache that stores recent lookups directly on your computer or smartphone">stub resolver</abbr></strong> before transmitting a DNS packet over the network.
       </p>
       <p>
         Client operating systems process hostname requests through 4 local stages:
@@ -92,8 +92,8 @@ const faq = {
       <ol>
         <li><strong>Validate</strong> whether the destination string is already an IPv4 address (such as 192.0.2.1) or an IPv6 literal using a regular expression check, which skips DNS resolution entirely if matched.</li>
         <li><strong>Inspect</strong> the application or web browser internal DNS cache (such as Chromium's in-memory host cache at <code>chrome://net-internals/#dns</code>) for an active, unexpired address mapping.</li>
-        <li><strong>Query</strong> the operating system stub resolver daemon: Windows DNS Client (dnscache), macOS mDNSResponder, or Linux systemd-resolved (governed by /etc/nsswitch.conf) to retrieve records cached at the OS kernel or service level.</li>
         <li><strong>Parse</strong> the local static hosts file (/etc/hosts on Linux and macOS, or C:\Windows\System32\drivers\etc\hosts on Windows) for manual hostname-to-IP overrides such as 127.0.0.1 localhost.</li>
+        <li><strong>Query</strong> the operating system stub resolver daemon: Windows DNS Client (dnscache), macOS mDNSResponder, or Linux systemd-resolved (governed by /etc/nsswitch.conf) to retrieve records cached at the OS kernel or service level.</li>
       </ol>
       <p>
         Evaluating these local checkpoints first eliminates unnecessary network queries whenever an application or operating system already holds a valid address record.
@@ -104,7 +104,7 @@ const faq = {
         A client device discovers its primary recursive DNS server IP address through <strong class="text-ink">3 configuration mechanisms: Dynamic Host Configuration Protocol (DHCP), IPv6 Router Advertisements, or manual network interface settings</strong>.
       </p>
       <p>
-        On IPv4 local area networks, routers provide local recursive server addresses through DHCP when the device connects. On IPv6 networks, routers broadcast recursive DNS server addresses via automated router advertisements. Network administrators can override automatic router settings by assigning manual public resolvers, including Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), AliDNS (223.5.5.5), and Quad9 (9.9.9.9). Administrators clear stale OS stub entries using the commands in <a href="/flush-dns-cache/">How to Flush DNS Cache</a> when local resolver settings change.
+        On IPv4 local area networks, routers provide local recursive server addresses through DHCP when the device connects. On IPv6 networks, routers advertise recursive DNS server addresses via multicast IPv6 Router Advertisements (RFC 8106 RDNSS). Network administrators can override automatic router settings by assigning manual public resolvers, including Cloudflare (1.1.1.1), Google Public DNS (8.8.8.8), AliDNS (223.5.5.5), and Quad9 (9.9.9.9). Administrators clear stale OS stub entries using the commands in <a href="/flush-dns-cache/">How to Flush DNS Cache</a> when local resolver settings change.
       </p>
 
       <h2 id="how-does-a-recursive-dns-lookup-work-across-the-4-server-tiers">How Does a Recursive DNS Lookup Work Across the 4 Server Tiers?</h2>

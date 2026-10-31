@@ -183,9 +183,9 @@ const faq = {
       </section>
 
       <section>
-        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-1-how-to-block-ai-crawlers-in-robotstxt">Method 1: How to Block AI Crawlers in robots.txt (2 Copy-Paste Templates)</h2>
+        <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="method-1-how-to-block-ai-crawlers-in-robotstxt">Method 1: How to Block AI Crawlers in robots.txt (3 Copy-Paste Templates)</h2>
         <p>
-          To block compliant AI crawlers using your <abbr class="pd-term" data-tip="A standardized text file placed at the web root instructing web robots which URLs they are permitted to crawl.">robots.txt</abbr> file, paste <strong class="text-ink">1 of 2 rule templates at the root of your domain (<code>https://example.com/robots.txt</code>) depending on whether you want to block only AI model training or block all AI bots completely</strong>.
+          To block compliant AI crawlers using your <abbr class="pd-term" data-tip="A standardized text file placed at the web root instructing web robots which URLs they are permitted to crawl.">robots.txt</abbr> file, paste <strong class="text-ink">1 of 3 rule templates at the root of your domain (<code>https://example.com/robots.txt</code>) depending on whether you want to block only AI model training or block all AI bots completely</strong>.
         </p>
 
         <p>
@@ -218,6 +218,7 @@ User-agent: Bytespider
 Disallow: /
 
 User-agent: cohere-ai
+User-agent: Diffbot
 Disallow: /
 
 User-agent: OAI-SearchBot
@@ -276,11 +277,13 @@ Disallow: /pricing/</code></pre>
           <li class="leading-relaxed">
             <strong class="text-ink">Block AI Crawlers in NGINX:</strong> The NGINX <code>map</code> directive matches user-agent strings via hash tables. Add this block to the <code>http &#123;&#125;</code> section of your configuration, then reject matching traffic inside your <code>server &#123;&#125;</code> block:
             <div class="my-3 overflow-x-auto rounded-xl border border-line bg-panel/60 p-4 font-mono text-xs leading-relaxed text-ink-dim">
-              <pre><code>map $http_user_agent $block_ai_bots &#123;
+              <pre><code># 1. Place inside the http &#123;&#125; block in nginx.conf:
+map $http_user_agent $block_ai_bots &#123;
     default 0;
     "~*(GPTBot|ClaudeBot|CCBot|Bytespider|Meta-ExternalAgent|cohere-ai)" 1;
 &#125;
 
+# 2. Place inside your site's server &#123;&#125; block:
 if ($block_ai_bots) &#123;
     return 403;
 &#125;</code></pre>

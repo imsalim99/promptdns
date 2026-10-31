@@ -109,7 +109,7 @@ const faq = {
               <tr><td class="font-medium text-ink font-mono text-accent">AS1 to AS64495</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs</td><td class="text-sm text-ink-dim">Assigned by RIRs for public BGP routing.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS64496 to AS64511</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm text-ink-dim">Documentation ASNs</td><td class="text-sm text-ink-dim">Reserved by IANA for documentation and examples.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS64512 to AS65534</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (1,023 total)</td><td class="text-sm text-ink-dim">Reserved for internal BGP networks; never announced publicly.</td></tr>
-              <tr><td class="font-medium text-ink font-mono text-accent">AS65536 to AS4199999999</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs</td><td class="text-sm text-ink-dim">Expanded 4-byte pool introduced after 16-bit exhaustion.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS65536 to AS4199999999</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs (AS65536-65551 reserved for docs)</td><td class="text-sm text-ink-dim">Expanded 4-byte pool introduced after 16-bit exhaustion.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS4200000000 to AS4294967294</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (~94.9M total)</td><td class="text-sm text-ink-dim">Expanded 32-bit pool for data center and cloud peering.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS0 and AS65535</td><td class="text-sm text-ink-dim">16-bit / 32-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">Reserved by IANA (AS23456 serves as AS_TRANS for legacy interop).</td></tr>
             </tbody>
@@ -213,9 +213,9 @@ const faq = {
       <pre class="my-3 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code># Query ASN, BGP Prefix, Country, and RIR via WHOIS:
 whois -h whois.cymru.com " -v 1.1.1.1"
 
-# Or query ASN via DNS TXT lookup (reversed IP octets):
-dig +short 1.1.1.1.origin.asn.cymru.com TXT
-# Returns: "13335 | 1.1.1.0/24 | US | arin | 2014-03-28"</code></pre>
+# Or query ASN via DNS TXT lookup (reverse the 4 IPv4 octets, e.g., 93.184.216.34 -> 34.216.184.93):
+dig +short 34.216.184.93.origin.asn.cymru.com TXT
+# Returns: "15133 | 93.184.216.0/24 | US | arin | 2007-06-04"</code></pre>
 
       <p>
         Understanding how an Autonomous System Number (ASN) operates clarifies the routing foundation connecting independent networks. From BGP path selection and bit allocations to Regional Internet Registries (RIRs) and multi-homed ISP failover, ASNs organize billions of endpoints into a fault-tolerant topology. Explore broader networking guides inside the <a href="/ip-and-networking/">IP and Networking</a> knowledge base.

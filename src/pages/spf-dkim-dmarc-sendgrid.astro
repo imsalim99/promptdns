@@ -66,7 +66,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Authenticating SendGrid requires <strong class="text-ink">publishing 3 delegated CNAME records (<code>emXXXX</code>, <code>s1._domainkey</code>, and <code>s2._domainkey</code>) for Automated Security, updating your root SPF record (<code>include:sendgrid.net</code>), and adding a <code>_dmarc</code> TXT policy</strong>. These records replace SendGrid's shared bounce domain with yours. The setup ensures 100% DMARC alignment and inbox placement.
+        Authenticating SendGrid requires <strong class="text-ink">publishing 3 delegated CNAME records (<code>emXXXX</code>, <code>s1._domainkey</code>, and <code>s2._domainkey</code>) for Automated Security (or adding <code>include:sendgrid.net</code> to your root SPF record for manual security) and publishing a <code>_dmarc</code> TXT policy</strong>. These records replace SendGrid's shared bounce domain with yours. The setup ensures 100% DMARC alignment and inbox placement.
       </p>
     </div>
 
@@ -128,7 +128,7 @@ const faq = {
                 <td class="p-3 font-mono text-xs text-ink-dim">TXT</td>
                 <td class="p-3 font-mono text-xs text-ink-dim">@</td>
                 <td class="p-3 font-mono text-xs text-ink-dim">v=spf1 include:sendgrid.net ~all</td>
-                <td class="p-3 text-sm font-medium text-amber-400">+1 DNS lookup (resolves to ab.sendgrid.net)</td>
+                <td class="p-3 text-sm font-medium text-amber-400">+2 total DNS lookups (1 top-level + 1 nested ab.sendgrid.net)</td>
               </tr>
               <tr>
                 <td class="p-3 font-semibold text-ink">5. DMARC Policy Record</td>
@@ -202,7 +202,7 @@ v=spf1 include:_spf.google.com include:spf.protection.outlook.com include:sendgr
         </ol>
 
         <p class="mt-4">
-          Publishing multiple <code>v=spf1</code> records on the root domain invalidates SPF validation completely. Consolidating all authorized sending services into a single TXT entry preserves deliverability, while adding <code>include:sendgrid.net</code> consumes +1 DNS lookup toward <a href="/spf-lookup-limit/">The SPF 10-Lookup Limit Explained</a>. Administrators verify record syntax using the <a href="/spf-record-checker/">SPF Record Checker</a> or reduce nested lookups via the <a href="/spf-flattener/">SPF Flattener</a>.
+          Publishing multiple <code>v=spf1</code> records on the root domain invalidates SPF validation completely. Consolidating all authorized sending services into a single TXT entry preserves deliverability, while adding <code>include:sendgrid.net</code> consumes +2 DNS lookups toward <a href="/spf-lookup-limit/">The SPF 10-Lookup Limit Explained</a>. Administrators verify record syntax using the <a href="/spf-record-checker/">SPF Record Checker</a> or reduce nested lookups via the <a href="/spf-flattener/">SPF Flattener</a>.
         </p>
       </section>
 

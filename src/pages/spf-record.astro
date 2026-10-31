@@ -111,7 +111,7 @@ const faq = {
         <pre class="overflow-x-auto rounded-xl border border-line bg-panel-2/90 p-4 font-mono text-xs text-accent-soft"><code>v=spf1 ip4:192.0.2.0/24 include:_spf.google.com include:sendgrid.net -all</code></pre>
       </div>
       <p>
-        Mechanisms define which IP addresses or hostnames are authorized to send mail, and each mechanism carries a specific DNS query cost. The table below lists the 9 SPF mechanisms and modifiers by lookup cost, syntax example, and evaluation behavior.
+        Mechanisms define which IP addresses or hostnames are authorized to send mail, and each mechanism carries a specific DNS query cost. The table below lists the 8 core SPF mechanisms and modifiers by syntax example and DNS lookup cost.
       </p>
       <section class="not-prose my-4" aria-label="Reference table">
         <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
@@ -120,7 +120,7 @@ const faq = {
             <tbody>
               <tr><td class="font-medium text-ink">include</td><td class="text-sm text-ink-dim">include:_spf.google.com</td><td class="text-sm text-ink-dim">1 (plus nested includes)</td></tr>
               <tr><td class="font-medium text-ink">a</td><td class="text-sm text-ink-dim">a:mail.example.com</td><td class="text-sm text-ink-dim">1</td></tr>
-              <tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 (plus A lookups of each MX)</td></tr>
+              <tr><td class="font-medium text-ink">mx</td><td class="text-sm text-ink-dim">mx:example.com</td><td class="text-sm text-ink-dim">1 toward the 10-lookup limit (up to 10 MX A/AAAA sub-lookups allowed)</td></tr>
               <tr><td class="font-medium text-ink">ptr</td><td class="text-sm text-ink-dim">ptr:example.com</td><td class="text-sm text-ink-dim">1 (deprecated, avoid)</td></tr>
               <tr><td class="font-medium text-ink">exists</td><td class="text-sm text-ink-dim">exists:verify.example.com</td><td class="text-sm text-ink-dim">1</td></tr>
               <tr><td class="font-medium text-ink">redirect</td><td class="text-sm text-ink-dim">redirect=example.com</td><td class="text-sm text-ink-dim">1 (replaces the record)</td></tr>
@@ -131,7 +131,7 @@ const faq = {
         </div>
       </section>
       <p>
-        The operational split between 0-lookup terms and DNS-querying mechanisms governs record efficiency. Mechanisms such as v=spf1, ip4, ip6, and all consume 0 DNS lookups, whereas include, a, mx, ptr, exists, and redirect= each consume 1 DNS lookup (plus any nested lookups inside an include target). The SPF specification explicitly deprecates the ptr mechanism because reverse DNS lookups impose heavy query latency and fail unpredictably under high mail volume. Administrators can review macro expansion and advanced syntax in the <a href="/spf-record-syntax/">SPF Record Syntax</a> guide or inspect mechanism behavior in <a href="/spf-mechanisms-explained/">SPF Mechanisms Explained</a>.
+        The operational split between 0-lookup terms and DNS-querying mechanisms governs record efficiency. Terms such as the v=spf1 version tag, ip4, ip6, and all consume 0 DNS lookups, whereas include, a, mx, ptr, exists, and redirect= each consume 1 DNS lookup (plus any nested lookups inside an include target). The SPF specification explicitly deprecates the ptr mechanism because reverse DNS lookups impose heavy query latency and fail unpredictably under high mail volume. Administrators can review macro expansion and advanced syntax in the <a href="/spf-record-syntax/">SPF Record Syntax</a> guide or inspect mechanism behavior in <a href="/spf-mechanisms-explained/">SPF Mechanisms Explained</a>.
       </p>
 
       <h3 id="what-are-the-4-spf-qualifiers-and-2-modifiers">What Are the 4 SPF Qualifiers (+, -, ~, ?) and 2 Modifiers?</h3>
@@ -165,7 +165,7 @@ const faq = {
               <tr><td class="font-medium text-ink">SoftFail (~all)</td><td class="text-sm text-ink-dim">IP is probably not authorized</td><td class="text-sm text-ink-dim">Accept but flag as suspicious</td></tr>
               <tr><td class="font-medium text-ink">Neutral (?)</td><td class="text-sm text-ink-dim">Record asserts nothing about the IP</td><td class="text-sm text-ink-dim">Treat like no SPF</td></tr>
               <tr><td class="font-medium text-ink">None</td><td class="text-sm text-ink-dim">No SPF record published</td><td class="text-sm text-ink-dim">No SPF evaluation possible</td></tr>
-              <tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Accept and retry later (transient)</td></tr>
+              <tr><td class="font-medium text-ink">TempError</td><td class="text-sm text-ink-dim">DNS timeout or SERVFAIL during evaluation</td><td class="text-sm text-ink-dim">Defer with 4xx temporary rejection (sender retries later)</td></tr>
               <tr><td class="font-medium text-ink">PermError</td><td class="text-sm text-ink-dim">Record is malformed or exceeds limits</td><td class="text-sm text-ink-dim">Permanent evaluation failure</td></tr>
             </tbody>
           </table>

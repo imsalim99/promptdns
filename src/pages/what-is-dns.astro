@@ -105,7 +105,7 @@ const faq = {
       <ol>
         <li><strong>Transmit</strong> the hostname request from the web browser to the operating system stub resolver, which checks local memory before forwarding the query across the network.</li>
         <li><strong>Query</strong> a DNS root nameserver (.) from the recursive resolver when the requested domain does not exist in local recursor memory.</li>
-        <li><strong>Return</strong> an authoritative referral from the root nameserver containing the IP addresses (<abbr class="pd-term" data-tip="An A or AAAA address record published by a parent registry to provide the IP of an in-bailiwick nameserver">glue records</abbr>) of the Top-Level Domain (.com) nameservers.</li>
+        <li><strong>Return</strong> a delegation referral from the root nameserver containing the IP addresses (<abbr class="pd-term" data-tip="An A or AAAA address record published by a parent registry to provide the IP of an in-bailiwick nameserver">glue records</abbr>) of the Top-Level Domain (.com) nameservers.</li>
         <li><strong>Send</strong> an iterative query from the recursive resolver to the assigned .com TLD nameserver.</li>
         <li><strong>Respond</strong> from the .com TLD nameserver with the nameserver (NS) records assigned to the requested domain.</li>
         <li><strong>Forward</strong> the query from the recursive resolver to the authoritative nameserver specified in the TLD referral.</li>
@@ -130,7 +130,7 @@ const faq = {
       </p>
       <ul>
         <li><strong>Recursive Query:</strong> The client stub resolver queries a recursive resolver with the Recursion Desired (RD=1) bit set in the DNS header. The recursive resolver returns either the requested resource record or an explicit error response (such as <abbr class="pd-term" data-tip="A DNS response code indicating that the queried domain name does not exist">NXDOMAIN</abbr> or <abbr class="pd-term" data-tip="A DNS error code indicating that the nameserver encountered an internal failure or DNSSEC signature mismatch">SERVFAIL</abbr>).</li>
-        <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. The queried nameserver returns an authoritative referral pointing to nameservers lower in the DNS tree if the queried nameserver does not hold the exact record.</li>
+        <li><strong>Iterative Query:</strong> The recursive resolver queries root, TLD, and authoritative nameservers without recursion. The queried nameserver returns a delegation referral pointing to nameservers lower in the DNS tree if the queried nameserver does not hold the exact record.</li>
         <li><strong>Non-Recursive Query:</strong> The resolver answers the query immediately without contacting upstream servers, either because the requested record already resides in local cache or because the queried server holds authoritative data for the zone.</li>
       </ul>
       <p>
@@ -162,7 +162,7 @@ const faq = {
 
       <h2 id="which-dns-record-types-control-web-traffic-email-and-domain-security">Which DNS Record Types Control Web Traffic, Email, and Domain Security?</h2>
       <p>
-        A DNS zone file contains <strong class="text-ink">resource records (RRs) identified by numeric IANA type codes that direct web traffic, route SMTP email, and publish cryptographic keys</strong>. The table below lists the 10 primary DNS record types with their decimal type codes, RFC specifications, functions, and live lookup tools.
+        A DNS zone file contains <strong class="text-ink">resource records (RRs) identified by numeric IANA type codes that direct web traffic, route SMTP email, and publish cryptographic keys</strong>. The table below lists the 10 primary DNS record types with their decimal IANA type codes, mappings, and core use cases.
       </p>
       <section class="not-prose my-4" aria-label="Reference table">
         <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
