@@ -151,7 +151,7 @@ const lg = (n, s) => {
     };const nm = (n, b) => E('span', { class: 'fx', style: 'gap:8px;flex-wrap:nowrap' }, lg(n) || '', b ? E('b', {}, n) : n);
 
     // ================= data =================
-    type DRow = { id: number; n: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
+    type DRow = { id: number; n: string; paused: boolean; verified: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
     let DOMS: DRow[] = [];
     let OV: any = null;
     let ALERTS: { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string }[] = [];
@@ -178,7 +178,7 @@ const lg = (n, s) => {
     async function refreshAll() {
       const [d, o, a] = await Promise.all([getJSON('/api/domains'), getJSON('/api/overview'), getJSON('/api/alerts')]);
       if (d && d.ok) {
-        DOMS = (d.domains || []).map((x: any) => ({ id: x.id, n: x.domain, paused: !!x.paused, score: x.score, grade: x.grade, checkedAt: x.checkedAt, checks: x.checks || [], records: x.records || [] }));
+        DOMS = (d.domains || []).map((x: any) => ({ id: x.id, n: x.domain, paused: !!x.paused, verified: !!x.verified, score: x.score, grade: x.grade, checkedAt: x.checkedAt, checks: x.checks || [], records: x.records || [] }));
         MAXD = d.max || 3;
       }
       OV = o && o.ok ? o : null;
@@ -281,7 +281,7 @@ const lg = (n, s) => {
         E('tbody', {}, rows.length ? rows.map((d) => {
           const i = DOMS.indexOf(d);
           return E('tr', { class: 'cl' },
-            E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
+            E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : '', d.verified ? ' ' : '', d.verified ? pill('Verified', 'ok') : ''),
             E('td', {}, nm(providerOf(d), 1) || E('span', { class: 'sub' }, providerOf(d))),
             E('td', { class: 'm' }, String((d.records || []).length)),
             E('td', {}, checkChips(d)),
@@ -797,8 +797,9 @@ const lg = (n, s) => {
       const head = E('div', { class: 'cd' }, E('div', { class: 'fx sp' },
         E('div', { class: 'fx' }, ring(d.score), E('div', {},
           E('b', { style: 'font-size:16px' }, d.n),
-          E('div', { class: 'sub' }, 'grade ' + gradeOf(d.score) + ' - ' + (d.paused ? 'monitoring paused' : 'monitoring active') + (d.checkedAt ? ' - last check ' + fmtWhen(d.checkedAt) : ' - not checked yet')))),
+          E('div', { class: 'sub' }, 'grade ' + gradeOf(d.score) + ' - ' + (d.paused ? 'monitoring paused' : 'monitoring active') + (d.checkedAt ? ' - last check ' + fmtWhen(d.checkedAt) : ' - not checked yet') + ' - ' + (d.verified ? 'verified' : 'not verified')), d.verified ? pill('Verified', 'ok') : pill('Not verified', 'wn'))),
         E('div', { class: 'fx' },
+          d.verified ? '' : E('button', { class: 'btn', onclick: () => verifyModal(d) }, 'Verify ownership'),
           E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(() => go()) }, 'Rescan'),
           E('button', { class: 'btn', onclick: () => doPause(d).then(() => go()) }, d.paused ? 'Resume' : 'Pause'),
           E('button', { class: 'btn', style: 'color:var(--bd)', onclick: () => doDelete(d) }, 'Remove domain'))));
@@ -850,6 +851,38 @@ const lg = (n, s) => {
         bad.length && (S.dtab || 'ov') === 'ov' ? E('div', { class: 'cd', style: 'margin-bottom:14px;background:var(--ws)' },
           E('b', {}, bad.length + ' check' + (bad.length === 1 ? '' : 's') + ' need attention.'),
           E('p', { class: 'sub', style: 'margin:4px 0 0' }, bad.map((c) => c.label).join(', ') + ' did not pass on the last scan.')) : '', body);
+    }
+
+    // ================= ownership verification =================
+    async function verifyModal(d: DRow) {
+      const j = await postJSON('/api/domains/verify/start?id=' + d.id);
+      if (!j || !j.ok) return toast((j && j.error) || 'Could not start verification.');
+      if (j.verified) {
+        toast('Domain is already verified.');
+        await refreshAll();
+        return;
+      }
+      const value = j.record.value;
+      const copyBtn = E('button', { class: 'btn p', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(value); toast('Copied to clipboard'); } }, 'Copy value');
+      const checkBtn = E('button', { class: 'btn p', onclick: async () => {
+        checkBtn.disabled = true;
+        toast('Checking DNS for the TXT record...');
+        const r = await postJSON('/api/domains/verify/check?id=' + d.id);
+        if (r && r.ok && r.verified) { cdr(); toast('Domain verified. Ownership confirmed.'); await refreshAll(); }
+        else if (r && r.ok) { checkBtn.disabled = false; toast(r.message || 'TXT record not found yet. Check the value and propagation.'); }
+        else { checkBtn.disabled = false; toast((r && r.error) || 'Check failed. Try again.'); }
+      } }, 'Check now');
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Verify ownership' },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'Verify ownership'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          E('p', { class: 'sub', style: 'margin:10px 0 12px' }, 'Prove you control ' + d.n + ' by publishing this TXT record at your DNS provider. Verification unlocks managed records and paid features.'),
+          E('div', { class: 'cd', style: 'margin-bottom:12px' },
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Type'), E('span', { class: 'm' }, 'TXT')),
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Name'), E('span', { class: 'm' }, '@ (your domain)')),
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Value'), E('span', { class: 'm' }, value))),
+          E('div', { class: 'fx', style: 'margin-bottom:12px' }, copyBtn, checkBtn),
+          E('p', { class: 'sub' }, 'DNS changes can take a few minutes to propagate. Keep the record published - re-verification may use it again.')));
     }
 
     // ================= workspaces (sample until the agency release) =================

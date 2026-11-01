@@ -165,3 +165,9 @@ ALTER TABLE domains ADD COLUMN records_json TEXT;
 
 ALTER TABLE waitlist ADD COLUMN verified_at TEXT;
 ALTER TABLE waitlist ADD COLUMN token_hash TEXT;
+
+-- v10: domain ownership verification (TXT challenge at the zone apex).
+
+ALTER TABLE domains ADD COLUMN verified INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE domains ADD COLUMN verification_token TEXT;
+ALTER TABLE domains ADD COLUMN verified_at TEXT;
