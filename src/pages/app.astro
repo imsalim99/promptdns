@@ -21,54 +21,62 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <div id="dash-shell" hidden>
       <div class="app"><aside id="side"></aside><main id="main"></main></div>
-      <p class="sub" style="padding:0 26px 28px;margin:0">Provider logos: Simple Icons (CC0) and Font Awesome Free (CC BY 4.0). All trademarks belong to their owners and are shown only to identify providers.</p>
+      <footer class="dv-foot">Provider logos via Simple Icons (CC0) and Font Awesome Free (CC BY 4.0). All trademarks belong to their owners and are shown only to identify providers.</footer>
       <div id="ly"></div>
     </div>
   </div>
 
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style is:global>
-    :root{--bg:#F4F5F9;--cd:#fff;--ink:#12161F;--so:#5A6378;--ln:#E3E6EE;--ac:#5B4FE8;--as:#EEECFD;--ad:#2E2599;--ok:#0F766E;--os:#E1F3F1;--wn:#B45309;--ws:#FDF0DC;--bd:#B42318;--bs:#FCE9E7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-    :root[data-theme=dark]{--bg:#0F1219;--cd:#171B26;--ink:#E8EBF3;--so:#98A1B8;--ln:#2A3042;--ac:#8F85FF;--as:#242048;--ad:#CFCBFF;--ok:#4FD1C5;--os:#10302D;--wn:#F6AD55;--ws:#3A2A10;--bd:#FC8181;--bs:#3D1A1A}
+    :root{--bg:#050810;--cd:#0b1222;--cd2:#0d1526;--ln:#1c2a47;--ink:#e6edf7;--so:#94a3b8;--ac:#22d3ee;--vi:#8b5cf6;--as:rgba(34,211,238,.10);--ad:#67e8f9;--onac:#04121a;--ok:#4ade80;--os:rgba(74,222,128,.12);--wn:#fbbf24;--ws:rgba(251,191,36,.12);--bd:#f87171;--bs:rgba(248,113,113,.12);--sg:linear-gradient(180deg,#0a0f1e,#070c18);--fdis:'Space Grotesk','Segoe UI',sans-serif;--fbody:'Inter','Segoe UI',sans-serif;--fmono:'JetBrains Mono',Consolas,monospace;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+    :root[data-theme=light]{--bg:#f5f7fb;--cd:#ffffff;--cd2:#eef2f9;--ln:#d9e1ee;--ink:#101828;--so:#4a5568;--ac:#0e7490;--vi:#6d28d9;--as:rgba(14,116,144,.10);--ad:#0e7490;--onac:#ffffff;--ok:#15803d;--os:rgba(21,128,61,.10);--wn:#b45309;--ws:rgba(180,83,9,.10);--bd:#b91c1c;--bs:rgba(185,28,28,.08);--sg:linear-gradient(180deg,#ffffff,#f5f7fb)}
     #dash-app *{box-sizing:border-box}
     html,body{height:100%}
     html:has(#dash-app){background:var(--bg)}
-    html:has(#dash-app) body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Plus Jakarta Sans',system-ui,sans-serif}
+    html:has(#dash-app) body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--fbody)}
     #dash-app button,#dash-app select,#dash-app input{font:inherit;color:inherit}
     #dash-app button{cursor:pointer}
-    .app{display:grid;grid-template-columns:208px minmax(0,1fr);min-height:100%}
-    #side{background:var(--cd);border-right:1px solid var(--ln);padding:16px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh}
-    .logo{font-weight:800;font-size:16px;padding:4px 10px 14px;display:flex;gap:8px;align-items:center;color:var(--ink);text-decoration:none}
-    .logo i{width:22px;height:22px;border-radius:7px;background:var(--ac)}
-    .nv{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:0;border-radius:9px;background:none;color:var(--so);font-weight:600;text-align:left;width:100%}
-    .nv:hover{background:var(--bg)}.nv.on{background:var(--as);color:var(--ad)}
-    .nv[disabled]{cursor:not-allowed;opacity:.6}
+    .app{min-height:100%}
+    #side{position:fixed;top:0;left:0;bottom:0;width:212px;background:var(--sg);border-right:1px solid var(--ln);padding:16px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;overscroll-behavior:contain;z-index:4}
+    .logo{font-family:var(--fdis);font-weight:700;font-size:17px;padding:2px 8px 14px;display:flex;gap:10px;align-items:center;color:var(--ink);text-decoration:none;letter-spacing:-0.01em}
+    .logo-badge{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--ac),var(--vi));font-family:var(--fmono);font-size:10px;font-weight:700;color:var(--onac);flex:none}
+    .logo-accent{color:var(--ac)}
+    .nv{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:0;border-radius:9px;background:none;color:var(--so);font-weight:500;text-align:left;width:100%}
+    a.nv{text-decoration:none}
+    .nv:hover{background:var(--as);color:var(--ink)}
+    .nv.on{background:var(--as);color:var(--ac);font-weight:600}
+    .nv[disabled]{cursor:not-allowed;opacity:.55}
+    .navbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bd);color:#fff;font-size:10.5px;font-weight:700;flex:none}
     .lab{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--so);padding:12px 10px 4px}
-    #main{padding:20px 26px 40px;min-width:0}
+    #main{margin-left:212px;padding:20px 26px 40px;min-width:0}
     .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-    #dash-app h1{font-size:21px;margin:0}#dash-app h3{margin:0;font-size:14.5px}
+    #dash-app h1{font-size:21px;margin:0;font-family:var(--fdis)}
+    #dash-app h3{margin:0;font-size:14.5px;font-family:var(--fdis);font-weight:600}
+    .hero-label{font-family:var(--fmono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--so);margin:0}
+    .hero-sub{font-family:var(--fdis);font-weight:600;font-size:15px;margin:2px 0 0}
     .sub{color:var(--so);font-size:12.5px}
     .fx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
-    .btn,.sel,.in{border:1px solid var(--ln);background:var(--cd);border-radius:9px;padding:7px 12px;font-weight:600;text-decoration:none;display:inline-block}
-    .btn.p{background:var(--ac);border-color:var(--ac);color:#fff}
+    .btn,.sel,.in{border:1px solid var(--ln);background:var(--cd2);border-radius:8px;padding:7px 13px;font-weight:500;font-size:12.5px;color:var(--ink);text-decoration:none;display:inline-block;transition:border-color .15s}
+    .btn:hover,.sel:hover{border-color:var(--ac)}
+    .btn.p{background:linear-gradient(100deg,var(--ac),var(--vi));border-color:transparent;color:var(--onac);font-family:var(--fdis);font-weight:600;box-shadow:0 8px 30px -10px var(--as)}
     .in{font-weight:500;min-width:200px}
     .btn:focus-visible,.nv:focus-visible,.sel:focus-visible,.in:focus-visible,.seg button:focus-visible,.lk:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
     .g{display:grid;gap:14px;margin-bottom:14px}
     .g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
     .cd{background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:16px 18px;min-width:0}
-    .k{font:700 26px 'JetBrains Mono',monospace}.m{font-family:'JetBrains Mono',monospace;font-size:12px}
+    .k{font:700 26px var(--fmono)}.m{font-family:var(--fmono);font-size:12px}
     .seg{display:inline-flex;border:1px solid var(--ln);border-radius:9px;overflow:hidden}
     .seg button{border:0;background:none;padding:6px 12px;font-weight:700;color:var(--so)}
     .seg .on{background:var(--as);color:var(--ad)}
     #dash-app table{width:100%;border-collapse:collapse;font-size:13px}
-    #dash-app th{text-align:left;font-size:11.5px;color:var(--so);padding:8px 10px;background:var(--bg);font-weight:600;white-space:nowrap}
+    #dash-app th{text-align:left;font-size:11.5px;color:var(--so);padding:8px 10px;background:var(--cd2);font-weight:600;white-space:nowrap}
     #dash-app th button{border:0;background:none;font-weight:600;color:var(--so);padding:0}
     #dash-app td{padding:9px 10px;border-bottom:1px solid var(--ln)}
-    tr.cl{cursor:pointer}tr.cl:hover td{background:var(--bg)}
+    tr.cl{cursor:pointer}tr.cl:hover td{background:var(--as)}
     .pl{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:9px;white-space:nowrap}
     .ok{background:var(--os);color:var(--ok)}.wn{background:var(--ws);color:var(--wn)}.bd{background:var(--bs);color:var(--bd)}.in2{background:var(--as);color:var(--ad)}
-    .lk{border:0;background:none;color:var(--ac);font-weight:700;padding:0}
+    .lk{border:0;background:none;color:var(--ac);font-weight:600;padding:0}
     .tabs{display:flex;gap:18px;border-bottom:1px solid var(--ln);margin-bottom:10px}
     .tabs button{border:0;background:none;padding:8px 0;font-weight:700;color:var(--so);border-bottom:2px solid transparent}
     .tabs .on{color:var(--ac);border-color:var(--ac)}
@@ -86,15 +94,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .dr{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--cd);z-index:6;padding:20px;overflow:auto;box-shadow:-8px 0 30px #0004}
     .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:9;font-weight:600;max-width:min(480px,90vw)}
     .sc{overflow-x:auto}
-    #dash-app pre{background:var(--bg);padding:12px;border-radius:10px;font:12px/1.5 'JetBrains Mono',monospace;margin:0;overflow:auto}
+    #dash-app pre{background:var(--cd2);padding:12px;border-radius:10px;font:12px/1.5 var(--fmono);margin:0;overflow:auto}
     .dv-center{display:grid;place-items:center;min-height:60vh;padding:20px}
     .dv-card{background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:26px;max-width:380px;text-align:center}
     .foot-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--ln);margin-top:auto}
-    .foot-user .av{width:26px;height:26px;border-radius:50%;background:var(--as);color:var(--ad);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none}
+    .foot-user .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--vi));color:var(--onac);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:none}
     .foot-user .em{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .plan{margin:8px 10px 6px;padding:9px 10px;border:1px dashed var(--ln);border-radius:10px;font-size:11.5px;color:var(--so)}
     .plan b{display:block;color:var(--ink)}
-    @media(max-width:900px){.app{grid-template-columns:1fr}#side{position:static;height:auto;flex-direction:row;overflow-x:auto;align-items:center}.lab,.logo,.plan,.foot-user{display:none}.nv{white-space:nowrap;width:auto}.g4,.g2,.g21{grid-template-columns:1fr 1fr}}
+    .dv-foot{border-top:1px solid var(--ln);margin:6px 26px 0 238px;padding:14px 0 24px;text-align:center;font-size:11.5px;color:var(--so)}
+    @media(max-width:900px){#side{position:static;width:auto;height:auto;flex-direction:row;overflow-x:auto;align-items:center}#main,.dv-foot{margin-left:0}.lab,.logo,.plan,.foot-user{display:none}.nv{white-space:nowrap;width:auto}.g4,.g2,.g21{grid-template-columns:1fr 1fr}}
     @media(max-width:560px){.g4,.g2,.g21{grid-template-columns:1fr}#main{padding:14px}}
   </style>
 
@@ -126,17 +135,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const fmtWhen = (iso) => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return iso; return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 
     // provider logos (Simple Icons CC0 / Font Awesome Free CC BY 4.0)
-    const LG = {"cloudflare":["0 0 24 24","M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727","#F38020"],"openai":["0 0 24 24","M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z",null],"anthropic":["0 0 24 24","M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z",null],"perplexity":["0 0 24 24","M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z","#1FB8CD"],"amazon":["0 0 448 512","M257.2 162.7c-48.7 1.8-169.5 15.5-169.5 117.5 0 109.5 138.3 114 183.5 43.2 6.5 10.2 35.4 37.5 45.3 46.8l56.8-56S341 288.9 341 261.4V114.3C341 89 316.5 32 228.7 32 140.7 32 94 87 94 136.3l73.5 6.8c16.3-49.5 54.2-49.5 54.2-49.5 40.7-.1 35.5 29.8 35.5 69.1zm0 86.8c0 80-84.2 68-84.2 17.2 0-47.2 50.5-56.7 84.2-57.8v40.6zm136 163.5c-7.7 10-70 67-174.5 67S34.2 408.5 9.7 379c-6.8-7.7 1-11.3 5.5-8.3C88.5 415.2 203 488.5 387.7 401c7.5-3.7 13.3 2 5.5 12zm39.8 2.2c-6.5 15.8-16 26.8-21.2 31-5.5 4.5-9.5 2.7-6.5-3.8s19.3-46.5 12.7-55c-6.5-8.3-37-4.3-48-3.2-10.8 1-13 2-14-.3-2.3-5.7 21.7-15.5 37.5-17.5 15.7-1.8 41-.8 46 5.7 3.7 5.1 0 27.1-6.5 43.1z",null],"google":["0 0 24 24","M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z","#4285F4"]};
-    const LK = [['openai','openai'],['gptbot','openai'],['chatgpt','openai'],['claude','anthropic'],['anthropic','anthropic'],['perplexity','perplexity'],['google-extended','google'],['google','google'],['amazonbot','amazon'],['amazon','amazon'],['gpt','openai']];
-    const lg = (n, s) => {
+    const LG = {"cloudflare":["0 0 24 24","M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727","#F38020"],"google":["0 0 24 24","M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z","#4285F4"],"namecheap":["0 0 24 24","M17.295 17.484c.227.403.57.728.985.931-.309.15-.647.229-.99.232h-3.068a2.26 2.26 0 0 1-1.957-1.143L6.705 6.511a2.27 2.27 0 0 0-.974-.922c.309-.153.652-.233.997-.232h3.05c.81.003 1.558.438 1.959 1.143l5.558 10.984zm-9.329-7.392L6.269 6.755c-.209-.392-.582-.657-.984-.829-.204.165-.391.35-.522.581-.184.349-4.391 8.648-4.569 8.987a2.245 2.245 0 0 0 4.016 1.999l3.756-7.401zm15.846-1.593a2.245 2.245 0 0 0-1.162-2.955v-.001a2.243 2.243 0 0 0-.892-.187l-.003-.011c-.816 0-1.569.443-1.965 1.157l-3.749 7.414 1.689 3.323c.213.399.59.664.998.839.252-.2.473-.444.605-.742l4.479-8.837z","#DE3723"],"godaddy":["0 0 24 24","M20.702 2.29c-2.494-1.554-5.778-1.187-8.706.654C9.076 1.104 5.79.736 3.3 2.29c-3.941 2.463-4.42 8.806-1.07 14.167 2.47 3.954 6.333 6.269 9.77 6.226 3.439.043 7.301-2.273 9.771-6.226 3.347-5.361 2.872-11.704-1.069-14.167zM4.042 15.328a12.838 12.838 0 01-1.546-3.541 10.12 10.12 0 01-.336-3.338c.15-1.98.956-3.524 2.27-4.345 1.315-.822 3.052-.87 4.903-.137.281.113.556.24.825.382A15.11 15.11 0 007.5 7.54c-2.035 3.255-2.655 6.878-1.945 9.765a13.247 13.247 0 01-1.514-1.98zm17.465-3.541a12.866 12.866 0 01-1.547 3.54 13.25 13.25 0 01-1.513 1.984c.635-2.589.203-5.76-1.353-8.734a.39.39 0 00-.563-.153l-4.852 3.032a.397.397 0 00-.126.546l.712 1.139a.395.395 0 00.547.126l3.145-1.965c.101.306.203.606.28.916.296 1.086.41 2.214.335 3.337-.15 1.982-.956 3.525-2.27 4.347a4.437 4.437 0 01-2.25.65h-.101a4.432 4.432 0 01-2.25-.65c-1.314-.822-2.121-2.365-2.27-4.347-.074-1.123.039-2.251.335-3.337a13.212 13.212 0 014.05-6.482 10.148 10.148 0 012.849-1.765c1.845-.733 3.586-.685 4.9.137 1.316.822 2.122 2.365 2.271 4.345a10.146 10.146 0 01-.33 3.334z","#1BDBDB"],"sendgrid":["0 0 24 24","M.8 24h13.6c.88 0 1.6-.72 1.6-1.6v-4.8c0-.88-.72-1.6-1.6-1.6H9.6c-.88 0-1.6-.72-1.6-1.6V9.6C8 8.72 7.28 8 6.4 8H1.6C.72 8 0 8.72 0 9.6v13.6c0 .44.36.8.8.8zM23.2 0H9.6C8.72 0 8 .72 8 1.6v4.8C8 7.28 8.72 8 9.6 8h4.8c.88 0 1.6.72 1.6 1.6v4.8c0 .88.72 1.6 1.6 1.6h4.8c.88 0 1.6-.72 1.6-1.6V.8c0-.44-.36-.8-.8-.8Z","#1A82E2"],"mailchimp":["0 0 24 24","M11.267 0C6.791-.015-1.82 10.246 1.397 12.964l.79.669a3.88 3.88 0 0 0-.22 1.792c.084.84.518 1.644 1.22 2.266.666.59 1.542.964 2.392.964 1.406 3.24 4.62 5.228 8.386 5.34 4.04.12 7.433-1.776 8.854-5.182.093-.24.488-1.316.488-2.267 0-.956-.54-1.352-.885-1.352-.01-.037-.078-.286-.172-.586-.093-.3-.19-.51-.19-.51.375-.563.382-1.065.332-1.35-.053-.353-.2-.653-.496-.964-.296-.311-.902-.63-1.753-.868l-.446-.124c-.002-.019-.024-1.053-.043-1.497-.014-.32-.042-.822-.197-1.315-.186-.668-.508-1.253-.911-1.627 1.112-1.152 1.806-2.422 1.804-3.511-.003-2.095-2.576-2.729-5.746-1.416l-.672.285A678.22 678.22 0 0 0 12.7.504C12.304.159 11.817.002 11.267 0zm.073.873c.166 0 .322.019.465.058.297.084 1.28 1.224 1.28 1.224s-1.826 1.013-3.52 2.426c-2.28 1.757-4.005 4.311-5.037 7.082-.811.158-1.526.618-1.963 1.253-.261-.218-.748-.64-.834-.804-.698-1.326.761-3.902 1.781-5.357C5.834 3.44 9.37.867 11.34.873zm3.286 3.273c.04-.002.06.05.028.074-.143.11-.299.26-.413.414a.04.04 0 0 0 .031.064c.659.004 1.587.235 2.192.574.041.023.012.103-.034.092-.915-.21-2.414-.369-3.97.01-1.39.34-2.45.863-3.224 1.426-.04.028-.086-.023-.055-.06.896-1.035 1.999-1.935 2.987-2.44.034-.018.07.019.052.052-.079.143-.23.447-.278.678-.007.035.032.063.062.042.615-.42 1.684-.868 2.622-.926zm3.023 3.205l.056.001a.896.896 0 0 1 .456.146c.534.355.61 1.216.638 1.845.015.36.059 1.229.074 1.478.034.571.184.651.487.751.17.057.33.098.563.164.706.198 1.125.4 1.39.658.157.162.23.333.253.497.083.608-.472 1.36-1.942 2.041-1.607.746-3.557.935-4.904.785l-.471-.053c-1.078-.145-1.693 1.247-1.046 2.201.417.615 1.552 1.015 2.688 1.015 2.604 0 4.605-1.111 5.35-2.072a.987.987 0 0 0 .06-.085c.036-.055.006-.085-.04-.054-.608.416-3.31 2.069-6.2 1.571 0 0-.351-.057-.672-.182-.255-.1-.788-.344-.853-.891 2.333.72 3.801.039 3.801.039a.072.072 0 0 0 .042-.072.067.067 0 0 0-.074-.06s-1.911.283-3.718-.378c.197-.64.72-.408 1.51-.345a11.045 11.045 0 0 0 3.647-.394c.818-.234 1.892-.697 2.727-1.356.281.618.38 1.299.38 1.299s.219-.04.4.073c.173.106.299.326.213.895-.176 1.063-.628 1.926-1.387 2.72a5.714 5.714 0 0 1-1.666 1.244c-.34.18-.704.334-1.087.46-2.863.935-5.794-.093-6.739-2.3a3.545 3.545 0 0 1-.189-.522c-.403-1.455-.06-3.2 1.008-4.299.065-.07.132-.153.132-.256 0-.087-.055-.179-.102-.243-.374-.543-1.669-1.466-1.409-3.254.187-1.284 1.31-2.189 2.357-2.135.089.004.177.01.266.015.453.027.85.085 1.223.1.625.028 1.187-.063 1.853-.618.225-.187.405-.35.71-.401.028-.005.092-.028.215-.028zm.022 2.18a.42.42 0 0 0-.06.005c-.335.054-.347.468-.228 1.04.068.32.187.595.32.765.175-.02.343-.022.498 0 .089-.205.104-.557.024-.942-.112-.535-.261-.872-.554-.868zm-3.66 1.546a1.724 1.724 0 0 0-1.016.326c-.16.117-.311.28-.29.378.008.032.031.056.088.063.131.015.592-.217 1.122-.25.374-.023.684.094.923.2.239.104.386.173.443.113.037-.038.026-.11-.031-.204-.118-.192-.36-.387-.618-.497a1.601 1.601 0 0 0-.621-.129zm4.082.81c-.171-.003-.313.186-.317.42-.004.236.131.43.303.432.172.003.314-.185.318-.42.004-.236-.132-.429-.304-.432zm-3.58.172c-.05 0-.102.002-.155.008-.311.05-.483.152-.593.247-.094.082-.152.173-.152.237a.075.075 0 0 0 .075.076c.07 0 .228-.063.228-.063a1.98 1.98 0 0 1 1.001-.104c.157.018.23.027.265-.026.01-.016.022-.049-.01-.1-.063-.103-.311-.269-.66-.275zm2.26.4c-.127 0-.235.051-.283.148-.075.154.035.363.246.466.21.104.443.063.52-.09.075-.155-.035-.364-.246-.467a.542.542 0 0 0-.237-.058zm-11.635.024c.048 0 .098 0 .149.003.73.04 1.806.6 2.052 2.19.217 1.41-.128 2.843-1.449 3.069-.123.02-.248.029-.374.026-1.22-.033-2.539-1.132-2.67-2.435-.145-1.44.591-2.548 1.894-2.811.117-.024.252-.04.398-.042zm-.07.927a1.144 1.144 0 0 0-.847.364c-.38.418-.439.988-.366 1.19.027.073.07.094.1.098.064.008.16-.039.22-.2a1.2 1.2 0 0 0 .017-.052 1.58 1.58 0 0 1 .157-.37.689.689 0 0 1 .955-.199c.266.174.369.5.255.81-.058.161-.154.469-.133.721.043.511.357.717.64.738.274.01.466-.143.515-.256.029-.067.005-.107-.011-.125-.043-.053-.113-.037-.18-.021a.638.638 0 0 1-.16.022.347.347 0 0 1-.294-.148c-.078-.12-.073-.3.013-.504.011-.028.025-.058.04-.092.138-.308.368-.825.11-1.317-.195-.37-.513-.602-.894-.65a1.135 1.135 0 0 0-.138-.01z",null],"salesforce":["0 0 24 24","M10.006 5.415a4.195 4.195 0 013.045-1.306c1.56 0 2.954.9 3.69 2.205.63-.3 1.35-.45 2.1-.45 2.85 0 5.159 2.34 5.159 5.22s-2.31 5.22-5.176 5.22c-.345 0-.69-.044-1.02-.104a3.75 3.75 0 01-3.3 1.95c-.6 0-1.155-.15-1.65-.375A4.314 4.314 0 018.88 20.4a4.302 4.302 0 01-4.05-2.82c-.27.062-.54.076-.825.076-2.204 0-4.005-1.8-4.005-4.05 0-1.5.811-2.805 2.01-3.51-.255-.57-.39-1.2-.39-1.846 0-2.58 2.1-4.65 4.65-4.65 1.53 0 2.85.705 3.72 1.8","#00A1E0"],"hubspot":["0 0 24 24","M18.164 7.93V5.084a2.198 2.198 0 001.267-1.978v-.067A2.2 2.2 0 0017.238.845h-.067a2.2 2.2 0 00-2.193 2.193v.067a2.196 2.196 0 001.252 1.973l.013.006v2.852a6.22 6.22 0 00-2.969 1.31l.012-.01-7.828-6.095A2.497 2.497 0 104.3 4.656l-.012.006 7.697 5.991a6.176 6.176 0 00-1.038 3.446c0 1.343.425 2.588 1.147 3.607l-.013-.02-2.342 2.343a1.968 1.968 0 00-.58-.095h-.002a2.033 2.033 0 102.033 2.033 1.978 1.978 0 00-.1-.595l.005.014 2.317-2.317a6.247 6.247 0 104.782-11.134l-.036-.005zm-.964 9.378a3.206 3.206 0 113.215-3.207v.002a3.206 3.206 0 01-3.207 3.207z","#FF7A59"],"hostinger":["0 0 24 24","M16.415 0v7.16l5.785 3.384V2.949L16.415 0ZM1.8 0v11.237h18.815L14.89 8.09l-7.457-.003V3.024L1.8 0Zm14.615 20.894v-5.019l-7.514-.005c.007.033-5.82-3.197-5.82-3.197l19.119.091V24l-5.785-3.106ZM1.8 13.551v7.343l5.633 2.949v-6.988L1.8 13.551Z","#673DE6"],"mailgun":["0 0 24 24","M11.837 0c6.602 0 11.984 5.381 11.984 11.994-.017 2.99-3.264 4.84-5.844 3.331a3.805 3.805 0 0 1-.06-.035l-.055-.033-.022.055c-2.554 4.63-9.162 4.758-11.894.232-2.732-4.527.46-10.313 5.746-10.416a6.868 6.868 0 0 1 7.002 6.866 1.265 1.265 0 0 0 2.52 0c0-5.18-4.197-9.38-9.377-9.387C4.611 2.594.081 10.41 3.683 16.673c3.238 5.632 11.08 6.351 15.289 1.402l1.997 1.686A11.95 11.95 0 0 1 11.837 24C2.6 23.72-2.87 13.543 1.992 5.684A12.006 12.006 0 0 1 11.837 0Zm0 7.745c-3.276-.163-5.5 3.281-4.003 6.2a4.26 4.26 0 0 0 4.014 2.31c3.276-.171 5.137-3.824 3.35-6.575a4.26 4.26 0 0 0-3.36-1.935Zm0 2.53c1.324 0 2.152 1.433 1.49 2.58a1.72 1.72 0 0 1-1.49.86 1.72 1.72 0 1 1 0-3.44Z","#F06B66"],"openai":["0 0 24 24","M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z",null],"anthropic":["0 0 24 24","M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z",null],"perplexity":["0 0 24 24","M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z","#1FB8CD"],"aws":["0 0 640 512","M180.41 203.01c-.72 22.65 10.6 32.68 10.88 39.05a8.164 8.164 0 0 1-4.1 6.27l-12.8 8.96a10.66 10.66 0 0 1-5.63 1.92c-.43-.02-8.19 1.83-20.48-25.61a78.608 78.608 0 0 1-62.61 29.45c-16.28.89-60.4-9.24-58.13-56.21-1.59-38.28 34.06-62.06 70.93-60.05 7.1.02 21.6.37 46.99 6.27v-15.62c2.69-26.46-14.7-46.99-44.81-43.91-2.4.01-19.4-.5-45.84 10.11-7.36 3.38-8.3 2.82-10.75 2.82-7.41 0-4.36-21.48-2.94-24.2 5.21-6.4 35.86-18.35 65.94-18.18a76.857 76.857 0 0 1 55.69 17.28 70.285 70.285 0 0 1 17.67 52.36l-.01 69.29zM93.99 235.4c32.43-.47 46.16-19.97 49.29-30.47 2.46-10.05 2.05-16.41 2.05-27.4-9.67-2.32-23.59-4.85-39.56-4.87-15.15-1.14-42.82 5.63-41.74 32.26-1.24 16.79 11.12 31.4 29.96 30.48zm170.92 23.05c-7.86.72-11.52-4.86-12.68-10.37l-49.8-164.65c-.97-2.78-1.61-5.65-1.92-8.58a4.61 4.61 0 0 1 3.86-5.25c.24-.04-2.13 0 22.25 0 8.78-.88 11.64 6.03 12.55 10.37l35.72 140.83 33.16-140.83c.53-3.22 2.94-11.07 12.8-10.24h17.16c2.17-.18 11.11-.5 12.68 10.37l33.42 142.63L420.98 80.1c.48-2.18 2.72-11.37 12.68-10.37h19.72c.85-.13 6.15-.81 5.25 8.58-.43 1.85 3.41-10.66-52.75 169.9-1.15 5.51-4.82 11.09-12.68 10.37h-18.69c-10.94 1.15-12.51-9.66-12.68-10.75L328.67 110.7l-32.78 136.99c-.16 1.09-1.73 11.9-12.68 10.75h-18.3zm273.48 5.63c-5.88.01-33.92-.3-57.36-12.29a12.802 12.802 0 0 1-7.81-11.91v-10.75c0-8.45 6.2-6.9 8.83-5.89 10.04 4.06 16.48 7.14 28.81 9.6 36.65 7.53 52.77-2.3 56.72-4.48 13.15-7.81 14.19-25.68 5.25-34.95-10.48-8.79-15.48-9.12-53.13-21-4.64-1.29-43.7-13.61-43.79-52.36-.61-28.24 25.05-56.18 69.52-55.95 12.67-.01 46.43 4.13 55.57 15.62 1.35 2.09 2.02 4.55 1.92 7.04v10.11c0 4.44-1.62 6.66-4.87 6.66-7.71-.86-21.39-11.17-49.16-10.75-6.89-.36-39.89.91-38.41 24.97-.43 18.96 26.61 26.07 29.7 26.89 36.46 10.97 48.65 12.79 63.12 29.58 17.14 22.25 7.9 48.3 4.35 55.44-19.08 37.49-68.42 34.44-69.26 34.42zm40.2 104.86c-70.03 51.72-171.69 79.25-258.49 79.25A469.127 469.127 0 0 1 2.83 327.46c-6.53-5.89-.77-13.96 7.17-9.47a637.37 637.37 0 0 0 316.88 84.12 630.22 630.22 0 0 0 241.59-49.55c11.78-5 21.77 7.8 10.12 16.38zm29.19-33.29c-8.96-11.52-59.28-5.38-81.81-2.69-6.79.77-7.94-5.12-1.79-9.47 40.07-28.17 105.88-20.1 113.44-10.63 7.55 9.47-2.05 75.41-39.56 106.91-5.76 4.87-11.27 2.3-8.71-4.1 8.44-21.25 27.39-68.49 18.43-80.02z","#FF9900"],"amazon":["0 0 448 512","M257.2 162.7c-48.7 1.8-169.5 15.5-169.5 117.5 0 109.5 138.3 114 183.5 43.2 6.5 10.2 35.4 37.5 45.3 46.8l56.8-56S341 288.9 341 261.4V114.3C341 89 316.5 32 228.7 32 140.7 32 94 87 94 136.3l73.5 6.8c16.3-49.5 54.2-49.5 54.2-49.5 40.7-.1 35.5 29.8 35.5 69.1zm0 86.8c0 80-84.2 68-84.2 17.2 0-47.2 50.5-56.7 84.2-57.8v40.6zm136 163.5c-7.7 10-70 67-174.5 67S34.2 408.5 9.7 379c-6.8-7.7 1-11.3 5.5-8.3C88.5 415.2 203 488.5 387.7 401c7.5-3.7 13.3 2 5.5 12zm39.8 2.2c-6.5 15.8-16 26.8-21.2 31-5.5 4.5-9.5 2.7-6.5-3.8s19.3-46.5 12.7-55c-6.5-8.3-37-4.3-48-3.2-10.8 1-13 2-14-.3-2.3-5.7 21.7-15.5 37.5-17.5 15.7-1.8 41-.8 46 5.7 3.7 5.1 0 27.1-6.5 43.1z",null]};
+const LK = [['google','google'],['microsoft','microsoft'],['cloudflare','cloudflare'],['route 53','aws'],['amazon ses','aws'],['amazon','amazon'],['aws','aws'],['namecheap','namecheap'],['godaddy','godaddy'],['hostinger','hostinger'],['sendgrid','sendgrid'],['mailchimp','mailchimp'],['salesforce','salesforce'],['hubspot','hubspot'],['mailgun','mailgun'],['openai','openai'],['gptbot','openai'],['claude','anthropic'],['anthropic','anthropic'],['perplexity','perplexity'],['google-extended','google'],['amazonbot','amazon'],['amazonbot','amazon']];
+const lg = (n, s) => {
       s = s || 20;
       const l = String(n).toLowerCase(), k = (LK.find(([a]) => l.includes(a)) || [])[1];
       if (!k) return null;
+      if (k === 'microsoft') return H('<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F25022" d="M2 2h9.5v9.5H2z"/><path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z"/><path fill="#00A4EF" d="M2 12.5h9.5V22H2z"/><path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z"/></svg>');
       if (k === 'anthropic') return H('<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + LG.anthropic[1] + '"/></svg>');
       const [vb, d, c] = LG[k];
       return H('<svg width="' + s + '" height="' + s + '" viewBox="' + vb + '" aria-hidden="true" style="flex:none"><path fill="' + (c || 'currentColor') + '" d="' + d + '"/></svg>');
-    };
-    const nm = (n, b) => E('span', { class: 'fx', style: 'gap:8px;flex-wrap:nowrap' }, lg(n) || '', b ? E('b', {}, n) : n);
+    };const nm = (n, b) => E('span', { class: 'fx', style: 'gap:8px;flex-wrap:nowrap' }, lg(n) || '', b ? E('b', {}, n) : n);
 
     // ================= data =================
     type DRow = { id: number; n: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
@@ -201,7 +210,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const pass = pts.map((p) => p.passing || 0);
       const fail = pts.map((p) => Math.max(0, (p.total || 0) - (p.passing || 0)));
       const labels = pts.map((p) => { const d = new Date(p.date + 'T00:00:00'); return isNaN(d) ? p.date : MON[d.getMonth()] + ' ' + d.getDate(); });
-      const sers = [['Compliant', pass, '#0F766E'], ['Non-compliant', fail, '#B45309']] as [string, number[], string][];
+      const sers = [['Compliant', pass, 'var(--ok)'], ['Non-compliant', fail, 'var(--wn)']] as [string, number[], string][];
       const W = 640, Ht = 230, L = 44, B = 26, pw = W - L - 10, ph = Ht - B - 10;
       const vis = sers.filter((a) => !S.hide.has(a[0]));
       const mx = Math.max(1, ...(S.kind === 'bar' ? labels.map((_, i) => vis.reduce((a, b) => a + b[1][i], 0)) : vis.flatMap((a) => a[1]))) * 1.1;
@@ -267,25 +276,70 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
     const rt = () => { const o = $('#tb'); if (o) o.replaceWith(tbl()); };
 
+        function gradeOf(score) {
+      if (score == null) return '-';
+      return score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 50 ? 'D' : 'F';
+    }
+    function nextAction() {
+      for (const d of DOMS) {
+        const spf = chk(d, 'spf');
+        if (spf && spf.status === 'fail') {
+          return { tag: 'Fix first', tagCls: 'bd', title: 'SPF on ' + d.n + ' is failing', body: 'The record has errors or exceeds the lookup limit. Receivers may be ignoring your policy entirely.', cta: 'Open the domain', fn: () => openDr(DOMS.indexOf(d)) };
+        }
+      }
+      for (const d of DOMS) {
+        const dm = chk(d, 'dmarc');
+        if (dm && dm.status === 'warn') {
+          return { tag: 'Roadmap', tagCls: 'ok', title: 'Move ' + d.n + ' toward p=quarantine', body: 'DMARC is in monitoring mode. Read the sources on the DMARC reports screen, mark every sender, and advance when they all pass.', cta: 'See DMARC sources', fn: () => { S.d = DOMS.indexOf(d); S.v = 'reports'; go(); scrollTo(0, 0); } };
+        }
+      }
+      for (const d of DOMS) {
+        const ds = chk(d, 'dnssec');
+        if (ds && ds.status === 'warn') {
+          return { tag: 'Harden', tagCls: 'wn', title: 'Enable DNSSEC on ' + d.n, body: 'No DS record at the parent. Enable DNSSEC at your DNS provider, then publish the DS record at your registrar.', cta: 'Open the domain', fn: () => openDr(DOMS.indexOf(d)) };
+        }
+      }
+      return null;
+    }
     function ov() {
       const avg = OV && OV.avgScore != null ? OV.avgScore : null;
-      const fails = DOMS.reduce((a, d) => a + failCount(d), 0);
+      const rate = OV && OV.dmarc && OV.dmarc.passRate != null ? OV.dmarc.passRate : null;
+      const un = ALERTS.filter((a) => !a.read_at).length;
+      const act = nextAction();
       const kpis = [
-        ['Total domains', String(DOMS.length) + ' of ' + MAXD, ''],
+        ['Total domains', DOMS.length + ' of ' + MAXD, ''],
         ['Average health score', avg != null ? avg + ' / 100' : '-', avg != null && avg >= 80 ? 'color:var(--ok)' : avg != null && avg < 60 ? 'color:var(--bd)' : ''],
-        ['DMARC messages', OV ? f(OV.dmarc?.messages || 0) : '-', ''],
-        ['Failing checks', String(fails), fails ? 'color:var(--bd)' : 'color:var(--ok)'],
+        ['Open alerts', String(un), un ? 'color:var(--wn)' : ''],
+        ['DMARC pass rate', rate != null ? rate + '%' : 'N/A', rate != null && rate >= 90 ? 'color:var(--ok)' : rate != null && rate < 60 ? 'color:var(--bd)' : ''],
       ];
       return E('div', {},
-        E('div', { class: 'g g4' }, kpis.map(([l, v, s]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: s }, v)))),
+        E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
+          E('div', {}, E('p', { class: 'hero-label' }, 'Your domains'), E('p', { class: 'hero-sub' }, 'Live security scores, checked every 6 hours')),
+          E('button', { class: 'btn p', onclick: addDomainFlow }, '+ Add domain')),
+        E('div', { class: 'g g4' }, kpis.map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v)))),
         E('div', { class: 'cd' },
           E('div', { class: 'fx sp', style: 'margin-bottom:10px' },
-            E('input', { class: 'in', type: 'search', 'aria-label': 'Search domains', placeholder: 'Search domains', value: S.q, oninput: (e: any) => { S.q = e.target.value; rt(); } }),
-            E('button', { class: 'btn p', onclick: addDomainFlow }, '+ Add domain')),
-          tbl()));
+            E('input', { class: 'in', type: 'search', 'aria-label': 'Search domains', placeholder: 'Search domains', value: S.q, oninput: (e: any) => { S.q = e.target.value; rt(); } })),
+            tbl()),
+        E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Next step'),
+            act
+              ? E('div', { class: 'rad on', style: 'min-width:0' },
+                  E('div', { class: 'fx', style: 'margin-bottom:6px' }, pill(act.tag, act.tagCls)),
+                  E('b', {}, act.title),
+                  E('p', { class: 'sub', style: 'margin:6px 0 10px' }, act.body),
+                  E('button', { class: 'btn p', onclick: act.fn }, act.cta))
+              : E('p', { class: 'sub' }, DOMS.length ? 'You are on top of things. Every check passed on the latest run.' : 'Add your first domain to get a security score and monitoring.')),
+          E('div', { class: 'cd' },
+            E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Latest check results'), E('span', { class: 'sub' }, DOMS.length + ' domains')),
+            DOMS.length ? DOMS.map((d) => E('div', { class: 'li' },
+              E('div', { class: 'fx' }, ring(d.score), E('div', {}, E('button', { class: 'lk', onclick: () => openDr(DOMS.indexOf(d)) }, d.n), E('div', { class: 'sub' }, d.checkedAt ? 'checked ' + fmtWhen(d.checkedAt) : 'not checked yet'))),
+              E('div', { class: 'fx' }, checkChips(d), pill('grade ' + gradeOf(d.score), d.score != null && d.score >= 80 ? 'ok' : d.score != null && d.score >= 60 ? 'wn' : 'bd')))) : E('p', { class: 'sub' }, 'No domains yet.'))),
+        E('div', { class: 'cd' },
+          E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC volume'), E('span', { class: 'sub' }, OV ? f(OV.dmarc?.messages || 0) + ' messages · ' + (OV.dmarc?.reports || 0) + ' reports' : '')),
+          chart(OV && OV.dmarc && OV.dmarc.daily ? OV.dmarc.daily : [])));
     }
-
-    // ================= drawer =================
+        // ================= drawer =================
     const cdr = () => { $('#ly').replaceChildren(); S.sel = null; };
     function openDr(i: number) { S.sel = i; S.dt = 'rec'; drw(); }
     async function drw() {
@@ -359,7 +413,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         E('div', { class: 'fx' },
           seg([['DY', '7D'], ['WK', '14D'], ['MO', '30D']], S.rng, (v) => { S.rng = v; go(); }),
           seg([['area', 'Line'], ['bar', 'Bar']], S.kind, (v) => { S.kind = v; go(); })));
-      const legend = E('div', { class: 'fx', style: 'margin-bottom:6px' }, [['Compliant', '#0F766E'], ['Non-compliant', '#B45309']].map(([n, c]) => E('button', { class: 'btn', 'aria-pressed': !S.hide.has(n as string), style: 'border-left:4px solid ' + c + ';' + (S.hide.has(n as string) ? 'opacity:.45' : ''), onclick: () => { const k = n as string; S.hide.has(k) ? S.hide.delete(k) : S.hide.add(k); go(); } }, n)));
+      const legend = E('div', { class: 'fx', style: 'margin-bottom:6px' }, [['Compliant', 'var(--ok)'], ['Non-compliant', 'var(--wn)']].map(([n, c]) => E('button', { class: 'btn', 'aria-pressed': !S.hide.has(n as string), style: 'border-left:4px solid ' + c + ';' + (S.hide.has(n as string) ? 'opacity:.45' : ''), onclick: () => { const k = n as string; S.hide.has(k) ? S.hide.delete(k) : S.hide.add(k); go(); } }, n)));
       const daily = DM && DM.daily ? DM.daily : [];
       const chartCard = E('div', { class: 'cd' }, head, ctl, legend, E('div', { style: 'margin-top:6px' }, chart(daily)));
       const side = E('div', { class: 'cd' },
@@ -576,7 +630,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return E('div', {}, E('div', { class: 'g g21' }, bld, E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:10px' }, 'Live preview'), pvw())), E('div', { class: 'g g2' }, sch, his));
     }
 
-    // ================= router =================
+    function settings() {
+      const mail = (document.getElementById('dv-mail') as HTMLElement)?.dataset.mail || '';
+      const cur = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      return E('div', {},
+        E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Appearance'),
+            E('div', { class: 'li' }, E('div', {}, 'Dashboard theme', E('small', {}, 'Applies to this browser')),
+              seg([['dark', 'Dark'], ['light', 'Light']], cur, (v) => { setTheme(v); go(); }))),
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Account'),
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Email'), E('span', { class: 'm' }, mail || '-')),
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Plan'), E('span', {}, 'Early access (free) ', pill('paid plans at launch', 'in2'))),
+            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Sign-in'), E('span', {}, 'Email link, no password')),
+            E('div', { class: 'fx', style: 'margin-top:12px' },
+              E('button', { class: 'btn', onclick: async () => { await postJSON('/api/auth/logout'); location.reload(); } }, 'Sign out'),
+              E('a', { class: 'btn', href: '/' }, 'Open website')))),
+        E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Notifications'),
+            E('div', { class: 'li' }, E('div', {}, 'Alert emails', E('small', {}, 'Alerts are sent to your account address as they fire')), pill('Active', 'ok')),
+            E('div', { class: 'li' }, E('div', {}, 'Slack, Teams and webhook channels', E('small', {}, 'Connect team channels for alert delivery')), prev()),
+            E('div', { class: 'li' }, E('div', {}, 'Digest and quiet hours', E('small', {}, 'One summary email per day at a time you pick')), prev())),
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Monitoring'),
+            E('div', { class: 'li' }, E('div', {}, 'Check frequency', E('small', {}, 'Every domain is re-checked every 6 hours')), pill('Every 6h', 'ok')),
+            E('div', { class: 'li' }, E('div', {}, 'DMARC aggregate reports', E('small', {}, 'Forward rua mail to your PromptDNS inbox to feed the reports screen')), pill('Active', 'ok')),
+            E('div', { class: 'li' }, E('div', {}, 'Domain limit during early access', E('small', {}, 'Raise the limit in a paid plan at launch')), pill(String(MAXD) + ' domains', 'in2')))));
+    }
+        // ================= router =================
     const V: Record<string, [string, () => HTMLElement | Promise<HTMLElement>]> = {
       overview: ['Overview', ov],
       reports: ['DMARC reports', rep],
@@ -585,23 +664,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       dns: ['DNS monitor and AI access', ai],
       alerts: ['Alerts', alr],
       rpt: ['Reports', rpt],
+      settings: ['Settings', settings],
     };
     function go() {
       const y = scrollY;
       const userMail = (document.getElementById('dv-mail') as HTMLElement)?.dataset.mail || '';
       $('#side').replaceChildren(
-        E('a', { class: 'logo', href: '/' }, E('i'), 'PromptDNS'),
+        E('a', { class: 'logo', href: '/', title: 'Back to promptdns.com' }, E('span', { class: 'logo-badge', 'aria-hidden': 'true' }, 'DNS'), E('span', {}, 'Prompt', E('span', { class: 'logo-accent' }, 'DNS'))),
         E('div', { class: 'lab' }, 'MONITOR'),
-        ...Object.entries(V).map(([k, [t]]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), 'aria-current': S.v === k ? 'page' : null, onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t)),
-        E('div', { class: 'lab' }, 'COMING NEXT'),
+        ...Object.entries(V).filter(([k]) => k !== 'settings').map(([k, [t]]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), 'aria-current': S.v === k ? 'page' : null, onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t, k === 'alerts' && ALERTS.some((a) => !a.read_at) ? E('span', { class: 'navbadge' }, String(ALERTS.filter((a) => !a.read_at).length)) : null)),
+        E('div', { class: 'lab' }, 'TOOLS'),
+E('a', { class: 'nv', href: '/tools/' }, 'All tools'),
+E('a', { class: 'nv', href: '/dns/' }, 'Guides'),
+E('div', { class: 'lab' }, 'COMING NEXT'),
+        
         ...['Workspaces', 'Billing'].map((t) => E('button', { class: 'nv', disabled: true, title: 'Ships after launch', onclick: () => toast(t + ' ships after launch.') }, t)),
+        E('button', { class: 'nv' + (S.v === 'settings' ? ' on' : ''), onclick: () => { S.v = 'settings'; go(); scrollTo(0, 0); } }, 'Settings'),
+        E('button', { class: 'nv', onclick: () => { setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); go(); } }, E('span', {}, themeLabel()), E('span', { class: 'sub' }, 'theme')),
         E('div', { class: 'plan' }, E('b', {}, 'Early access'), 'Free during development.'),
         E('div', { class: 'foot-user' }, E('span', { class: 'av', 'aria-hidden': 'true' }, (userMail || '?').charAt(0).toUpperCase()), E('span', { class: 'em' }, userMail),
           E('button', { class: 'btn', style: 'padding:4px 8px;font-size:11.5px;white-space:nowrap', onclick: async () => { await postJSON('/api/auth/logout'); location.reload(); } }, 'Sign out')));
       const sel = DOMS.length ? E('select', { id: 'dm', class: 'sel', 'aria-label': 'Domain', onchange: (e: any) => { S.d = +e.target.value; go(); } }, DOMS.map((d, i) => E('option', { value: i, selected: S.d === i }, d.n))) : null;
       $('#main').replaceChildren(
         E('div', { class: 'top' }, E('h1', {}, V[S.v][0]),
-          E('div', { class: 'fx' }, sel || '', E('button', { class: 'btn', 'aria-label': 'Toggle theme', onclick: () => { const r = document.documentElement; setTheme(r.dataset.theme === 'dark' ? 'light' : 'dark'); } }, 'Theme'))),
+          E('div', { class: 'fx' }, sel || '')),
         E('div', { id: 'dv-screen' }, ''));
       const out = V[S.v][1]();
       Promise.resolve(out).then((el) => { const holder = $('#dv-screen'); if (holder) holder.replaceChildren(el); });
@@ -611,15 +697,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // ================= theme =================
     function setTheme(t: 'dark' | 'light') {
       const r = document.documentElement;
-      if (t === 'dark') r.dataset.theme = 'dark'; else delete r.dataset.theme;
+      if (t === 'light') r.dataset.theme = 'light'; else delete r.dataset.theme;
       try { localStorage.setItem('pd-theme', t); } catch { /* private mode */ }
+    }
+    function themeLabel() {
+      return document.documentElement.dataset.theme === 'light' ? 'Dark mode' : 'Light mode';
     }
 
     // ================= boot =================
     (async function boot() {
       let t: string | null = null;
       try { t = localStorage.getItem('pd-theme'); } catch { /* private mode */ }
-      setTheme((t === 'light' || t === 'dark') ? t : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      setTheme(t === 'light' ? 'light' : 'dark');
       const me = await getJSON('/api/auth/me');
       if (!me || !me.ok || !me.authenticated || !me.email) {
         $('#dash-loading').hidden = true;
