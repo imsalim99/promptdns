@@ -298,3 +298,66 @@ export async function handleDmarcMark(request: Request, env: Env): Promise<Respo
     .run();
   return json({ ok: true, mark });
 }
+
+/** POST /api/domains/dmarc/upload?id=<domainId> - direct upload of one
+ * aggregate report (raw XML, .gz or .zip). The report's policy_published
+ * domain must match the monitored domain it is uploaded for. */
+export async function handleDmarcUpload(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') return json({ ok: false, error: 'POST only.' }, 405);
+  if (!env.DB) return json({ ok: false, error: 'Storage is not configured.' }, 503);
+  const origin = request.headers.get('Origin');
+  if (origin) {
+    try {
+      if (new URL(origin).host !== new URL(request.url).host) return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
+    } catch {
+      return json({ ok: false, error: 'Cross-origin request rejected.' }, 403);
+    }
+  }
+  const user = await getUserBySession(env.DB, request);
+  if (!user) return json({ ok: false, error: 'Sign in first.' }, 401);
+
+  const idParam = new URL(request.url).searchParams.get('id');
+  const id = idParam ? Number.parseInt(idParam, 10) : Number.NaN;
+  if (!Number.isInteger(id)) return json({ ok: false, error: 'Missing domain id.' }, 400);
+
+  const owned = await env.DB
+    .prepare('SELECT id, domain FROM domains WHERE id = ?1 AND user_id = ?2')
+    .bind(id, user.id)
+    .first<{ id: number; domain: string }>();
+  if (!owned) return json({ ok: false, error: 'Domain not found on your list.' }, 404);
+
+  const raw = new Uint8Array(await request.arrayBuffer());
+  if (!raw.length) return json({ ok: false, error: 'Empty upload.' }, 400);
+  if (raw.length > 20 * 1024 * 1024) return json({ ok: false, error: 'File too large (20 MB limit).' }, 413);
+
+  let xml: string;
+  try {
+    if (raw[0] === 0x1f && raw[1] === 0x8b) {
+      // gzip; the fixed output buffer caps decompression at 16 MB
+      xml = new TextDecoder().decode(gunzipSync(raw, { out: new Uint8Array(16 * 1024 * 1024) }));
+    } else if (raw[0] === 0x50 && raw[1] === 0x4b) {
+      // zip: take the first .xml member of a reasonable size
+      const files = unzipSync(raw, { filter: (f) => f.name.endsWith('.xml') && (f.originalSize ?? f.size) <= 16 * 1024 * 1024 });
+      const names = Object.keys(files);
+      if (!names.length) return json({ ok: false, error: 'No XML file inside the zip.' }, 400);
+      xml = new TextDecoder().decode(files[names[0]]);
+    } else {
+      xml = new TextDecoder().decode(raw);
+    }
+  } catch {
+    return json({ ok: false, error: 'Could not decompress the file. Upload the .xml, .gz or .zip report.' }, 400);
+  }
+
+  const agg = parseAggregateXml(xml);
+  if (!agg) return json({ ok: false, error: 'That file is not a DMARC aggregate report.' }, 400);
+  const normalized = agg.domain.replace(/\.+$/, '').toLowerCase();
+  if (normalized !== owned.domain.toLowerCase()) {
+    return json({ ok: false, error: `This report is for ${agg.domain}, not ${owned.domain}.` }, 400);
+  }
+  const stored = await storeReport(env.DB, agg);
+  return json({
+    ok: true,
+    stored,
+    report: { org: agg.org, messages: agg.records.reduce((s, r) => s + r.count, 0), sources: agg.records.length },
+  });
+}

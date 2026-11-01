@@ -35,7 +35,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     html,body{height:100%}
     html:has(#dash-app){background:var(--bg)}
     html:has(#dash-app) body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--fbody)}
-    #dash-app button,#dash-app select,#dash-app input{font:inherit;color:inherit}
+    #dash-app button,#dash-app select,#dash-app input{font:inherit}
     #dash-app button{cursor:pointer}
     .app{min-height:100%}
     #side{position:fixed;top:0;left:0;bottom:0;width:212px;background:var(--sg);border-right:1px solid var(--ln);padding:16px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;overscroll-behavior:contain;z-index:4}
@@ -59,7 +59,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .fx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
     .btn,.sel,.in{border:1px solid var(--ln);background:var(--cd2);border-radius:8px;padding:7px 13px;font-weight:500;font-size:12.5px;color:var(--ink);text-decoration:none;display:inline-block;transition:border-color .15s}
     .btn:hover,.sel:hover{border-color:var(--ac)}
-    .btn.p{background:linear-gradient(100deg,var(--ac),var(--vi));border-color:transparent;color:var(--onac);font-family:var(--fdis);font-weight:600;box-shadow:0 8px 30px -10px var(--as)}
+    .btn.p{position:relative;overflow:hidden;border:0;background:linear-gradient(100deg,var(--ac),var(--vi));color:var(--onac);font-family:var(--fdis);font-weight:600;transition:transform .18s ease,box-shadow .18s ease;box-shadow:0 8px 30px -10px var(--as)}
+        .btn.p::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);transform:translateX(-120%);transition:transform .7s ease}
+        .btn.p:hover{transform:translateY(-1px);box-shadow:0 10px 34px -8px var(--ac)}
+        .btn.p:hover::after{transform:translateX(120%)}
     .in{font-weight:500;min-width:200px}
     .btn:focus-visible,.nv:focus-visible,.sel:focus-visible,.in:focus-visible,.seg button:focus-visible,.lk:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
     .g{display:grid;gap:14px;margin-bottom:14px}
@@ -158,6 +161,12 @@ const lg = (n, s) => {
 
     const S = { v: 'overview', d: 0, rng: 'MO', kind: 'area', tab: 'all', q: '', sort: ['n', 1] as [string, number], dt: 'rec', sel: null as number | null, hide: new Set<string>(), pol: 'quarantine', pct: 50, ruf: false, flat: false, mta: 'enforce', pf: [] as any[], atab: 'feed', asev: 'all', ai: { GPTBot: 'block', ClaudeBot: 'allow', PerplexityBot: 'allow', 'Google-Extended': 'block', Amazonbot: 'unset' } as Record<string, string> };
 
+    const postRAW = async (u: string, file: File) => {
+      try {
+        const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file });
+        return await r.json();
+      } catch { return { ok: false, error: 'Could not reach the server.' }; }
+    };
     const getJSON = async (u: string) => { try { const r = await fetch(u); const j = await r.json(); return j; } catch { return null; } };
     const postJSON = async (u: string, body?: any) => {
       try {
@@ -260,19 +269,19 @@ const lg = (n, s) => {
         return (av > bv ? 1 : -1) * dir;
       });
       const th = (key: string, l: string) => E('th', {}, E('button', { onclick: () => { S.sort = [key, S.sort[0] === key ? -S.sort[1] : 1]; rt(); } }, l + (S.sort[0] === key ? (S.sort[1] > 0 ? ' ▲' : ' ▼') : '')));
-      return E('div', { class: 'sc', id: 'tb' }, E('table', {}, E('thead', {}, E('tr', {}, th('n', 'Domain'), E('th', {}, 'Checks'), th('score', 'Health'), E('th', {}, 'DNSSEC'), E('th', {}, 'Last check'), E('th', {}, ''))),
+      return E('div', { class: 'sc', id: 'tb' }, E('table', {}, E('thead', {}, E('tr', {}, th('n', 'Domain'), E('th', {}, 'Checks'), th('score', 'Health'), E('th', {}, 'DNSSEC'), E('th', {}, 'Monitoring'), E('th', {}, 'Last check'), E('th', {}, ''))),
         E('tbody', {}, rows.length ? rows.map((d) => {
           const i = DOMS.indexOf(d);
           return E('tr', { class: 'cl' },
             E('td', {}, E('button', { class: 'lk', onclick: () => openDr(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
             E('td', {}, checkChips(d)),
             E('td', {}, ring(d.score)),
-            E('td', {}, dnssecPill(d)),
+            E('td', {}, dnssecPill(d)), E('td', {}, pill(d.paused ? 'Paused' : 'Active', d.paused ? 'wn' : 'ok')),
             E('td', { class: 'sub' }, d.checkedAt ? fmtWhen(d.checkedAt) : '-'),
             E('td', {}, E('div', { class: 'fx' },
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doRescan(d.id); } }, 'Rescan'),
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doPause(d); } }, d.paused ? 'Resume' : 'Pause'))));
-        }) : E('tr', {}, E('td', { colspan: 6, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
+        }) : E('tr', {}, E('td', { colspan: 7, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
     }
     const rt = () => { const o = $('#tb'); if (o) o.replaceWith(tbl()); };
 
@@ -337,7 +346,7 @@ const lg = (n, s) => {
               E('div', { class: 'fx' }, checkChips(d), pill('grade ' + gradeOf(d.score), d.score != null && d.score >= 80 ? 'ok' : d.score != null && d.score >= 60 ? 'wn' : 'bd')))) : E('p', { class: 'sub' }, 'No domains yet.'))),
         E('div', { class: 'cd' },
           E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC volume'), E('span', { class: 'sub' }, OV ? f(OV.dmarc?.messages || 0) + ' messages · ' + (OV.dmarc?.reports || 0) + ' reports' : '')),
-          chart(OV && OV.dmarc && OV.dmarc.daily ? OV.dmarc.daily : [])));
+          E('div', { style: 'max-width:820px' }, chart(OV && OV.dmarc && OV.dmarc.daily ? OV.dmarc.daily : []))));
     }
         // ================= drawer =================
     const cdr = () => { $('#ly').replaceChildren(); S.sel = null; };
@@ -388,18 +397,29 @@ const lg = (n, s) => {
       if (j && j.ok) { toast(d.n + ' removed'); cdr(); await refreshAll(); }
       else toast((j && j.error) || 'Could not remove the domain.');
     }
-    async function addDomainFlow() {
-      const name = prompt('Domain to monitor, for example example.com');
-      if (!name) return;
-      const dom = name.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-      if (!/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(dom)) return toast('That does not look like a domain name.');
-      toast('Adding ' + dom + ' and running the first scan…');
-      const j = await postJSON('/api/domains', { domain: dom });
-      if (j && j.ok) { toast(dom + ' added. First scan complete.'); await refreshAll(); }
-      else toast((j && j.error) || 'Could not add the domain.');
+    function addDomainFlow() {
+      const err = E('p', { class: 'sub', style: 'color:var(--bd);margin:6px 0 0;display:none' });
+      const input = E('input', { class: 'in', style: 'width:100%', type: 'text', inputmode: 'url', autocomplete: 'off', spellcheck: 'false', placeholder: 'yourdomain.com', 'aria-label': 'Domain to monitor', onkeydown: (e: any) => { if (e.key === 'Enter') submit(); } });
+      const submitBtn = E('button', { class: 'btn p', onclick: submit }, 'Add & scan');
+      async function submit() {
+        const dom = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        if (!/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(dom)) { err.textContent = 'That does not look like a domain name.'; err.style.display = 'block'; return; }
+        submitBtn.disabled = true;
+        toast('Adding ' + dom + ' and running the first scan…');
+        const j = await postJSON('/api/domains', { domain: dom });
+        if (j && j.ok) { cdr(); toast(dom + ' added. First scan complete.'); await refreshAll(); }
+        else { err.textContent = (j && j.error) || 'Could not add the domain.'; err.style.display = 'block'; submitBtn.disabled = false; }
+      }
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Add a domain' },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'Add a domain'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          E('div', { style: 'margin:14px 0 0' }, input, err),
+          E('p', { class: 'sub', style: 'margin:10px 0 14px' }, 'Adding runs an instant scan of the public DNS records and starts 6 hour monitoring. Up to ' + MAXD + ' domains during early access.'),
+          E('div', { class: 'fx' }, submitBtn)));
+      input.focus();
     }
-
-    // ================= DMARC reports =================
+        // ================= DMARC reports =================
     async function rep() {
       const d = curDom();
       if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain on the Overview screen to see its DMARC reports.'));
@@ -437,7 +457,20 @@ const lg = (n, s) => {
               else toast('Could not save the mark.');
             } }, mk === 'me' ? 'This is me' : mk === 'notme' ? 'Not me' : 'Mark')));
         }) : E('tr', {}, E('td', { colspan: 5, class: 'sub' }, 'No sources in this view yet.')))));
-      return E('div', {}, E('div', { class: 'g g21' }, chartCard, side), E('div', { class: 'cd' }, tabs, table));
+      const upl = E('input', { type: 'file', accept: '.xml,.gz,.zip', style: 'display:none', 'aria-hidden': 'true', onchange: async (e: any) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (file.size > 20 * 1024 * 1024) return toast('File too large (20 MB limit).');
+        toast('Uploading ' + file.name + '…');
+        const j = await postRAW('/api/domains/dmarc/upload?id=' + d.id, file);
+        if (j && j.ok) { toast(j.stored ? 'Report stored: ' + j.report.messages + ' messages from ' + j.report.org : 'Duplicate report; nothing new to store.'); await loadDmarc(true); go(); }
+        else toast((j && j.error) || 'Upload failed.');
+      } });
+      const upBtn = E('button', { class: 'btn p', onclick: () => upl.click() }, 'Upload report');
+      return E('div', {}, E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
+        E('p', { class: 'sub', style: 'margin:0' }, 'Reports arrive by forwarding rua mail to PromptDNS, or upload one directly.'),
+        E('div', { class: 'fx' }, upBtn, upl)),
+        E('div', { class: 'g g21' }, chartCard, side), E('div', { class: 'cd' }, tabs, table));
     }
 
     // ================= enforcement =================
@@ -543,7 +576,38 @@ const lg = (n, s) => {
           E('div', { class: 'fx' }, E('button', { class: 'btn p', onclick: () => { cdr(); S.v = 'overview'; go(); scrollTo(0, 0); } }, 'Open Overview'),
             E('button', { class: 'btn', onclick: async () => { const j = await postJSON('/api/alerts/read'); if (j && j.ok) { cdr(); toast('All alerts marked as read'); await refreshAll(); } } }, 'Mark all as read'))));
     }
-    function alr() {
+    const MET = ['DMARC pass rate', 'DNS record change', 'New sender', 'SPF lookups', 'Expiry', 'AI crawler change'];
+    const CND = ['is below', 'is above', 'happens', 'appears', 'is within (days)'];
+    const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
+    const loadRules = () => { try { return JSON.parse(localStorage.getItem('pd-alert-rules') || '[]'); } catch { return []; } };
+    const saveRules = (list: any[]) => { try { localStorage.setItem('pd-alert-rules', JSON.stringify(list)); } catch { /* private mode */ } };
+    const ruleText = (r: any) => r.m + ' ' + r.c + (r.v === '' ? '' : ' ' + r.v);
+    function ruleModal(edit?: any, idx?: number) {
+      const x = edit ? Object.assign({}, edit, { ch: edit.ch.slice() }) : { n: '', m: MET[0], c: CND[0], v: '95', sc: 'All domains', ch: ['Email'], on: 1 };
+      const nameIn = E('input', { id: 'rn', class: 'in', style: 'width:100%', value: x.n, placeholder: 'e.g. Alert me when DMARC drops', oninput: (e: any) => { x.n = e.target.value; } });
+      const sel = (id: string, opts: string[], cur: string, fn: (v: string) => void) => E('select', { id, class: 'sel', style: 'width:100%', onchange: (e: any) => fn(e.target.value) }, opts.map((o) => E('option', { selected: o === cur }, o)));
+      const valIn = E('input', { id: 'rv', class: 'in', style: 'width:100%', type: 'number', value: x.v, oninput: (e: any) => { x.v = e.target.value; } });
+      const row = (l: string, el: HTMLElement) => E('div', { style: 'margin:12px 0' }, E('label', { class: 'sub', style: 'display:block;margin-bottom:4px' }, l), el);
+      const valRow = row('Value', valIn);
+      const cndSel = sel('rc', CND, x.c, (v) => { x.c = v; valRow.style.display = v === 'happens' || v === 'appears' ? 'none' : ''; });
+      if (x.c === 'happens' || x.c === 'appears') valRow.style.display = 'none';
+      const chWrap = E('div', { class: 'fx' }, CHN.map((c) => E('label', { class: 'btn' }, E('input', { type: 'checkbox', checked: x.ch.includes(c), onchange: (e: any) => { x.ch = e.target.checked ? x.ch.concat(c) : x.ch.filter((y: string) => y !== c); } }), ' ' + c)));
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': edit ? 'Edit rule' : 'New rule' },
+          E('div', { class: 'fx sp' }, E('h1', {}, edit ? 'Edit rule' : 'New rule'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          row('Rule name', nameIn),
+          row('When', sel('rm', MET, x.m, (v) => { x.m = v; })),
+          row('Condition', cndSel),
+          valRow,
+          row('Applies to', sel('rs', ['All domains'].concat(DOMS.map((d) => d.n)), x.sc, (v) => { x.sc = v; })),
+          E('div', { class: 'sub' }, 'Notify through'),
+          E('div', { style: 'margin:6px 0 16px' }, chWrap),
+          E('div', { class: 'fx' },
+            E('button', { class: 'btn p', onclick: () => { if (!x.n.trim()) x.n = ruleText(x); const list = loadRules(); if (typeof idx === 'number') list[idx] = x; else list.push(x); saveRules(list); cdr(); toast('Rule saved in this browser'); go(); } }, 'Save rule'),
+            E('button', { class: 'btn', onclick: cdr }, 'Cancel'))));
+    }
+        function alr() {
       const live = ALERTS;
       const cnt = (s2: string) => live.filter((a) => s2 === 'all' || a.severity === s2).length;
       const un = live.filter((a) => !a.read_at).length;
@@ -559,16 +623,31 @@ const lg = (n, s) => {
               E('div', {}, E('div', { class: 'fx' }, pill(a.severity, sevC[a.severity] || 'in2'), a.read_at ? E('span', {}, a.title) : E('b', {}, a.title)), E('small', {}, a.domain + ' · ' + fmtWhen(a.created_at))),
               E('div', { class: 'fx' }, E('button', { class: 'btn', onclick: () => adr(a) }, 'Details')))) : E('p', { class: 'sub' }, 'No alerts in this view. New alerts appear as the 6 hour checks run.')));
       } else if (S.atab === 'rules') {
-        const RL = [
+        const BUILTIN = [
           ['DMARC pass rate below 95%', 'All domains', ['Email']],
           ['Any DNS record changed', 'All domains', ['Email']],
           ['New unclassified sender', 'All domains', ['Email', 'Webhook']],
           ['Certificate or domain expiring', 'All domains', ['Email']],
         ];
-        body = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, 'Built-in rules are watching your domains'), prev()),
-          E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels'].map((x) => E('th', {}, x)))),
-            E('tbody', {}, RL.map((r) => E('tr', {}, E('td', {}, E('b', {}, r[0] as string)), E('td', {}, r[1] as string), E('td', {}, E('div', { class: 'fx' }, (r[2] as string[]).map((c) => pill(c, 'in2'))))))))),
-          E('p', { class: 'sub', style: 'margin-top:10px' }, 'Custom rules with per-rule channels arrive with the managed enforcement release.'));
+        const custom = loadRules();
+        body = E('div', {},
+          E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, 'Built-in rules are watching your domains'), pill('Always on', 'ok')),
+            E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels'].map((x) => E('th', {}, x)))),
+              E('tbody', {}, BUILTIN.map((r) => E('tr', {}, E('td', {}, E('b', {}, r[0] as string)), E('td', {}, r[1] as string), E('td', {}, E('div', { class: 'fx' }, (r[2] as string[]).map((c) => pill(c, 'in2')))))))))),
+          E('div', { class: 'cd', style: 'margin-top:14px' },
+            E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('div', { class: 'fx' }, E('h3', {}, 'Custom rules'), prev()),
+              E('button', { class: 'btn p', onclick: () => ruleModal() }, '+ New rule')),
+            custom.length ? E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels', 'Active', ''].map((x) => E('th', {}, x)))),
+              E('tbody', {}, custom.map((r, i) => E('tr', {},
+                E('td', {}, E('b', {}, r.n), E('div', { class: 'sub' }, ruleText(r))),
+                E('td', {}, r.sc),
+                E('td', {}, E('div', { class: 'fx' }, r.ch.map((c) => pill(c, 'in2')))),
+                E('td', {}, E('button', { class: 'sw' + (r.on ? ' on' : ''), role: 'switch', 'aria-checked': !!r.on, 'aria-label': 'Toggle ' + r.n, onclick: () => { custom[i].on = custom[i].on ? 0 : 1; saveRules(custom); go(); } })),
+                E('td', {}, E('div', { class: 'fx' },
+                  E('button', { class: 'btn', onclick: () => ruleModal(r, i) }, 'Edit'),
+                  E('button', { class: 'btn', onclick: () => { custom.splice(i, 1); saveRules(custom); toast('Rule deleted'); go(); } }, 'Delete'))))))))
+            : E('p', { class: 'sub' }, 'No custom rules yet. Create one to get notified the way you want.'),
+            E('p', { class: 'sub', style: 'margin-top:10px' }, 'Custom rules are saved in this browser and start evaluating when the managed release ships the rules engine.')));
       } else {
         const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
         body = E('div', { class: 'g g2' }, CHN.map((c) => E('div', { class: 'cd' },
