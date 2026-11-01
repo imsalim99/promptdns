@@ -257,6 +257,14 @@ const lg = (n, s) => {
       if (!bad.length) return (d.checks || []).length ? pill('all checks pass', 'ok') : E('span', { class: 'sub' }, '-');
       return E('span', { class: 'fx' }, bad.slice(0, max).map((c) => pill(c.label, c.status === 'fail' ? 'bd' : 'wn')));
     }
+    const NS_PROVIDERS: [string, string][] = [['cloudflare', 'Cloudflare'], ['godaddy', 'GoDaddy'], ['namecheap', 'Namecheap'], ['awsdns', 'Route 53'], ['amazonaws', 'Route 53'], ['googledomains', 'Google Cloud'], ['dnsgoogle', 'Google Cloud'], ['hostinger', 'Hostinger'], ['digitalocean', 'DigitalOcean'], ['azure', 'Azure'], ['linode', 'Akamai'], ['nsone', 'NS1'], ['ultradns', 'ClearCanvas'], ['wixdns', 'Wix'], ['squarespace', 'Squarespace'], ['ionos', 'IONOS'], ['gandi', 'Gandi'], ['ovh', 'OVH'], ['registrar-servers', 'Namecheap'], ['dnsmadeeasy', 'DNS Made Easy'], ['hover', 'Hover'], ['dreamhost', 'DreamHost'], ['route53', 'Route 53']];
+    function providerOf(d: DRow): string {
+      const ns = (chk(d, 'ns')?.value || '').toLowerCase();
+      const hit = NS_PROVIDERS.find(([k]) => ns.includes(k));
+      if (hit) return hit[1];
+      const m = ns.match(/([a-z0-9-]+\.[a-z]{2,})/);
+      return m ? m[1] : 'Unknown';
+    }
     function dnssecPill(d: DRow) {
       const s = chk(d, 'dnssec');
       if (!s) return pill('Unknown', 'in2');
@@ -269,11 +277,13 @@ const lg = (n, s) => {
         return (av > bv ? 1 : -1) * dir;
       });
       const th = (key: string, l: string) => E('th', {}, E('button', { onclick: () => { S.sort = [key, S.sort[0] === key ? -S.sort[1] : 1]; rt(); } }, l + (S.sort[0] === key ? (S.sort[1] > 0 ? ' ▲' : ' ▼') : '')));
-      return E('div', { class: 'sc', id: 'tb' }, E('table', {}, E('thead', {}, E('tr', {}, th('n', 'Domain'), E('th', {}, 'Checks'), th('score', 'Health'), E('th', {}, 'DNSSEC'), E('th', {}, 'Monitoring'), E('th', {}, 'Last check'), E('th', {}, ''))),
+      return E('div', { class: 'sc', id: 'tb' }, E('table', {}, E('thead', {}, E('tr', {}, th('n', 'Domain'), E('th', {}, 'DNS provider'), E('th', {}, 'Records'), th('score', 'Health'), E('th', {}, 'DNSSEC'), E('th', {}, 'Monitoring'), E('th', {}, 'Last check'), E('th', {}, ''))),
         E('tbody', {}, rows.length ? rows.map((d) => {
           const i = DOMS.indexOf(d);
           return E('tr', { class: 'cl' },
             E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
+            E('td', {}, nm(providerOf(d), 1) || E('span', { class: 'sub' }, providerOf(d))),
+            E('td', { class: 'm' }, String((d.records || []).length)),
             E('td', {}, checkChips(d)),
             E('td', {}, ring(d.score)),
             E('td', {}, dnssecPill(d)), E('td', {}, pill(d.paused ? 'Paused' : 'Active', d.paused ? 'wn' : 'ok')),
@@ -282,7 +292,7 @@ const lg = (n, s) => {
               E('button', { class: 'lk', onclick: (e: Event) => { e.stopPropagation(); openDr(i); } }, 'Quick view'),
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doRescan(d.id); } }, 'Rescan'),
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doPause(d); } }, d.paused ? 'Resume' : 'Pause'))));
-        }) : E('tr', {}, E('td', { colspan: 7, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
+        }) : E('tr', {}, E('td', { colspan: 9, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
     }
     const rt = () => { const o = $('#tb'); if (o) o.replaceWith(tbl()); };
 
@@ -327,7 +337,7 @@ const lg = (n, s) => {
           E('div', {}, E('p', { class: 'hero-label' }, 'Your domains'), E('p', { class: 'hero-sub' }, 'Live security scores, checked every 6 hours')),
           E('button', { class: 'btn p', onclick: addDomainFlow }, '+ Add domain')),
         E('div', { class: 'g g4' }, kpis.map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v)))),
-        E('div', { class: 'cd' },
+        E('div', { class: 'cd', style: 'margin-bottom:14px' },
           E('div', { class: 'fx sp', style: 'margin-bottom:10px' },
             E('input', { class: 'in', type: 'search', 'aria-label': 'Search domains', placeholder: 'Search domains', value: S.q, oninput: (e: any) => { S.q = e.target.value; rt(); } })),
             tbl()),
@@ -377,7 +387,7 @@ const lg = (n, s) => {
         E('aside', { class: 'dr', role: 'dialog', 'aria-label': d.n },
           E('div', { class: 'fx sp' }, E('h1', {}, d.n), E('button', { class: 'btn', onclick: cdr }, 'Close')),
           E('div', { class: 'sub fx', style: 'margin:4px 0 12px' }, 'health ' + (d.score ?? 'N/A') + ' / 100' + (d.paused ? ' · monitoring paused' : '')),
-          E('div', { class: 'fx', style: 'margin-bottom:12px' },
+          E('div', { class: 'fx', style: 'margin-bottom:12px;justify-content:flex-end' },
             E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(drw) }, 'Rescan'),
             E('button', { class: 'btn', onclick: () => doPause(d).then(drw) }, d.paused ? 'Resume' : 'Pause'),
             E('button', { class: 'btn', style: 'color:var(--bd)', onclick: () => doDelete(d) }, 'Remove')),
@@ -435,33 +445,56 @@ const lg = (n, s) => {
       const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
         E('h3', {}, 'Volume distribution by DMARC compliance'),
         E('span', { class: 'sub' }, 'Compliance rate: ', E('b', { style: rate != null ? 'color:' + cv(rate) : '' }, rate != null ? rate + '%' : 'N/A'), '   Messages: ', E('b', {}, f(tot)), '   Reports: ', E('b', {}, String(sum.reports))));
-      const ctl = E('div', { class: 'fx sp', style: 'margin-bottom:6px' },
-        E('div', { class: 'fx' },
-          seg([['DY', '7D'], ['WK', '14D'], ['MO', '30D']], S.rng, (v) => { S.rng = v; go(); }),
-          seg([['area', 'Line'], ['bar', 'Bar']], S.kind, (v) => { S.kind = v; go(); })));
-      const legend = E('div', { class: 'fx', style: 'margin-bottom:6px' }, [['Compliant', 'var(--ok)'], ['Non-compliant', 'var(--wn)']].map(([n, c]) => E('button', { class: 'btn', 'aria-pressed': !S.hide.has(n as string), style: 'border-left:4px solid ' + c + ';' + (S.hide.has(n as string) ? 'opacity:.45' : ''), onclick: () => { const k = n as string; S.hide.has(k) ? S.hide.delete(k) : S.hide.add(k); go(); } }, n)));
+              const legend = E('div', { class: 'fx' }, [['Compliant', 'var(--ok)'], ['Non-compliant', 'var(--wn)'], ['Threat', 'var(--bd)']].map(([n, c]) => E('button', { class: 'btn', 'aria-pressed': !S.hide.has(n as string), style: 'border-left:4px solid ' + c + ';' + (S.hide.has(n as string) ? 'opacity:.45' : ''), onclick: () => { const k = n as string; S.hide.has(k) ? S.hide.delete(k) : S.hide.add(k); go(); } }, n)));
+        const ctl = E('div', { class: 'fx sp', style: 'margin-bottom:6px' },
+          legend,
+          E('div', { class: 'fx' },
+            seg([['DY', '7D'], ['WK', '14D'], ['MO', '30D']], S.rng, (v) => { S.rng = v; go(); }),
+            seg([['area', 'Line'], ['bar', 'Bar']], S.kind, (v) => { S.kind = v; go(); })));
       const daily = DM && DM.daily ? DM.daily : [];
-      const chartCard = E('div', { class: 'cd' }, head, ctl, legend, E('div', { style: 'margin-top:6px' }, chart(daily)));
-      const side = E('div', { class: 'cd' },
-        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Top sending sources'), E('span', { class: 'sub' }, (DM ? DM.sources.length : 0) + ' total')),
-        (DM && DM.sources.length ? DM.sources.slice(0, 6).map((r: any) => E('div', { class: 'li' }, E('span', { class: 'm' }, r.headerFrom ? r.headerFrom + ' (' + r.ip + ')' : r.ip), E('b', { class: 'm' }, f(r.volume || 0)))) : E('p', { class: 'sub' }, 'Sources appear here as reports arrive.')));
+      const chartCard = E('div', { class: 'cd' }, head, ctl, E('div', { style: 'margin-top:6px' }, chart(daily)));
+              const groupBy = (key: (r: any) => string) => {
+          const m = new Map<string, number>();
+          (DM ? DM.sources : []).forEach((r: any) => { const k = key(r) || 'unknown'; m.set(k, (m.get(k) || 0) + (r.volume || 0)); });
+          return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+        };
+        const by = S.by || 'source';
+        const list = by === 'country'
+          ? [E('p', { class: 'sub' }, 'Country breakdown arrives with GeoIP enrichment.')]      
+          : (DM && DM.sources.length
+            ? (by === 'domain'
+              ? groupBy((r: any) => (r.headerFrom || '').replace(/^[^.]+\./, '') || r.ip).map(([k, v]) => E('div', { class: 'li' }, nm(k, 1) || E('span', { class: 'm' }, k), E('b', { class: 'm' }, f(v))))
+              : groupBy((r: any) => r.headerFrom || r.ip).map(([k, v]) => E('div', { class: 'li' }, nm(k, 1) || E('span', { class: 'm' }, k), E('b', { class: 'm' }, f(v)))))
+            : [E('p', { class: 'sub' }, 'Sources appear here as reports arrive.')]);
+        const side = E('div', { class: 'cd' },
+          E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'View by'), E('span', { class: 'sub' }, (DM ? DM.sources.length : 0) + ' sources')),
+          E('select', { class: 'sel', style: 'width:100%;margin-bottom:8px', 'aria-label': 'View by', onchange: (e: any) => { S.by = e.target.value; go(); } },
+            [['source', 'Sending sources'], ['domain', 'Sending domain'], ['country', 'Country']].map(([v, l]) => E('option', { selected: by === v }, l))),
+          ...list);
       const marks = new Map<string, string>((DM ? DM.marks : []).map((m: any) => [m.source_ip, m.mark]));
-      const rows = DM ? DM.sources.filter((r: any) => S.tab === 'all' || (S.tab === 'comp' ? (r.volume > 0 && r.dmarcPass >= r.volume) : (r.volume === 0 || r.dmarcPass < r.volume))) : [];
-      const cnt = (k: string) => !DM ? 0 : k === 'all' ? DM.sources.length : DM.sources.filter((r: any) => k === 'comp' ? (r.volume > 0 && r.dmarcPass >= r.volume) : (r.volume === 0 || r.dmarcPass < r.volume)).length;
-      const tabs = E('div', { class: 'tabs' }, [['all', 'All'], ['comp', 'Compliant'], ['non', 'Non-compliant']].map(([v, l]) => E('button', { class: S.tab === v ? 'on' : '', onclick: () => { S.tab = v; go(); } }, l + ' ', pill(String(cnt(v)), v === 'non' ? 'wn' : 'ok'))));
+              const classify = (r: any) => {
+          const vol = r.volume || 0;
+          if (vol > 0 && (r.dmarcPass || 0) >= vol) return 'comp';
+          if ((r.dmarcPass || 0) > 0) return 'non';
+          if ((r.dkimPass || 0) > 0 && (r.spfPass || 0) === 0) return 'fwd';
+          return 'thr';
+        };
+        const rows = DM ? DM.sources.filter((r: any) => S.tab === 'all' || classify(r) === S.tab) : [];
+      const cnt = (k: string) => !DM ? 0 : k === 'all' ? DM.sources.length : DM.sources.filter((r: any) => k !== 'all' && classify(r) === k).length;
+      const tabs = E('div', { class: 'tabs' }, [['all', 'All'], ['comp', 'Compliant'], ['non', 'Non-compliant'], ['thr', 'Threat'], ['fwd', 'Forwarded']].map(([v, l]) => E('button', { class: S.tab === v ? 'on' : '', onclick: () => { S.tab = v; go(); } }, l + ' ', pill(String(cnt(v)), v === 'thr' ? 'bd' : v === 'non' ? 'wn' : 'ok'))));
       const table = E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Source', 'Volume', 'SPF pass', 'DKIM pass', 'Action'].map((x) => E('th', {}, x)))),
         E('tbody', {}, rows.length ? rows.map((r: any) => {
           const mk = marks.get(r.ip);
-          return E('tr', {}, E('td', {}, E('span', { class: 'm' }, r.ip), r.headerFrom ? E('div', { class: 'sub' }, r.headerFrom) : ''),
+          return E('tr', {}, E('td', {}, r.headerFrom ? nm(r.headerFrom, 1) : E('span', { class: 'm' }, r.ip)),
             E('td', { class: 'm' }, f(r.volume || 0)),
             E('td', {}, E('div', { class: 'fx' }, bar(r.volume ? Math.round(r.spfPass / r.volume * 100) : 0), E('span', { class: 'sub' }, (r.volume ? Math.round(r.spfPass / r.volume * 100) : 0) + '%'))),
             E('td', {}, E('div', { class: 'fx' }, bar(r.volume ? Math.round(r.dkimPass / r.volume * 100) : 0), E('span', { class: 'sub' }, (r.volume ? Math.round(r.dkimPass / r.volume * 100) : 0) + '%'))),
             E('td', {}, E('button', { class: 'btn' + (mk === 'me' ? ' p' : ''), onclick: async (e: Event) => {
-              const next = mk === 'me' ? 'notme' : 'me';
+              const next = mk ? (mk === 'me' ? 'notme' : 'me') : (classify(r) === 'thr' ? 'notme' : 'me');
               const j = await postJSON('/api/domains/dmarc/mark', { id: d.id, ip: r.ip, mark: next });
               if (j && j.ok) { toast(next === 'me' ? r.ip + ' marked as your sender' : r.ip + ' marked as not yours'); await loadDmarc(true); go(); }
               else toast('Could not save the mark.');
-            } }, mk === 'me' ? 'This is me' : mk === 'notme' ? 'Not me' : 'Mark')));
+            } }, mk ? (mk === 'me' ? 'This is me' : 'Not me') : (classify(r) === 'thr' ? 'Block' : 'Mark'))));
         }) : E('tr', {}, E('td', { colspan: 5, class: 'sub' }, 'No sources in this view yet.')))));
       const upl = E('input', { type: 'file', accept: '.xml,.gz,.zip', style: 'display:none', 'aria-hidden': 'true', onchange: async (e: any) => {
         const file = e.target.files && e.target.files[0];
@@ -508,7 +541,7 @@ const lg = (n, s) => {
         E('div', { class: 'fx', style: 'margin-top:8px' }, E('label', { for: 'mt' }, 'Mode'), E('select', { id: 'mt', class: 'sel', onchange: () => toast('Preview: MTA-STS hosting ships with managed records.') }, ['none', 'testing', 'enforce'].map((o) => E('option', { selected: S.mta === o }, o)))));
       const pfCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Pre-flight check'), E('button', { class: 'btn p', onclick: preflight }, 'Run check')),
         E('div', { id: 'pf', style: 'margin-top:8px' }, S.pf.length ? S.pf.map((x) => E('div', { class: 'li' }, x[0], x[1])) : E('p', { class: 'sub' }, 'Runs a live scan of ' + (d ? d.n : 'your domain') + ' and reports conflicts.')));
-      return E('div', {}, policyCard, E('div', { class: 'g g2' }, spfCard, dkimCard, mtaCard, pfCard));
+      return E('div', {}, E('div', { class: 'g' }, policyCard), E('div', { class: 'g g2' }, spfCard, dkimCard, mtaCard, pfCard));
     }
     async function preflight() {
       const d = curDom();
@@ -537,7 +570,7 @@ const lg = (n, s) => {
       return E('div', { class: 'g g21' },
         E('div', { class: 'cd' },
           E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Outbound waterfall: domain, then each sending source')),
-          E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Name', 'Sent', 'DMARC pass'].map((x) => E('th', {}, x)))),
+          E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Name', 'Sent', 'Delivered'].map((x) => E('th', {}, x)))),
             E('tbody', {}, rows.map(([name, kind, sent, rate, rc], i) => E('tr', {},
               E('td', { style: 'padding-left:' + (10 + (i ? 22 : 0)) + 'px' }, name, ' ', rc ? pill(rc, 'bd') : '', E('div', { class: 'sub' }, kind)),
               E('td', { class: 'm' }, f(sent || 0)),
@@ -571,6 +604,7 @@ const lg = (n, s) => {
 
     // ================= alerts =================
     const sevC = { critical: 'bd', warning: 'wn', info: 'in2' } as Record<string, string>;
+    const ALSET: any = { dg: 1, dgt: '08:00', qh: 'Off' };
     function adr(a: any) {
       $('#ly').replaceChildren(
         E('div', { class: 'ov', onclick: cdr }),
@@ -656,10 +690,22 @@ const lg = (n, s) => {
             E('p', { class: 'sub', style: 'margin-top:10px' }, 'Custom rules are saved in this browser and start evaluating when the managed release ships the rules engine.')));
       } else {
         const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
-        body = E('div', { class: 'g g2' }, CHN.map((c) => E('div', { class: 'cd' },
-          E('div', { class: 'fx sp' }, E('h3', {}, c), pill(c === 'Email' ? 'Active' : 'Coming soon', c === 'Email' ? 'ok' : 'in2')),
-          E('div', { class: 'sub', style: 'margin:6px 0 10px' }, c === 'Email' ? 'Alerts go to your account email.' : 'Connect ' + c + ' after the managed release.'),
-          E('div', { class: 'fx' }, c === 'Email' ? '' : E('button', { class: 'btn', onclick: () => toast('Preview: channel connections ship with the managed release.') }, 'Connect')))));
+                body = E('div', {},
+          E('div', { class: 'g g2' }, CHN.map((c) => E('div', { class: 'cd' },
+            E('div', { class: 'fx sp' }, E('h3', {}, c), pill(c === 'Email' ? 'Active' : 'Coming soon', c === 'Email' ? 'ok' : 'in2')),
+            E('div', { class: 'sub', style: 'margin:6px 0 10px' }, c === 'Email' ? 'Alerts go to your account email.' : 'Connect ' + c + ' after the managed release.'),
+            E('div', { class: 'fx' }, c === 'Email' ? '' : E('button', { class: 'btn', onclick: () => toast('Preview: channel connections ship with the managed release.') }, 'Connect'))))),
+          E('div', { class: 'cd', style: 'margin-top:14px' },
+            E('h3', { style: 'margin-bottom:8px' }, 'Digest and quiet hours'),
+            E('div', { class: 'li' }, E('div', {}, 'Daily digest', E('small', {}, 'One email summarising the last 24 hours')),
+              E('button', { class: 'sw' + (ALSET.dg ? ' on' : ''), role: 'switch', 'aria-checked': !!ALSET.dg, 'aria-label': 'Daily digest', onclick: () => { ALSET.dg = ALSET.dg ? 0 : 1; go(); } })),
+            E('div', { class: 'li' }, E('label', { for: 'dgt' }, 'Digest time'),
+              E('select', { id: 'dgt', class: 'sel', onchange: (e: any) => { ALSET.dgt = e.target.value; toast('Preview: digest scheduling activates with the managed release.'); } },
+                ['06:00', '08:00', '12:00', '18:00'].map((o) => E('option', { selected: o === ALSET.dgt }, o)))),
+            E('div', { class: 'li' }, E('label', { for: 'qh' }, 'Quiet hours (non-critical)'),
+              E('select', { id: 'qh', class: 'sel', onchange: (e: any) => { ALSET.qh = e.target.value; toast('Preview: quiet hours activate with the managed release.'); } },
+                ['Off', '22:00 to 07:00', '20:00 to 08:00'].map((o) => E('option', { selected: o === ALSET.qh }, o)))),
+            prev()));
       }
       return E('div', {}, E('div', { class: 'cd', style: 'padding-bottom:0;margin-bottom:14px' }, tabs), body);
     }
@@ -808,10 +854,10 @@ const lg = (n, s) => {
 
     // ================= workspaces (sample until the agency release) =================
     const WS = [
-      { id: 1, n: 'Acme Logistics', dm: 3, seats: 2, lr: 'Oct 1', c: '#5B4FE8' },
-      { id: 2, n: 'Northwind Supply', dm: 2, seats: 1, lr: 'Oct 1', c: '#0F766E' },
-      { id: 3, n: 'Harbor Legal', dm: 4, seats: 3, lr: 'Sep 15', c: '#B42318' },
-      { id: 4, n: 'Kestrel Studio', dm: 1, seats: 1, lr: 'Oct 1', c: '#B45309' },
+      { id: 1, n: 'Acme Logistics', dm: 3, h: 88, al: 1, seats: 2, lr: 'Oct 1', c: '#5B4FE8' },
+      { id: 2, n: 'Northwind Supply', dm: 2, h: 91, al: 0, seats: 1, lr: 'Oct 1', c: '#0F766E' },
+      { id: 3, n: 'Harbor Legal', dm: 4, h: 64, al: 2, seats: 3, lr: 'Sep 15', c: '#B42318' },
+      { id: 4, n: 'Kestrel Studio', dm: 1, h: 79, al: 0, seats: 1, lr: 'Oct 1', c: '#B45309' },
     ];
     const MEMS = [
       { n: 'You', e: '', r: 'Owner', a: 'All clients', la: 'Now' },
@@ -836,12 +882,14 @@ const lg = (n, s) => {
         E('div', { class: 'fx' }, E('input', { class: 'in', type: 'search', 'aria-label': 'Search clients', placeholder: 'Search clients', value: Wk.q, oninput: (e: any) => { Wk.q = e.target.value; go(); } })),
         E('button', { class: 'btn p', onclick: nws }, '+ New workspace')),
         E('div', { class: 'sc' }, E('table', {},
-          E('thead', {}, E('tr', {}, ['Client', 'Domains', 'Seats', 'Last report', ''].map((x) => E('th', {}, x)))),
+          E('thead', {}, E('tr', {}, ['Client', 'Domains', 'Health', 'Open alerts', 'Seats', 'Last report', ''].map((x) => E('th', {}, x)))),
           E('tbody', {}, WS.filter((w) => w.n.toLowerCase().includes(Wk.q.toLowerCase())).map((w) => E('tr', {},
             E('td', {}, E('div', { class: 'fx', style: 'flex-wrap:nowrap' },
               E('span', { style: 'width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;background:' + w.c + ';font-weight:800' }, w.n.charAt(0)),
               E('b', {}, w.n))),
             E('td', {}, String(w.dm)),
+            E('td', {}, ring(w.h)),
+            E('td', {}, w.al ? pill(w.al, 'bd') : pill(0, 'ok')),
             E('td', {}, String(w.seats)),
             E('td', { class: 'sub' }, w.lr),
             E('td', {}, E('div', { class: 'fx' },
@@ -913,6 +961,7 @@ const lg = (n, s) => {
             E('button', { class: 'btn p', onclick: () => { cdr(); toast('Preview: plan changes unlock with Dodo Payments.'); } }, 'Confirm change'),
             E('button', { class: 'btn', onclick: cdr }, 'Keep current plan'))));
     }
+    const BIL: any = { xd: 0, lh: 0, inv: [{ d: 'Oct 1, 2026', n: 'Business plan, monthly', a: 99, s: 'Paid' }, { d: 'Sep 1, 2026', n: 'Business plan, monthly', a: 99, s: 'Paid' }, { d: 'Aug 1, 2026', n: 'Upgrade to Pro, prorated', a: 34.3, s: 'Paid' }] };
     function bil() {
       const msgs = OV && OV.dmarc ? OV.dmarc.messages || 0 : 0;
       const meter = (l: string, v: number, mx: number, t: string) => E('div', { style: 'margin:10px 0' }, E('div', { class: 'fx sp sub' }, l, E('b', { style: 'color:var(--ink)' }, t)), bar(Math.min(100, v / mx * 100)));
@@ -927,7 +976,7 @@ const lg = (n, s) => {
       const use = E('div', { class: 'cd' }, E('h3', {}, 'Usage this period'),
         meter('Domains', DOMS.length, MAXD, DOMS.length + ' of ' + MAXD),
         meter('Team seats', 1, 10, '1 of 10'),
-        meter('DMARC messages processed', msgs, 2500000, f(msgs) + ' so far'));
+        meter('DMARC messages processed', msgs, 2500000, f(msgs) + ' of 2.5M fair use / mo'));
       const plans = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:10px' }, E('h3', {}, 'Plans'), prev()),
         E('div', { class: 'g', style: 'grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:0' }, PLANS.map((x) => E('div', { class: 'cd', style: 'margin:0' },
           E('div', { class: 'fx sp' }, E('b', {}, x[0])),
@@ -935,9 +984,24 @@ const lg = (n, s) => {
           E('div', { class: 'sub' }, x[2] + ' domains, ' + x[3] + ' history'),
           E('ul', { style: 'padding-left:18px;margin:8px 0 12px' }, x[4].map((fl) => E('li', {}, fl))),
           E('button', { class: 'btn p', onclick: () => cfp(x[0]) }, 'Switch to ' + x[0])))));
-      const ivs = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Invoices'), prev()),
-        E('p', { class: 'sub' }, 'Invoices appear here after the first billing cycle.'));
-      return E('div', {}, E('div', { class: 'g g21' }, cur, pay), E('div', { class: 'g g2' }, use, ivs), plans);
+      const addons = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Add-ons'), prev()),
+        E('div', { class: 'li' }, E('div', {}, 'Extra domains', E('small', {}, '$4 per domain per month')), E('div', { class: 'fx' },
+          E('button', { class: 'btn', 'aria-label': 'Remove an extra domain', disabled: !BIL.xd, onclick: () => { BIL.xd--; go(); } }, '-'),
+          E('b', { class: 'm' }, String(BIL.xd)),
+          E('button', { class: 'btn', 'aria-label': 'Add an extra domain', onclick: () => { BIL.xd++; go(); } }, '+'))),
+        E('div', { class: 'li' }, E('div', {}, 'Longer report history (3 extra years)', E('small', {}, '$9 per month')),
+          E('button', { class: 'sw' + (BIL.lh ? ' on' : ''), role: 'switch', 'aria-checked': !!BIL.lh, 'aria-label': 'Longer history', onclick: () => { BIL.lh = BIL.lh ? 0 : 1; go(); } })),
+        E('div', { class: 'sub', style: 'margin-top:8px' }, 'Add-ons activate with the first paid cycle.'));
+      const invs = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:10px' }, E('h3', {}, 'Invoices'), prev()),
+        E('div', { class: 'sc' }, E('table', {},
+          E('thead', {}, E('tr', {}, ['Date', 'Description', 'Amount', 'Status', ''].map((x) => E('th', {}, x)))),
+          E('tbody', {}, BIL.inv.map((iv: any) => E('tr', {},
+            E('td', {}, iv.d),
+            E('td', {}, iv.n),
+            E('td', { class: 'm' }, '$' + (Math.round(iv.a * 100) / 100)),
+            E('td', {}, pill(iv.s, iv.s === 'Paid' ? 'ok' : 'in2')),
+            E('td', {}, E('button', { class: 'btn', onclick: () => toast('Preview: invoice PDFs arrive with Dodo Payments.') }, 'Download'))))))));
+      return E('div', {}, E('div', { class: 'g g21' }, cur, pay), E('div', { class: 'g g2' }, use, addons), plans, invs);
     }
     // ================= router =================
     const V: Record<string, [string, () => HTMLElement | Promise<HTMLElement>]> = {
