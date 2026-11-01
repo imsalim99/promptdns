@@ -59,9 +59,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .fx{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
     .btn,.sel,.in{border:1px solid var(--ln);background:var(--cd2);border-radius:8px;padding:7px 13px;font-weight:500;font-size:12.5px;color:var(--ink);text-decoration:none;display:inline-block;transition:border-color .15s}
     .btn:hover,.sel:hover{border-color:var(--ac)}
-    .btn.p{position:relative;overflow:hidden;border:0;background:linear-gradient(100deg,var(--ac),var(--vi));color:var(--onac);font-family:var(--fdis);font-weight:600;transition:transform .18s ease,box-shadow .18s ease;box-shadow:0 8px 30px -10px var(--as)}
+    .btn.p{position:relative;overflow:hidden;border:0;background:linear-gradient(100deg,var(--ac),var(--vi));color:var(--onac);font-family:var(--fdis);font-weight:600;transition:transform .18s ease}
         .btn.p::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);transform:translateX(-120%);transition:transform .7s ease}
-        .btn.p:hover{transform:translateY(-1px);box-shadow:0 10px 34px -8px var(--ac)}
+        .btn.p:hover{transform:translateY(-1px)}
         .btn.p:hover::after{transform:translateX(120%)}
     .in{font-weight:500;min-width:200px}
     .btn:focus-visible,.nv:focus-visible,.sel:focus-visible,.in:focus-visible,.seg button:focus-visible,.lk:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
@@ -273,12 +273,13 @@ const lg = (n, s) => {
         E('tbody', {}, rows.length ? rows.map((d) => {
           const i = DOMS.indexOf(d);
           return E('tr', { class: 'cl' },
-            E('td', {}, E('button', { class: 'lk', onclick: () => openDr(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
+            E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
             E('td', {}, checkChips(d)),
             E('td', {}, ring(d.score)),
             E('td', {}, dnssecPill(d)), E('td', {}, pill(d.paused ? 'Paused' : 'Active', d.paused ? 'wn' : 'ok')),
             E('td', { class: 'sub' }, d.checkedAt ? fmtWhen(d.checkedAt) : '-'),
             E('td', {}, E('div', { class: 'fx' },
+              E('button', { class: 'lk', onclick: (e: Event) => { e.stopPropagation(); openDr(i); } }, 'Quick view'),
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doRescan(d.id); } }, 'Rescan'),
               E('button', { class: 'btn', onclick: (e: Event) => { e.stopPropagation(); doPause(d); } }, d.paused ? 'Resume' : 'Pause'))));
         }) : E('tr', {}, E('td', { colspan: 7, class: 'sub' }, DOMS.length ? 'No domains match your search' : 'No domains yet. Add your first domain to start monitoring.')))));
@@ -293,7 +294,7 @@ const lg = (n, s) => {
       for (const d of DOMS) {
         const spf = chk(d, 'spf');
         if (spf && spf.status === 'fail') {
-          return { tag: 'Fix first', tagCls: 'bd', title: 'SPF on ' + d.n + ' is failing', body: 'The record has errors or exceeds the lookup limit. Receivers may be ignoring your policy entirely.', cta: 'Open the domain', fn: () => openDr(DOMS.indexOf(d)) };
+          return { tag: 'Fix first', tagCls: 'bd', title: 'SPF on ' + d.n + ' is failing', body: 'The record has errors or exceeds the lookup limit. Receivers may be ignoring your policy entirely.', cta: 'Open the domain', fn: () => openDomain(DOMS.indexOf(d)) };
         }
       }
       for (const d of DOMS) {
@@ -305,7 +306,7 @@ const lg = (n, s) => {
       for (const d of DOMS) {
         const ds = chk(d, 'dnssec');
         if (ds && ds.status === 'warn') {
-          return { tag: 'Harden', tagCls: 'wn', title: 'Enable DNSSEC on ' + d.n, body: 'No DS record at the parent. Enable DNSSEC at your DNS provider, then publish the DS record at your registrar.', cta: 'Open the domain', fn: () => openDr(DOMS.indexOf(d)) };
+          return { tag: 'Harden', tagCls: 'wn', title: 'Enable DNSSEC on ' + d.n, body: 'No DS record at the parent. Enable DNSSEC at your DNS provider, then publish the DS record at your registrar.', cta: 'Open the domain', fn: () => openDomain(DOMS.indexOf(d)) };
         }
       }
       return null;
@@ -342,7 +343,7 @@ const lg = (n, s) => {
           E('div', { class: 'cd' },
             E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Latest check results'), E('span', { class: 'sub' }, DOMS.length + ' domains')),
             DOMS.length ? DOMS.map((d) => E('div', { class: 'li' },
-              E('div', { class: 'fx' }, ring(d.score), E('div', {}, E('button', { class: 'lk', onclick: () => openDr(DOMS.indexOf(d)) }, d.n), E('div', { class: 'sub' }, d.checkedAt ? 'checked ' + fmtWhen(d.checkedAt) : 'not checked yet'))),
+              E('div', { class: 'fx' }, ring(d.score), E('div', {}, E('button', { class: 'lk', onclick: () => openDomain(DOMS.indexOf(d)) }, d.n), E('div', { class: 'sub' }, d.checkedAt ? 'checked ' + fmtWhen(d.checkedAt) : 'not checked yet'))),
               E('div', { class: 'fx' }, checkChips(d), pill('grade ' + gradeOf(d.score), d.score != null && d.score >= 80 ? 'ok' : d.score != null && d.score >= 60 ? 'wn' : 'bd')))) : E('p', { class: 'sub' }, 'No domains yet.'))),
         E('div', { class: 'cd' },
           E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC volume'), E('span', { class: 'sub' }, OV ? f(OV.dmarc?.messages || 0) + ' messages · ' + (OV.dmarc?.reports || 0) + ' reports' : '')),
@@ -351,6 +352,7 @@ const lg = (n, s) => {
         // ================= drawer =================
     const cdr = () => { $('#ly').replaceChildren(); S.sel = null; };
     function openDr(i: number) { S.sel = i; S.dt = 'rec'; drw(); }
+    function openDomain(i: number) { S.d = i; S.v = 'domain'; S.dtab = 'ov'; go(); scrollTo(0, 0); }
     async function drw() {
       const d = DOMS[S.sel];
       if (!d) return;
@@ -375,6 +377,10 @@ const lg = (n, s) => {
         E('aside', { class: 'dr', role: 'dialog', 'aria-label': d.n },
           E('div', { class: 'fx sp' }, E('h1', {}, d.n), E('button', { class: 'btn', onclick: cdr }, 'Close')),
           E('div', { class: 'sub fx', style: 'margin:4px 0 12px' }, 'health ' + (d.score ?? 'N/A') + ' / 100' + (d.paused ? ' · monitoring paused' : '')),
+          E('div', { class: 'fx', style: 'margin-bottom:12px' },
+            E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(drw) }, 'Rescan'),
+            E('button', { class: 'btn', onclick: () => doPause(d).then(drw) }, d.paused ? 'Resume' : 'Pause'),
+            E('button', { class: 'btn', style: 'color:var(--bd)', onclick: () => doDelete(d) }, 'Remove')),
           E('div', { class: 'tabs' }, [['rec', 'DNS zone records'], ['chg', 'Changes timeline'], ['ins', 'Insights']].map(([v, l]) => E('button', { class: S.dt === v ? 'on' : '', onclick: () => { S.dt = v; drw(); } }, l))),
           body));
     }
@@ -734,7 +740,206 @@ const lg = (n, s) => {
             E('div', { class: 'li' }, E('div', {}, 'DMARC aggregate reports', E('small', {}, 'Forward rua mail to your PromptDNS inbox to feed the reports screen')), pill('Active', 'ok')),
             E('div', { class: 'li' }, E('div', {}, 'Domain limit during early access', E('small', {}, 'Raise the limit in a paid plan at launch')), pill(String(MAXD) + ' domains', 'in2')))));
     }
-        // ================= router =================
+        // ================= domain overview screen =================
+    async function dom() {
+      const d = curDom();
+      if (!d) return E('div', { class: 'cd' }, E('p', { class: 'sub' }, 'No domain selected. Add one from the Overview screen.'));
+      const DM = await loadDmarc();
+      const hist = await loadHist(d.id);
+      const bad = (d.checks || []).filter((c) => c.status !== 'pass');
+      const tabs = E('div', { class: 'tabs' }, [['ov', 'Overview'], ['rec', 'DNS records'], ['act', 'Activity']].map(([v, l]) => E('button', { class: (S.dtab || 'ov') === v ? 'on' : '', onclick: () => { S.dtab = v; go(); } }, l)));
+      const head = E('div', { class: 'cd' }, E('div', { class: 'fx sp' },
+        E('div', { class: 'fx' }, ring(d.score), E('div', {},
+          E('b', { style: 'font-size:16px' }, d.n),
+          E('div', { class: 'sub' }, 'grade ' + gradeOf(d.score) + ' - ' + (d.paused ? 'monitoring paused' : 'monitoring active') + (d.checkedAt ? ' - last check ' + fmtWhen(d.checkedAt) : ' - not checked yet')))),
+        E('div', { class: 'fx' },
+          E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(() => go()) }, 'Rescan'),
+          E('button', { class: 'btn', onclick: () => doPause(d).then(() => go()) }, d.paused ? 'Resume' : 'Pause'),
+          E('button', { class: 'btn', style: 'color:var(--bd)', onclick: () => doDelete(d) }, 'Remove domain'))));
+      let body: HTMLElement;
+      if ((S.dtab || 'ov') === 'rec') {
+        const recs = d.records || [];
+        body = recs.length ? E('div', { class: 'cd' },
+          E('h3', { style: 'margin-bottom:8px' }, 'DNS zone records'),
+          E('div', { class: 'sc' }, E('table', {},
+            E('thead', {}, E('tr', {}, ['Type', 'Name', 'Value'].map((x) => E('th', {}, x)))),
+            E('tbody', {}, recs.map((r) => E('tr', {},
+              E('td', {}, r.type),
+              E('td', { class: 'm' }, r.name),
+              E('td', { class: 'm' }, r.value)))))))
+          : E('p', { class: 'sub' }, 'No records captured yet. Run a scan.');
+      } else if ((S.dtab || 'ov') === 'act') {
+        const runs = hist ? hist.runs : [];
+        const dAlerts = ALERTS.filter((a) => a.domain === d.n);
+        body = E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Scan timeline'),
+            runs.length ? runs.map((r: any) => E('div', { class: 'li' },
+              E('div', {}, r.outcome === 'changed' ? r.changes + ' record change' + (r.changes === 1 ? '' : 's') + ' detected' : 'No changes', E('small', { class: 'm' }, 'score ' + (r.score ?? '-'))),
+              E('span', { class: 'sub' }, fmtWhen(r.ran_at))))
+              : E('p', { class: 'sub' }, 'No scans recorded yet.')),
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Alerts for this domain'),
+            dAlerts.length ? dAlerts.map((a) => E('div', { class: 'li' },
+              E('div', {}, E('b', {}, a.title), E('small', {}, fmtWhen(a.created_at))),
+              pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2')))
+              : E('p', { class: 'sub' }, 'No alerts for this domain yet.')));
+      } else {
+        body = E('div', { class: 'g g2' },
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'Checks'),
+            E('div', { class: 'sc' }, E('table', {},
+              E('thead', {}, E('tr', {}, ['Check', 'Status', 'Detail'].map((x) => E('th', {}, x)))),
+              E('tbody', {}, (d.checks || []).map((c) => E('tr', {},
+                E('td', {}, E('b', {}, c.label)),
+                E('td', {}, pill(c.status, c.status === 'pass' ? 'ok' : c.status === 'warn' ? 'wn' : 'bd')),
+                E('td', { class: 'm' }, c.value || '-'))))))),
+          E('div', { class: 'cd' }, E('h3', { style: 'margin-bottom:8px' }, 'DMARC summary'),
+            DM && DM.summary.messages ? E('div', {},
+              E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
+                E('span', { class: 'sub' }, f(DM.summary.messages) + ' messages, ' + DM.summary.reports + ' reports, ' + DM.summary.orgs + ' orgs'),
+                E('b', { style: 'color:' + (DM.summary.passRate != null ? cv(DM.summary.passRate) : 'var(--so)') }, DM.summary.passRate != null ? DM.summary.passRate + '% pass' : 'N/A')),
+              DM.sources.slice(0, 5).map((r: any) => E('div', { class: 'li' }, E('span', { class: 'm' }, r.headerFrom || r.ip), E('span', { class: 'm' }, f(r.volume || 0)))),
+              E('button', { class: 'btn', style: 'margin-top:10px', onclick: () => { S.v = 'reports'; go(); scrollTo(0, 0); } }, 'Open DMARC reports'))
+              : E('p', { class: 'sub' }, 'No aggregate reports yet. Forward rua mail to PromptDNS or upload one from the DMARC reports screen.')));
+      }
+      return E('div', {}, head, E('div', { style: 'margin-bottom:14px' }, tabs),
+        bad.length && (S.dtab || 'ov') === 'ov' ? E('div', { class: 'cd', style: 'margin-bottom:14px;background:var(--ws)' },
+          E('b', {}, bad.length + ' check' + (bad.length === 1 ? '' : 's') + ' need attention.'),
+          E('p', { class: 'sub', style: 'margin:4px 0 0' }, bad.map((c) => c.label).join(', ') + ' did not pass on the last scan.')) : '', body);
+    }
+
+    // ================= workspaces (sample until the agency release) =================
+    const WS = [
+      { id: 1, n: 'Acme Logistics', dm: 3, seats: 2, lr: 'Oct 1', c: '#5B4FE8' },
+      { id: 2, n: 'Northwind Supply', dm: 2, seats: 1, lr: 'Oct 1', c: '#0F766E' },
+      { id: 3, n: 'Harbor Legal', dm: 4, seats: 3, lr: 'Sep 15', c: '#B42318' },
+      { id: 4, n: 'Kestrel Studio', dm: 1, seats: 1, lr: 'Oct 1', c: '#B45309' },
+    ];
+    const MEMS = [
+      { n: 'You', e: '', r: 'Owner', a: 'All clients', la: 'Now' },
+      { n: 'Priya N.', e: 'priya@example.com', r: 'Admin', a: 'All clients', la: '12 min ago' },
+      { n: 'Dan K.', e: 'dan@example.com', r: 'Analyst', a: 'Acme Logistics', la: 'Yesterday' },
+    ];
+    const WLOG = [
+      { t: 'Today 09:14', x: 'Priya N. raised DMARC rollout to 50% for Acme Logistics' },
+      { t: 'Yesterday', x: 'Dan K. rotated DKIM selector google' },
+      { t: 'Oct 27', x: 'Sample workspace data until the agency release ships' },
+    ];
+    const Wk = { q: '' };
+    function wsv() {
+      const al = ALERTS.filter((a) => !a.read_at).length;
+      const kp = E('div', { class: 'g g4' }, [
+        ['Clients', String(WS.length), ''],
+        ['Domains used', DOMS.length + ' / ' + MAXD, DOMS.length / MAXD > .8 ? 'color:var(--wn)' : ''],
+        ['Open alerts', String(al), al ? 'color:var(--bd)' : ''],
+        ['Team members', String(MEMS.length), ''],
+      ].map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v))));
+      const tb = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:10px' },
+        E('div', { class: 'fx' }, E('input', { class: 'in', type: 'search', 'aria-label': 'Search clients', placeholder: 'Search clients', value: Wk.q, oninput: (e: any) => { Wk.q = e.target.value; go(); } })),
+        E('button', { class: 'btn p', onclick: nws }, '+ New workspace')),
+        E('div', { class: 'sc' }, E('table', {},
+          E('thead', {}, E('tr', {}, ['Client', 'Domains', 'Seats', 'Last report', ''].map((x) => E('th', {}, x)))),
+          E('tbody', {}, WS.filter((w) => w.n.toLowerCase().includes(Wk.q.toLowerCase())).map((w) => E('tr', {},
+            E('td', {}, E('div', { class: 'fx', style: 'flex-wrap:nowrap' },
+              E('span', { style: 'width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;background:' + w.c + ';font-weight:800' }, w.n.charAt(0)),
+              E('b', {}, w.n))),
+            E('td', {}, String(w.dm)),
+            E('td', {}, String(w.seats)),
+            E('td', { class: 'sub' }, w.lr),
+            E('td', {}, E('div', { class: 'fx' },
+              E('button', { class: 'btn', onclick: () => toast('Preview: workspace switching ships with the agency release.') }, 'Open'),
+              E('button', { class: 'btn', onclick: () => toast('Preview: bulk checks ship with the agency release.') }, 'Run checks')))))))),
+        prev());
+      const tm = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Team and roles'), E('button', { class: 'btn p', onclick: inv }, '+ Invite teammate')),
+        E('div', { class: 'sc' }, E('table', {},
+          E('thead', {}, E('tr', {}, ['Member', 'Role', 'Access', 'Last active', ''].map((x) => E('th', {}, x)))),
+          E('tbody', {}, MEMS.map((m, i) => E('tr', {},
+            E('td', {}, E('b', {}, m.n), E('div', { class: 'sub' }, m.e || (document.getElementById('dv-mail') as HTMLElement)?.dataset.mail || '')),
+            E('td', {}, m.r === 'Owner' ? pill('Owner', 'in2') : E('select', { class: 'sel', 'aria-label': 'Role for ' + m.n, onchange: () => toast('Preview: roles activate with the agency release.') }, ['Admin', 'Analyst', 'Viewer'].map((o) => E('option', { selected: o === m.r }, o)))),
+            E('td', {}, m.a),
+            E('td', { class: 'sub' }, m.la),
+            E('td', {}, m.r === 'Owner' ? '' : E('button', { class: 'lk', 'aria-label': 'Remove ' + m.n, onclick: () => { MEMS.splice(i, 1); toast('Member removed'); go(); } }, '✕'))))))),
+        prev());
+      const lg2 = E('div', { class: 'cd' }, E('h3', {}, 'Audit log'), E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Every change to a hosted record or setting'),
+        WLOG.map((l) => E('div', { class: 'li' }, l.x, E('span', { class: 'sub', style: 'white-space:nowrap' }, l.t))), prev());
+      return E('div', {}, kp, tb, E('div', { class: 'g g21', style: 'margin-top:14px' }, tm, lg2));
+    }
+    function nws() {
+      const x = { n: '', d: '' };
+      const row = (l: string, el: HTMLElement) => E('div', { style: 'margin:12px 0' }, E('label', { class: 'sub', style: 'display:block;margin-bottom:4px' }, l), el);
+      const nameIn = E('input', { class: 'in', style: 'width:100%', oninput: (e: any) => { x.n = e.target.value; } });
+      const domsIn = E('textarea', { class: 'in', rows: 4, style: 'width:100%', placeholder: 'client.com, one per line', oninput: (e: any) => { x.d = e.target.value; } });
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'New client workspace' },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'New client workspace'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          row('Client name', nameIn),
+          row('Domains (one per line)', domsIn),
+          E('div', { class: 'fx' },
+            E('button', { class: 'btn p', onclick: () => { if (!x.n.trim()) return toast('Enter a client name'); WS.push({ id: Date.now(), n: x.n.trim(), dm: x.d.split('\n').filter((t: string) => t.trim()).length, seats: 1, lr: 'None yet', c: '#5B4FE8' }); cdr(); toast('Preview: workspace created locally'); go(); } }, 'Create workspace'),
+            E('button', { class: 'btn', onclick: cdr }, 'Cancel'))));
+    }
+    function inv() {
+      const x = { e: '', r: 'Analyst', a: 'All clients' };
+      const row = (l: string, el: HTMLElement) => E('div', { style: 'margin:12px 0' }, E('label', { class: 'sub', style: 'display:block;margin-bottom:4px' }, l), el);
+      const emailIn = E('input', { class: 'in', type: 'email', style: 'width:100%', oninput: (e: any) => { x.e = e.target.value; } });
+      const roleSel = E('select', { class: 'sel', style: 'width:100%', onchange: (e: any) => { x.r = e.target.value; } }, ['Admin', 'Analyst', 'Viewer'].map((o) => E('option', {}, o)));
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Invite teammate' },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'Invite teammate'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          row('Email', emailIn),
+          row('Role', roleSel),
+          row('Access', E('select', { class: 'sel', style: 'width:100%' }, ['All clients'].concat(WS.map((w) => w.n)).map((o) => E('option', {}, o)))),
+          E('div', { class: 'fx' },
+            E('button', { class: 'btn p', onclick: () => { if (!/.+@.+/.test(x.e)) return toast('Enter a valid email'); MEMS.push({ n: x.e.split('@')[0], e: x.e, r: x.r, a: x.a, la: 'Pending invite' }); cdr(); toast('Preview: invite stored locally'); go(); } }, 'Send invite'),
+            E('button', { class: 'btn', onclick: cdr }, 'Cancel'))));
+    }
+
+    // ================= billing (plans are sample until Dodo is live) =================
+    const PLANS: [string, number, number, string, string[]][] = [
+      ['Starter', 19, 3, '90 days', ['Report explorer', 'Sources manager', 'DNS change alerts']],
+      ['Pro', 49, 10, '1 year', ['Managed DMARC and SPF', 'Cloudflare connect', 'AI access monitor', 'Slack and webhooks']],
+      ['Business', 99, 25, '1 year', ['White-label reports', 'Agency workspaces', 'API access', 'TLS-RPT and MTA-STS']],
+    ];
+    function cfp(n: string) {
+      const t = PLANS.find((x) => x[0] === n)!;
+      $('#ly').replaceChildren(
+        E('div', { class: 'ov', onclick: cdr }),
+        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Switch to ' + n },
+          E('div', { class: 'fx sp' }, E('h1', {}, 'Switch to ' + n), E('button', { class: 'btn', onclick: cdr }, 'Close')),
+          E('div', { class: 'li' }, 'New plan', E('b', {}, n + ' - $' + t[1] + '/mo, ' + t[2] + ' domains')),
+          E('div', { class: 'li' }, 'Domains after switch', E('b', {}, t[2] + ' (your ' + DOMS.length + ' carry over)')),
+          E('div', { class: 'li', style: 'background:var(--ws);padding:10px;border-radius:10px' }, 'Billing activates when Dodo Payments is approved. Nothing is charged today.'),
+          E('div', { class: 'fx', style: 'margin-top:16px' },
+            E('button', { class: 'btn p', onclick: () => { cdr(); toast('Preview: plan changes unlock with Dodo Payments.'); } }, 'Confirm change'),
+            E('button', { class: 'btn', onclick: cdr }, 'Keep current plan'))));
+    }
+    function bil() {
+      const msgs = OV && OV.dmarc ? OV.dmarc.messages || 0 : 0;
+      const meter = (l: string, v: number, mx: number, t: string) => E('div', { style: 'margin:10px 0' }, E('div', { class: 'fx sp sub' }, l, E('b', { style: 'color:var(--ink)' }, t)), bar(Math.min(100, v / mx * 100)));
+      const cur = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Current plan'), pill('Active', 'ok')),
+        E('div', { style: 'margin:10px 0' }, E('span', { class: 'k' }, 'Early access'), E('span', { class: 'sub' }, '  free during development')),
+        E('div', { class: 'sub', style: 'margin:10px 0' }, 'Paid plans switch on when Dodo Payments approves the merchant account. Your domains and history carry over.'),
+        E('div', { class: 'fx' }, E('button', { class: 'btn', onclick: () => { const el = document.getElementById('plans-card'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } }, 'See paid plans')));
+      const pay = E('div', { class: 'cd' }, E('h3', {}, 'Payment method'),
+        E('div', { class: 'li' }, E('div', {}, 'No card on file', E('small', {}, 'Nothing is billed during early access')), pill('Awaiting Dodo', 'wn')),
+        E('div', { class: 'sub', style: 'margin:8px 0 10px' }, 'Payments, tax and invoices will be handled by Dodo Payments, our merchant of record.'),
+        E('button', { class: 'btn', onclick: () => toast('Preview: payment setup unlocks with Dodo Payments.') }, 'Update payment method'));
+      const use = E('div', { class: 'cd' }, E('h3', {}, 'Usage this period'),
+        meter('Domains', DOMS.length, MAXD, DOMS.length + ' of ' + MAXD),
+        meter('Team seats', 1, 10, '1 of 10'),
+        meter('DMARC messages processed', msgs, 2500000, f(msgs) + ' so far'));
+      const plans = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:10px' }, E('h3', {}, 'Plans'), prev()),
+        E('div', { class: 'g', style: 'grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:0' }, PLANS.map((x) => E('div', { class: 'cd', style: 'margin:0' },
+          E('div', { class: 'fx sp' }, E('b', {}, x[0])),
+          E('div', { style: 'margin:8px 0' }, E('span', { class: 'k' }, '$' + x[1]), E('span', { class: 'sub' }, ' /mo')),
+          E('div', { class: 'sub' }, x[2] + ' domains, ' + x[3] + ' history'),
+          E('ul', { style: 'padding-left:18px;margin:8px 0 12px' }, x[4].map((fl) => E('li', {}, fl))),
+          E('button', { class: 'btn p', onclick: () => cfp(x[0]) }, 'Switch to ' + x[0])))));
+      const ivs = E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Invoices'), prev()),
+        E('p', { class: 'sub' }, 'Invoices appear here after the first billing cycle.'));
+      return E('div', {}, E('div', { class: 'g g21' }, cur, pay), E('div', { class: 'g g2' }, use, ivs), plans);
+    }
+    // ================= router =================
     const V: Record<string, [string, () => HTMLElement | Promise<HTMLElement>]> = {
       overview: ['Overview', ov],
       reports: ['DMARC reports', rep],
@@ -743,6 +948,9 @@ const lg = (n, s) => {
       dns: ['DNS monitor and AI access', ai],
       alerts: ['Alerts', alr],
       rpt: ['Reports', rpt],
+      domain: ['Domain overview', dom],
+      ws: ['Workspaces', wsv],
+      bill: ['Billing', bil],
       settings: ['Settings', settings],
     };
     function go() {
@@ -751,13 +959,13 @@ const lg = (n, s) => {
       $('#side').replaceChildren(
         E('a', { class: 'logo', href: '/', title: 'Back to promptdns.com' }, E('span', { class: 'logo-badge', 'aria-hidden': 'true' }, 'DNS'), E('span', {}, 'Prompt', E('span', { class: 'logo-accent' }, 'DNS'))),
         E('div', { class: 'lab' }, 'MONITOR'),
-        ...Object.entries(V).filter(([k]) => k !== 'settings').map(([k, [t]]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), 'aria-current': S.v === k ? 'page' : null, onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t, k === 'alerts' && ALERTS.some((a) => !a.read_at) ? E('span', { class: 'navbadge' }, String(ALERTS.filter((a) => !a.read_at).length)) : null)),
+        ...Object.entries(V).filter(([k]) => k !== 'settings' && k !== 'domain' && k !== 'ws' && k !== 'bill').map(([k, [t]]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), 'aria-current': S.v === k ? 'page' : null, onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t, k === 'alerts' && ALERTS.some((a) => !a.read_at) ? E('span', { class: 'navbadge' }, String(ALERTS.filter((a) => !a.read_at).length)) : null)),
         E('div', { class: 'lab' }, 'TOOLS'),
 E('a', { class: 'nv', href: '/tools/' }, 'All tools'),
 E('a', { class: 'nv', href: '/dns/' }, 'Guides'),
-E('div', { class: 'lab' }, 'COMING NEXT'),
+E('div', { class: 'lab' }, 'ACCOUNT'),
         
-        ...['Workspaces', 'Billing'].map((t) => E('button', { class: 'nv', disabled: true, title: 'Ships after launch', onclick: () => toast(t + ' ships after launch.') }, t)),
+        ...[['Workspaces', 'ws'], ['Billing', 'bill']].map(([t, k]) => E('button', { class: 'nv' + (S.v === k ? ' on' : ''), onclick: () => { S.v = k; go(); scrollTo(0, 0); } }, t)),
         E('button', { class: 'nv' + (S.v === 'settings' ? ' on' : ''), onclick: () => { S.v = 'settings'; go(); scrollTo(0, 0); } }, 'Settings'),
         E('button', { class: 'nv', onclick: () => { setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); go(); } }, E('span', {}, themeLabel()), E('span', { class: 'sub' }, 'theme')),
         E('div', { class: 'plan' }, E('b', {}, 'Early access'), 'Free during development.'),
