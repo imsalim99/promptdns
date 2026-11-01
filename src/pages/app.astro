@@ -440,6 +440,16 @@ const lg = (n, s) => {
       const d = curDom();
       if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain on the Overview screen to see its DMARC reports.'));
       const DM = await loadDmarc();
+      const dmarcRec = (d ? chk(d, 'dmarc')?.value : '') || '';
+      const ruaMatch = dmarcRec.match(/rua=([^;]+)/i);
+      const lastReport = DM && DM.reports && DM.reports[0] ? DM.reports[0].received_at : null;
+      const notices = E('div', { style: 'margin-bottom:14px' },
+        !ruaMatch ? E('div', { class: 'cd', style: 'background:var(--ws)' },
+          E('b', {}, 'This domain cannot receive aggregate reports yet.'),
+          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Its DMARC record has no rua= tag, so providers have nowhere to send reports. Add rua=mailto:reports@promptdns.com to the record at your DNS provider.'),
+          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Recommended record: ', E('span', { class: 'm' }, 'v=DMARC1; p=none; rua=mailto:reports@promptdns.com')))
+        : E('div', { class: 'cd', style: 'background:var(--as)' },
+          E('p', { class: 'sub', style: 'margin:0' }, 'Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.'))));
       const sum = DM ? DM.summary : { reports: 0, messages: 0, orgs: 0, passRate: null };
       const tot = sum.messages || 0, rate = sum.passRate;
       const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
@@ -506,7 +516,7 @@ const lg = (n, s) => {
         else toast((j && j.error) || 'Upload failed.');
       } });
       const upBtn = E('button', { class: 'btn p', onclick: () => upl.click() }, 'Upload report');
-      return E('div', {}, E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
+      return E('div', {}, notices, E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
         E('p', { class: 'sub', style: 'margin:0' }, 'Reports arrive by forwarding rua mail to PromptDNS, or upload one directly.'),
         E('div', { class: 'fx' }, upBtn, upl)),
         E('div', { class: 'g g21' }, chartCard, side), E('div', { class: 'cd' }, tabs, table));
