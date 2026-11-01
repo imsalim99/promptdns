@@ -437,19 +437,36 @@ const lg = (n, s) => {
     }
         // ================= DMARC reports =================
     async function rep() {
+      const ruaCache = new Map<string, string | null>();
       const d = curDom();
       if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain on the Overview screen to see its DMARC reports.'));
       const DM = await loadDmarc();
       const dmarcRec = (d ? chk(d, 'dmarc')?.value : '') || '';
-      const ruaMatch = dmarcRec.match(/rua=([^;]+)/i);
+      let ruaRec: string | null | undefined = dmarcRec.toLowerCase().includes('v=dmarc') ? dmarcRec : undefined;
+      if (d && ruaRec === undefined) {
+        if (ruaCache.has(d.n)) ruaRec = ruaCache.get(d.n);
+        else {
+          try {
+            const res = await fetch('https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent('_dmarc.' + d.n) + '&type=TXT', { headers: { accept: 'application/dns-json' } });
+            const json = await res.json();
+            const txts = (json.Answer || []).filter((a: any) => a.type === 16).map((a: any) => String(a.data).replace(/"/g, ''));
+            ruaRec = txts.find((t: string) => t.toLowerCase().startsWith('v=dmarc1')) || null;
+          } catch { ruaRec = null; }
+          ruaCache.set(d.n, ruaRec);
+        }
+      }
+      const ruaMatch = ruaRec ? ruaRec.match(/rua=([^;]+)/i) : null;
       const lastReport = DM && DM.reports && DM.reports[0] ? DM.reports[0].received_at : null;
       const notices = E('div', { style: 'margin-bottom:14px' },
-        !ruaMatch ? E('div', { class: 'cd', style: 'background:var(--ws)' },
+        ruaRec === undefined ? E('div', { class: 'cd', style: 'background:var(--as)' },
+          E('p', { class: 'sub', style: 'margin:0' }, 'Checking the rua= tag on the live DMARC record...'))
+        : !ruaRec ? E('div', { class: 'cd', style: 'background:var(--ws)' },
           E('b', {}, 'This domain cannot receive aggregate reports yet.'),
-          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Its DMARC record has no rua= tag, so providers have nowhere to send reports. Add rua=mailto:reports@promptdns.com to the record at your DNS provider.'),
+          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'No DMARC record with an rua= tag was found in live DNS, so providers have nowhere to send reports. Add rua=mailto:reports@promptdns.com to the record at your DNS provider.'),
           E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Recommended record: ', E('span', { class: 'm' }, 'v=DMARC1; p=none; rua=mailto:reports@promptdns.com')))
         : E('div', { class: 'cd', style: 'background:var(--as)' },
-          E('p', { class: 'sub', style: 'margin:0' }, 'Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.'))));
+          E('p', { class: 'sub', style: 'margin:0' }, 'rua= is configured' + (ruaMatch ? ' (' + ruaMatch[1].trim() + ')' : '') + '. Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.')),
+          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Live record: ', E('span', { class: 'm' }, ruaRec))));
       const sum = DM ? DM.summary : { reports: 0, messages: 0, orgs: 0, passRate: null };
       const tot = sum.messages || 0, rate = sum.passRate;
       const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },

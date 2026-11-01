@@ -146,7 +146,7 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   checks.push({
     id: 'dmarc', label: 'DMARC', weight: 25,
     status: policy === 'reject' ? 'pass' : policy ? 'warn' : 'fail',
-    value: policy ? `p=${policy}` : 'No DMARC record',
+    value: rec ?? 'No DMARC record',
     earned: dmarcEarned,
   });
 
