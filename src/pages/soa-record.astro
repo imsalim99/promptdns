@@ -198,7 +198,7 @@ example.com.  3600   IN     SOA   ns1.example.com.        hostmaster.example.com
       </ol>
 
       <p>
-        Editing raw BIND, NSD, or Knot DNS configurations without advancing the SOA serial causes replication failure: secondary nameservers observe an unchanged serial, presume zero edits occurred, and serve stale records indefinitely. Production deployments protect zone replication by restricting AXFR zone transfers with IP access lists and cryptographic TSIG keys, verifiable through the <a href="/axfr-checker/" class="text-accent underline hover:text-accent-hover">AXFR / Zone Transfer Leak Checker</a>.
+        Editing raw BIND, NSD, or Knot DNS configurations without advancing the SOA serial causes replication failure: secondary nameservers observe an unchanged serial, presume zero edits occurred, and serve stale records indefinitely. Secondary servers avoid serving stale records when serials advance, and administrators restrict zone transfers (AXFR) with IP access lists and cryptographic TSIG keys, verifiable through the <a href="/axfr-checker/" class="text-accent underline hover:text-accent-hover">AXFR / Zone Transfer Leak Checker</a>.
       </p>
 
       <h2 id="how-to-format-the-soa-serial-number-yyyymmddnn-and-rname-email-address">How to Format the SOA Serial Number (YYYYMMDDnn) and RNAME Email Address</h2>
