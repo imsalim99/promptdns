@@ -622,7 +622,7 @@ const lg = (n, s) => {
       // fire monitors in the background if no data yet - render immediately
       if (cd && !mon) {
         postJSON('/api/domains/monitors?id=' + cd.id).then((j) => {
-          if (j && j.ok) { loadRules(); go(); }
+          if (j && j.ok && j.monitors) { const d = DOMS.find((x) => x.id === cd.id); if (d) d.monitors = j.monitors; }
         }).catch(() => { /* monitors are best-effort */ });
       }
       const st = S.ai;
