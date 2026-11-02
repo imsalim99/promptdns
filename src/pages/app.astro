@@ -614,21 +614,29 @@ const lg = (n, s) => {
     }
 
     // ================= DNS monitor + AI access =================
-    function ai() {
+    async function ai() {
       const cd = curDom();
       const domAlerts = cd ? ALERTS.filter((a) => a.domain === cd.n) : ALERTS;
-      const mon = cd ? cd.monitors : null;
+      let mon = cd ? cd.monitors : null;
+      // auto-trigger monitors on first visit if no data exists yet
+      if (cd && !mon) {
+        mon = await (async () => {
+          const j = await postJSON('/api/domains/monitors?id=' + cd.id);
+          if (j && j.ok && j.monitors) { await loadRules(); return j.monitors; }
+          return null;
+        })();
+      }
       const st = S.ai;
       const ex = Object.values(st).filter((v) => v !== 'unset').length;
       const score = Math.min(100, 50 + ex * 6);
-      const txt = mon && mon.robots && mon.robots.exists ? mon.robots.content : '# No robots.txt found for this domain';
-      const expiryTxt = mon && mon.expiry ? mon.expiry.days + ' days' : 'checking...';
+      const expiryTxt = mon && mon.expiry ? mon.expiry.days + ' days' : 'not checked yet';
       const expiryColor = mon && mon.expiry ? (mon.expiry.days < 30 ? 'color:var(--bd)' : mon.expiry.days < 90 ? 'color:var(--wn)' : '') : '';
-      const sslTxt = mon && mon.ssl ? (mon.ssl.ok ? 'Valid' : 'Failed') : 'checking...';
+      const sslTxt = mon && mon.ssl ? (mon.ssl.ok ? 'Valid' : 'Failed') : 'not checked yet';
       const sslColor = mon && mon.ssl ? (mon.ssl.ok ? 'color:var(--ok)' : 'color:var(--bd)') : '';
-      const blTxt = mon && mon.blocklists ? mon.blocklists.hits + ' of ' + mon.blocklists.total : 'checking...';
+      const blTxt = mon && mon.blocklists ? mon.blocklists.hits + ' of ' + mon.blocklists.total : 'not checked yet';
       const blColor = mon && mon.blocklists && mon.blocklists.hits > 0 ? 'color:var(--bd)' : 'color:var(--ok)';
       const hasRobots = mon && mon.robots && mon.robots.exists;
+      const robotsContent = hasRobots ? mon.robots.content : '';
       const crawlerList = hasRobots && mon.robots.crawlers.length ? mon.robots.crawlers : [];
       const kpis = E('div', { class: 'g g4' }, [
         ['Domain expiry', expiryTxt, expiryColor],
@@ -636,33 +644,71 @@ const lg = (n, s) => {
         ['Blocklists', blTxt, blColor],
         ['AI readiness', score + ' / 100', ''],
       ].map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v))));
+      // Crawler access: parsed status from the live robots.txt
+      const statusPill = (s2: string) => s2 === 'disallow' ? pill('Blocked', 'bd') : s2 === 'allow' ? pill('Allowed', 'ok') : pill('Unset', 'in2');
       const crawlerCard = E('div', { class: 'cd' },
-        E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access (robots.txt)')),
+        E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access (live robots.txt)')),
         hasRobots
           ? [
-              E('div', { class: 'sub', style: 'margin-bottom:8px' }, 'Live robots.txt from ' + (cd ? cd.n : '') + ' - showing how AI crawlers are configured.'),
+              E('div', { class: 'sub', style: 'margin-bottom:8px' }, 'How AI crawlers are configured in the live robots.txt of ' + (cd ? cd.n : '') + '.'),
               crawlerList.length
                 ? crawlerList.map((c) => {
                     const stTxt = c.status === 'disallow' ? 'Blocked' : c.status === 'allow' ? 'Allowed' : 'Unset';
                     const stCls = c.status === 'disallow' ? 'bd' : c.status === 'allow' ? 'ok' : 'in2';
-                    const desc = c.status === 'disallow' ? ' - blocked by robots.txt' : c.status === 'allow' ? ' - allowed by robots.txt' : ' - not mentioned';
+                    const desc = c.status === 'disallow' ? 'Blocked by robots.txt' : c.status === 'allow' ? 'Allowed by robots.txt' : 'Not mentioned (default: allowed)';
                     return E('div', { class: 'li' },
-                      E('div', {}, E('b', {}, c.name), E('small', { class: 'sub' }, desc)),
+                      E('div', {}, E('b', {}, c.name), E('small', { class: 'sub' }, ' ' + desc)),
                       pill(stTxt, stCls));
-                  }).join('')
+                  })
                 : E('p', { class: 'sub' }, 'No known AI crawlers mentioned in robots.txt. They are allowed by default.'),
               E('details', { style: 'margin-top:10px' },
                 E('summary', { class: 'sub', style: 'cursor:pointer' }, 'View full robots.txt'),
-                E('pre', { style: 'margin-top:8px' }, txt)),
+                E('pre', { style: 'margin-top:8px' }, robotsContent)),
             ]
           : [
-              E('p', { class: 'sub', style: 'margin:8px 0' }, 'No robots.txt found at ' + (cd ? cd.n : '') + '/robots.txt. AI crawlers can access all pages by default.'),
-              E('p', { class: 'sub' }, 'Publish a robots.txt file to control which AI crawlers can access your site.'),
+              E('p', { class: 'sub', style: 'margin:8px 0' }, 'No robots.txt found at ' + (cd ? cd.n : '') + '/robots.txt.'),
+              E('p', { class: 'sub' }, 'AI crawlers can access all pages by default. Publish a robots.txt to control access.'),
             ]);
-      const robotsCard = E('div', { class: 'cd' },
+      // Generated robots.txt: recommended content the user can copy
+      const generated = [
+        '# AI crawler access for ' + (cd ? cd.n : 'your domain'),
+        '# Edit at your DNS provider or web host, then paste into /robots.txt',
+        '',
+        'User-agent: GPTBot',
+        st['GPTBot'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: ClaudeBot',
+        st['ClaudeBot'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: PerplexityBot',
+        st['PerplexityBot'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: Google-Extended',
+        st['Google-Extended'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: Amazonbot',
+        st['Amazonbot'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: CCBot',
+        st['CCBot'] === 'allow' ? 'Allow: /' : 'Disallow: /',
+        '',
+        'User-agent: *',
+        'Allow: /',
+      ].join('\n');
+      const generatedCard = E('div', { class: 'cd' },
+        E('div', { class: 'fx sp' }, E('h3', {}, 'Generated robots.txt'), prev()),
+        E('div', { class: 'sub', style: 'margin:6px 0 10px' }, 'Use the toggles below to generate the robots.txt rules you want, then copy and publish at your web host.'),
+        BOTS.map(([b, o, p2]) => E('div', { class: 'li' }, E('div', { class: 'fx', style: 'flex-wrap:nowrap;gap:10px' }, lg(o, 22) || '', E('div', {}, E('b', {}, b), E('small', {}, o + ' - ' + p2))), seg([['unset', 'Unset'], ['allow', 'Allow'], ['block', 'Block']], st[b], (v) => { st[b] = v; go(); }))),
+        E('pre', { style: 'margin-top:12px' }, generated),
+        E('div', { class: 'fx', style: 'margin-top:10px' },
+          E('button', { class: 'btn p', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(generated); toast('Copied to clipboard'); } }, 'Copy robots.txt')));
+      const alertsCard = E('div', { class: 'cd' },
         E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Recent alerts for ' + (cd ? cd.n : 'your domains'))),
         (domAlerts.length ? domAlerts.map((a) => E('div', { class: 'li' }, E('div', {}, a.title, E('small', { class: 'm' }, a.domain)), pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2'))) : E('p', { class: 'sub' }, 'No alerts for this domain yet.')));
-      return E('div', {}, kpis, E('div', { class: 'g g2' }, crawlerCard, robotsCard));
+      return E('div', {},
+        kpis,
+        E('div', { class: 'g g2' }, crawlerCard, generatedCard),
+        E('div', { style: 'margin-top:14px' }, alertsCard));
     }
     // ================= alerts =================
     const sevC = { critical: 'bd', warning: 'wn', info: 'in2' } as Record<string, string>;
