@@ -1,14 +1,15 @@
 /**
- * DNS monitor checks (v12): SSL status, domain expiry, blocklists.
+ * DNS monitor checks (v12): SSL status, domain expiry, blocklists, robots.txt.
  *
- * All three run inside the Worker using standard protocols:
+ * All run inside the Worker using standard protocols:
  * - SSL: fetch over HTTPS to the site root; failure = SSL problem.
  * - Expiry: RDAP (rdap.org) bootstrap, returns the expiration event.
- * - Blocklists: resolve the domain's A record, then query two public
- *   DNSBLs (Spamhaus Zen, SpamCop) via DoH with the reversed IP.
+ * - Blocklists: resolve the domain's A record, then query DNSBLs via DoH.
+ * - Robots.txt: fetch and parse the live file; per-crawler status derived
+ *   from User-agent groups (specific match beats wildcard).
  *
  * Results are stored in domains.monitors_json by the 6-hour cron and
- * surface on the DNS monitor screen and as alerts when issues appear.
+ * after domain add, and surface on the DNS monitor screen and as alerts.
  */
 
 import { txtRecords } from './scan';
@@ -27,11 +28,19 @@ function sameOrigin(request: Request): boolean {
   }
 }
 
+export interface CrawlerStatus {
+  name: string;
+  status: 'allow' | 'disallow' | 'unset';
+}
+
 export interface MonitorResult {
   ssl: { ok: boolean; error: string };
   expiry: { date: string; days: number } | null;
   blocklists: { hits: number; total: number; listed: string[] };
+  robots: { exists: boolean; content: string; crawlers: CrawlerStatus[] };
 }
+
+const KNOWN_CRAWLERS = ['GPTBot', 'ClaudeBot', 'Claude-Web', 'anthropic-ai', 'PerplexityBot', 'Google-Extended', 'Amazonbot', 'CCBot', 'ChatGPT-User', 'Applebot-Extended'];
 
 /** 1. SSL: an HTTPS fetch that succeeds means the certificate is valid. */
 async function checkSSL(domain: string): Promise<{ ok: boolean; error: string }> {
@@ -45,13 +54,11 @@ async function checkSSL(domain: string): Promise<{ ok: boolean; error: string }>
       headers: { 'user-agent': 'PromptDNS-Monitor/1.0' },
     });
     clearTimeout(timer);
-    // any HTTP response over TLS means the certificate is valid
     return { ok: true, error: '' };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes('abort') || msg.includes('timeout')) return { ok: false, error: 'Connection timed out' };
     if (msg.includes('certificate') || msg.includes('SSL') || msg.includes('TLS')) return { ok: false, error: msg.slice(0, 120) };
-    // non-SSL connection failures (site down, DNS issues) are not SSL problems
     return { ok: true, error: '' };
   }
 }
@@ -105,7 +112,7 @@ async function resolveA(domain: string): Promise<string | null> {
 
 function reversedIp(ip: string): string | null {
   const parts = ip.split('.');
-  if (parts.length !== 4) return null; // IPv6 not supported by most DNSBLs
+  if (parts.length !== 4) return null;
   return parts.reverse().join('.');
 }
 
@@ -127,7 +134,6 @@ async function checkBlocklists(domain: string): Promise<{ hits: number; total: n
       });
       clearTimeout(timer);
       const data = await res.json() as { Status?: number; Answer?: { data: string }[] };
-      // NXDOMAIN (Status 3) = not listed; a 127.0.0.x answer = listed
       if (data.Status === 0 && data.Answer && data.Answer.some((a) => a.data.startsWith('127.0.'))) {
         listed.push(bl.name);
       }
@@ -137,14 +143,87 @@ async function checkBlocklists(domain: string): Promise<{ hits: number; total: n
   return { hits, total: DNSBLS.length, listed };
 }
 
-/** Run all three checks for a domain. */
+/** 4. Robots.txt: fetch and parse for known AI crawlers. */
+async function checkRobotsTxt(domain: string): Promise<{ exists: boolean; content: string; crawlers: CrawlerStatus[] }> {
+  let content = '';
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch('https://' + domain + '/robots.txt', {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'user-agent': 'PromptDNS-Monitor/1.0' },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { exists: false, content: '', crawlers: KNOWN_CRAWLERS.map((c) => ({ name: c, status: 'unset' as const })) };
+    content = await res.text();
+    if (content.length > 50000) content = content.slice(0, 50000);
+  } catch {
+    return { exists: false, content: '', crawlers: KNOWN_CRAWLERS.map((c) => ({ name: c, status: 'unset' as const })) };
+  }
+
+  // Parse robots.txt into user-agent groups with their directives
+  const groups: { agents: string[]; disallowAll: boolean; allowAll: boolean; hasRules: boolean }[] = [];
+  let currentAgents: string[] = [];
+  let hasRules = false;
+  let disallowAll = false;
+  let allowAll = false;
+  for (const raw of content.split('\n')) {
+    const line = raw.trim();
+    const lower = line.toLowerCase();
+    if (lower.startsWith('user-agent:')) {
+      if (currentAgents.length && hasRules) {
+        groups.push({ agents: currentAgents, disallowAll, allowAll, hasRules });
+        currentAgents = [];
+        hasRules = false;
+        disallowAll = false;
+        allowAll = false;
+      }
+      const agent = line.split(':')[1]?.trim() || '';
+      currentAgents.push(agent);
+    } else if (lower.startsWith('disallow:')) {
+      const path = line.split(':').slice(1).join(':').trim();
+      if (path === '' || path === '/') { /* empty disallow = allow all */ }
+      else { hasRules = true; disallowAll = true; }
+    } else if (lower.startsWith('allow:')) {
+      hasRules = true;
+      allowAll = true;
+    }
+  }
+  if (currentAgents.length && hasRules) {
+    groups.push({ agents: currentAgents, disallowAll, allowAll, hasRules });
+  }
+
+  // Determine status for each known crawler
+  const crawlers: CrawlerStatus[] = KNOWN_CRAWLERS.map((bot) => {
+    const botLower = bot.toLowerCase();
+    // specific match beats wildcard
+    const specific = groups.find((g) => g.agents.some((a) => a.toLowerCase() === botLower));
+    if (specific) {
+      if (specific.disallowAll) return { name: bot, status: 'disallow' as const };
+      if (specific.allowAll) return { name: bot, status: 'allow' as const };
+      return { name: bot, status: 'unset' as const };
+    }
+    const wildcard = groups.find((g) => g.agents.some((a) => a === '*'));
+    if (wildcard) {
+      if (wildcard.disallowAll) return { name: bot, status: 'disallow' as const };
+      return { name: bot, status: 'unset' as const };
+    }
+    return { name: bot, status: 'unset' as const };
+  });
+
+  return { exists: true, content, crawlers };
+}
+
+/** Run all four checks for a domain. */
 export async function runMonitors(domain: string): Promise<MonitorResult> {
-  const [ssl, expiry, blocklists] = await Promise.all([
+  const [ssl, expiry, blocklists, robots] = await Promise.all([
     checkSSL(domain),
     checkExpiry(domain),
     checkBlocklists(domain),
+    checkRobotsTxt(domain),
   ]);
-  return { ssl, expiry, blocklists };
+  return { ssl, expiry, blocklists, robots };
 }
 
 /** POST /api/domains/monitors?id=N - run monitors on demand and return results. */

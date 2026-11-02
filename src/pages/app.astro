@@ -615,20 +615,21 @@ const lg = (n, s) => {
 
     // ================= DNS monitor + AI access =================
     function ai() {
-      const st = S.ai;
       const cd = curDom();
       const domAlerts = cd ? ALERTS.filter((a) => a.domain === cd.n) : ALERTS;
-      const BOTS: [string, string, string][] = [['GPTBot', 'OpenAI', 'Training'], ['ClaudeBot', 'Anthropic', 'Training'], ['PerplexityBot', 'Perplexity', 'Search index'], ['Google-Extended', 'Google', 'Training opt-out'], ['Amazonbot', 'Amazon', 'Search and assistant']];
+      const mon = cd ? cd.monitors : null;
+      const st = S.ai;
       const ex = Object.values(st).filter((v) => v !== 'unset').length;
       const score = Math.min(100, 50 + ex * 6);
-      const txt = BOTS.map(([b]) => st[b] === 'unset' ? '' : `User-agent: ${b}\n${st[b] === 'allow' ? 'Allow: /' : 'Disallow: /'}\n`).filter(Boolean).join('\n') || '# No AI crawler rules yet';
-      const mon = cd ? cd.monitors : null;
+      const txt = mon && mon.robots && mon.robots.exists ? mon.robots.content : '# No robots.txt found for this domain';
       const expiryTxt = mon && mon.expiry ? mon.expiry.days + ' days' : 'checking...';
       const expiryColor = mon && mon.expiry ? (mon.expiry.days < 30 ? 'color:var(--bd)' : mon.expiry.days < 90 ? 'color:var(--wn)' : '') : '';
       const sslTxt = mon && mon.ssl ? (mon.ssl.ok ? 'Valid' : 'Failed') : 'checking...';
       const sslColor = mon && mon.ssl ? (mon.ssl.ok ? 'color:var(--ok)' : 'color:var(--bd)') : '';
       const blTxt = mon && mon.blocklists ? mon.blocklists.hits + ' of ' + mon.blocklists.total : 'checking...';
       const blColor = mon && mon.blocklists && mon.blocklists.hits > 0 ? 'color:var(--bd)' : 'color:var(--ok)';
+      const hasRobots = mon && mon.robots && mon.robots.exists;
+      const crawlerList = hasRobots && mon.robots.crawlers.length ? mon.robots.crawlers : [];
       const kpis = E('div', { class: 'g g4' }, [
         ['Domain expiry', expiryTxt, expiryColor],
         ['SSL certificates', sslTxt, sslColor],
@@ -636,17 +637,33 @@ const lg = (n, s) => {
         ['AI readiness', score + ' / 100', ''],
       ].map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v))));
       const crawlerCard = E('div', { class: 'cd' },
-        E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access'), prev()),
-        E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Set a rule per crawler. SSL, expiry and blocklist checks run every 6 hours.'),
-        BOTS.map(([b, o, p2]) => E('div', { class: 'li' }, E('div', { class: 'fx', style: 'flex-wrap:nowrap;gap:10px' }, lg(o, 22) || '', E('div', {}, E('b', {}, b), E('small', {}, o + ' - ' + p2))), seg([['unset', 'Unset'], ['allow', 'Allow'], ['block', 'Block']], st[b], (v) => { st[b] = v; go(); }))));
+        E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access (robots.txt)')),
+        hasRobots
+          ? [
+              E('div', { class: 'sub', style: 'margin-bottom:8px' }, 'Live robots.txt from ' + (cd ? cd.n : '') + ' - showing how AI crawlers are configured.'),
+              crawlerList.length
+                ? crawlerList.map((c) => {
+                    const stTxt = c.status === 'disallow' ? 'Blocked' : c.status === 'allow' ? 'Allowed' : 'Unset';
+                    const stCls = c.status === 'disallow' ? 'bd' : c.status === 'allow' ? 'ok' : 'in2';
+                    const desc = c.status === 'disallow' ? ' - blocked by robots.txt' : c.status === 'allow' ? ' - allowed by robots.txt' : ' - not mentioned';
+                    return E('div', { class: 'li' },
+                      E('div', {}, E('b', {}, c.name), E('small', { class: 'sub' }, desc)),
+                      pill(stTxt, stCls));
+                  }).join('')
+                : E('p', { class: 'sub' }, 'No known AI crawlers mentioned in robots.txt. They are allowed by default.'),
+              E('details', { style: 'margin-top:10px' },
+                E('summary', { class: 'sub', style: 'cursor:pointer' }, 'View full robots.txt'),
+                E('pre', { style: 'margin-top:8px' }, txt)),
+            ]
+          : [
+              E('p', { class: 'sub', style: 'margin:8px 0' }, 'No robots.txt found at ' + (cd ? cd.n : '') + '/robots.txt. AI crawlers can access all pages by default.'),
+              E('p', { class: 'sub' }, 'Publish a robots.txt file to control which AI crawlers can access your site.'),
+            ]);
       const robotsCard = E('div', { class: 'cd' },
-        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Generated robots.txt'), E('button', { class: 'btn', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(txt); toast('Copied to clipboard'); } }, 'Copy')),
-        E('pre', {}, txt),
-        E('h3', { style: 'margin:14px 0 4px' }, 'Recent alerts for ' + (cd ? cd.n : 'your domains')),
+        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Recent alerts for ' + (cd ? cd.n : 'your domains'))),
         (domAlerts.length ? domAlerts.map((a) => E('div', { class: 'li' }, E('div', {}, a.title, E('small', { class: 'm' }, a.domain)), pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2'))) : E('p', { class: 'sub' }, 'No alerts for this domain yet.')));
       return E('div', {}, kpis, E('div', { class: 'g g2' }, crawlerCard, robotsCard));
     }
-
     // ================= alerts =================
     const sevC = { critical: 'bd', warning: 'wn', info: 'in2' } as Record<string, string>;
     const ALSET: any = { dg: 1, dgt: '08:00', qh: 'Off' };

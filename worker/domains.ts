@@ -10,6 +10,7 @@
 import type { Env } from './index';
 import { getUserBySession } from './auth';
 import { scanDomainServer } from './scan';
+import { runMonitors } from './monitors';
 
 const MAX_DOMAINS = 3; // development cap; becomes the plan limit when billing ships
 
@@ -129,6 +130,15 @@ export async function handleDomainsAdd(request: Request, env: SessionEnv): Promi
     .prepare('INSERT INTO snapshots (domain_id, score, grade, checks_json, records_json) VALUES (?1, ?2, ?3, ?4, ?5)')
     .bind(domainId, scan.score, scan.grade, JSON.stringify(scan.checks), JSON.stringify(scan.records))
     .run();
+
+  // run DNS monitors immediately so the DNS monitor screen has real data
+  try {
+    const mon = await runMonitors(domain);
+    await env.DB
+      .prepare("UPDATE domains SET monitors_json = ?2, monitored_at = datetime('now') WHERE id = ?1")
+      .bind(domainId, JSON.stringify(mon))
+      .run();
+  } catch { /* monitors best-effort */ }
 
   return json({ ok: true, domain: { id: domainId, domain, score: scan.score, grade: scan.grade, checkedAt: new Date().toISOString(), checks: scan.checks } });
 }
