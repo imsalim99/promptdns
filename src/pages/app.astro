@@ -171,8 +171,9 @@ const lg = (n, s) => {
     const postJSON = async (u: string, body?: any) => {
       try {
         const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-        return await r.json();
-      } catch { return { ok: false, error: 'Could not reach the server.' }; }
+        const text = await r.text();
+        try { return JSON.parse(text); } catch { return { ok: false, error: 'Server ' + r.status + ': ' + text.slice(0, 120) }; }
+      } catch (e) { return { ok: false, error: 'Network: ' + (e instanceof Error ? e.message : 'unknown') }; }
     };
 
     async function refreshAll() {
