@@ -1,95 +1,363 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "NS",
- "title": "NS Record: Nameservers and Delegation",
- "description": "NS records explained in depth: registry vs zone NS, lame delegation, transfer mechanics, and how to audit who really serves your DNS.",
- "intro": "NS records declare which nameservers are authoritative for a name. They are the load-bearing wall of delegation: get them wrong and your entire zone, website and email included, stops answering.",
- "deepDive": [
-  "There are two places NS records live, and confusing them causes most delegation incidents. The parent zone (.com registry) holds the delegation NS set you configure through your registrar. Your own zone also publishes NS records at its apex. When the two sets disagree, part of the internet asks servers that no longer hold your data, a state called lame delegation that shows up as intermittent SERVFAIL for a subset of users.",
-  "Changing DNS providers is therefore an ordered procedure, not a toggle: add the zone at the new provider first, verify it answers identically, then change the delegation at the registrar, then wait out the full TTL window (up to 48 hours, because registry delegations cache) before decommissioning the old servers. Reversing any of those steps creates an interval where some resolvers have nowhere valid to ask.",
-  "NS records also delegate subdomains. Pointing dev.example.com at a different provider's nameservers lets teams run their own zone without touching yours. The same correctness rules apply: the parent (you) must publish delegation matching what the child zone serves, glue records included when the child's nameservers live inside the delegated name."
- ],
- "example": "example.com.  86400  IN  NS  ns1.cloudflare.com.\nexample.com.  86400  IN  NS  ns2.cloudflare.com.",
- "anatomy": [
-  [
-   "NS",
-   "The record type: an authoritative nameserver hostname follows."
-  ],
-  [
-   "86400",
-   "Delegation TTLs are long by design; registry-side caching makes NS changes slow."
-  ],
-  [
-   "ns1.cloudflare.com.",
-   "The nameserver. It must itself resolve to an A/AAAA record (glue, when hosted under the delegated name)."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between changing NS records and changing an A record?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Changing your NS records at your domain registrar moves your entire DNS zone (web, email, and subdomains) to a new DNS hosting provider (like moving from GoDaddy to Cloudflare) and takes up to 48 hours. Changing an A record only updates the web server IP address while keeping DNS and email records at your existing DNS host."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does ns1 get more traffic than ns2 in my NS records?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, NS records do not have priority numbers or follow a strict 1-then-2 order. Recursive resolvers treat all published NS records as equally authoritative peers, querying them in parallel or preferring whichever nameserver has the lowest network latency (RTT) from the resolver's location."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why did my company email stop working right after I changed my nameservers (NS records)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world migrations, this represents the most common outage: switching nameservers causes the previous provider to stop answering queries immediately. Omitting your MX, SPF, and DKIM records from the new provider's zone prior to delegating nameservers breaks incoming and outgoing email until administrators publish those records at the new DNS host."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I edit the root (@) NS records inside my Cloudflare or Route 53 DNS table when moving my domain away?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in practice you change root nameservers inside your domain registrar's \"Nameservers\" console, not by editing @ NS rows inside your existing DNS host's table. You only add NS rows inside your DNS zone when delegating a subdomain (such as app.example.com) to separate nameservers."
+      }
+    }
   ]
- ],
- "uses": [
-  "Delegating your domain to its DNS host (Cloudflare, Route 53, registrar DNS)",
-  "Delegating subdomains to other providers or teams",
-  "Verifying that a registrar transfer or provider switch actually completed"
- ],
- "steps": [
-  [
-   "Look up the delegation",
-   "An NS query on your domain shows what resolvers consider authoritative."
-  ],
-  [
-   "Compare with the zone",
-   "Your DNS provider's panel lists the NS set it publishes. Both sets must match exactly."
-  ],
-  [
-   "Test the servers directly",
-   "Querying each nameserver for your apex A record proves each one answers, not just the first."
-  ],
-  [
-   "After any switch, wait out the window",
-   "Keep the old provider answering for 48 hours before cancelling it."
-  ]
- ],
- "mistakes": [
-  "Changing NS records inside the old provider's panel and expecting the world to follow; the registry only hears your registrar",
-  "Mismatched sets between registry and zone, producing lame delegation and intermittent failures",
-  "Cancelling the old DNS plan the day after a switch, before long delegation TTLs expire",
-  "Four or more nameservers 'for reliability' without monitoring: slow or dead ones hurt more than fewer fast ones"
- ],
- "faqs": [
-  [
-   "Where do I change my nameservers?",
-   "At your registrar. The registrar tells the registry, and the registry's delegation is what resolvers follow."
-  ],
-  [
-   "Why do NS changes take up to 48 hours?",
-   "Registry delegations cache with long TTLs, independent of your zone's own records."
-  ],
-  [
-   "What is lame delegation?",
-   "The parent points at nameservers that don't authoritatively answer for your zone. Users see random SERVFAIL."
-  ],
-  [
-   "Do more nameservers mean more reliability?",
-   "Only if they are all healthy. A dead nameserver in the set adds latency and failure cases."
-  ],
-  [
-   "How do I check NS records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should NS records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "How DNS resolution works",
-   "/how-dns-works/"
-  ],
-  [
-   "SOA records (zone metadata)",
-   "/soa-record/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["NS Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="NS Record: What Nameserver Records Are, Parent vs Child Delegation, and Examples"
+  description="Understand what an NS record is, how nameserver delegation works between parent TLDs and child zones, multi-provider redundancy, and how to query NS records."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">NS Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      NS Record: What Nameserver Records Are, Parent vs Child Delegation, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        An <abbr class="pd-term" data-tip="NS record: DNS Nameserver resource record (IANA Type 2) delegating a DNS zone to authoritative nameservers">NS (Nameserver) record</abbr> is <strong class="text-ink">a DNS resource record that declares which authoritative servers hold the master zone file and answer queries for a domain or subdomain</strong>. Recursive resolvers check NS records first to find where your DNS lives. The delegation of an NS record connects registrars to DNS hosts.
+      </p>
+    </div>
+
+    <Diagram name="delegation" caption="DNS Delegation Architecture: recursive resolvers query the parent registry zone to receive NS referrals directing lookups to your authoritative nameservers" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-an-ns-record-and-what-does-its-structure-look-like-syntax-and-provider-examples">What is an NS record and provider examples</a></li>
+        <li><a href="#parent-tld-ns-records-vs-child-zone-ns-records-why-both-sets-synchronize">Parent TLD vs child zone NS records</a></li>
+        <li><a href="#how-many-ns-records-should-a-domain-have-redundancy-subnets-and-anycast">How many NS records a domain needs</a></li>
+        <li><a href="#how-to-delegate-a-subdomain-subexamplecom-to-another-dns-provider-using-ns-records">Subdomain NS delegation step-by-step</a></li>
+        <li><a href="#what-are-the-3-strict-rules-for-ns-target-hostnames-no-ips-no-cnames-and-vanity-glue-records">3 strict rules for NS target hostnames</a></li>
+        <li><a href="#how-to-check-your-domains-ns-records-dig-ns-dig-trace-and-browser-doh">Check NS records and verify delegation</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-an-ns-record-and-what-does-its-structure-look-like-syntax-and-provider-examples">What Is an NS Record and What Does Its Structure Look Like? (Syntax and Provider Examples)</h2>
+      <p>
+        An NS (Nameserver) resource record (IANA Type 2) <strong class="text-ink">acts as the authoritative delegation pointer that connects the global DNS hierarchy to your specific DNS hosting provider</strong>. Every active domain publishes its NS records in two locations simultaneously - in the parent Top-Level Domain (TLD) registry zone (such as .com, configured at your domain registrar) and at the apex (@) of your child zone file - across 4 zone fields (Host, <abbr class="pd-term" data-tip="TTL: Time to Live in seconds determining how long resolvers cache a DNS record">TTL</abbr>, Type, and Nameserver Target). The table below defines the structure of an NS record and lists the default nameserver naming patterns used by 6 major DNS providers.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        Standard zone syntax illustrates root apex records alongside delegated subdomain entries:
+      </p>
+
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel/60 p-4 font-mono text-xs text-ink leading-relaxed"><code>; Host / Zone            TTL     Class  Type  Authoritative Nameserver Target (FQDN)
+example.com.             86400   IN     NS    ada.ns.cloudflare.com.
+example.com.             86400   IN     NS    bob.ns.cloudflare.com.
+
+; Delegating a subdomain (app.example.com) to AWS Route 53 nameservers:
+app.example.com.         3600    IN     NS    ns-2048.awsdns-64.com.
+app.example.com.         3600    IN     NS    ns-2049.awsdns-65.net.</code></pre>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The table below details the technical specification of IANA Type 2 NS records and compares nameserver architectures across 6 major DNS providers:
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">DNS Provider / Specification</th>
+              <th class="py-2.5 px-3">Default NS Count</th>
+              <th class="py-2.5 px-3">Example Nameserver Hostname Pattern</th>
+              <th class="py-2.5 px-3">How Redundancy Is Architected</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">IANA Specification (Type 2)</td>
+              <td class="py-2.5 px-3 font-mono">Minimum 2 (2 to 7 recommended)</td>
+              <td class="py-2.5 px-3 font-mono text-xs">ns1.example.com. / ns2.example.com.</td>
+              <td class="py-2.5 px-3">Independent servers on separate subnets (RFC 2182).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Cloudflare DNS</td>
+              <td class="py-2.5 px-3 font-mono">2 nameservers</td>
+              <td class="py-2.5 px-3 font-mono text-xs">&lt;female-name&gt;.ns.cloudflare.com &amp; &lt;male-name&gt;.ns.cloudflare.com</td>
+              <td class="py-2.5 px-3">Global Anycast network across 300+ cities.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">AWS Route 53</td>
+              <td class="py-2.5 px-3 font-mono">4 nameservers</td>
+              <td class="py-2.5 px-3 font-mono text-xs">ns-xxx.awsdns-xx.com, .net, .org, and .co.uk</td>
+              <td class="py-2.5 px-3">Splits nameservers across 4 separate TLDs.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Google Cloud DNS</td>
+              <td class="py-2.5 px-3 font-mono">4 nameservers</td>
+              <td class="py-2.5 px-3 font-mono text-xs">ns-cloud-a1.googledomains.com through a4</td>
+              <td class="py-2.5 px-3">Distributed Anycast shards per zone.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Namecheap Basic/Premium DNS</td>
+              <td class="py-2.5 px-3 font-mono">2 to 5 nameservers</td>
+              <td class="py-2.5 px-3 font-mono text-xs">dns1.registrar-servers.com &amp; dns2.registrar-servers.com</td>
+              <td class="py-2.5 px-3">Multi-region Anycast clusters.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">GoDaddy Standard DNS</td>
+              <td class="py-2.5 px-3 font-mono">2 nameservers</td>
+              <td class="py-2.5 px-3 font-mono text-xs">nsXX.domaincontrol.com &amp; nsYY.domaincontrol.com</td>
+              <td class="py-2.5 px-3">Sequential hostnames on paired IP ranges.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Provider architectures reflect differing resilience designs. AWS Route 53 assigns 4 nameservers across 4 distinct Top-Level Domains (.com, .net, .org, and .co.uk), ensuring resolvers reach alternate servers during a regional TLD registry outage. Cloudflare and Google Cloud utilize global Anycast routing where 2 or 4 hostnames distribute traffic across redundant edge nodes. Administrators verify live <abbr class="pd-term" data-tip="Authoritative nameserver: DNS server holding the definitive zone records for a domain and returning answers with AA=1">authoritative nameservers</abbr> and inspect resolved endpoints using the <a href="/ns-record-lookup/" class="text-accent underline hover:text-accent-hover">NS Record Lookup</a> and <a href="/nameserver-lookup/" class="text-accent underline hover:text-accent-hover">Nameserver Lookup (Find NS + IPs)</a>.
+      </p>
+
+      <h2 id="parent-tld-ns-records-vs-child-zone-ns-records-why-both-sets-synchronize">Parent TLD NS Records vs Child Zone NS Records: Why Both Sets Synchronize</h2>
+      <p>
+        Your domain's root NS records exist in <strong class="text-ink">two separate zones at the same time: the parent TLD registry zone (controlled by your domain registrar) and your own child authoritative zone file (controlled by your DNS host)</strong>. The table below compares parent and child NS records and explains operational behaviors when they fall out of sync.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Dimension</th>
+              <th class="py-2.5 px-3">Parent Zone NS Records (Delegation)</th>
+              <th class="py-2.5 px-3">Child Zone NS Records (Apex Authority)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Where They Are Stored</td>
+              <td class="py-2.5 px-3">Inside the <abbr class="pd-term" data-tip="Parent zone: higher-level DNS zone (such as .com) holding delegation NS records for child domains">parent zone</abbr> (such as .com at Verisign)</td>
+              <td class="py-2.5 px-3">At the top (@) of your own zone file alongside the <a href="/soa-record/" class="text-accent underline hover:text-accent-hover">SOA Record</a></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Where You Edit Them</td>
+              <td class="py-2.5 px-3">Domain Registrar's "Nameservers" screen</td>
+              <td class="py-2.5 px-3">DNS Host's zone record editor</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Authoritative Flag (AA)</td>
+              <td class="py-2.5 px-3 font-mono text-xs">Referral response (AA=0)</td>
+              <td class="py-2.5 px-3 font-mono text-xs">Authoritative answer (AA=1)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Typical TTL</td>
+              <td class="py-2.5 px-3 font-mono">Fixed 48 hours (172,800 seconds)</td>
+              <td class="py-2.5 px-3 font-mono">Configurable (3,600 to 86,400 seconds)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Role in a DNS Lookup</td>
+              <td class="py-2.5 px-3">Directs resolvers to your DNS host (<a href="/how-dns-works/" class="text-accent underline hover:text-accent-hover">How DNS Works</a>)</td>
+              <td class="py-2.5 px-3">Confirms authoritative servers within your zone</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Parent and child NS records frequently diverge during provider migrations. Resolvers initially follow parent TLD records to reach your DNS host. Upon receiving an authoritative response, resolvers discover child NS records carrying AA=1. Under RFC 2181 Section 5.4.1 trust rankings, AA=1 authoritative data supersedes parent referrals, prompting resolvers to overwrite their cache. Set mismatches trigger intermittent query drops and localized resolution failures. Administrators verify parent and child nameserver agreement using the <a href="/delegation-checker/" class="text-accent underline hover:text-accent-hover">DNS Delegation Checker</a>.
+      </p>
+
+      <h2 id="how-many-ns-records-should-a-domain-have-redundancy-subnets-and-anycast">How Many NS Records Should a Domain Have? (Redundancy, Subnets, and Anycast)</h2>
+      <p>
+        Every domain requires <strong class="text-ink">a minimum of 2 authoritative NS records (with 2 to 4 being standard and 7 being the practical maximum)</strong> to satisfy TLD registry rules and prevent single server failures from taking domains offline.
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Minimum of 2 Nameservers on Separate IP Networks (RFC 2182):</strong> TLD registries reject registrations specifying only 1 nameserver. Independent authoritative nameservers operate across separate IP subnets, distinct Autonomous System Numbers (ASNs), and isolated networks. Resolvers automatically fail over between servers in milliseconds.
+        </li>
+        <li>
+          <strong class="text-ink">All Published NS Servers Serve Identical Zone Data (No Priority Ranking):</strong> Nameserver records lack priority numbers. Resolvers query all listed servers in parallel or track round-trip latency (RTT) to favor the fastest responder. Primary and secondary designations merely describe where zone edits originate (SOA MNAME).
+        </li>
+        <li>
+          <strong class="text-ink">Why Anycast DNS Providers Only Need 2 to 4 NS Hostnames:</strong> <abbr class="pd-term" data-tip="Anycast: network routing technique where multiple physical servers advertise the same IP address via BGP">Anycast</abbr> routing platforms broadcast identical IP addresses globally via BGP. Each individual hostname (such as ada.ns.cloudflare.com) terminates across hundreds of edge locations, routing visitors to their nearest geographic node.
+        </li>
+      </ol>
+
+      <p>
+        Publishing beyond 7 nameservers introduces protocol overhead without improving uptime. Legacy UDP limits restrict unfragmented response packets to 512 bytes (RFC 1035). Packing 8 or more NS records with IPv4 and IPv6 glue records triggers packet truncation (TC=1), forcing resolvers to fall back to slower TCP handshakes.
+      </p>
+
+      <h2 id="how-to-delegate-a-subdomain-subexamplecom-to-another-dns-provider-using-ns-records">How to Delegate a Subdomain (sub.example.com) to Another DNS Provider Using NS Records</h2>
+      <p>
+        To manage a specific subdomain (such as app.example.com or mail.example.com) on a separate DNS provider without moving your main domain, publish <strong class="text-ink">child NS delegation records for that subdomain inside your main DNS zone across 4 steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Create</strong> a standalone DNS zone for the subdomain (app.example.com) on the secondary provider and note the 2 to 4 assigned nameserver hostnames.
+        </li>
+        <li>
+          <strong class="text-ink">Add</strong> production A, AAAA, MX, or TXT records inside the new subdomain zone first so nameservers answer authoritatively before receiving live queries.
+        </li>
+        <li>
+          <strong class="text-ink">Open</strong> your primary domain DNS panel (example.com) and create NS records pointing the app host to the secondary provider's nameservers.
+        </li>
+        <li>
+          <strong class="text-ink">Verify</strong> the delegation pathway with <code>dig app.example.com NS +short</code> to confirm proper referral resolution.
+        </li>
+      </ol>
+
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel/60 p-4 font-mono text-xs text-ink leading-relaxed"><code>; Apex zone file (example.com):
+; Host / Subdomain       TTL     Class  Type  Delegated Nameserver Target
+app                      3600    IN     NS    ns-1024.awsdns-00.org.
+app                      3600    IN     NS    ns-1025.awsdns-01.co.uk.</code></pre>
+
+      <p>
+        Subdomain delegation introduces two serious security risks. A <abbr class="pd-term" data-tip="Lame delegation: configuration defect where an NS record points to a nameserver that is not authoritative for the domain, returning REFUSED or SERVFAIL">lame delegation</abbr> occurs when an NS record references a server lacking a configured zone, returning REFUSED or SERVFAIL. A dangling NS subdomain takeover occurs when teams delete a cloud zone while leaving child NS records active in the parent zone, allowing attackers to re-register the zone on that provider and hijack subdomain traffic.
+      </p>
+
+      <h2 id="what-are-the-3-strict-rules-for-ns-target-hostnames-no-ips-no-cnames-and-vanity-glue-records">What Are the 3 Strict Rules for NS Target Hostnames? (No IPs, No CNAMEs, and Vanity Glue Records)</h2>
+      <p>
+        DNS protocol specifications enforce <strong class="text-ink">3 strict rules on every NS record target covering raw IP addresses, CNAME aliases, and in-bailiwick vanity nameserver glue records</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">An NS Record Never Points Directly to an IPv4 or IPv6 Address:</strong> Entering an IP address (such as 198.51.100.53) into the target field violates zone syntax. An NS record always specifies a <abbr class="pd-term" data-tip="FQDN: Fully Qualified Domain Name ending with a trailing dot specifying its exact location in the DNS hierarchy">Fully Qualified Domain Name (FQDN)</abbr> like ns1.example.com., resolving to an IP via its own <a href="/a-record/" class="text-accent underline hover:text-accent-hover">A Record</a> or AAAA record.
+        </li>
+        <li>
+          <strong class="text-ink">An NS Target Hostname Never Points to a CNAME Record:</strong> Pointing an NS target to a <a href="/cname-record/" class="text-accent underline hover:text-accent-hover">CNAME Record</a> alias is strictly prohibited under RFC 2181 Section 10.3 and causes resolver delegation failures.
+        </li>
+        <li>
+          <strong class="text-ink">Custom "Vanity" Nameservers (ns1.yourdomain.com) Require Glue Records at Your Registrar:</strong> Domains utilizing nameservers within their own apex domain (in-bailiwick hostnames) create circular resolution dependencies. Administrators register IPv4 and IPv6 <abbr class="pd-term" data-tip="Glue record: an A or AAAA address record provided by a parent registry to resolve in-bailiwick nameservers and break circular dependencies">glue records</abbr> directly at the domain registrar to provide bootstrap addresses, auditable via the <a href="/glue-record-checker/" class="text-accent underline hover:text-accent-hover">Glue Record Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Domains using third-party nameservers (such as *.ns.cloudflare.com) avoid in-bailiwick glue requirements because parent registries resolve those hostnames through their respective TLD zones. Custom vanity nameservers require vigilance to keep registrar glue addresses aligned with server infrastructure.
+      </p>
+
+      <h2 id="how-to-check-your-domains-ns-records-dig-ns-dig-trace-and-browser-doh">How to Check Your Domain's NS Records (dig NS, dig +trace, and Browser DoH)</h2>
+      <p>
+        To inspect your domain's active authoritative nameservers and verify that your registrar's parent TLD delegation matches your child zone, run <strong class="text-ink">a browser DoH check or terminal dig query across 3 steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Query</strong> authoritative NS records and trace parent TLD delegations:
+          <pre class="mt-2 overflow-x-auto rounded border border-line bg-panel/60 p-3 font-mono text-xs text-ink leading-relaxed"><code># 1. Query child NS records on Linux / macOS:
+dig example.com NS +short
+
+# 2. Trace parent TLD (.com) delegation vs child NS records:
+dig +trace example.com NS
+
+# 3. Query NS records on Windows:
+nslookup -type=ns example.com 1.1.1.1</code></pre>
+        </li>
+        <li>
+          <strong class="text-ink">Compare</strong> NS records returned by TLD registries against your child zone records, evaluating cache lifetimes detailed in <a href="/what-is-ttl-in-dns/" class="text-accent underline hover:text-accent-hover">DNS TTL Explained</a>.
+        </li>
+        <li>
+          <strong class="text-ink">Track</strong> global propagation across recursive vantage points following registrar updates (which take up to 48 hours as explained in <a href="/dns-propagation/" class="text-accent underline hover:text-accent-hover">DNS Propagation</a>) using the <a href="/dns-propagation-checker/" class="text-accent underline hover:text-accent-hover">DNS Propagation Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Auditing nameserver synchronization across parent and child zones preserves operational reliability throughout the broader index of <a href="/dns-records/" class="text-accent underline hover:text-accent-hover">DNS Record Types</a>. Every production NS record (IANA Type 2) anchors DNS architecture by delegating authority from parent TLD registries to child nameservers. Deploying 2 to 4 nameservers on diverse subnets, configuring in-bailiwick glue records for vanity hostnames, and monitoring for lame delegations shields internet services from outages and subdomain hijacking.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="space-y-4 my-6">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What is the difference between changing NS records and changing an A record?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Changing your NS records at your domain registrar moves your entire DNS zone (web, email, and subdomains) to a new DNS hosting provider (like moving from GoDaddy to Cloudflare) and takes up to 48 hours. Changing an A record only updates the web server IP address while keeping DNS and email records at your existing DNS host.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does ns1 get more traffic than ns2 in my NS records?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, NS records do not have priority numbers or follow a strict 1-then-2 order. Recursive resolvers treat all published NS records as equally authoritative peers, querying them in parallel or preferring whichever nameserver has the lowest network latency (RTT) from the resolver's location.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why did my company email stop working right after I changed my nameservers (NS records)?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world migrations, this represents the most common outage: switching nameservers causes the previous provider to stop answering queries immediately. Omitting your MX, SPF, and DKIM records from the new provider's zone prior to delegating nameservers breaks incoming and outgoing email until administrators publish those records at the new DNS host.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Should I edit the root (@) NS records inside my Cloudflare or Route 53 DNS table when moving my domain away?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, in practice you change root nameservers inside your domain registrar's "Nameservers" console, not by editing @ NS rows inside your existing DNS host's table. You only add NS rows inside your DNS zone when delegating a subdomain (such as app.example.com) to separate nameservers.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
