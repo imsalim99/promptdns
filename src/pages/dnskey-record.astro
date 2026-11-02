@@ -1,99 +1,342 @@
 ---
-import RecordTypeTemplate from '../components/RecordTypeTemplate.astro';
-const data = {
- "type": "DNSKEY",
- "title": "DNSKEY Records: DNSSEC's Public Keys",
- "description": "DNSKEY records explained in depth: flags and the KSK/ZSK split, algorithm choices, rollover strategies, and validator expectations.",
- "intro": "DNSKEY records publish the public halves of your zone's DNSSEC signing keys. Validators fetch them, match the key-signing key against the parent's DS record, and use the zone-signing key to verify the signatures on everything else.",
- "deepDive": [
-  "Two roles, two keys, in any properly run zone. The key-signing key (KSK, flags 257) exists to sign the DNSKEY record set itself and is the key whose digest appears in the parent's DS. The zone-signing key (ZSK, flags 256) signs the everyday records. Splitting duties limits how often the operationally-risky KSK changes, while the ZSK can rotate freely.",
-  "Algorithms are a live compatibility question. RSA/SHA-256 (8) is the universal default; ECDSA P-256 (13) delivers equivalent security with far smaller records, which matters because big DNSSEC responses need to fit in packets; Ed25519 (15) is modern but still unevenly validated. Whatever you choose, the algorithm here must match what the DS record in the parent declares.",
-  "Rollover is where DNSKEY knowledge pays for itself. The two standard methods are pre-publish (introduce the new key, wait, switch signing, wait, retire the old) and double-signing (sign with both during the transition). Both exist to keep the chain unbroken for resolvers at every point in the TTL window; skipping the waits is how zones SERVFAIL themselves."
- ],
- "example": "example.com.  3600  IN  DNSKEY  257 3 13 ( base64-KSK... )\nexample.com.  3600  IN  DNSKEY  256 3 13 ( base64-ZSK... )",
- "anatomy": [
-  [
-   "257 / 256",
-   "Flags: 257 marks the KSK (matches the parent's DS), 256 the ZSK."
-  ],
-  [
-   "3",
-   "Protocol field; fixed at 3."
-  ],
-  [
-   "13",
-   "Algorithm: 8 RSA/SHA-256, 13 ECDSA P-256, 15 Ed25519."
-  ],
-  [
-   "(key)",
-   "The base64 public key material."
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between DNSKEY Flag 256 and Flag 257?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Flag 256 identifies a Zone Signing Key (ZSK), which signs your domain's everyday DNS records (A, AAAA, MX, TXT) and rotates every 30 to 90 days. Flag 257 adds the Secure Entry Point (SEP) bit to identify a Key Signing Key (KSK), which signs the DNSKEY record set itself and links to your parent registrar's DS record."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is the Protocol field in a DNSKEY record always set to 3?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Protocol field is hardcoded to 3 in every valid DNSKEY record for backward compatibility with the original 1999 DNSSEC specification (RFC 2535), where 3 was the assigned protocol number for DNSSEC. Under modern RFC 4034 rules, any DNSKEY record with a Protocol value other than 3 is rejected as invalid."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to manually create or paste a DNSKEY record in my DNS control panel?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in practice you never create a DNSKEY record manually on managed DNS providers like Cloudflare, AWS Route 53, or Google Cloud DNS. The moment you toggle DNSSEC ON in your DNS host's settings, the provider automatically generates the private keys in hardware and publishes the public 256 and 257 DNSKEY records in your zone."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do I see two Flag 256 (ZSK) DNSKEY records on my domain at the same time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world operations, seeing two ZSK (Flag 256) records simultaneously is completely normal and means your DNS provider is in the middle of an automated pre-publish ZSK key rollover. The provider publishes the new ZSK alongside the current ZSK for one TTL cycle so global resolvers cache both keys before switching signatures over."
+      }
+    }
   ]
- ],
- "uses": [
-  "Completing the DNSSEC validation chain (KSK to DS, ZSK to records)",
-  "Key rollovers without breaking validators",
-  "Auditing that the registrar-published keys match the zone's"
- ],
- "steps": [
-  [
-   "Inspect the key set",
-   "A DNSKEY lookup on your domain shows flags and algorithms at a glance."
-  ],
-  [
-   "Match KSK to DS",
-   "The 257-flagged key's tag should correspond to the DS at the parent; mismatch means a broken chain."
-  ],
-  [
-   "Prefer algorithm 13",
-   "Unless you have legacy constraints, ECDSA keeps responses small and validation fast."
-  ],
-  [
-   "Rotate with waits",
-   "Follow pre-publish or double-sign timing; the waits are the safety."
-  ]
- ],
- "mistakes": [
-  "Retiring a KSK whose digest the parent still references",
-  "Swapping flags so the DS-matching key signs records instead",
-  "1024-bit RSA keys: weak and inflated; prefer algorithm 13 or 15",
-  "Rollovers without waiting out TTLs at each phase"
- ],
- "faqs": [
-  [
-   "What is the difference between KSK and ZSK?",
-   "The KSK signs the key set and matches the parent's DS; the ZSK signs the zone's records. Separation limits risky KSK changes."
-  ],
-  [
-   "Do I ever edit DNSKEY records by hand?",
-   "Almost never. Signing software and DNS providers manage them; your job is publishing the DS and not breaking rotation order."
-  ],
-  [
-   "Which algorithm should I use?",
-   "ECDSA P-256 (13) for new deployments: strong, compact, widely validated."
-  ],
-  [
-   "Can DNSSEC work without a DS at the parent?",
-   "As an island that validators won't trust. The chain from the root is the point."
-  ],
-  [
-   "How do I check DNSKEY records after changing them?",
-   "Run the record lookup filtered to the type just changed: it shows live values straight from a public resolver. Then confirm worldwide agreement with the propagation checker."
-  ],
-  [
-   "What TTL should DNSKEY records use?",
-   "3600 seconds (one hour) is the sensible default. Drop to 300 a full day before planned changes so cutover is quick, then raise it back afterwards."
-  ]
- ],
- "related": [
-  [
-   "DS records",
-   "/ds-record/"
-  ],
-  [
-   "What is DNSSEC",
-   "/what-is-dnssec/"
-  ]
- ]
 };
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Record Types", "/dns-records/"],
+  ["DNSKEY Record"]
+];
 ---
-<RecordTypeTemplate data={data} />
+
+<BaseLayout
+  title="DNSKEY Record: What DNSSEC Public Key Records Are, Flags 256 vs 257, and Syntax"
+  description="Learn what a DNS DNSKEY record is, what Flags 256 and 257 mean, how ZSK and KSK keys validate RRSIG signatures, and how to verify DNSKEY records."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns-records/" class="hover:text-accent">Record Types</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNSKEY Record</span>
+    </nav>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DNSKEY Record: What DNSSEC Public Key Records Are, Flags 256 vs 257, and Syntax
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A <abbr class="pd-term" data-tip="DNSKEY record: DNSSEC resource record (IANA Type 48) storing public signing keys used to verify cryptographic signatures">DNSKEY record</abbr> is <strong class="text-ink">a DNSSEC resource record published in your authoritative zone that stores the public cryptographic keys resolvers use to verify digital <abbr class="pd-term" data-tip="RRSIG: digital signature record (IANA Type 46) protecting individual DNS resource record sets">RRSIG</abbr> signatures</strong>. Every signed domain publishes a <abbr class="pd-term" data-tip="Zone Signing Key: public cryptographic key (Flag 256) used to sign everyday DNS records in a zone">Zone Signing Key (ZSK)</abbr> and <abbr class="pd-term" data-tip="Key Signing Key: public cryptographic key (Flag 257) used to sign the DNSKEY RRset and link to the parent DS record">Key Signing Key (KSK)</abbr>. The flags field identifies each key's operational role.
+      </p>
+    </div>
+
+    <Diagram name="dnssec-chain" caption="DNSSEC Chain of Trust: validating recursive resolvers verify child DNSKEY records against parent DS records to validate cryptographic RRSIG signatures" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-is-a-dnskey-record-and-what-do-its-4-fields-mean-syntax-and-anatomy">What is a DNSKEY record and 4 fields</a></li>
+        <li><a href="#dnskey-flag-256-zsk-vs-flag-257-ksk-why-does-dnssec-use-two-keys">Flags 256 (ZSK) vs 257 (KSK) vs CSK</a></li>
+        <li><a href="#how-do-resolvers-use-dnskey-records-to-validate-dns-responses-5-steps">Resolver validation flow (5 steps)</a></li>
+        <li><a href="#how-does-a-dnskey-record-relate-to-rrsig-ds-and-cdnskey-records">DNSKEY vs RRSIG, DS, and CDNSKEY</a></li>
+        <li><a href="#how-to-check-your-dnskey-records-and-find-the-key-tag-dig-multiline">Check DNSKEY records &amp; Key Tag (dig)</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-is-a-dnskey-record-and-what-do-its-4-fields-mean-syntax-and-anatomy">What Is a DNSKEY Record and What Do Its 4 Fields Mean? (Syntax and Anatomy)</h2>
+      <p>
+        A DNSKEY resource record (IANA Type 48, standardized in RFC 4034 to replace the obsolete Type 25 KEY record) <strong class="text-ink">publishes the public half of a domain's asymmetric DNSSEC key pairs directly inside the authoritative zone file</strong>. Your private signing keys stay hidden on your DNS provider's hardware security modules, whereas recursive resolvers fetch your public DNSKEY records to verify cryptographic RRSIG signatures across 4 data fields: Flags (<code>256</code> or <code>257</code>), Protocol (always <code>3</code>), Algorithm, and Public Key (<abbr class="pd-term" data-tip="Base64: binary-to-text encoding scheme translating cryptographic raw key bytes into printable ASCII characters">Base64</abbr>). The table below defines all 4 fields of a standard DNSKEY record.
+      </p>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The following zone excerpt demonstrates how production DNSKEY records appear inside an authoritative zone file:
+      </p>
+
+      <pre class="overflow-x-auto rounded-lg border border-line bg-panel/60 p-4 font-mono text-xs text-ink leading-relaxed"><code>; Zone Name   TTL   Class  Type    Flags  Protocol  Algorithm  Base64 Public Key Data
+example.com.  3600  IN     DNSKEY  256    3         13         mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ== ; ZSK
+example.com.  3600  IN     DNSKEY  257    3         13         AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTOiW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN7SWXgnLh4+B5xQlNVz8= ; KSK</code></pre>
+
+      <p class="text-sm font-medium text-ink-dim">
+        The table below details the 4 data fields comprising every standard DNS DNSKEY record, their formats, and their specific verification roles:
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">DNSKEY Field</th>
+              <th class="py-2.5 px-3">Example Value</th>
+              <th class="py-2.5 px-3">Bit Size / Format</th>
+              <th class="py-2.5 px-3">Function in DNSSEC Verification</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">1. Flags</td>
+              <td class="py-2.5 px-3 font-mono">256 or 257</td>
+              <td class="py-2.5 px-3">16-bit integer bitmask</td>
+              <td class="py-2.5 px-3">Identifies key role: Bit 7 (256) marks a Zone Key (ZSK); Bit 15 (+1 = 257) sets the <abbr class="pd-term" data-tip="Secure Entry Point: bit flag 15 indicating that a DNSKEY is designed to act as a KSK linking to a parent DS record">Secure Entry Point (SEP)</abbr> flag for a Key Signing Key (KSK).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">2. Protocol</td>
+              <td class="py-2.5 px-3 font-mono">3</td>
+              <td class="py-2.5 px-3">8-bit integer (Fixed at 3)</td>
+              <td class="py-2.5 px-3">Fixed at 3 for DNSSEC protocol compatibility (RFC 2535/4034); other values are invalid.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">3. Algorithm</td>
+              <td class="py-2.5 px-3 font-mono">13</td>
+              <td class="py-2.5 px-3">8-bit integer (8, 13, 15)</td>
+              <td class="py-2.5 px-3">Public-key algorithm identifier (13 = ECDSAP256SHA256, 15 = Ed25519, 8 = RSASHA256).</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-mono font-medium text-ink">4. Public Key</td>
+              <td class="py-2.5 px-3 font-mono">mdsswUyr3D...</td>
+              <td class="py-2.5 px-3">Base64-encoded binary string</td>
+              <td class="py-2.5 px-3">Raw public key material used to verify RRSIG digital signatures.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        The 16-bit Flags field supports additional operational states: setting Bit 8 (+128 = Flag 385 on a KSK) activates the REVOKE bit (RFC 5011), prompting validating resolvers to purge the retired KSK during automated rollovers. A Flags value of 0 denotes a disabled key with zero cryptographic authority. Administrators inspect active public keys and Key Tags in seconds using the <a href="/dnskey-record-lookup/" class="text-accent underline hover:text-accent-hover">DNSKEY Record Lookup</a>.
+      </p>
+
+      <h2 id="dnskey-flag-256-zsk-vs-flag-257-ksk-why-does-dnssec-use-two-keys">DNSKEY Flag 256 (ZSK) vs Flag 257 (KSK): Why Does DNSSEC Use Two Keys?</h2>
+      <p>
+        DNSSEC separates public keys into a Zone Signing Key (ZSK, Flag 256) and a Key Signing Key (KSK, Flag 257) so DNS providers rotate daily operational signing keys frequently without forcing domain owners to update the parent TLD registry every month. The table below compares ZSK (256), KSK (257), and Combined Signing Keys (CSK) across 6 operational dimensions:
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Feature / Dimension</th>
+              <th class="py-2.5 px-3">Zone Signing Key (ZSK - Flag 256)</th>
+              <th class="py-2.5 px-3">Key Signing Key (KSK - Flag 257)</th>
+              <th class="py-2.5 px-3">Combined Signing Key (CSK - Flag 257)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">16-Bit Flags Value</td>
+              <td class="py-2.5 px-3 font-mono">256 (Bit 7 = 1, Bit 15 SEP = 0)</td>
+              <td class="py-2.5 px-3 font-mono">257 (Bit 7 = 1, Bit 15 SEP = 1)</td>
+              <td class="py-2.5 px-3 font-mono">257 (Single key performing both roles)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">What Records It Signs</td>
+              <td class="py-2.5 px-3">Signs all zone RRsets (A, AAAA, MX, TXT, NS, SOA)</td>
+              <td class="py-2.5 px-3">Signs only the zone DNSKEY RRset (authorizing both keys)</td>
+              <td class="py-2.5 px-3">Signs both the DNSKEY RRset and all zone data RRsets</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Linked to Parent DS Record?</td>
+              <td class="py-2.5 px-3">No (Unknown to the parent TLD registry)</td>
+              <td class="py-2.5 px-3">Yes (Its SHA-256 hash is published as the parent <a href="/ds-record/" class="text-accent underline hover:text-accent-hover">DS Record</a>)</td>
+              <td class="py-2.5 px-3">Yes (Its SHA-256 hash is published as the parent DS record)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Typical Rotation Cadence</td>
+              <td class="py-2.5 px-3">Every 30 to 90 days (Automated internally)</td>
+              <td class="py-2.5 px-3">Every 12 to 24 months (Requires registrar DS update)</td>
+              <td class="py-2.5 px-3">Every 12 months (Requires registrar DS update)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Typical Key Size (RSA vs ECDSA)</td>
+              <td class="py-2.5 px-3">1024-bit RSA or 256-bit ECDSA (Alg 13)</td>
+              <td class="py-2.5 px-3">2048-bit RSA or 256-bit ECDSA (Alg 13)</td>
+              <td class="py-2.5 px-3">256-bit ECDSA (Alg 13) or Ed25519 (Alg 15)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Operational Advantage</td>
+              <td class="py-2.5 px-3">Rotates with zero registrar involvement</td>
+              <td class="py-2.5 px-3">Anchors parent-to-child delegation long-term</td>
+              <td class="py-2.5 px-3">Minimizes DNSKEY packet size by publishing a single key</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Adopting Algorithm 13 (ECDSAP256SHA256) optimizes DNSSEC efficiency across split-key and Combined Signing Key deployments. Legacy Algorithm 8 (RSASHA256) configurations produced oversized 2048-bit KSK records exceeding 1,200 bytes, causing IP fragmentation and elevating exposure to <a href="/dns-amplification-attack/" class="text-accent underline hover:text-accent-hover">DNS Amplification Attacks</a>. Algorithm 13 public keys require only 64 bytes (88 Base64 characters), preserving compact response sizes within standard UDP boundaries.
+      </p>
+
+      <h2 id="how-do-resolvers-use-dnskey-records-to-validate-dns-responses-5-steps">How Do Resolvers Use DNSKEY Records to Validate DNS Responses? (5 Steps)</h2>
+      <p>
+        Recursive resolvers validating a signed domain utilize the child zone's DNSKEY records as the cryptographic bridge between the parent DS hash and the target record's RRSIG signature across 5 verification steps:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Request</strong> the target record (example.com A) with the EDNS0 DO=1 (DNSSEC OK) bit, receiving the record set alongside its private-ZSK RRSIG signature.
+        </li>
+        <li>
+          <strong class="text-ink">Query</strong> example.com for its complete DNSKEY RRset, receiving the public ZSK 256, public KSK 257, and covering RRSIG signature.
+        </li>
+        <li>
+          <strong class="text-ink">Hash</strong> the public KSK (DNSKEY 257) with SHA-256 and confirm that the digest matches the parent DS record published in the TLD zone, verifiable via the <a href="/ds-record-lookup/" class="text-accent underline hover:text-accent-hover">DS Record Lookup (DNSSEC)</a>.
+        </li>
+        <li>
+          <strong class="text-ink">Validate</strong> the DNSKEY RRset RRSIG signature using the authenticated public KSK (257), confirming the sibling ZSK (256) remains authentic.
+        </li>
+        <li>
+          <strong class="text-ink">Verify</strong> the A record RRSIG signature using the authenticated public ZSK (256) and return the IP address with the Authenticated Data (AD=1) flag set, preventing <a href="/dns-cache-poisoning/" class="text-accent underline hover:text-accent-hover">DNS Cache Poisoning</a>.
+        </li>
+      </ol>
+
+      <p>
+        Recursive resolvers cache verified DNSKEY RRsets in memory for the duration of the zone's <a href="/what-is-ttl-in-dns/" class="text-accent underline hover:text-accent-hover">DNS TTL Explained</a> (typically 3,600 to 86,400 seconds), eliminating redundant parent hashing on subsequent user lookups. Administrators inspect the full cryptographic trust pathway across any domain using <a href="/what-is-dnssec/" class="text-accent underline hover:text-accent-hover">What Is DNSSEC</a> and the automated <a href="/dnssec-checker/" class="text-accent underline hover:text-accent-hover">DNSSEC Checker</a>.
+      </p>
+
+      <h2 id="how-does-a-dnskey-record-relate-to-rrsig-ds-and-cdnskey-records">How Does a DNSKEY Record Relate to RRSIG, DS, and CDNSKEY Records?</h2>
+      <p>
+        A DNSKEY record never works in isolation; it interacts directly with 3 companion DNSSEC record types (RRSIG, DS, and CDNSKEY) to complete zone signing and automated key rollovers:
+      </p>
+
+      <ol class="my-4 space-y-4 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">DNSKEY vs. RRSIG (Type 46 - The Public Key vs. The Signature):</strong>
+          The RRSIG record holds the cryptographic signature calculated over a resource record set (A, AAAA, MX, TXT), whereas the DNSKEY record provides the public key needed for mathematical verification. Every RRSIG record embeds a 16-bit <abbr class="pd-term" data-tip="Key Tag: 16-bit integer computed from DNSKEY data to identify which key signed a record">Key Tag</abbr> (such as <code>2371</code> or <code>34505</code>) matching the identifier of the corresponding DNSKEY, instructing resolvers exactly which public key created the signature.
+        </li>
+        <li>
+          <strong class="text-ink">DNSKEY vs. DS (Type 43 - The Child Public Key vs. The Parent Fingerprint):</strong>
+          Your public KSK (DNSKEY Flag 257) resides inside the child zone (<code>example.com</code>), whereas the corresponding Delegation Signer (DS) record resides in the parent TLD registry (<code>.com</code>). The parent DS record contains a 64-character SHA-256 hash digest of the child KSK rather than raw public key data, establishing a secure delegation link without bloating parent zone files.
+        </li>
+        <li>
+          <strong class="text-ink">DNSKEY vs. CDNSKEY (Type 60 - Automated Registrar Key Rollover Signal):</strong>
+          Defined under RFC 7344, a <abbr class="pd-term" data-tip="Child DNSKEY: resource record (IANA Type 60) signaling automated KSK rollover instructions to parent registries">Child DNSKEY (CDNSKEY)</abbr> record shares the exact 4-field structure of a standard DNSKEY (Flags 257, Protocol 3, Algorithm 13, and Base64 key data). Managed DNS hosts initiating scheduled KSK rotations publish the new key as a CDNSKEY record in the child zone, prompting supporting parent registries and registrars to ingest the new key and update the parent DS record automatically without manual intervention.
+        </li>
+      </ol>
+
+      <p>
+        Managed cloud DNS providers generate key pairs, publish signatures, and manage rollovers automatically. Enabling DNSSEC on production domains requires toggling the feature inside your DNS management console (detailed in <a href="/enable-dnssec-cloudflare/" class="text-accent underline hover:text-accent-hover">How to Enable DNSSEC in Cloudflare</a>) and submitting the generated DS digest to your registrar.
+      </p>
+
+      <h2 id="how-to-check-your-dnskey-records-and-find-the-key-tag-dig-multiline">How to Check Your DNSKEY Records and Find the Key Tag (dig +multiline)</h2>
+      <p>
+        Extracting the 16-bit Key Tag (key id) and inspecting active public keys requires terminal <code>dig +multiline</code> diagnostics or browser lookup tools across 3 verification steps:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Run</strong> <code>dig example.com DNSKEY +multiline</code> in your Linux, macOS, or WSL terminal to decode flags and print computed key identifiers:
+          <pre class="mt-2 overflow-x-auto rounded border border-line bg-panel/60 p-3 font-mono text-xs text-ink leading-relaxed"><code>$ dig example.com DNSKEY +multiline
+
+;; ANSWER SECTION:
+example.com. 3600 IN DNSKEY 256 3 13 (
+        mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+Gq
+        JxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==
+        ) ; ZSK; alg = ECDSAP256SHA256 ; key id = 34505
+
+example.com. 3600 IN DNSKEY 257 3 13 (
+        AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTO
+        iW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN
+        ) ; KSK; alg = ECDSAP256SHA256 ; key id = 2371</code></pre>
+        </li>
+        <li>
+          <strong class="text-ink">Match</strong> the KSK (257) comment <code>; key id = 2371</code> against the Key Tag displayed in <code>dig example.com DS +short</code> or in the browser-based <a href="/delegation-checker/" class="text-accent underline hover:text-accent-hover">DNS Delegation Checker</a> to confirm your child KSK and parent DS record remain in perfect agreement.
+        </li>
+        <li>
+          <strong class="text-ink">Verify</strong> that recursive nameservers globally answer with identical DNSKEY records using the <a href="/dns-propagation-checker/" class="text-accent underline hover:text-accent-hover">DNS Propagation Checker</a>.
+        </li>
+      </ol>
+
+      <p>
+        Auditing DNSKEY record synchronization ensures cryptographic integrity across all <a href="/dns-records/" class="text-accent underline hover:text-accent-hover">DNS Record Types</a>. Every production DNSSEC public key record (Type 48) anchors domain authentication by publishing Zone Signing Keys (Flag 256) and Key Signing Keys (Flag 257), enforcing Protocol 3 standards alongside Algorithm 13 ECDSA cryptography, and enabling recursive resolvers to verify digital RRSIG signatures against parent DS trust anchors.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="space-y-4 my-6">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What is the difference between DNSKEY Flag 256 and Flag 257?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p><strong class="text-ink">Flag 256</strong> identifies a <strong class="text-ink">Zone Signing Key (ZSK)</strong>, which signs your domain's everyday DNS records (A, AAAA, MX, TXT) and rotates every 30 to 90 days. <strong class="text-ink">Flag 257</strong> adds the Secure Entry Point (SEP) bit to identify a <strong class="text-ink">Key Signing Key (KSK)</strong>, which signs the DNSKEY record set itself and links to your parent registrar's DS record.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why is the Protocol field in a DNSKEY record always set to 3?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>The <strong class="text-ink">Protocol field is hardcoded to 3</strong> in every valid DNSKEY record for backward compatibility with the original 1999 DNSSEC specification (RFC 2535), where <strong class="text-ink">3</strong> was the assigned protocol number for DNSSEC. Under modern RFC 4034 rules, any DNSKEY record with a Protocol value other than 3 is rejected as invalid.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Do I need to manually create or paste a DNSKEY record in my DNS control panel?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, in practice <strong class="text-ink">you never create a DNSKEY record manually</strong> on managed DNS providers like Cloudflare, AWS Route 53, or Google Cloud DNS. The moment you toggle DNSSEC ON in your DNS host's settings, the provider automatically generates the private keys in hardware and publishes the public <strong class="text-ink">256 and 257 DNSKEY records</strong> in your zone.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why do I see two Flag 256 (ZSK) DNSKEY records on my domain at the same time?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world operations, seeing <strong class="text-ink">two ZSK (Flag 256) records simultaneously</strong> is completely normal and means your DNS provider is in the middle of an automated <strong class="text-ink">pre-publish ZSK key rollover</strong>. The provider publishes the new ZSK alongside the current ZSK for one TTL cycle so global resolvers cache both keys before switching signatures over.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
