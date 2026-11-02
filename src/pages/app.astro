@@ -551,12 +551,13 @@ const lg = (n, s) => {
       const recVal = dmarcChk && dmarcChk.value ? dmarcChk.value : '';
       const pm = recVal.match(/p=([a-z]+)/i);
       const cur = pm ? pm[1].toLowerCase() : null;
+      if (cur === 'none' || cur === 'quarantine' || cur === 'reject') S.pol = cur; else if (!cur) S.pol = 'none';
       const P = [['none', 'None', 'Failing messages still deliver to the inbox'], ['quarantine', 'Quarantine', 'Failing messages are marked as spam'], ['reject', 'Reject', 'Failing messages are rejected']];
       const policyCard = E('div', { class: 'cd' },
         E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC policy rollout'), cur ? pill('current: p=' + cur, cur === 'reject' ? 'ok' : cur === 'quarantine' ? 'wn' : 'in2') : prev()),
         E('p', { class: 'sub', style: 'margin:0 0 10px' }, recVal ? E('span', { class: 'm' }, recVal) : 'No DMARC record found on ' + (d ? d.n : 'this domain') + ' yet. Managed records publish one for you.'),
-        P.map(([v, t, dd]) => E('button', { class: 'rad' + (S.pol === v ? ' on' : ''), 'aria-pressed': S.pol === v, onclick: () => { S.pol = v; go(); } }, E('b', {}, t), E('span', { class: 'sub' }, dd))),
-        E('div', { class: 'fx', style: 'margin-top:10px' },
+        E('div', { class: 'fx', style: 'margin:14px 0;gap:12px' }, P.map(([v, t, dd]) => E('button', { class: 'rad' + (S.pol === v ? ' on' : ''), 'aria-pressed': S.pol === v, onclick: () => { S.pol = v; go(); } }, E('b', {}, t), E('span', { class: 'sub' }, dd)))),
+        E('div', { class: 'fx', style: 'margin:16px 0;padding:12px 0' },
           E('label', { for: 'pc' }, 'Apply to ', E('b', {}, S.pct + '%'), ' of failing mail'),
           E('input', { id: 'pc', type: 'range', min: 10, max: 100, step: 10, value: S.pct, oninput: (e: any) => { S.pct = +e.target.value; e.target.previousSibling.children[0].textContent = S.pct + '%'; } }),
           E('button', { class: 'btn p', onclick: () => toast('Preview: hosted DMARC records ship with managed enforcement.') }, 'Publish change')),
