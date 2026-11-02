@@ -12,6 +12,7 @@ import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomains
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload } from './dmarc-ingest';
 import { handleVerifyStart, handleVerifyCheck } from './verify';
+import { handleRulesList, handleRulesCreate, handleRulesUpdate, handleRulesDelete, handleDigestSetting } from './rules';
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 
@@ -45,7 +46,12 @@ export default {
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/domains/dmarc/upload' && method === 'POST') return handleDmarcUpload(request, env);
-    if (path === '/api/domains/verify/start' && method === 'POST') return handleVerifyStart(request, env);
+
+    if (path === '/api/rules' && method === 'GET') return handleRulesList(request, env);
+    if (path === '/api/rules' && method === 'POST') return handleRulesCreate(request, env);
+    if (path === '/api/rules/update' && method === 'POST') return handleRulesUpdate(request, env);
+    if (path === '/api/rules/delete' && method === 'POST') return handleRulesDelete(request, env);
+    if (path === '/api/settings/digest' && method === 'POST') return handleDigestSetting(request, env);
     if (path === '/api/domains/verify/check' && method === 'POST') return handleVerifyCheck(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);

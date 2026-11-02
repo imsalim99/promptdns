@@ -650,11 +650,14 @@ const lg = (n, s) => {
             E('button', { class: 'btn', onclick: async () => { const j = await postJSON('/api/alerts/read'); if (j && j.ok) { cdr(); toast('All alerts marked as read'); await refreshAll(); } } }, 'Mark all as read'))));
     }
     const MET = ['DMARC pass rate', 'DNS record change', 'New sender', 'SPF lookups', 'Expiry', 'AI crawler change'];
+    const MET_API: Record<string, string> = { 'DMARC pass rate': 'dmarc_pass_rate', 'DNS record change': 'dns_change', 'New sender': 'new_sender', 'SPF lookups': 'spf_lookups', 'Expiry': 'expiry', 'AI crawler change': 'ai_crawler' };
+    const METRIC_LABELS: Record<string, string> = Object.fromEntries(Object.entries(MET_API).map(([k, v]) => [v, k]));
     const CND = ['is below', 'is above', 'happens', 'appears', 'is within (days)'];
     const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
-    const loadRules = () => { try { return JSON.parse(localStorage.getItem('pd-alert-rules') || '[]'); } catch { return []; } };
-    const saveRules = (list: any[]) => { try { localStorage.setItem('pd-alert-rules', JSON.stringify(list)); } catch { /* private mode */ } };
-    const ruleText = (r: any) => r.m + ' ' + r.c + (r.v === '' ? '' : ' ' + r.v);
+    let RULES: any[] = [];
+    const loadRules = async () => { const j = await getJSON('/api/rules'); RULES = j && j.ok ? j.rules : []; };
+    const domainIdOf = (name: string): number | null => { const d = DOMS.find((x) => x.n === name); return d ? d.id : null; };
+    const ruleText = (r: any) => (r.metric ? METRIC_LABELS[r.metric] || r.metric : r.m) + ' ' + (r.condition || r.c) + ' ' + (r.value !== undefined ? r.value : r.v);
     function ruleModal(edit?: any, idx?: number) {
       const x = edit ? Object.assign({}, edit, { ch: edit.ch.slice() }) : { n: '', m: MET[0], c: CND[0], v: '95', sc: 'All domains', ch: ['Email'], on: 1 };
       const nameIn = E('input', { id: 'rn', class: 'in', style: 'width:100%', value: x.n, placeholder: 'e.g. Alert me when DMARC drops', oninput: (e: any) => { x.n = e.target.value; } });
@@ -677,10 +680,14 @@ const lg = (n, s) => {
           E('div', { class: 'sub' }, 'Notify through'),
           E('div', { style: 'margin:6px 0 16px' }, chWrap),
           E('div', { class: 'fx' },
-            E('button', { class: 'btn p', onclick: () => { if (!x.n.trim()) x.n = ruleText(x); const list = loadRules(); if (typeof idx === 'number') list[idx] = x; else list.push(x); saveRules(list); cdr(); toast('Rule saved in this browser'); go(); } }, 'Save rule'),
+            E('button', { class: 'btn p', onclick: async () => { if (!x.n.trim()) x.n = ruleText(x); const body = { id: typeof idx === 'number' ? RULES[idx].id : undefined, name: x.n, metric: MET_API[x.m] || x.m, condition: x.c, value: String(x.v), domainId: domainIdOf(x.sc), channels: x.ch.map((c: string) => c.toLowerCase()), enabled: x.on === undefined ? true : !!x.on }; const j = await postJSON('/api/rules' + (typeof idx === 'number' ? '/update' : ''), body); if (j && j.ok) { cdr(); toast('Rule saved - runs on every 6 hour scan'); await loadRules(); go(); } else toast((j && j.error) || 'Could not save the rule.'); } }, 'Save rule'),
             E('button', { class: 'btn', onclick: cdr }, 'Cancel'))));
     }
-        function alr() {
+
+    async function alr() {
+      await loadRules();
+      const dg = await getJSON('/api/settings/digest');
+      if (dg && dg.ok) ALSET.dg = dg.enabled ? 1 : 0;
       const live = ALERTS;
       const cnt = (s2: string) => live.filter((a) => s2 === 'all' || a.severity === s2).length;
       const un = live.filter((a) => !a.read_at).length;
@@ -702,25 +709,31 @@ const lg = (n, s) => {
           ['New unclassified sender', 'All domains', ['Email', 'Webhook']],
           ['Certificate or domain expiring', 'All domains', ['Email']],
         ];
-        const custom = loadRules();
-        body = E('div', {},
-          E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, 'Built-in rules are watching your domains'), pill('Always on', 'ok')),
-            E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels'].map((x) => E('th', {}, x)))),
-              E('tbody', {}, BUILTIN.map((r) => E('tr', {}, E('td', {}, E('b', {}, r[0] as string)), E('td', {}, r[1] as string), E('td', {}, E('div', { class: 'fx' }, (r[2] as string[]).map((c) => pill(c, 'in2')))))))))),
-          E('div', { class: 'cd', style: 'margin-top:14px' },
-            E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('div', { class: 'fx' }, E('h3', {}, 'Custom rules'), prev()),
-              E('button', { class: 'btn p', onclick: () => ruleModal() }, '+ New rule')),
-            custom.length ? E('div', { class: 'sc' }, E('table', {}, E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels', 'Active', ''].map((x) => E('th', {}, x)))),
-              E('tbody', {}, custom.map((r, i) => E('tr', {},
-                E('td', {}, E('b', {}, r.n), E('div', { class: 'sub' }, ruleText(r))),
-                E('td', {}, r.sc),
-                E('td', {}, E('div', { class: 'fx' }, r.ch.map((c) => pill(c, 'in2')))),
-                E('td', {}, E('button', { class: 'sw' + (r.on ? ' on' : ''), role: 'switch', 'aria-checked': !!r.on, 'aria-label': 'Toggle ' + r.n, onclick: () => { custom[i].on = custom[i].on ? 0 : 1; saveRules(custom); go(); } })),
-                E('td', {}, E('div', { class: 'fx' },
-                  E('button', { class: 'btn', onclick: () => ruleModal(r, i) }, 'Edit'),
-                  E('button', { class: 'btn', onclick: () => { custom.splice(i, 1); saveRules(custom); toast('Rule deleted'); go(); } }, 'Delete'))))))))
+        const custom = RULES;
+        const builtinCard = E('div', { class: 'cd' }, E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('span', { class: 'sub' }, 'Built-in rules are watching your domains'), pill('Always on', 'ok')),
+          E('div', { class: 'sc' }, E('table', {},
+            E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels'].map((x) => E('th', {}, x)))),
+            E('tbody', {}, BUILTIN.map((r) => E('tr', {},
+              E('td', {}, E('b', {}, r[0] as string)),
+              E('td', {}, r[1] as string),
+              E('td', {}, E('div', { class: 'fx' }, (r[2] as string[]).map((c) => pill(c, 'in2'))))))))))
+        const customRows = custom.map((r, i) => E('tr', {},
+          E('td', {}, E('b', {}, r.name || ruleText(r)), E('div', { class: 'sub' }, ruleText(r))),
+          E('td', {}, r.sc),
+          E('td', {}, E('div', { class: 'fx' }, r.ch.map((c) => pill(c, 'in2')))),
+          E('td', {}, E('button', { class: 'sw' + (r.enabled ? ' on' : ''), role: 'switch', 'aria-checked': !!r.enabled, 'aria-label': 'Toggle ' + (r.name || 'rule'), onclick: async () => { const j = await postJSON('/api/rules/update', { id: r.id, enabled: !r.enabled }); if (j && j.ok) { await loadRules(); go(); } else toast((j && j.error) || 'Could not update the rule.'); } })),
+          E('td', {}, E('div', { class: 'fx' },
+            E('button', { class: 'btn', onclick: () => ruleModal(r, i) }, 'Edit'),
+            E('button', { class: 'btn', onclick: async () => { const j = await postJSON('/api/rules/delete?id=' + r.id); if (j && j.ok) { await loadRules(); toast('Rule deleted'); go(); } else toast((j && j.error) || 'Could not delete the rule.'); } }, 'Delete')))));
+        const customCard = E('div', { class: 'cd', style: 'margin-top:14px' },
+          E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Custom rules'),
+            E('button', { class: 'btn p', onclick: () => ruleModal() }, '+ New rule')),
+          custom.length ? E('div', { class: 'sc' }, E('table', {},
+            E('thead', {}, E('tr', {}, ['Rule', 'Applies to', 'Channels', 'Active', ''].map((x) => E('th', {}, x)))),
+            E('tbody', {}, customRows)))
             : E('p', { class: 'sub' }, 'No custom rules yet. Create one to get notified the way you want.'),
-            E('p', { class: 'sub', style: 'margin-top:10px' }, 'Custom rules are saved in this browser and start evaluating when the managed release ships the rules engine.')));
+          E('p', { class: 'sub', style: 'margin-top:10px' }, 'Rules run on every 6 hour scan. The Email channel delivers to your account email; Slack, Teams and Webhook delivery activates with the managed release.'));
+        body = E('div', {}, builtinCard, customCard);
       } else {
         const CHN = ['Email', 'Slack', 'Teams', 'Webhook'];
                 body = E('div', {},
@@ -738,7 +751,7 @@ const lg = (n, s) => {
             E('div', { class: 'li' }, E('label', { for: 'qh' }, 'Quiet hours (non-critical)'),
               E('select', { id: 'qh', class: 'sel', onchange: (e: any) => { ALSET.qh = e.target.value; toast('Preview: quiet hours activate with the managed release.'); } },
                 ['Off', '22:00 to 07:00', '20:00 to 08:00'].map((o) => E('option', { selected: o === ALSET.qh }, o)))),
-            prev()));
+          ));
       }
       return E('div', {}, E('div', { class: 'cd', style: 'padding-bottom:0;margin-bottom:14px' }, tabs), body);
     }
