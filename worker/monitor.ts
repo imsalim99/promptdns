@@ -19,6 +19,7 @@ import type { Env } from './index';
 import { getUserBySession } from './auth';
 import { scanDomainServer, type ScanCheck, type ScanResult } from './scan';
 import { evaluateRulesForDomain, sendDigests } from './rules';
+import { runMonitors } from './monitors';
 
 interface DomainRow {
   id: number;
@@ -226,6 +227,31 @@ export async function runScheduled(env: SessionEnv): Promise<void> {
     await Promise.allSettled(batch.map(async (d) => {
       const outcome = await scanAndCompare(env, d);
       if (!outcome.unresolvable) await evaluateRulesForDomain(env, d, outcome.scan, outcome.diff, outcome.changed);
+      try {
+        const mon = await runMonitors(d.domain);
+        await env.DB.prepare("UPDATE domains SET monitors_json = ?2, monitored_at = datetime('now') WHERE id = ?1").bind(d.id, JSON.stringify(mon)).run();
+        // monitor alerts: SSL fail, domain expiring, blocklisted (24h dedup)
+        const recent = await env.DB.prepare(
+          "SELECT id FROM alerts WHERE domain_id = ?1 AND created_at > datetime('now', '-24 hours') AND (title LIKE '%SSL%' OR title LIKE '%expir%' OR title LIKE '%blocklist%')",
+        ).bind(d.id).first<{ id: number }>();
+        if (!recent) {
+          if (!mon.ssl.ok) {
+            await env.DB.prepare(
+              "INSERT INTO alerts (user_id, domain_id, severity, title, detail) VALUES (?1, ?2, 'critical', ?3, ?4)",
+            ).bind(d.user_id, d.id, 'SSL connection failed on ' + d.domain, 'HTTPS requests to the site failed: ' + (mon.ssl.error || 'unknown')).run();
+          }
+          if (mon.expiry && mon.expiry.days < 30) {
+            await env.DB.prepare(
+              "INSERT INTO alerts (user_id, domain_id, severity, title, detail) VALUES (?1, ?2, 'warning', ?3, ?4)",
+            ).bind(d.user_id, d.id, 'Domain ' + d.domain + ' expires in ' + mon.expiry.days + ' days', 'The domain registration expires ' + mon.expiry.date + '. Renew at your registrar to avoid losing the domain.').run();
+          }
+          if (mon.blocklists.hits > 0) {
+            await env.DB.prepare(
+              "INSERT INTO alerts (user_id, domain_id, severity, title, detail) VALUES (?1, ?2, 'critical', ?3, ?4)",
+            ).bind(d.user_id, d.id, d.domain + ' is on ' + mon.blocklists.hits + ' blocklist(s)', 'Listed on: ' + mon.blocklists.listed.join(', ') + '. Email from this domain may be rejected by receivers.').run();
+          }
+        }
+      } catch { /* monitors are best-effort */ }
     }));
   }
 

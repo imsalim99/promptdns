@@ -13,6 +13,7 @@ import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleH
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload } from './dmarc-ingest';
 import { handleVerifyStart, handleVerifyCheck } from './verify';
 import { handleRulesList, handleRulesCreate, handleRulesUpdate, handleRulesDelete, handleDigestSetting } from './rules';
+import { handleMonitorsRefresh } from './monitors';
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 
@@ -52,6 +53,7 @@ export default {
     if (path === '/api/rules/update' && method === 'POST') return handleRulesUpdate(request, env);
     if (path === '/api/rules/delete' && method === 'POST') return handleRulesDelete(request, env);
     if (path === '/api/settings/digest' && method === 'POST') return handleDigestSetting(request, env);
+    if (path === '/api/domains/monitors' && method === 'POST') return handleMonitorsRefresh(request, env);
     if (path === '/api/domains/verify/check' && method === 'POST') return handleVerifyCheck(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);

@@ -622,17 +622,29 @@ const lg = (n, s) => {
       const ex = Object.values(st).filter((v) => v !== 'unset').length;
       const score = Math.min(100, 50 + ex * 6);
       const txt = BOTS.map(([b]) => st[b] === 'unset' ? '' : `User-agent: ${b}\n${st[b] === 'allow' ? 'Allow: /' : 'Disallow: /'}\n`).filter(Boolean).join('\n') || '# No AI crawler rules yet';
-      return E('div', {},
-        E('div', { class: 'g g4' }, [['Domain expiry', '212 days', ''], ['SSL certificates', '1 expiring', ''], ['Blocklists', '0 of 62', ''], ['AI readiness', score + ' / 100', '']].map(([l, v, s]) => E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('div', { class: 'sub' }, l), prev()), E('div', { class: 'k', style: s }, v)))),
-        E('div', { class: 'g g2' },
-          E('div', { class: 'cd' }, E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access'), prev()),
-            E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Set a rule per crawler. robots.txt hosting ships with managed records.'),
-            BOTS.map(([b, o, p]) => E('div', { class: 'li' }, E('div', { class: 'fx', style: 'flex-wrap:nowrap;gap:10px' }, lg(o, 22) || '', E('div', {}, E('b', {}, b), E('small', {}, o + ' · ' + p))), seg([['unset', 'Unset'], ['allow', 'Allow'], ['block', 'Block']], st[b], (v) => { st[b] = v; go(); })))),
-          E('div', { class: 'cd' },
-            E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Generated robots.txt'), E('button', { class: 'btn', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(txt); toast('Copied to clipboard'); } }, 'Copy')),
-            E('pre', {}, txt),
-            E('h3', { style: 'margin:14px 0 4px' }, 'Recent alerts for ' + (curDom() ? curDom()!.n : 'your domains')),
-            (domAlerts.length ? domAlerts.map((a) => E('div', { class: 'li' }, E('div', {}, a.title, E('small', { class: 'm' }, a.domain)), pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2'))) : E('p', { class: 'sub' }, 'No alerts for this domain yet.')))));
+      const mon = cd ? cd.monitors : null;
+      const expiryTxt = mon && mon.expiry ? mon.expiry.days + ' days' : 'checking...';
+      const expiryColor = mon && mon.expiry ? (mon.expiry.days < 30 ? 'color:var(--bd)' : mon.expiry.days < 90 ? 'color:var(--wn)' : '') : '';
+      const sslTxt = mon && mon.ssl ? (mon.ssl.ok ? 'Valid' : 'Failed') : 'checking...';
+      const sslColor = mon && mon.ssl ? (mon.ssl.ok ? 'color:var(--ok)' : 'color:var(--bd)') : '';
+      const blTxt = mon && mon.blocklists ? mon.blocklists.hits + ' of ' + mon.blocklists.total : 'checking...';
+      const blColor = mon && mon.blocklists && mon.blocklists.hits > 0 ? 'color:var(--bd)' : 'color:var(--ok)';
+      const kpis = E('div', { class: 'g g4' }, [
+        ['Domain expiry', expiryTxt, expiryColor],
+        ['SSL certificates', sslTxt, sslColor],
+        ['Blocklists', blTxt, blColor],
+        ['AI readiness', score + ' / 100', ''],
+      ].map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v))));
+      const crawlerCard = E('div', { class: 'cd' },
+        E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access'), prev()),
+        E('div', { class: 'sub', style: 'margin-bottom:6px' }, 'Set a rule per crawler. SSL, expiry and blocklist checks run every 6 hours.'),
+        BOTS.map(([b, o, p2]) => E('div', { class: 'li' }, E('div', { class: 'fx', style: 'flex-wrap:nowrap;gap:10px' }, lg(o, 22) || '', E('div', {}, E('b', {}, b), E('small', {}, o + ' - ' + p2))), seg([['unset', 'Unset'], ['allow', 'Allow'], ['block', 'Block']], st[b], (v) => { st[b] = v; go(); }))));
+      const robotsCard = E('div', { class: 'cd' },
+        E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'Generated robots.txt'), E('button', { class: 'btn', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(txt); toast('Copied to clipboard'); } }, 'Copy')),
+        E('pre', {}, txt),
+        E('h3', { style: 'margin:14px 0 4px' }, 'Recent alerts for ' + (cd ? cd.n : 'your domains')),
+        (domAlerts.length ? domAlerts.map((a) => E('div', { class: 'li' }, E('div', {}, a.title, E('small', { class: 'm' }, a.domain)), pill(a.severity, a.severity === 'critical' ? 'bd' : a.severity === 'warning' ? 'wn' : 'in2'))) : E('p', { class: 'sub' }, 'No alerts for this domain yet.')));
+      return E('div', {}, kpis, E('div', { class: 'g g2' }, crawlerCard, robotsCard));
     }
 
     // ================= alerts =================
