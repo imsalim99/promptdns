@@ -1,82 +1,335 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Diagram from '../components/Diagram.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "How do I know if my DNS has been hijacked?", "acceptedAnswer": { '@type': 'Answer', "text": "Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don\u2019t recognize, investigate immediately. Check your registrar\u2019s audit log for unauthorized changes." } },
-    {'@type': 'Question', 'name': "Can DNS hijacking be reversed?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically." } },
-    {'@type': 'Question', 'name': "Does my DNS provider protect against hijacking?", "acceptedAnswer": { '@type': 'Answer', "text": "Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer." } },
-    {'@type': 'Question', 'name': "What is the difference between DNS hijacking and DNS spoofing?", "acceptedAnswer": { '@type': 'Answer', "text": "They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method." } },
-    {'@type': 'Question', 'name': "Should I use a DNS provider with registry lock?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security." } },
-    {'@type': 'Question', 'name': "Does my hosting provider protect DNS too?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider\u2019s security is irrelevant to DNS attacks." } }
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between DNS hijacking and DNS spoofing (cache poisoning)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "DNS hijacking persistently alters where queries go or what the authoritative zone says (by modifying device or router DNS settings or breaching a domain registrar account). DNS spoofing (cache poisoning) injects a temporary forged response into a recursive resolver's RAM cache without changing registrar or router configurations."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does HTTPS protect me from DNS hijacking?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For client-side or Wi-Fi DNS hijacking, HTTPS protects you because the attacker's server lacks a valid SSL certificate for the domain and triggers a browser warning. In a domain-level registrar hijack, the attacker controls domain DNS and passes automated validation to obtain a real, valid SSL certificate, displaying a normal HTTPS padlock."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between Registrar Lock and Registry Lock for preventing domain hijacking?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, Registrar Lock (clientTransferProhibited) represents a software toggle inside your registrar account; an attacker stealing your password simply clicks a toggle to unlock it. Registry Lock (serverUpdateProhibited) operates one tier higher at the TLD registry (like Verisign) and requires out-of-band human verification to modify nameservers, stopping hijackers even when registrar credentials are compromised."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is my home internet redirecting typos and non-existent domains to a strange search page?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world diagnostics, browser redirection to ad pages on typos indicates either ISP NXDOMAIN redirection or a compromised home router with altered DHCP DNS settings. Switching router or device DNS settings to Cloudflare (1.1.1.1) or Quad9 (9.9.9.9) with DoH enabled stops the redirection immediately."
+      }
+    }
   ]
-}
+};
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["DNS Security", "/dns-security/"],
+  ["DNS Hijacking"]
+];
 ---
+
 <BaseLayout
-  title="DNS Hijacking: How Attacks Work and How to Stop Them"
-  description="DNS hijacking explained: the attack types (registrar hijack, MITM, cache poisoning), real examples, and the layered defense that stops each one."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Security", "/dns-security/"], ["DNS Hijacking"]]}>
+  title="DNS Hijacking: How DNS Redirection Attacks Work, Types, and Prevention"
+  description="Understand DNS hijacking attack vectors across local malware, router exploits, and registrar takeovers, and learn how Registry Lock and DNSSEC stop redirection."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/dns/" class="hover:text-accent">DNS Guide</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/dns-security/" class="hover:text-accent">DNS Security</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DNS Hijacking</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Hijacking: How Attacks Work and How to Stop Them</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">DNS hijacking redirects your domain's traffic by manipulating DNS answers. The victim never sees your server. This is one of the most damaging attacks because it is invisible to users and can persist for hours or days.</p>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DNS Hijacking: How DNS Redirection Attacks Work, Types, and Prevention
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        <abbr class="pd-term" data-tip="DNS hijacking: cyberattack subverting DNS resolution to redirect traffic to unauthorized servers">DNS hijacking</abbr> (also called DNS redirection) is <strong class="text-ink">a cyberattack that subverts domain name resolution to silently reroute users to fraudulent servers</strong>. Attackers hijack DNS by infecting local devices or routers, intercepting unencrypted queries, or breaching domain registrar accounts. The 5 attack vectors require both client and domain-level defenses.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS hijacking attack types</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Type</th><th>How it works</th><th>Defense</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Registrar compromise</td><td class="text-sm text-ink-dim">Attacker takes over the registrar account and repoints NS</td><td class="text-sm text-ink-dim">Registrar lock, two-factor authentication</td></tr><tr><td class="font-medium text-ink">Local router override</td><td class="text-sm text-ink-dim">Malware changes the resolver on the device or router</td><td class="text-sm text-ink-dim">Firmware updates, resolver hard-coding</td></tr><tr><td class="font-medium text-ink">Cache poisoning</td><td class="text-sm text-ink-dim">Forged answers inserted into resolver caches</td><td class="text-sm text-ink-dim">DNSSEC validation</td></tr><tr><td class="font-medium text-ink">MITM on plaintext DNS</td><td class="text-sm text-ink-dim">On-path interception of port 53 traffic</td><td class="text-sm text-ink-dim">DoH or DoT encryption</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
+    <Diagram name="resolution" caption="DNS hijacking attack surface: attackers intercept DNS resolution at local devices, routers, network transit, or domain registrar authoritative zones" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-three-attack-vectors">The three attack vectors</a></li>
-        <li><a href="#real-attack-scenarios">Real attack scenarios</a></li>
-        <li><a href="#the-layered-defense">The layered defense</a></li>
+        <li><a href="#what-are-the-5-types-of-dns-hijacking-attacks-attack-surface-matrix">5 types of DNS hijacking attacks</a></li>
+        <li><a href="#how-does-a-domain-level-registrar-hijack-work-the-5-step-kill-chain">Domain-level registrar hijack kill chain</a></li>
+        <li><a href="#dns-hijacking-vs-dns-cache-poisoning-vs-bgp-hijacking-comparison-table">DNS hijacking vs cache poisoning vs BGP hijacking</a></li>
+        <li><a href="#5-ways-domain-owners-prevent-registrar-and-zone-hijacking-registry-lock-2fa-caa">5 ways domain owners prevent hijacking</a></li>
+        <li><a href="#how-to-detect-and-fix-dns-hijacking-for-both-domain-owners-and-end-users">How to detect and fix DNS hijacking</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#dns-security-cluster">DNS Security Cluster</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
-    <Diagram name="resolution" caption="How DNS resolution works, and where hijacking intercepts" />
 
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-three-attack-vectors">The three attack vectors</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">Registrar hijack:</strong> the attacker gains access to your registrar account (via phishing, credential stuffing, or a registrar breach) and changes your nameservers or A records to point at their infrastructure. This is the most damaging form because it is authoritative.</li><li class="leading-relaxed"><strong class="text-ink">On-path (MITM):</strong> the attacker intercepts unencrypted DNS queries between the user and the resolver and forges answers. Defeated by DNSSEC (authentication) and DoH/DoT (encryption).</li><li class="leading-relaxed"><strong class="text-ink">Cache poisoning:</strong> the attacker injects forged records into a resolver’s cache. Defeated by DNSSEC and randomizing source ports/query IDs.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="real-attack-scenarios">Real attack scenarios</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">A crypto exchange’s DNS is hijacked; users visit a pixel-perfect clone, enter credentials, and lose funds.</li><li class="leading-relaxed">A government registrar is compromised; hundreds of domains redirect to a censorship page simultaneously.</li><li class="leading-relaxed">A router’s DNS settings are changed via a vulnerability; every device on the network resolves to an attacker-controlled resolver.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-layered-defense">The layered defense</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">DNSSEC:</strong> makes forged answers cryptographically detectable. Enable it at your <a href="/what-is-dnssec/">DNS host and registrar</a>.</li><li class="leading-relaxed"><strong class="text-ink">Registrar security:</strong> two-factor authentication, registry lock, transfer authorization codes stored securely.</li><li class="leading-relaxed"><strong class="text-ink">Monitoring:</strong> alert on any record change, especially nameservers and A records. Our <a href="/dns-propagation-checker/">propagation checker</a> detects mismatches.</li><li class="leading-relaxed"><strong class="text-ink">CAA records:</strong> prevent attackers from issuing certificates for your domain even if they control DNS.</li><li class="leading-relaxed"><strong class="text-ink">DoH/DoT:</strong> encrypt DNS queries so on-path attackers cannot read or forge them.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I know if my DNS has been hijacked?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Check your domain with the DNS record lookup and propagation checker: if different resolvers return different answers, or the IP is one you don’t recognize, investigate immediately. Check your registrar’s audit log for unauthorized changes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can DNS hijacking be reversed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, but it takes time: fix the root cause (regain registrar access, remove the poisoned record), then wait for caches to expire. DNSSEC-enabled zones recover faster because resolvers reject the forged answers automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my DNS provider protect against hijacking?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reputable providers (Cloudflare, Route 53) implement strong internal controls, but the registrar account is the soft target. Enable every security feature they offer.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between DNS hijacking and DNS spoofing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">They overlap. Spoofing is the technique (forging answers); hijacking is the outcome (traffic redirected). Cache poisoning is a spoofing method; registrar compromise is a hijacking method.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use a DNS provider with registry lock?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes for high-value domains. Registry lock requires human verification at the registry level before any nameserver change, adding a layer beyond registrar security.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does my hosting provider protect DNS too?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if they host your DNS. If your nameservers point at Cloudflare or Route 53, your hosting provider’s security is irrelevant to DNS attacks.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="dns-security-cluster">DNS Security Cluster</h2>
-      <p class="text-sm text-ink-dim">Every attack type and its defense, cross-referenced:</p>
-      <ul class="mt-3 grid gap-2">
-<li><a href="/dns-cache-poisoning/" class="text-accent hover:text-accent-soft">DNS Cache Poisoning</a></li>
-<li><a href="/dns-amplification-attack/" class="text-accent hover:text-accent-soft">DNS Amplification Attacks</a></li>
-<li><a href="/dns-tunneling/" class="text-accent hover:text-accent-soft">DNS Tunneling</a></li>
-<li><a href="/dns-rebinding-explained/" class="text-accent hover:text-accent-soft">DNS Rebinding</a></li>
-<li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">DNSSEC: the cryptographic defense</a></li>
-      </ul>
+      <h2 id="what-are-the-5-types-of-dns-hijacking-attacks-attack-surface-matrix">What Are the 5 Types of DNS Hijacking Attacks? (Attack Surface Matrix)</h2>
+      <p>
+        DNS hijacking is <strong class="text-ink">an umbrella attack category encompassing two distinct threat models: client-side DNS redirection (where malware or a compromised Wi-Fi router forces a user's device to query a rogue recursive DNS server) and domain-side infrastructure hijacking (where an attacker breaches your domain registrar or DNS hosting account to rewrite your authoritative NS, A, and MX records for everyone on the internet)</strong>. Both attack paths redirect unsuspecting visitors to fraudulent phishing servers and allow attackers to intercept email or issue unauthorized SSL/TLS certificates. The table below compares the 5 primary DNS hijacking vectors by target layer, blast radius, and primary defense.
+      </p>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">What is DNSSEC →</a></li><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">DNS propagation checker →</a></li><li><a href="/" class="text-accent hover:text-accent-soft">Homepage security scanner →</a></li></ul>
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Attack Vector</th>
+              <th class="py-2.5 px-3">Target Layer</th>
+              <th class="py-2.5 px-3">Who Is Affected (Blast Radius)</th>
+              <th class="py-2.5 px-3">How the Hijack Executes</th>
+              <th class="py-2.5 px-3">Primary Technical Defense</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">1. Local Device DNS Hijack (DNSChanger)</td>
+              <td class="py-2.5 px-3">Client OS (hosts file or network profile)</td>
+              <td class="py-2.5 px-3">Single infected computer or mobile device</td>
+              <td class="py-2.5 px-3">Malware modifies /etc/hosts (or Windows hosts) or replaces OS DNS resolver IPs with rogue addresses.</td>
+              <td class="py-2.5 px-3">Endpoint protection, hosts file monitoring, and locking OS network adapter profiles.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">2. Router DHCP DNS Hijack</td>
+              <td class="py-2.5 px-3">Wi-Fi Router / Gateway (CPE)</td>
+              <td class="py-2.5 px-3">Every device connected to that local network</td>
+              <td class="py-2.5 px-3">Attackers exploit default router credentials or firmware flaws to alter DHCP Option 6 DNS server settings.</td>
+              <td class="py-2.5 px-3">Updating router credentials, disabling remote WAN management, and applying vendor firmware updates.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">3. On-Path Man-in-the-Middle (<abbr class="pd-term" data-tip="MITM: Man-in-the-Middle attack where an adversary intercepts and alters communications between two parties">MITM</abbr>)</td>
+              <td class="py-2.5 px-3">Network Transit (UDP Port 53)</td>
+              <td class="py-2.5 px-3">Users on local unencrypted Wi-Fi or transit links</td>
+              <td class="py-2.5 px-3">Adversaries intercept plaintext UDP port 53 traffic, forging spoofed responses before legitimate resolvers reply.</td>
+              <td class="py-2.5 px-3">Encrypting queries with <a href="/doh-vs-dot/" class="text-accent underline hover:text-accent-hover">DNS-over-HTTPS vs DNS-over-TLS</a> and validating <a href="/what-is-dnssec/" class="text-accent underline hover:text-accent-hover">What Is DNSSEC</a>.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">4. Registrar or DNS Account Takeover</td>
+              <td class="py-2.5 px-3">Authoritative Zone (NS, A, MX, TXT)</td>
+              <td class="py-2.5 px-3">100% of global internet visitors to the domain</td>
+              <td class="py-2.5 px-3">Attackers compromise registrar credentials or API tokens to rewrite authoritative NS delegations or zone records.</td>
+              <td class="py-2.5 px-3">Hardware-key 2FA (FIDO2), Registry Lock, CAA pinning, and continuous <a href="/dns-monitoring/" class="text-accent underline hover:text-accent-hover">DNS Monitoring</a>.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">5. ISP NXDOMAIN Redirection</td>
+              <td class="py-2.5 px-3">ISP Recursive Resolver</td>
+              <td class="py-2.5 px-3">Subscribers utilizing the ISP default resolver</td>
+              <td class="py-2.5 px-3">Internet service providers intercept NXDOMAIN responses to redirect browser lookups to monetization search pages.</td>
+              <td class="py-2.5 px-3">Configuring router and device resolvers to independent public services (such as 1.1.1.1, 8.8.8.8, or 9.9.9.9).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Architectural divergence between client-side and domain-side attacks defines your investigative workflow. A single user reporting an isolated phishing redirect while global resolvers return legitimate IP addresses indicates a local device infection or router compromise. Global recursive resolvers displaying unauthorized IP addresses or foreign nameservers confirm an authoritative zone breach or registrar account takeover requiring immediate administrative intervention.
+      </p>
+
+      <h2 id="how-does-a-domain-level-registrar-hijack-work-the-5-step-kill-chain">How Does a Domain-Level Registrar Hijack Work? (The 5-Step Kill Chain)</h2>
+      <p>
+        In a domain-level infrastructure hijack (such as the state-sponsored Sea Turtle campaign documented in CISA Emergency Directive 19-01), attackers compromise your registrar or DNS provider to <strong class="text-ink">intercept traffic, mint valid SSL/TLS certificates, and capture corporate email across 5 sequential steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-3 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Compromise</strong> the domain owner's registrar login credentials, DNS hosting dashboard account, or automated DNS API token via spear-phishing, credential stuffing, or registrar support social engineering.
+        </li>
+        <li>
+          <strong class="text-ink">Modify</strong> the domain's parent NS delegation records to point to an attacker-controlled nameserver (or edit the existing zone's A, AAAA, and MX records directly to point to an attacker proxy IP) with a short TTL (60 seconds).
+        </li>
+        <li>
+          <strong class="text-ink">Request</strong> a brand-new, publicly trusted SSL/TLS certificate for the hijacked domain from an automated Certificate Authority (such as Let's Encrypt or Sectigo); because the attacker temporarily controls domain DNS, automated HTTP-01 or DNS-01 validation checks succeed automatically.
+        </li>
+        <li>
+          <strong class="text-ink">Intercept</strong> sensitive user logins, VPN credentials, and incoming corporate emails in a transparent man-in-the-middle proxy using that newly issued SSL certificate (displaying a valid HTTPS padlock with zero browser warnings) before proxying requests to the real server.
+        </li>
+        <li>
+          <strong class="text-ink">Revert</strong> the A and NS records back to legitimate servers after harvesting credentials, leaving no obvious trace unless the organization actively monitors <abbr class="pd-term" data-tip="Certificate Transparency: public append-only cryptographic log recording every issued SSL/TLS certificate">Certificate Transparency</abbr> (CT) logs and historical DNS changes.
+        </li>
+      </ol>
+
+      <p>
+        Automated ACME certificate issuance makes modern domain hijacking exceptionally hazardous. Transport encryption alone cannot protect visitors when attackers control authoritative DNS long enough to pass validation challenges and mint genuine certificates.
+      </p>
+
+      <h2 id="dns-hijacking-vs-dns-cache-poisoning-vs-bgp-hijacking-comparison-table">DNS Hijacking vs DNS Cache Poisoning vs BGP Hijacking (Comparison Table)</h2>
+      <p>
+        Security teams distinguish between DNS Hijacking, <strong class="text-ink"><a href="/dns-cache-poisoning/" class="text-accent underline hover:text-accent-hover">DNS Cache Poisoning</a> (DNS Spoofing)</strong>, and BGP Hijacking because each attack targets a different layer of internet infrastructure and requires distinct remediation. The table below compares all 3 redirection attacks side by side.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Dimension</th>
+              <th class="py-2.5 px-3">DNS Hijacking</th>
+              <th class="py-2.5 px-3">DNS Cache Poisoning (Spoofing)</th>
+              <th class="py-2.5 px-3">BGP Route Hijacking</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">What Gets Altered</td>
+              <td class="py-2.5 px-3">Device/router DNS settings or authoritative registrar/zone records</td>
+              <td class="py-2.5 px-3">Volatile RAM cache inside a recursive DNS resolver</td>
+              <td class="py-2.5 px-3">Internet router <abbr class="pd-term" data-tip="BGP: Border Gateway Protocol managing routing paths between Autonomous Systems across the internet">BGP</abbr> prefix tables (AS_PATH)</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">How Attackers Gain Access</td>
+              <td class="py-2.5 px-3">Malware, weak router passwords, or stolen registrar/DNS credentials</td>
+              <td class="py-2.5 px-3">Forging UDP port 53 response packets with guessed 16-bit Transaction IDs</td>
+              <td class="py-2.5 px-3">Announcing an unauthorized IP CIDR prefix from a rogue ASN</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Duration of the Attack</td>
+              <td class="py-2.5 px-3 font-semibold text-ink">Persistent until records, router settings, or passwords are manually restored</td>
+              <td class="py-2.5 px-3">Temporary (Expires automatically when the poisoned record TTL reaches 0)</td>
+              <td class="py-2.5 px-3">Persistent until upstream ISPs filter the rogue BGP announcement</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Does DNSSEC Stop It?</td>
+              <td class="py-2.5 px-3">Stops MITM/rogue resolver hijacks, unless attackers breach the registrar and replace the parent DS record</td>
+              <td class="py-2.5 px-3 font-semibold text-accent">Yes (100%): RRSIG signature validation rejects unsigned forged responses</td>
+              <td class="py-2.5 px-3">No: Operates at the IP routing layer after DNS resolution completes; requires RPKI</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Protocol boundaries determine defense efficacy. Cryptographic validation verified through the <a href="/dnssec-checker/" class="text-accent underline hover:text-accent-hover">DNSSEC Checker</a> neutralizes recursive cache poisoning and on-path spoofing, yet provides zero protection if an attacker logs into your registrar console and replaces your parent DS delegation record. Enterprise resilience demands locking registrar portals alongside protocol-level signing.
+      </p>
+
+      <h2 id="5-ways-domain-owners-prevent-registrar-and-zone-hijacking-registry-lock-2fa-caa">5 Ways Domain Owners Prevent Registrar and Zone Hijacking (Registry Lock, 2FA, CAA)</h2>
+      <p>
+        Protecting a production domain against authoritative DNS and registrar hijacking requires <strong class="text-ink">5 layered security controls across authentication, TLD registry locks, cryptographic signing, certificate restrictions, and continuous drift monitoring</strong>:
+      </p>
+
+      <ol class="my-4 space-y-4 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Enforce Phishing-Resistant Hardware 2FA (FIDO2 / WebAuthn) and Scope API Tokens:</strong> Protect registrar and DNS hosting accounts with hardware security keys (FIDO2 passkeys) rather than SMS codes, and restrict automated DNS API tokens to specific zone endpoints and authorized source IP addresses.
+        </li>
+        <li>
+          <strong class="text-ink">Enable Registrar Lock (clientTransferProhibited) AND Enterprise Registry Lock (serverUpdateProhibited):</strong> Deploy layered authorization locks across your registrar and registry tiers:
+          <ul class="my-2 space-y-2 pl-5 list-disc text-ink-dim">
+            <li>
+              <strong class="text-ink"><abbr class="pd-term" data-tip="Registrar lock: clientTransferProhibited status code set in registrar consoles to block domain transfers">Registrar Lock</abbr> (clientTransferProhibited / clientUpdateProhibited):</strong> Standard free setting inside your registrar dashboard blocking automated domain transfers; an attacker with stolen account credentials can toggle this off.
+            </li>
+            <li>
+              <strong class="text-ink"><abbr class="pd-term" data-tip="Registry lock: high-security serverUpdateProhibited status enforced at the TLD registry level requiring human verification">Registry Lock</abbr> (serverTransferProhibited / serverUpdateProhibited / serverDeleteProhibited):</strong> Out-of-band lock enforced at the TLD registry level (such as Verisign for .com). Changes require multi-party telephone authentication and security phrase verification, preventing unauthorized updates even if the registrar account is compromised. Audit your domain's active EPP lock status in the <a href="/whois-lookup/" class="text-accent underline hover:text-accent-hover">WHOIS / RDAP Lookup</a>.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong class="text-ink">Sign Your Zone With DNSSEC (Algorithm 13):</strong> Cryptographic ECDSA signatures protect queries in transit between authoritative servers and recursive resolvers, preventing on-path interception and rogue resolver forgery.
+        </li>
+        <li>
+          <strong class="text-ink">Publish Strict CAA Record Policies With ACME Account Pinning:</strong> Restrict authorized Certificate Authorities and bind issuance to your designated ACME account URI (RFC 8657) via a <a href="/caa-record/" class="text-accent underline hover:text-accent-hover">CAA Record</a>, blocking rogue certificate minting during brief DNS diversions.
+        </li>
+        <li>
+          <strong class="text-ink">Deploy Automated 6-Hour DNS Drift and Nameserver Monitoring:</strong> Scheduled snapshot audits detect unauthorized A, AAAA, MX, NS, and DS modifications around the clock, alerting administrators via email the moment records deviate from baseline configurations.
+        </li>
+      </ol>
+
+      <p>
+        Layering authentication controls and registry locks insulates core domain assets against credential compromise. Operational hardening workflows are detailed in our <a href="/dns-threat-protection-checklist/" class="text-accent underline hover:text-accent-hover">DNS Hardening Checklist: 15 Steps</a>.
+      </p>
+
+      <h2 id="how-to-detect-and-fix-dns-hijacking-for-both-domain-owners-and-end-users">How to Detect and Fix DNS Hijacking (For Both Domain Owners and End Users)</h2>
+      <p>
+        To determine whether a suspicious redirect is caused by a global domain hijack or a local device/router compromise, execute <strong class="text-ink">4 diagnostic and recovery steps</strong>:
+      </p>
+
+      <ol class="my-4 space-y-4 pl-6 list-decimal text-ink-dim">
+        <li>
+          <strong class="text-ink">Compare Global DoH Vantages Against Local Resolution:</strong> Query your domain across global vantage points in the <a href="/dns-propagation-checker/" class="text-accent underline hover:text-accent-hover">DNS Propagation Checker</a> and <a href="/delegation-checker/" class="text-accent underline hover:text-accent-hover">DNS Delegation Checker</a>. Uniform foreign IPs indicate an authoritative registrar hijack; clean global IPs alongside a local redirect indicate client or router tampering.
+        </li>
+        <li>
+          <strong class="text-ink">Check Which Recursive Resolver Your Device Is Using:</strong> Run the <a href="/dns-leak-test/" class="text-accent underline hover:text-accent-hover">DNS Leak Test</a> to identify your active resolver IP and ASN, and inspect local hosts files and router WAN DHCP configurations for rogue entries:
+          <pre class="mt-2 overflow-x-auto rounded border border-line bg-panel/60 p-3 font-mono text-xs text-ink leading-relaxed"><code># Compare what your local OS/router resolver returns vs Cloudflare 1.1.1.1:
+dig example.com A +short
+dig @1.1.1.1 example.com A +short</code></pre>
+        </li>
+        <li>
+          <strong class="text-ink">Remediate a Domain-Side Registrar Hijack:</strong> Revoke compromised sessions and API keys immediately, restore authoritative NS, A, MX, and TXT records from zone backups, inspect Certificate Transparency logs (crt.sh) to revoke unauthorized certificates, and temporarily reduce TTLs to 300 seconds.
+        </li>
+        <li>
+          <strong class="text-ink">Remediate a Client or Router Hijack:</strong> Factory-reset compromised routers, update firmware, remove unauthorized entries from /etc/hosts (or Windows hosts), configure encrypted DNS (<abbr class="pd-term" data-tip="DoH: DNS-over-HTTPS protocol encrypting DNS queries inside HTTPS sessions">DoH</abbr> or DoT), and clear cached entries using <a href="/flush-dns-cache/" class="text-accent underline hover:text-accent-hover">How to Flush DNS Cache</a>.
+        </li>
+      </ol>
+
+      <p>
+        Proactive defense against DNS redirection protects corporate reputation across the broader landscape of <a href="/dns-security/" class="text-accent underline hover:text-accent-hover">DNS Security</a>. Defending against local malware, router DHCP exploits, MITM interception, and registrar account takeovers demands combining hardware 2FA and Registry Lock with <abbr class="pd-term" data-tip="DNSSEC: Domain Name System Security Extensions authenticating DNS responses with digital signatures">DNSSEC</abbr> and encrypted DoH/DoT. Scheduled DNS drift monitoring ensures rapid incident detection before attackers exploit hijacked traffic to intercept credentials or compromise users.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="space-y-4 my-6">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What is the difference between DNS hijacking and DNS spoofing (cache poisoning)?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>DNS hijacking persistently alters where queries go or what the authoritative zone says (by modifying device or router DNS settings or breaching a domain registrar account). DNS spoofing (cache poisoning) injects a temporary forged response into a recursive resolver's RAM cache without changing registrar or router configurations.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does HTTPS protect me from DNS hijacking?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>For client-side or Wi-Fi DNS hijacking, HTTPS protects you because the attacker's server lacks a valid SSL certificate for the domain and triggers a browser warning. In a domain-level registrar hijack, the attacker controls domain DNS and passes automated validation to obtain a real, valid SSL certificate, displaying a normal HTTPS padlock.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What is the difference between Registrar Lock and Registry Lock for preventing domain hijacking?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In practice, Registrar Lock (clientTransferProhibited) represents a software toggle inside your registrar account; an attacker stealing your password simply clicks a toggle to unlock it. Registry Lock (serverUpdateProhibited) operates one tier higher at the TLD registry (like Verisign) and requires out-of-band human verification to modify nameservers, stopping hijackers even when registrar credentials are compromised.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why is my home internet redirecting typos and non-existent domains to a strange search page?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world diagnostics, browser redirection to ad pages on typos indicates either ISP NXDOMAIN redirection or a compromised home router with altered DHCP DNS settings. Switching router or device DNS settings to Cloudflare (1.1.1.1) or Quad9 (9.9.9.9) with DoH enabled stops the redirection immediately.</p>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 </BaseLayout>
