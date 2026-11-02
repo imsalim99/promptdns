@@ -614,17 +614,16 @@ const lg = (n, s) => {
     }
 
     // ================= DNS monitor + AI access =================
+    const BOTS: [string, string, string][] = [['GPTBot', 'OpenAI', 'Training'], ['ClaudeBot', 'Anthropic', 'Training'], ['PerplexityBot', 'Perplexity', 'Search index'], ['Google-Extended', 'Google', 'Training opt-out'], ['Amazonbot', 'Amazon', 'Search and assistant'], ['CCBot', 'OpenAI', 'Training']];
     async function ai() {
       const cd = curDom();
       const domAlerts = cd ? ALERTS.filter((a) => a.domain === cd.n) : ALERTS;
-      let mon = cd ? cd.monitors : null;
-      // auto-trigger monitors on first visit if no data exists yet
+      const mon = cd ? cd.monitors : null;
+      // fire monitors in the background if no data yet - render immediately
       if (cd && !mon) {
-        mon = await (async () => {
-          const j = await postJSON('/api/domains/monitors?id=' + cd.id);
-          if (j && j.ok && j.monitors) { await loadRules(); return j.monitors; }
-          return null;
-        })();
+        postJSON('/api/domains/monitors?id=' + cd.id).then((j) => {
+          if (j && j.ok) { loadRules(); go(); }
+        }).catch(() => { /* monitors are best-effort */ });
       }
       const st = S.ai;
       const ex = Object.values(st).filter((v) => v !== 'unset').length;
@@ -644,11 +643,11 @@ const lg = (n, s) => {
         ['Blocklists', blTxt, blColor],
         ['AI readiness', score + ' / 100', ''],
       ].map(([l, v, st]) => E('div', { class: 'cd' }, E('div', { class: 'sub' }, l), E('div', { class: 'k', style: st }, v))));
-      // Crawler access: parsed status from the live robots.txt
       const statusPill = (s2: string) => s2 === 'disallow' ? pill('Blocked', 'bd') : s2 === 'allow' ? pill('Allowed', 'ok') : pill('Unset', 'in2');
       const crawlerCard = E('div', { class: 'cd' },
         E('div', { class: 'fx sp' }, E('h3', {}, 'Crawler access (live robots.txt)')),
-        hasRobots
+        !mon ? E('p', { class: 'sub' }, 'Monitors are running - results appear here in a few seconds.')
+        : hasRobots
           ? [
               E('div', { class: 'sub', style: 'margin-bottom:8px' }, 'How AI crawlers are configured in the live robots.txt of ' + (cd ? cd.n : '') + '.'),
               crawlerList.length
