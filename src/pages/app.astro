@@ -457,16 +457,21 @@ const lg = (n, s) => {
       }
       const ruaMatch = ruaRec ? ruaRec.match(/rua=([^;]+)/i) : null;
       const lastReport = DM && DM.reports && DM.reports[0] ? DM.reports[0].received_at : null;
+      const noticeChecking = () => E('div', { class: 'cd', style: 'background:var(--as)' },
+        E('p', { class: 'sub', style: 'margin:0' }, 'Checking the rua= tag on the live DMARC record...'));
+      const noticeNoRecord = () => E('div', { class: 'cd', style: 'background:var(--ws)' },
+        E('b', {}, 'This domain cannot receive aggregate reports yet.'),
+        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'No DMARC record was found in live DNS, so providers have nowhere to send reports. Publish the record below at your DNS provider.'),
+        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Recommended record: ', E('span', { class: 'm' }, 'v=DMARC1; p=none; rua=mailto:reports@promptdns.com')));
+      const noticeNoRua = () => E('div', { class: 'cd', style: 'background:var(--ws)' },
+        E('b', {}, 'Your DMARC record is missing the rua= tag.'),
+        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'The live record is ', E('span', { class: 'm' }, ruaRec), ' - it has no rua= tag, so providers have nowhere to send reports. Update the record at your DNS provider to:'),
+        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Updated record: ', E('span', { class: 'm' }, ruaRec.replace(/;\s*$/, '') + '; rua=mailto:reports@promptdns.com')));
+      const noticeOk = () => E('div', { class: 'cd', style: 'background:var(--as)' },
+        E('p', { class: 'sub', style: 'margin:0' }, 'rua= is configured (' + ruaMatch[1].trim() + '). Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.')),
+        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Live record: ', E('span', { class: 'm' }, ruaRec)));
       const notices = E('div', { style: 'margin-bottom:14px' },
-        ruaRec === undefined ? E('div', { class: 'cd', style: 'background:var(--as)' },
-          E('p', { class: 'sub', style: 'margin:0' }, 'Checking the rua= tag on the live DMARC record...'))
-        : !ruaRec ? E('div', { class: 'cd', style: 'background:var(--ws)' },
-          E('b', {}, 'This domain cannot receive aggregate reports yet.'),
-          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'No DMARC record with an rua= tag was found in live DNS, so providers have nowhere to send reports. Add rua=mailto:reports@promptdns.com to the record at your DNS provider.'),
-          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Recommended record: ', E('span', { class: 'm' }, 'v=DMARC1; p=none; rua=mailto:reports@promptdns.com')))
-        : E('div', { class: 'cd', style: 'background:var(--as)' },
-          E('p', { class: 'sub', style: 'margin:0' }, 'rua= is configured' + (ruaMatch ? ' (' + ruaMatch[1].trim() + ')' : '') + '. Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.')),
-          E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Live record: ', E('span', { class: 'm' }, ruaRec))));
+        ruaRec === undefined ? noticeChecking() : !ruaRec ? noticeNoRecord() : !ruaMatch ? noticeNoRua() : noticeOk());
       const sum = DM ? DM.summary : { reports: 0, messages: 0, orgs: 0, passRate: null };
       const tot = sum.messages || 0, rate = sum.passRate;
       const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
