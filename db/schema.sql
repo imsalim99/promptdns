@@ -194,11 +194,3 @@ CREATE TABLE IF NOT EXISTS alert_rules (
 
 ALTER TABLE users ADD COLUMN digest_enabled INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN last_digest_at TEXT;
-
--- v12: DNS monitor results (SSL, domain expiry, blocklists) stored as JSON.
-
-ALTER TABLE domains ADD COLUMN monitors_json TEXT;
-
--- v12b: monitor last-run timestamp.
-
-ALTER TABLE domains ADD COLUMN monitored_at TEXT;

@@ -10,7 +10,6 @@
 import type { Env } from './index';
 import { getUserBySession } from './auth';
 import { scanDomainServer } from './scan';
-import { runMonitors } from './monitors';
 
 const MAX_DOMAINS = 3; // development cap; becomes the plan limit when billing ships
 
@@ -56,7 +55,7 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
     .prepare(
       `SELECT d.id, d.domain, d.created_at, d.paused, d.verified,
               COALESCE(d.last_checked_at, s.checked_at) AS checked_at,
-              s.score, s.grade, s.checks_json, d.records_json AS records_json, d.monitors_json AS monitors_json
+              s.score, s.grade, s.checks_json, d.records_json AS records_json
          FROM domains d
          LEFT JOIN snapshots s ON s.id = (
            SELECT id FROM snapshots WHERE domain_id = d.id ORDER BY id DESC LIMIT 1
@@ -65,7 +64,7 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
         ORDER BY d.id`,
     )
     .bind(userOrRes.id)
-    .all<{ id: number; domain: string; created_at: string; paused: number; verified: number; score: number | null; grade: string | null; checks_json: string | null; records_json: string | null; monitors_json: string | null; checked_at: string | null }>();
+    .all<{ id: number; domain: string; created_at: string; paused: number; verified: number; score: number | null; grade: string | null; checks_json: string | null; records_json: string | null; checked_at: string | null }>();
 
   const domains = (rows.results ?? []).map((r) => ({
     id: r.id,
@@ -78,7 +77,6 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
     checkedAt: r.checked_at,
     checks: r.checks_json ? (JSON.parse(r.checks_json) as unknown) : null,
     records: r.records_json ? (JSON.parse(r.records_json) as unknown) : null,
-    monitors: r.monitors_json ? (JSON.parse(r.monitors_json) as unknown) : null,
   }));
   return json({ ok: true, domains, max: MAX_DOMAINS });
 }
@@ -130,15 +128,6 @@ export async function handleDomainsAdd(request: Request, env: SessionEnv): Promi
     .prepare('INSERT INTO snapshots (domain_id, score, grade, checks_json, records_json) VALUES (?1, ?2, ?3, ?4, ?5)')
     .bind(domainId, scan.score, scan.grade, JSON.stringify(scan.checks), JSON.stringify(scan.records))
     .run();
-
-  // run DNS monitors immediately so the DNS monitor screen has real data
-  try {
-    const mon = await runMonitors(domain);
-    await env.DB
-      .prepare("UPDATE domains SET monitors_json = ?2, monitored_at = datetime('now') WHERE id = ?1")
-      .bind(domainId, JSON.stringify(mon))
-      .run();
-  } catch { /* monitors best-effort */ }
 
   return json({ ok: true, domain: { id: domainId, domain, score: scan.score, grade: scan.grade, checkedAt: new Date().toISOString(), checks: scan.checks } });
 }
