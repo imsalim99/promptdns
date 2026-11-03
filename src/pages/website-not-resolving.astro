@@ -1,51 +1,345 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "How do I tell if it's DNS or the server?", "acceptedAnswer": { '@type': 'Answer', "text": "If the record lookup returns the correct IP, DNS is fine: the problem is the server. If the lookup fails or returns wrong values, it\u2019s DNS." } },
-    {'@type': 'Question', 'name': "Why does the site work on my phone but not my laptop?", "acceptedAnswer": { '@type': 'Answer', "text": "Different DNS caches: your laptop has the old answer cached. Flush your local DNS cache." } },
-    {'@type': 'Question', 'name': "Can expired SSL certificates look like DNS errors?", "acceptedAnswer": { '@type': 'Answer', "text": "No: certificate errors show a different warning. DNS errors prevent the page from loading at all." } },
-    {'@type': 'Question', 'name': "What if only one page on my site is broken?", "acceptedAnswer": { '@type': 'Answer', "text": "That\u2019s not DNS: DNS resolves at the domain level, not per-page. The issue is server-side routing or the page itself." } },
-    {'@type': 'Question', 'name': "How do I flush my DNS cache?", "acceptedAnswer": { '@type': 'Answer', "text": "See our flush DNS guide for commands on Windows, macOS, Linux, and Chrome." } },
-    {'@type': 'Question', 'name': "When should I contact my DNS provider?", "acceptedAnswer": { '@type': 'Answer', "text": "When the authoritative answers are wrong (record lookup shows incorrect values you didn\u2019t set) or nameservers don\u2019t answer." } }
+import Diagram from '../components/Diagram.astro';
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between ERR_NAME_NOT_RESOLVED and ERR_CONNECTION_REFUSED?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ERR_NAME_NOT_RESOLVED (and DNS_PROBE_FINISHED_NXDOMAIN) means DNS failed to find an IP address for the domain. ERR_CONNECTION_REFUSED means DNS succeeded and returned an IP address, but the web server at that IP is turned off, blocking port 80/443, or not running NGINX/Apache."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my newly registered domain still not resolve after 24 hours?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "New domains that fail to resolve after 24 hours usually have one of two issues: either no A or CNAME record was added inside the DNS zone yet (parking records were deleted without adding a web host IP), or the domain was placed on ICANN clientHold because the owner has not clicked the verification link sent to their registrant email address."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my website load fine at the office, but fail on my phone's 5G cellular network?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, when a website works on office Wi-Fi (IPv4) but fails on 5G mobile networks (IPv6), the culprit is almost always either a broken IPv6 AAAA record (mobile networks prefer IPv6 and hit a dead IP) or a broken DNSSEC DS record (mobile carrier resolvers enforce strict DNSSEC validation and return SERVFAIL while office routers fail to validate DNSSEC)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my root domain (example.com) resolve, while www.example.com says \"Site can't be reached\"?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world DNS setups, example.com (@) and www.example.com (www) are treated as two separate hostnames. Creating an A record only for @ does not automatically cover www; web administrators add a CNAME record for www pointing to example.com (or a second A record for www) in their DNS table."
+      }
+    }
   ]
-}
+};
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["DNS Guide", "/dns/"],
+  ["Website Not Resolving"]
+];
 ---
+
 <BaseLayout
-  title="Website Not Resolving? DNS Causes and Fixes"
-  description="website not resolving DNS"
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Website Not Resolving? DNS Causes and Fixes"]]}>
+  title="Website Not Resolving? How to Diagnose and Fix DNS Resolution Failures"
+  description="Diagnose why your domain or website is not resolving, decode NXDOMAIN and SERVFAIL errors, fix ICANN clientHold, and resolve DNS vs web server issues."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Website Not Resolving? DNS Causes and Fixes</span>
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Website Not Resolving</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Website Not Resolving? DNS Causes and Fixes</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">When a website won’t load and the browser shows a DNS error, the problem is almost always in one of five places. This diagnostic finds it fast.</p>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      Website Not Resolving? How to Diagnose and Fix DNS Resolution Failures
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A non-resolving website (<abbr class="pd-term" data-tip="DNS_PROBE_FINISHED_NXDOMAIN: Chrome browser error code indicating the domain does not exist in DNS">DNS_PROBE_FINISHED_NXDOMAIN</abbr> or <abbr class="pd-term" data-tip="ERR_NAME_NOT_RESOLVED: Chromium error indicating DNS lookup failure for the requested hostname">ERR_NAME_NOT_RESOLVED</abbr>) is <strong class="text-ink">a DNS lookup failure where recursive resolvers cannot translate your domain name into an IPv4 or IPv6 server address</strong>. The failure stems from either a global zone error or a local cache. The DNS response code pinpoints the exact root cause.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <Diagram name="resolution" caption="DNS resolution failure triage: validating public resolvers, root hints, TLD registries, authoritative zones, and local stub caches" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-five-causes-in-diagnostic-order">The five causes, in diagnostic order</a></li>
-        <li><a href="#quick-reference-error-to-cause">Quick reference: error to cause</a></li>
+        <li><a href="#60-second-triage-decoding-the-exact-dns-response-code-nxdomain-servfail-refused">60-second triage: decoding DNS response codes</a></li>
+        <li><a href="#7-domain-side-causes-when-your-website-fails-to-resolve-for-everyone">7 domain-side causes for global resolution failures</a></li>
+        <li><a href="#5-client-side-fixes-when-the-website-works-on-mobile-data-but-not-your-computer">5 client-side fixes for local resolution issues</a></li>
+        <li><a href="#is-it-a-dns-failure-or-a-web-server-failure-browser-error-comparison-table">DNS failure vs web server failure comparison</a></li>
+        <li><a href="#how-to-diagnose-any-non-resolving-domain-from-the-terminal-4-dig-commands">Diagnose non-resolving domains via terminal</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-five-causes-in-diagnostic-order">The five causes, in diagnostic order</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed"><strong class="text-ink">1. The domain doesn’t exist (NXDOMAIN).</strong> Typo in the URL, expired domain, or deleted record. Check: run the record lookup; NXDOMAIN means the name isn’t in DNS.</li><li class="leading-relaxed"><strong class="text-ink">2. No A/AAAA record.</strong> The domain exists but has no address. Check: record lookup for A and AAAA; empty result means records are missing.</li><li class="leading-relaxed"><strong class="text-ink">3. Nameservers don’t answer.</strong> Delegation is broken (lame delegation, expired domain, DNSSEC mismatch). Check: NS lookup shows the wrong set or SERVFAIL.</li><li class="leading-relaxed"><strong class="text-ink">4. Local cache has a stale answer.</strong> You see an old IP that no longer works. Check: propagation checker shows resolvers disagreeing; flush your local cache.</li><li class="leading-relaxed"><strong class="text-ink">5. The server is down (not DNS).</strong> DNS resolves correctly but the server doesn’t respond. Check: record lookup shows the right IP; the site still doesn’t load = server problem.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="quick-reference-error-to-cause">Quick reference: error to cause</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NXDOMAIN</td><td class="text-sm text-ink-dim">Domain doesn’t exist (cause 1)</td></tr><tr><td class="text-sm text-ink-dim">ERR_NAME_NOT_RESOLVED</td><td class="text-sm text-ink-dim">No A record or broken delegation (causes 2-3)</td></tr><tr><td class="text-sm text-ink-dim">ERR_CONNECTION_REFUSED</td><td class="text-sm text-ink-dim">Server down (cause 5)</td></tr><tr><td class="text-sm text-ink-dim">ERR_CONNECTION_TIMED_OUT</td><td class="text-sm text-ink-dim">Server unreachable: firewall or wrong IP (causes 2 or 5)</td></tr></tbody></table></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I tell if it's DNS or the server?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">If the record lookup returns the correct IP, DNS is fine: the problem is the server. If the lookup fails or returns wrong values, it’s DNS.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does the site work on my phone but not my laptop?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different DNS caches: your laptop has the old answer cached. Flush your local DNS cache.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can expired SSL certificates look like DNS errors?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: certificate errors show a different warning. DNS errors prevent the page from loading at all.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What if only one page on my site is broken?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">That’s not DNS: DNS resolves at the domain level, not per-page. The issue is server-side routing or the page itself.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I flush my DNS cache?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">See our flush DNS guide for commands on Windows, macOS, Linux, and Chrome.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">When should I contact my DNS provider?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">When the authoritative answers are wrong (record lookup shows incorrect values you didn’t set) or nameservers don’t answer.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/dns-error-messages/" class="text-accent hover:text-accent-soft">DNS error messages →</a></li><li><a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">Flush DNS cache →</a></li><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">Propagation checker →</a></li></ul>
+      <h2 id="60-second-triage-decoding-the-exact-dns-response-code-nxdomain-servfail-refused">60-Second Triage: Decoding the Exact DNS Response Code (NXDOMAIN, SERVFAIL, REFUSED)</h2>
+      <p>
+        Browser errors like <code>DNS_PROBE_FINISHED_NXDOMAIN</code> and <code>ERR_NAME_NOT_RESOLVED</code> <strong class="text-ink">occur at the DNS layer before any TCP, TLS, or HTTP packet reaches your server</strong>. Isolating root causes requires checking two factors: whether failures are <strong class="text-ink">global</strong> or <strong class="text-ink">local</strong>, and which <strong class="text-ink">4-bit DNS response code (<abbr class="pd-term" data-tip="RCODE: 4-bit DNS header field indicating resolution status such as NOERROR, NXDOMAIN, or SERVFAIL">RCODE</abbr>)</strong> resolvers return. The table below maps each failure status to its meaning and root cause.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">DNS Status / RCODE</th>
+              <th class="py-2.5 px-3">Browser Error Displayed</th>
+              <th class="py-2.5 px-3">What the Status Actually Means</th>
+              <th class="py-2.5 px-3">Most Likely Root Cause</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="NXDOMAIN (RCODE 3): Non-Existent Domain response confirming the hostname does not exist in the authoritative zone">NXDOMAIN</abbr> (RCODE 3)</td>
+              <td class="py-2.5 px-3"><code>DNS_PROBE_FINISHED_NXDOMAIN</code></td>
+              <td class="py-2.5 px-3"><strong class="text-ink">Non-Existent Domain:</strong> Hostname does not exist in authoritative zones.</td>
+              <td class="py-2.5 px-3">Missing root records, typos, or registrar <abbr class="pd-term" data-tip="clientHold: ICANN EPP status code set by registrars that removes domain nameservers from the parent TLD zone">clientHold</abbr>.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="SERVFAIL (RCODE 2): Server Failure response indicating the resolver could not obtain or validate DNS records">SERVFAIL</abbr> (RCODE 2)</td>
+              <td class="py-2.5 px-3"><code>ERR_NAME_NOT_RESOLVED</code></td>
+              <td class="py-2.5 px-3"><strong class="text-ink">Server Failure:</strong> Resolvers encounter validation breakdowns or timeouts.</td>
+              <td class="py-2.5 px-3">Broken DNSSEC Delegation Signer (<abbr class="pd-term" data-tip="DS record: Delegation Signer record in parent zone establishing DNSSEC chain of trust">DS</abbr>) records or dead nameservers.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="REFUSED (RCODE 5): Query Refused response indicating the nameserver rejected answering for this zone">REFUSED</abbr> (RCODE 5)</td>
+              <td class="py-2.5 px-3"><code>ERR_NAME_NOT_RESOLVED</code></td>
+              <td class="py-2.5 px-3"><strong class="text-ink">Query Refused:</strong> Nameservers reject answering for this domain.</td>
+              <td class="py-2.5 px-3"><abbr class="pd-term" data-tip="Lame delegation: configuration error where parent zone delegates to nameservers that lack active authority for the domain">Lame Delegation</abbr>: delegations point to nameservers lacking an active zone.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>NOERROR</code> (NODATA)</td>
+              <td class="py-2.5 px-3"><code>ERR_NAME_NOT_RESOLVED</code></td>
+              <td class="py-2.5 px-3"><strong class="text-ink">Hostname Exists, Record Missing:</strong> Zone exists, but requested address record is absent.</td>
+              <td class="py-2.5 px-3">Apex retains MX or TXT records, but web server address records were omitted.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink">Global <code>NOERROR</code> (Local Fails)</td>
+              <td class="py-2.5 px-3"><code>DNS_PROBE_FINISHED_NXDOMAIN</code></td>
+              <td class="py-2.5 px-3"><strong class="text-ink">Healthy Global DNS:</strong> Public resolvers return IPs while local lookups fail.</td>
+              <td class="py-2.5 px-3">Negative caching from <abbr class="pd-term" data-tip="SOA MINIMUM: field in the Start of Authority record defining negative caching duration for NXDOMAIN">SOA MINIMUM</abbr> timers or stale resolver caches.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Checking public resolvers across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) in the <a href="/dns-propagation-checker/" class="text-accent hover:underline">DNS Propagation Checker</a> isolates whether outages affect the entire internet or remain local. Global failures require registrar and zone record audits in Section 2, while local failures warrant workstation fixes in Section 3. Review all status codes in <a href="/dns-error-messages/" class="text-accent hover:underline">DNS Error Messages: The Complete Reference</a>.
+      </p>
+
+      <h2 id="7-domain-side-causes-when-your-website-fails-to-resolve-for-everyone">7 Domain-Side Causes When Your Website Fails to Resolve for Everyone</h2>
+      <p>
+        Global DNS resolution failures across all networks stem from <strong class="text-ink">7 configuration errors across registrar account status, zone apex records, DNSSEC chains, and nameserver delegations</strong>.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Domain Suspended by Registrar clientHold or serverHold:</strong> Unconfirmed registrant emails or expired terms trigger an EPP <code>clientHold</code> or <code>serverHold</code> status, purging nameservers from the parent TLD zone and causing universal <code>NXDOMAIN</code> errors. Check status in the <a href="/whois-lookup/" class="text-accent hover:underline">WHOIS / RDAP Lookup</a> to verify contact details or renew.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Missing Root (@) or www Subdomain Address Record:</strong> Publishing an <a href="/a-record/" class="text-accent hover:underline">A Record</a> only for <code>www.example.com</code> leaves apex root (<code>example.com</code>, designated <code>@</code>) returning <code>NOERROR</code> without answers (NODATA), while configuring only root leaves <code>www</code> unresolvable. Both prefixes require address entries, verifiable via <a href="/a-record-lookup/" class="text-accent hover:underline">A Record Lookup</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Broken DNSSEC Chain of Trust (Stale DS Record Producing SERVFAIL):</strong> Migrating DNS hosts without deleting old DS records at the registrar causes validation failures. Resolvers reject zones whose parent DS records point to discarded keys, returning <code>SERVFAIL</code>. Align keys with <a href="/what-is-dnssec/" class="text-accent hover:underline">What Is DNSSEC</a> standards and verify chain continuity in the <a href="/dnssec-checker/" class="text-accent hover:underline">DNSSEC Checker</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Lame Delegation (Nameservers Missing an Active Zone File Returning REFUSED):</strong> Pointing registrar <a href="/ns-record/" class="text-accent hover:underline">NS Record</a> delegations to a DNS host before activating your zone returns <code>REFUSED</code> (RCODE 5) because nameservers have no loaded records. Audit delegation discrepancies using the <a href="/delegation-checker/" class="text-accent hover:underline">DNS Delegation Checker</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Editing Records in the Wrong Control Panel:</strong> Adding records in a registrar portal while delegation points to external nameservers leaves live traffic unaffected. Resolvers query authoritative nameservers at the registry level, ignoring inactive legacy panels. Changes apply only inside the active DNS dashboard.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Doubled Domain Suffix in the Host Name Field (www.example.com.example.com):</strong> DNS panels often append apex domain names automatically. Entering fully qualified domain names like <code>www.example.com</code> instead of <code>www</code> creates <code>www.example.com.example.com</code>, leaving <code>www.example.com</code> returning <code>NXDOMAIN</code>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Registrar Nameserver Changes in 48-Hour TLD TTL Window:</strong> Delegating nameservers requires resolvers to expire cached parent NS records. TLD registries publish delegations with <abbr class="pd-term" data-tip="TTL: Time to Live in seconds indicating how long recursive resolvers cache a DNS record">TTL</abbr> values up to 48 hours, causing queries to split between nameservers as explained in <a href="/dns-propagation/" class="text-accent hover:underline">DNS Propagation</a>.
+        </li>
+      </ol>
+
+      <p>
+        Systematic verification of these seven domain-side misconfigurations eliminates the underlying authoritative root cause. For websites experiencing outages immediately following an infrastructure migration, execute the recovery procedure in <a href="/site-down-after-dns-change/" class="text-accent hover:underline">Site Down After a DNS Change?</a>
+      </p>
+
+      <h2 id="5-client-side-fixes-when-the-website-works-on-mobile-data-but-not-your-computer">5 Client-Side Fixes When the Website Works on Mobile Data But Not Your Computer</h2>
+      <p>
+        To fix a website that loads normally on your smartphone's cellular data (and passes global DoH checks) while failing on your computer or office Wi-Fi, execute <strong class="text-ink">5 local cache and resolver fixes</strong>.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Clear Negative Caching (NXDOMAIN Cached from Premature Visits):</strong> Querying a domain before its record exists causes resolvers to cache negative <code>NXDOMAIN</code> responses. RFC 2308 dictates retaining negative results for the duration in the zone's <code>SOA MINIMUM</code> field (300 to 86,400 seconds). Resolvers reject lookups until this timer expires.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Flush Operating System DNS Caches and Browser Socket Pools:</strong> Workstation operating systems and browsers maintain internal address caches. Clearing workstation caches requires terminal commands, while browser socket pools demand a purge via <code>chrome://net-internals/#dns</code> and <code>chrome://net-internals/#sockets</code>. Detailed commands appear in <a href="/flush-dns-cache/" class="text-accent hover:underline">How to Flush DNS Cache</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Switch Workstation and Router Resolvers to Cloudflare (1.1.1.1) or Google (8.8.8.8):</strong> Consumer ISP resolvers often enforce aggressive caching policies, ignoring record TTL expirations. Replacing default ISP resolvers with public anycast resolvers like Cloudflare (1.1.1.1) or Google Public DNS (8.8.8.8) routes queries through compliant, low-latency caches.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Inspect Local Hosts Files for Stale Overrides:</strong> Operating system <abbr class="pd-term" data-tip="stub resolver: local OS library resolving DNS queries before forwarding them to recursive resolvers">stub resolvers</abbr> evaluate local hosts files before querying network DNS. Forgotten development mappings to <code>127.0.0.1</code> or staging IPs lock machines to dead addresses.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Reboot Local Routers and Pause Filtering:</strong> Consumer routers store stale entries in volatile memory forwarder caches; power-cycling wipes this memory. In addition, corporate VPNs and antivirus suites with DNS filtering intercept port 53 traffic, producing false blocks.
+        </li>
+      </ol>
+
+      <p>
+        Disabling Wi-Fi on a smartphone and querying the URL over cellular data isolates the failure in under five seconds. Success on cellular connections confirms that authoritative domain records are intact, focusing remaining troubleshooting on local resolver caches and workstation network configurations.
+      </p>
+
+      <h2 id="is-it-a-dns-failure-or-a-web-server-failure-browser-error-comparison-table">Is It a DNS Failure or a Web Server Failure? (Browser Error Comparison Table)</h2>
+      <p>
+        Not every browser "This site can't be reached" screen indicates a DNS failure; <strong class="text-ink">several error codes prove that DNS resolved your IP address successfully, but destination web servers or firewalls rejected the connection</strong>. The table below distinguishes DNS resolution errors from TCP, firewall, and SSL/TLS server errors.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Browser Error Code</th>
+              <th class="py-2.5 px-3">Did DNS Resolve the IP?</th>
+              <th class="py-2.5 px-3">Failing Layer</th>
+              <th class="py-2.5 px-3">Actual Root Cause & Technical Fix</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>DNS_PROBE_FINISHED_NXDOMAIN</code> / <code>ERR_NAME_NOT_RESOLVED</code></td>
+              <td class="py-2.5 px-3 text-rose-600 font-semibold">No (DNS Failed)</td>
+              <td class="py-2.5 px-3">DNS Layer (Port 53 / DoH)</td>
+              <td class="py-2.5 px-3">Domain or address record missing, DNSSEC validation failed, or domain is suspended on registrar clientHold.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>ERR_CONNECTION_REFUSED</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (DNS Worked!)</td>
+              <td class="py-2.5 px-3">TCP / Web Server Layer (Port 80/443)</td>
+              <td class="py-2.5 px-3">Resolver returned the server IP address, but no service listens on port 80/443, or the web daemon stopped.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>ERR_CONNECTION_TIMED_OUT</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (DNS Worked!)</td>
+              <td class="py-2.5 px-3">Firewall / Network Layer</td>
+              <td class="py-2.5 px-3">Resolver returned the server IP address, but firewalls, security groups, or packet filters drop inbound port 80/443 traffic.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>ERR_TOO_MANY_REDIRECTS</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (DNS Worked!)</td>
+              <td class="py-2.5 px-3">HTTP / CDN Proxy Layer</td>
+              <td class="py-2.5 px-3">DNS and TCP handshakes succeeded; web server or proxy entered an infinite HTTP-to-HTTPS redirect loop.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>NET::ERR_CERT_COMMON_NAME_INVALID</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (DNS Worked!)</td>
+              <td class="py-2.5 px-3">TLS / SSL Certificate Layer</td>
+              <td class="py-2.5 px-3">DNS resolved the IP and the server responded, but the SSL certificate does not match the requested hostname.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Distinguishing DNS lookups from subsequent connection phases prevents wasted diagnostic hours. Browsers displaying <code>ERR_CONNECTION_REFUSED</code> or <code>ERR_CONNECTION_TIMED_OUT</code> have completed name resolution; troubleshooting belongs entirely on web daemon status (<code>systemctl status nginx</code>) and firewall accessibility.
+      </p>
+
+      <h2 id="how-to-diagnose-any-non-resolving-domain-from-the-terminal-4-dig-commands">How to Diagnose Any Non-Resolving Domain from the Terminal (4 dig Commands)</h2>
+      <p>
+        System administrators pinpoint the exact link where domain resolution breaks in under 30 seconds by <strong class="text-ink">running 4 targeted <code>dig</code> and <code>whois</code> commands in the terminal</strong>.
+      </p>
+
+      <div class="my-6 rounded-xl border border-line bg-panel/60 p-4">
+        <pre class="overflow-x-auto text-xs font-mono text-ink"><code># Command 1: Check RCODE status (look for "status: NXDOMAIN" or "status: SERVFAIL")
+dig example.com A @1.1.1.1
+
+# Command 2: Test with DNSSEC Checking Disabled (+cd) if SERVFAIL occurs
+dig example.com A @1.1.1.1 +cd
+
+# Command 3: Trace delegation from Root (.) -> TLD (.com) -> Authoritative NS
+dig +trace example.com A
+
+# Command 4: Check WHOIS for clientHold or serverHold status
+whois example.com | grep -i "status"</code></pre>
+      </div>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Inspect Header Status Fields in Command 1:</strong> Running <code>dig example.com A @1.1.1.1</code> displays the DNS header. Examine the <code>status:</code> token: <code>NXDOMAIN</code> signifies missing records, <code>SERVFAIL</code> denotes broken DNSSEC chains, and <code>REFUSED</code> indicates the nameserver denies authority.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Evaluate DNSSEC Validation with the Checking Disabled Flag in Command 2:</strong> Adding <code>+cd</code> instructs resolvers to bypass DNSSEC verification. Scenarios where Command 1 yields <code>SERVFAIL</code> while Command 2 returns <code>NOERROR</code> with your IP address prove outages stem from broken DNSSEC DS records.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Trace the Hierarchical Delegation Chain in Command 3:</strong> Executing <code>dig +trace example.com A</code> queries root nameservers, descends into TLD registries, and concludes at authoritative nameservers. Interrupted TLD layers expose missing glue records, while final hop failures reveal zone errors.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Audit Registrar EPP Status Codes in Command 4:</strong> Piping WHOIS output into grep inspects registry EPP status codes directly. Discovering <code>clientHold</code> or <code>serverHold</code> flags confirms an administrative registry freeze, directing resolution efforts to registrar panels.
+        </li>
+      </ol>
+
+      <p>
+        Executing this terminal sequence isolates whether faults reside in registrar delegations, zone apex addresses, cryptographic signatures, or remote server availability.
+      </p>
+
+      <p>
+        Mastering diagnostic workflows for a website not resolving eliminates guesswork. Differentiating between <code>DNS_PROBE_FINISHED_NXDOMAIN</code> and <code>ERR_NAME_NOT_RESOLVED</code>, decoding NXDOMAIN vs SERVFAIL vs REFUSED codes, checking ICANN clientHold status, contrasting missing A records vs broken DNSSEC DS records, and executing targeted local cache flushes restore reachability across resolvers and clients.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="mt-4 space-y-3">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>What is the difference between ERR_NAME_NOT_RESOLVED and ERR_CONNECTION_REFUSED?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p><strong class="text-ink">ERR_NAME_NOT_RESOLVED</strong> (and <strong class="text-ink">DNS_PROBE_FINISHED_NXDOMAIN</strong>) means <strong class="text-ink">DNS failed to find an IP address</strong> for the domain. <strong class="text-ink">ERR_CONNECTION_REFUSED</strong> means <strong class="text-ink">DNS succeeded and returned an IP address</strong>, but the web server at that IP is turned off, blocking port 80/443, or not running NGINX/Apache.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why does my newly registered domain still not resolve after 24 hours?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>New domains that fail to resolve after 24 hours usually have one of two issues: either <strong class="text-ink">no A or CNAME record was added</strong> inside the DNS zone yet (parking records were deleted without adding a web host IP), or the domain was placed on <strong class="text-ink">ICANN clientHold</strong> because the owner has not clicked the verification link sent to their registrant email address.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why does my website load fine at the office, but fail on my phone's 5G cellular network?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In practice, when a website works on office Wi-Fi (IPv4) but fails on 5G mobile networks (IPv6), the culprit is almost always either a <strong class="text-ink">broken IPv6 AAAA record</strong> (mobile networks prefer IPv6 and hit a dead IP) or a <strong class="text-ink">broken DNSSEC DS record</strong> (mobile carrier resolvers enforce strict DNSSEC validation and return SERVFAIL while office routers fail to validate DNSSEC).</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why does my root domain (example.com) resolve, while www.example.com says "Site can't be reached"?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world DNS setups, <strong class="text-ink">example.com</strong> (<code>@</code>) and <strong class="text-ink">www.example.com</strong> (<code>www</code>) are treated as <strong class="text-ink">two separate hostnames</strong>. Creating an A record only for <code>@</code> does not automatically cover <code>www</code>; web administrators add a <strong class="text-ink">CNAME record for <code>www</code></strong> pointing to <code>example.com</code> (or a second A record for <code>www</code>) in their DNS table.</p>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 </BaseLayout>
