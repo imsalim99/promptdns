@@ -12,7 +12,6 @@ import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomains
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload } from './dmarc-ingest';
 import { handleVerifyStart, handleVerifyCheck } from './verify';
-import { handleRulesList, handleRulesCreate, handleRulesUpdate, handleRulesDelete, handleDigestSetting } from './rules';
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 
@@ -27,27 +26,6 @@ export type { Env };
 
 export default {
   async fetch(request: Request, env: Env & AuthEnv): Promise<Response> {
-    try {
-      return await handleFetch(request, env);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('Worker error:', msg);
-      return Response.json({ ok: false, error: 'Worker error: ' + msg.slice(0, 200) }, { status: 500 });
-    }
-  },
-  async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
-    if (!env.DB) return;
-    ctx.waitUntil(runScheduled(env));
-  },
-
-  // DMARC aggregate report ingestion: invoked by the Email Routing rule
-  // for reports@promptdns.com (rule created in the Cloudflare dashboard).
-  async email(message: ForwardableEmailMessage, env: Env & AuthEnv, _ctx: ExecutionContext): Promise<void> {
-    await handleDmarcEmail(message, env);
-  },
-} satisfies ExportedHandler<Env & AuthEnv>;
-
-async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -67,12 +45,7 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/domains/dmarc/upload' && method === 'POST') return handleDmarcUpload(request, env);
-
-    if (path === '/api/rules' && method === 'GET') return handleRulesList(request, env);
-    if (path === '/api/rules' && method === 'POST') return handleRulesCreate(request, env);
-    if (path === '/api/rules/update' && method === 'POST') return handleRulesUpdate(request, env);
-    if (path === '/api/rules/delete' && method === 'POST') return handleRulesDelete(request, env);
-    if (path === '/api/settings/digest' && method === 'POST') return handleDigestSetting(request, env);
+    if (path === '/api/domains/verify/start' && method === 'POST') return handleVerifyStart(request, env);
     if (path === '/api/domains/verify/check' && method === 'POST') return handleVerifyCheck(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
@@ -80,4 +53,18 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
     if (path === '/api/alerts/read') return handleAlertsRead(request, env);
 
     return env.ASSETS.fetch(request);
-}
+  },
+
+  // Monitoring engine: re-scan every monitored domain every 6 hours
+  // (crontab in wrangler.toml).
+  async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
+    if (!env.DB) return;
+    ctx.waitUntil(runScheduled(env));
+  },
+
+  // DMARC aggregate report ingestion: invoked by the Email Routing rule
+  // for reports@promptdns.com (rule created in the Cloudflare dashboard).
+  async email(message: ForwardableEmailMessage, env: Env & AuthEnv, _ctx: ExecutionContext): Promise<void> {
+    await handleDmarcEmail(message, env);
+  },
+} satisfies ExportedHandler<Env & AuthEnv>;

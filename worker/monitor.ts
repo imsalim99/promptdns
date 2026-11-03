@@ -18,7 +18,6 @@
 import type { Env } from './index';
 import { getUserBySession } from './auth';
 import { scanDomainServer, type ScanCheck, type ScanResult } from './scan';
-import { evaluateRulesForDomain, sendDigests } from './rules';
 
 interface DomainRow {
   id: number;
@@ -55,7 +54,7 @@ interface CompareOutcome {
   severity: 'info' | 'warn' | 'fail';
 }
 
-export async function emailAlert(env: { DB: D1Database; RESEND_API_KEY?: string; SEND_EMAIL?: { send(message: unknown): Promise<void> } }, userId: number, domainName: string, title: string, detail: string): Promise<void> {
+async function emailAlert(env: SessionEnv, userId: number, domainName: string, title: string, detail: string): Promise<void> {
   if (!env.DB) return;
   const user = await env.DB.prepare('SELECT email FROM users WHERE id = ?1').bind(userId).first<{ email: string }>();
   if (!user) return;
@@ -223,14 +222,8 @@ export async function runScheduled(env: SessionEnv): Promise<void> {
   const domains = rows.results ?? [];
   for (let i = 0; i < domains.length; i += 5) {
     const batch = domains.slice(i, i + 5);
-    await Promise.allSettled(batch.map(async (d) => {
-      const outcome = await scanAndCompare(env, d);
-      if (!outcome.unresolvable) await evaluateRulesForDomain(env, d, outcome.scan, outcome.diff, outcome.changed);
-    }));
+    await Promise.allSettled(batch.map((d) => scanAndCompare(env, d)));
   }
-
-  // daily digest: the first cron run of the UTC day (00:00)
-  if (new Date().getUTCHours() === 0) await sendDigests(env);
 }
 
 export async function handleAlertsList(request: Request, env: SessionEnv): Promise<Response> {

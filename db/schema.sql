@@ -171,26 +171,3 @@ ALTER TABLE waitlist ADD COLUMN token_hash TEXT;
 ALTER TABLE domains ADD COLUMN verified INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE domains ADD COLUMN verification_token TEXT;
 ALTER TABLE domains ADD COLUMN verified_at TEXT;
-
--- v11: user-defined alert rules, evaluated on every 6 hour scan.
--- domain_id NULL means the rule applies to all of the user's domains.
--- Expiry and AI-crawler metrics are stored but fire once those monitors ship.
-
-CREATE TABLE IF NOT EXISTS alert_rules (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL REFERENCES users(id),
-  name TEXT NOT NULL DEFAULT '',
-  domain_id INTEGER REFERENCES domains(id),
-  metric TEXT NOT NULL,
-  condition TEXT NOT NULL,
-  value TEXT NOT NULL DEFAULT '',
-  channels TEXT NOT NULL DEFAULT '["email"]',
-  enabled INTEGER NOT NULL DEFAULT 1,
-  last_fired_at TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
-
--- v11b: daily digest preference and dedup per user.
-
-ALTER TABLE users ADD COLUMN digest_enabled INTEGER NOT NULL DEFAULT 1;
-ALTER TABLE users ADD COLUMN last_digest_at TEXT;
