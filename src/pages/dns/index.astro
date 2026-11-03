@@ -1,286 +1,513 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Diagram from '../../components/Diagram.astro';
 
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "What is the difference between a domain registrar and a DNS hosting provider?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A domain registrar (such as Namecheap, Porkbun, or GoDaddy) is where you register and renew ownership of your domain name and set its parent NS (Nameserver) delegation. A DNS hosting provider (such as Cloudflare, AWS Route 53, or Google Cloud DNS) operates the authoritative nameservers that actually store your zone file and answer queries for your A, MX, and TXT records."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which DNS records are required for every website and email domain?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Every valid DNS zone requires 1 SOA record and at least 2 NS records at the root (@). To load a website over IPv4 and IPv6, you add A and AAAA records on @ and a CNAME record on www. To send and receive email reliably, you add MX, SPF (TXT), DKIM (TXT/CNAME), and DMARC (_dmarc TXT) records."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can I use one company as my domain registrar and a different company for DNS hosting?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, in practice separating your domain registrar from your DNS hosting provider is an engineering best practice. Keeping your domain registered at a low-cost registrar while pointing your NS records to a fast Anycast DNS provider (like Cloudflare or AWS Route 53) gives you sub-20ms global lookup speeds and advanced features without transferring your domain registration."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Why did changing my website's nameservers break my company email?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "In real-world migrations, changing your NS records moves authority for your entire domain, both web and email, to the new DNS provider. Email stops working immediately when a web agency switches nameservers to a new host and adds only the website's A record without copying over existing MX, SPF, and DKIM records, requiring administrators to recreate those mail records in the new DNS zone."
-      }
-    }
-  ]
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const fundamentalsCards: HubCard[] = [
+  {
+    href: '/what-is-dns/',
+    badge: 'Pillar Guide',
+    title: 'What Is DNS?',
+    desc: 'Architecture of the Domain Name System, the 4 server tiers, port 53 specs, caching layers, and history.',
+  },
+  {
+    href: '/how-dns-works/',
+    badge: 'Pillar Guide',
+    title: 'How DNS Works Step by Step',
+    desc: 'The 4 local OS pre-checks, 8-step network lookup, packet header flags (AA, TC=1, AD), and dig +trace.',
+  },
+  {
+    href: '/what-is-ttl-in-dns/',
+    badge: 'Pillar Guide',
+    title: 'DNS TTL Explained',
+    desc: 'How Time to Live countdown timers work in seconds and recommended TTL values for every record type.',
+  },
+  {
+    href: '/doh-vs-dot/',
+    badge: 'Protocol Comparison',
+    title: 'DNS-over-HTTPS vs DNS-over-TLS',
+    desc: 'Compare DoH (port 443), DoT (port 853), and DoQ across lookup speed, firewall visibility, and privacy.',
+  },
+  {
+    href: '/cname-flattening/',
+    badge: 'Core Concept',
+    title: 'CNAME Flattening',
+    desc: 'How authoritative DNS servers resolve root-domain (@) hostname aliases into standard A and AAAA responses.',
+  },
+];
+
+const recordCards: HubCard[] = [
+  {
+    href: '/dns-records/',
+    badge: 'Sub-Hub (All 13 Types)',
+    title: 'DNS Record Types: The Complete Reference',
+    desc: 'Master reference hub covering A, AAAA, CNAME, ALIAS, MX, TXT, NS, SOA, PTR, SRV, CAA, DS, and DNSKEY.',
+  },
+  {
+    href: '/dns-providers/',
+    badge: 'Sub-Hub (12 Providers)',
+    title: 'DNS Provider Playbooks',
+    desc: 'Step-by-step DNS management, nameserver changes, and troubleshooting for Cloudflare, Route 53, GoDaddy, and Namecheap.',
+  },
+  {
+    href: '/a-record/',
+    badge: 'Record Pillar',
+    title: 'A Record (IPv4 Address)',
+    desc: 'Map root domains (@), subdomains, and wildcards (*) to 32-bit IPv4 server addresses and Round-Robin pools.',
+  },
+  {
+    href: '/aaaa-record/',
+    badge: 'Record Pillar',
+    title: 'AAAA Record (IPv6 Quad-A)',
+    desc: 'Configure 128-bit IPv6 addresses, shorthand :: compression, and dual-stack Happy Eyeballs routing.',
+  },
+  {
+    href: '/cname-record/',
+    badge: 'Record Pillar',
+    title: 'CNAME Record (Canonical Name)',
+    desc: 'Point alias subdomains (www, shop, DKIM selectors) to target hostnames and avoid apex conflicts.',
+  },
+  {
+    href: '/mx-record/',
+    badge: 'Record Pillar',
+    title: 'MX Record (Mail Exchange)',
+    desc: 'Direct incoming email to Google Workspace, Microsoft 365, or custom mail servers using priority numbers.',
+  },
+  {
+    href: '/txt-record/',
+    badge: 'Record Pillar',
+    title: 'TXT Record (Text & Verification)',
+    desc: 'Publish SPF, DKIM, DMARC, and site-verification tokens within the 255-character string-splitting rules.',
+  },
+  {
+    href: '/how-to-add-mx-record/',
+    badge: 'Setup Guide',
+    title: 'How to Add MX Records for Email',
+    desc: 'Step-by-step instructions for publishing and verifying mail exchange records without losing incoming mail.',
+  },
+];
+
+const operationsCards: HubCard[] = [
+  {
+    href: '/dns-propagation/',
+    badge: 'Pillar Guide',
+    title: 'DNS Propagation Explained',
+    desc: 'Why record edits take 5 minutes to 24 hours while registrar NS changes take up to 48 hours, and how to speed them up.',
+  },
+  {
+    href: '/flush-dns-cache/',
+    badge: 'Pillar Guide',
+    title: 'How to Flush DNS Cache',
+    desc: 'Exact terminal commands and browser steps to clear cached DNS entries on Windows, macOS, Linux, and Chrome.',
+  },
+  {
+    href: '/change-dns-records-safely/',
+    badge: 'Operations Guide',
+    title: 'Change DNS Records Without Downtime',
+    desc: 'Follow the T-48h pre-migration TTL lowering schedule (3600s to 300s) for seamless IP and hostname cutovers.',
+  },
+  {
+    href: '/dns-migration-checklist/',
+    badge: 'Operations Checklist',
+    title: 'The Complete DNS Migration Checklist',
+    desc: 'End-to-end checklist for moving a domain between DNS providers safely, including zone parity and DNSSEC handling.',
+  },
+  {
+    href: '/export-dns-records/',
+    badge: 'Operations Guide',
+    title: 'How to Export and Back Up DNS Records',
+    desc: 'Export a clean BIND zone file backup before making bulk edits or transferring domain registrars.',
+  },
+];
+
+const troubleshootingCards: HubCard[] = [
+  {
+    href: '/website-not-resolving/',
+    badge: 'Troubleshooting Pillar',
+    title: 'Website Not Resolving?',
+    desc: '60-second triage for DNS_PROBE_FINISHED_NXDOMAIN, SERVFAIL, REFUSED, and ICANN clientHold suspensions.',
+  },
+  {
+    href: '/site-down-after-dns-change/',
+    badge: 'Troubleshooting Guide',
+    title: 'Site Down After a DNS Change?',
+    desc: 'Isolate and fix missing @/www records, broken DNSSEC DS hashes, and CDN SSL mismatches after an edit.',
+  },
+  {
+    href: '/email-not-working-after-dns-change/',
+    badge: 'Troubleshooting Guide',
+    title: 'Email Stopped Working After DNS Change',
+    desc: 'Restore broken inbound and outbound email when a website migration overwrites MX, SPF, or DKIM records.',
+  },
+  {
+    href: '/mx-record-not-working/',
+    badge: 'Troubleshooting Guide',
+    title: 'MX Record Not Working?',
+    desc: 'Diagnose and repair MX priority conflicts, CNAME target violations, and Cloudflare proxy mail blocks.',
+  },
+  {
+    href: '/dns-error-messages/',
+    badge: 'Reference Guide',
+    title: 'DNS Error Messages Reference',
+    desc: 'Complete decoder for NOERROR, FORMERR, SERVFAIL, NXDOMAIN, REFUSED, and browser DNS error codes.',
+  },
+  {
+    href: '/dns-security/',
+    badge: 'Sub-Hub',
+    title: 'DNS Security Hub',
+    desc: 'Defend your domain against DNS hijacking, cache poisoning, amplification DDoS, tunneling, and rebinding.',
+  },
+  {
+    href: '/what-is-dnssec/',
+    badge: 'Security Pillar',
+    title: 'What Is DNSSEC?',
+    desc: 'How RRSIG, DNSKEY (ZSK 256 / KSK 257), DS, and NSEC3 records cryptographically authenticate DNS data.',
+  },
+];
+
+const toolCards: HubCard[] = [
+  {
+    href: '/dns-propagation-checker/',
+    badge: 'Free Live Tool',
+    title: 'DNS Propagation Checker',
+    desc: 'Query all 12 DNS record types live across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5).',
+  },
+  {
+    href: '/dns-record-lookup/',
+    badge: 'Free Live Tool',
+    title: 'DNS Record Lookup',
+    desc: 'Inspect the complete resource record set and raw values published on any domain or subdomain.',
+  },
+  {
+    href: '/ttl-checker/',
+    badge: 'Free Live Tool',
+    title: 'DNS TTL Checker',
+    desc: 'Compare authoritative starting TTLs against live decrementing cache timers across public resolvers.',
+  },
+  {
+    href: '/delegation-checker/',
+    badge: 'Free Live Tool',
+    title: 'DNS Delegation Checker',
+    desc: 'Verify that your parent TLD registrar NS records match your child authoritative zone NS records.',
+  },
+  {
+    href: '/dnssec-checker/',
+    badge: 'Free Live Tool',
+    title: 'DNSSEC Checker',
+    desc: 'Validate your parent DS hash, child DNSKEYs, RRSIG signatures, and Authenticated Data (AD=1) status.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What is the difference between a domain registrar and a DNS hosting provider?',
+    a: 'A domain registrar is an ICANN-accredited company where you purchase domain name ownership and maintain official WHOIS registration data. A DNS hosting provider operates the authoritative nameservers that host your active DNS zone file and answer IP lookup queries for visitors. Many companies offer both services together, but you can register a domain at one company while delegating nameservers to a dedicated DNS provider like Cloudflare or AWS Route 53.',
+  },
+  {
+    q: 'Which DNS records are required for every website and email domain?',
+    a: 'Every functioning website requires an A record (for IPv4) or AAAA record (for IPv6) pointing the root domain (@) or www subdomain to a web server IP address. Domains handling outbound or inbound email also require MX records pointing to mail servers, along with SPF (TXT), DKIM (TXT or CNAME), and DMARC (TXT) records to authenticate messages and prevent phishing.',
+  },
+  {
+    q: 'Can I use one company as my domain registrar and a different company for DNS hosting?',
+    a: 'Yes, in practice separating your domain registrar from your DNS hosting provider is an engineering best practice. Keeping your domain registered at a low-cost registrar while pointing your NS records to a fast Anycast DNS provider (like Cloudflare or AWS Route 53) gives you sub-20ms global lookup speeds and advanced features without transferring your domain registration.',
+  },
+  {
+    q: "Why did changing my website's nameservers break my company email?",
+    a: "In real-world migrations, changing your NS records moves authority for your entire domain, both web and email, to the new DNS provider. Email stops working immediately when a web agency switches nameservers to a new host and adds only the website's A record without copying over existing MX, SPF, and DKIM records, requiring administrators to recreate those mail records in the new DNS zone.",
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'DNS: The Complete Guide to the Domain Name System, Records, Propagation, and Security',
+  url: 'https://promptdns.com/dns/',
+  description: 'Master hub for Domain Name System (DNS) architecture, resource records, TTL caching, zero-downtime migrations, and DNSSEC security.',
 };
 
-const breadcrumb = [
-  ["Home", "/"],
-  ["DNS Guide"]
-];
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'DNS Guide', item: 'https://promptdns.com/dns/' },
+  ],
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
 
 <BaseLayout
   title="DNS: The Complete Guide to the Domain Name System, Records, Propagation, and Security"
-  description="Master the Domain Name System. Learn DNS resolution architecture, record types, TTL caching, zero-downtime migrations, and DNSSEC security."
-  schema={[faqSchema]}
-  breadcrumb={breadcrumb}
+  description="Master hub for Domain Name System (DNS) architecture, resource records, TTL caching, zero-downtime migrations, and DNSSEC security."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
-  <div class="mx-auto max-w-4xl px-4 py-12">
-    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-      <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">DNS Guide</span>
+  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <nav class="mb-6 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">DNS Guide</span>
     </nav>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl">
       DNS: The Complete Guide to the Domain Name System, Records, Propagation, and Security
     </h1>
 
-    <div class="pd-answer mt-6" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">
-        The <abbr class="pd-term" data-tip="DNS: Domain Name System, hierarchical naming architecture resolving hostnames to IP addresses">Domain Name System (DNS)</abbr> is <strong class="text-ink">the hierarchical, distributed naming protocol that translates human-readable domain names into IPv4 and IPv6 addresses, routes inbound email, and publishes cryptographic domain policies</strong>. Recursive resolvers and authoritative nameservers coordinate every lookup in milliseconds. The 4 core layers span resolution, record types, operations, and security.
+    <div class="mt-6 rounded-2xl border border-line bg-panel/60 p-6 shadow-sm" data-vs="answer">
+      <p class="text-base leading-relaxed text-ink-dim sm:text-lg">
+        The Domain Name System (DNS) is <strong class="text-ink">the hierarchical, distributed naming protocol that translates human-readable domain names into IPv4 and IPv6 addresses, routes inbound email, and publishes cryptographic domain policies</strong>. Recursive resolvers and authoritative nameservers coordinate every lookup in milliseconds. The 4 core layers span resolution, record types, operations, and security.
       </p>
     </div>
 
-    <Diagram name="resolution" caption="Domain Name System 4-layer architecture: resolution mechanics, authoritative zone records, operations and caching, and DNSSEC security validation" />
+    <div class="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-4">
+      <div class="space-y-14 lg:col-span-3">
+        <!-- Section 1: Overview & Table -->
+        <section id="overview" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            How the 4 Layers of the Domain Name System Fit Together (Architecture Overview)
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            Managing a production domain requires coordinating both sides of the DNS resolution boundary: the recursive resolvers (<code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">1.1.1.1</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">8.8.8.8</code>, and ISP servers) that cache answers for visitors, and the authoritative nameservers that store your master zone file. Every web connection, email delivery, and TLS certificate check depends on 4 interconnected DNS subsystems. The table below maps the 4 subsystems of DNS by core infrastructure job, key protocol mechanics, and primary operational scope.
+          </p>
 
-    <nav class="pd-toc my-8" aria-label="On this page">
-      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
-      <ul>
-        <li><a href="#how-the-4-layers-of-the-domain-name-system-fit-together-architecture-overview">DNS architecture overview</a></li>
-        <li><a href="#1-dns-fundamentals-and-resolution-mechanics-start-here">1. Fundamentals and resolution mechanics</a></li>
-        <li><a href="#2-dns-record-types-and-provider-setup-playbooks">2. Record types and provider playbooks</a></li>
-        <li><a href="#3-dns-operations-propagation-cache-flushing-and-zero-downtime-migrations">3. Operations, propagation, and migrations</a></li>
-        <li><a href="#4-dns-troubleshooting-error-codes-and-security-hardening">4. Troubleshooting, error codes, and security</a></li>
-        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-      </ul>
-    </nav>
+          <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+              <thead>
+                <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                  <th class="px-4 py-3">DNS Subsystem</th>
+                  <th class="px-4 py-3">Core Infrastructure Job</th>
+                  <th class="px-4 py-3">Key Protocol Mechanics</th>
+                  <th class="px-4 py-3">Operational Scope</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line">
+                <tr>
+                  <td class="px-4 py-3 font-medium text-ink">1. Resolution Architecture</td>
+                  <td class="px-4 py-3">Translates hostnames to IPs across stub, recursive, root, TLD, and authoritative servers.</td>
+                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">UDP/TCP Port 53</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">EDNS0 (4,096B)</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DoH (Port 443)</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DoT (Port 853)</code>, TTL caching.</td>
+                  <td class="px-4 py-3">Client devices, ISP recursors, and global Anycast hierarchy.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-ink">2. Zone Resource Records</td>
+                  <td class="px-4 py-3">Stores typed routing, aliasing, mail, and verification instructions in the zone file.</td>
+                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">A</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">AAAA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">CNAME</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">ALIAS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">MX</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">TXT</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">NS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SOA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">PTR</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SRV</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">CAA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSKEY</code>.</td>
+                  <td class="px-4 py-3">Authoritative DNS zone tables and provider control panels.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-ink">3. Operations &amp; Migrations</td>
+                  <td class="px-4 py-3">Controls cache lifetimes, provider cutovers, zone backups, and registrar delegations.</td>
+                  <td class="px-4 py-3">Pre-migration <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">300s</code> TTL lowering, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SOA</code> serial increments, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">172,800s</code> TLD NS caches.</td>
+                  <td class="px-4 py-3">Server migrations, registrar transfers, and cache flushing.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-ink">4. Security &amp; Hardening</td>
+                  <td class="px-4 py-3">Authenticates DNS responses cryptographically and defends against hijacking and spoofing.</td>
+                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSSEC</code> (<code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">RRSIG</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSKEY</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">NSEC3</code>), Registrar/Registry locks, CAA allowlists.</td>
+                  <td class="px-4 py-3">Zone signing, parent DS delegation, and drift monitoring.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-    <div class="rich-text mt-8">
-      <h2 id="how-the-4-layers-of-the-domain-name-system-fit-together-architecture-overview">How the 4 Layers of the Domain Name System Fit Together (Architecture Overview)</h2>
-      <p>
-        Managing a production domain requires understanding both sides of the DNS resolution boundary: the <abbr class="pd-term" data-tip="recursive resolver: DNS server that queries root, TLD, and authoritative servers on behalf of clients">recursive resolvers</abbr> (operated by ISPs, Cloudflare 1.1.1.1, and Google 8.8.8.8) that query and cache records for visitors, and the <abbr class="pd-term" data-tip="authoritative nameserver: server holding the official zone file and definitive record data for a domain">authoritative nameservers</abbr> (operated by your DNS host) that store the definitive zone file. Every web request, SMTP email delivery, TLS certificate issuance, and AI crawler verification depends on 4 interconnected DNS subsystems. The table below maps the 4 subsystems of DNS by core function, governing protocol mechanics, and primary reference hub.
-      </p>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            Beginners learning how domain lookups work start with <strong class="text-ink">Section 1 (Fundamentals)</strong>, administrators configuring zone files use <strong class="text-ink">Section 2 (Record Types &amp; Providers)</strong>, and engineers executing cutovers or fixing outages jump to <strong class="text-ink">Section 3 (Operations)</strong> and <strong class="text-ink">Section 4 (Troubleshooting &amp; Security)</strong>.
+          </p>
+        </section>
 
-      <p class="text-sm font-medium text-ink">
-        The table below maps the 4 subsystems of the Domain Name System across core functions, protocol metrics, and reference pillars.
-      </p>
+        <!-- Section 2: Fundamentals Grid -->
+        <section id="fundamentals" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            1. DNS Fundamentals and Resolution Mechanics (Start Here)
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            Five foundational guides explain what the Domain Name System is, how local operating systems and recursive resolvers trace a lookup from the root zone down, how Time to Live (TTL) timers govern caching, and how modern encrypted DNS works. Select a guide below based on the resolution layer you are investigating:
+          </p>
 
-      <div class="overflow-x-auto my-6">
-        <table class="pdns-table w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th class="p-3 font-semibold text-ink">DNS Subsystem</th>
-              <th class="p-3 font-semibold text-ink">Core Infrastructure Job</th>
-              <th class="p-3 font-semibold text-ink">Key Protocol Mechanics</th>
-              <th class="p-3 font-semibold text-ink">Primary Reference Hub / Pillar</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-line text-ink-dim">
-            <tr>
-              <td class="p-3 font-medium text-ink">1. Resolution Architecture</td>
-              <td class="p-3">Translates hostnames to IPs across stub, recursive, root, TLD, and authoritative servers.</td>
-              <td class="p-3">UDP and TCP Port 53, EDNS0 (4,096 bytes), DoH (Port 443), DoT (Port 853), TTL caching.</td>
-              <td class="p-3"><a href="/what-is-dns/" class="text-accent hover:underline">What Is DNS? How the Domain Name System Translates Domain Names to IP Addresses</a></td>
-            </tr>
-            <tr>
-              <td class="p-3 font-medium text-ink">2. Zone Resource Records</td>
-              <td class="p-3">Stores typed routing, aliasing, mail, and verification instructions in the zone file.</td>
-              <td class="p-3">A, AAAA, CNAME, ALIAS, MX, TXT, NS, SOA, PTR, SRV, CAA, DS, DNSKEY.</td>
-              <td class="p-3">Zone Resource Records (detailed in Section 2 below)</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-medium text-ink">3. Operations &amp; Migrations</td>
-              <td class="p-3">Controls cache lifetimes, provider cutovers, zone backups, and registrar delegations.</td>
-              <td class="p-3">Pre-migration 300s TTL lowering, SOA serial increments, 172,800s TLD NS caches.</td>
-              <td class="p-3"><a href="/dns-propagation/" class="text-accent hover:underline">DNS Propagation: How Long It Takes, Why It Happens, and How to Speed It Up</a></td>
-            </tr>
-            <tr>
-              <td class="p-3 font-medium text-ink">4. Security &amp; Hardening</td>
-              <td class="p-3">Authenticates DNS responses cryptographically and defends against hijacking and spoofing.</td>
-              <td class="p-3">DNSSEC (RRSIG, DNSKEY, DS, NSEC3), Registrar and Registry locks, CAA allowlists.</td>
-              <td class="p-3">Security and Hardening (detailed in Section 4 below)</td>
-            </tr>
-          </tbody>
-        </table>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {fundamentalsCards.map((card) => (
+              <a
+                href={card.href}
+                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+              >
+                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  {card.badge}
+                </span>
+                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                  {card.title}
+                </h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                  {card.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Section 3: Records & Providers Grid -->
+        <section id="records-providers" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            2. DNS Record Types and Provider Setup Playbooks
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            Every routing, email, and verification rule in DNS is published as a specific resource record type inside your DNS hosting provider's zone panel. Explore the complete record reference hub, provider-specific playbooks, and the 6 most common everyday record guides below:
+          </p>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recordCards.map((card) => (
+              <a
+                href={card.href}
+                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+              >
+                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  {card.badge}
+                </span>
+                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                  {card.title}
+                </h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                  {card.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Section 4: Operations Grid -->
+        <section id="operations" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            3. DNS Operations: Propagation, Cache Flushing, and Migrations
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            Changing web hosts, editing IP addresses, or switching authoritative nameservers requires coordinating TTL cache timers so visitors never hit a dead server. Use these 5 operational guides to flush local caches, back up zones, and execute zero-downtime cutovers:
+          </p>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {operationsCards.map((card) => (
+              <a
+                href={card.href}
+                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+              >
+                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  {card.badge}
+                </span>
+                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                  {card.title}
+                </h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                  {card.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Section 5: Troubleshooting, Security & Tools Grid -->
+        <section id="troubleshooting-security" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            4. DNS Troubleshooting, Security Hardening, and Live Diagnostic Tools
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-dim">
+            When a domain fails to resolve, email bounces after a nameserver switch, or you need to harden your zone against cache poisoning, start with these 7 troubleshooting and security guides alongside our live browser-based DNS-over-HTTPS tools:
+          </p>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {troubleshootingCards.map((card) => (
+              <a
+                href={card.href}
+                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+              >
+                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  {card.badge}
+                </span>
+                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                  {card.title}
+                </h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                  {card.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+
+          <h3 class="mt-10 text-xl font-bold text-ink">
+            Flagship Live Diagnostic Tools
+          </h3>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {toolCards.map((card) => (
+              <a
+                href={card.href}
+                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+              >
+                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  {card.badge}
+                </span>
+                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                  {card.title}
+                </h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                  {card.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+
+          <p class="mt-8 text-base leading-relaxed text-ink-dim">
+            Every guide and live diagnostic tool in this <strong class="text-ink">Domain Name System (DNS) hub</strong> works together to help you configure <strong class="text-ink">DNS record types</strong>, manage <strong class="text-ink">TTL caching and zero-downtime migrations</strong>, troubleshoot <strong class="text-ink">resolution failures</strong>, and enforce <strong class="text-ink">DNSSEC security</strong>.
+          </p>
+        </section>
+
+        <!-- Section 6: FAQs -->
+        <section id="faq" class="scroll-mt-24">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+            Frequently Asked Questions
+          </h2>
+          <div class="mt-6 space-y-3">
+            {faqs.map((faq) => (
+              <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+                <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+                  <span>{faq.q}</span>
+                  <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+                </summary>
+                <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+                  <p>{faq.a}</p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <p>
-        Navigating this hub depends on current operational requirements: beginners starting from architectural concepts begin with Section 1 (Resolution Fundamentals), administrators configuring zone files jump to Section 2 (Record Types and Provider Playbooks), and engineers diagnosing an active incident proceed directly to Section 4 (Troubleshooting and Security Hardening).
-      </p>
-
-      <h2 id="1-dns-fundamentals-and-resolution-mechanics-start-here">1. DNS Fundamentals and Resolution Mechanics (Start Here)</h2>
-      <p>
-        Four foundational guides explain how DNS translates domain names into IP addresses, how recursive and authoritative servers interact, how <abbr class="pd-term" data-tip="TTL: Time to Live, seconds recursive resolvers cache a DNS record before re-querying">Time to Live (TTL)</abbr> timers control caching, and how encrypted DNS protects privacy.
-      </p>
-
-      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
-        <li class="leading-relaxed">
-          <strong class="text-ink">Trace the step-by-step resolution process:</strong> Follow the 4 local operating system checks and 8-step iterative resolution across root nameservers, TLD registries, and authoritative zones in <a href="/how-dns-works/" class="text-accent hover:underline">How DNS Works: The Step-by-Step Domain Name Resolution Process</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Manage record caching durations:</strong> Learn how recursive resolvers count down record validity in seconds (from 60s up to 86,400s) and configure optimal caching values in <a href="/what-is-ttl-in-dns/" class="text-accent hover:underline">DNS TTL Explained: What Time to Live Means and Best Values in Seconds</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Encrypt recursive query transport:</strong> Compare modern encrypted lookup standards over HTTPS port 443 (<abbr class="pd-term" data-tip="DoH: DNS-over-HTTPS, encrypted DNS resolution over HTTPS on port 443">DoH</abbr>) and TLS port 853 (<abbr class="pd-term" data-tip="DoT: DNS-over-TLS, encrypted DNS transport over dedicated TLS on port 853">DoT</abbr>) in <a href="/doh-vs-dot/" class="text-accent hover:underline">DNS-over-HTTPS vs DNS-over-TLS (DoH vs DoT)</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Resolve root domain alias targets:</strong> Configure apex hostnames without violating DNS protocol coexistence constraints using <a href="/cname-flattening/" class="text-accent hover:underline"><abbr class="pd-term" data-tip="CNAME flattening: DNS provider technique synthesizing A/AAAA answers at the zone apex">CNAME Flattening</abbr></a>.
-        </li>
-      </ol>
-
-      <p>
-        Testing live record values and inspecting remaining cache timers across public resolvers takes seconds using the <a href="/dns-record-lookup/" class="text-accent hover:underline">DNS Record Lookup</a> and the <a href="/ttl-checker/" class="text-accent hover:underline">DNS TTL Checker</a>.
-      </p>
-
-      <h2 id="2-dns-record-types-and-provider-setup-playbooks">2. DNS Record Types and Provider Setup Playbooks</h2>
-      <p>
-        Every instruction inside a DNS zone is stored as a typed resource record managed through your authoritative DNS provider control panel.
-      </p>
-
-      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
-        <li class="leading-relaxed">
-          <strong class="text-ink">Route web traffic to IPv4 and IPv6 addresses:</strong> Map domain apexes and subdomains to 32-bit IPv4 endpoints with the <a href="/a-record/" class="text-accent hover:underline">A Record</a> and to 128-bit IPv6 endpoints with the <a href="/aaaa-record/" class="text-accent hover:underline">AAAA Record</a> for modern dual-stack routing.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Alias subdomains to canonical hostnames:</strong> Point secondary subdomains (such as www, blog, or shop) to external target hostnames using the <a href="/cname-record/" class="text-accent hover:underline">CNAME Record</a> while observing apex coexistence restrictions.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Direct inbound company mail delivery:</strong> Establish mail exchanger priority preferences with the <a href="/mx-record/" class="text-accent hover:underline">MX Record</a>, following setup procedures in <a href="/how-to-add-mx-record/" class="text-accent hover:underline">How to Add MX Records for Email</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Publish security policies and verification tokens:</strong> Deploy SPF sender rules, DKIM public keys, DMARC compliance parameters, and webmaster ownership tokens within string-length limits using the <a href="/txt-record/" class="text-accent hover:underline">TXT Record</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Execute provider-specific DNS workflows:</strong> Follow step-by-step instructions for adding records, changing nameservers, and configuring features across major cloud and hosting platforms in <a href="/dns-providers/" class="text-accent hover:underline">DNS Provider Playbooks</a>.
-        </li>
-      </ol>
-
-      <p>
-        Reviewing complete parameter syntax, RFC specifications, and configuration rules across all 13 standard zone types is available in <a href="/dns-records/" class="text-accent hover:underline">DNS Record Types: The Complete Reference</a>.
-      </p>
-
-      <h2 id="3-dns-operations-propagation-cache-flushing-and-zero-downtime-migrations">3. DNS Operations: Propagation, Cache Flushing, and Zero-Downtime Migrations</h2>
-      <p>
-        Executing server cutovers and nameserver switches without website or email downtime requires managing cache expiration windows, backing up zone files, and following a staged migration sequence across 4 operational guides.
-      </p>
-
-      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
-        <li class="leading-relaxed">
-          <strong class="text-ink">Clear local resolver cache mappings:</strong> Purge stale operating system and browser IP caches immediately on Windows, macOS, Linux, and Chromium using <a href="/flush-dns-cache/" class="text-accent hover:underline">How to Flush DNS Cache on Windows, Mac, Linux, and Browsers</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Lower TTL values prior to migrations:</strong> Pre-stage planned IP address changes using the 48-hour TTL reduction procedure in <a href="/change-dns-records-safely/" class="text-accent hover:underline">How to Change DNS Records Without Downtime</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Execute provider nameserver migrations:</strong> Switch authoritative DNS hosts safely while preventing DNSSEC validation failures using <a href="/dns-migration-checklist/" class="text-accent hover:underline">The Complete DNS Migration Checklist</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Export and archive zone backups:</strong> Generate standard BIND zone file archives before making bulk record edits or transferring registrars using <a href="/export-dns-records/" class="text-accent hover:underline">How to Export and Back Up DNS Records</a>.
-        </li>
-      </ol>
-
-      <p>
-        Verifying global record convergence across independent public resolvers takes seconds with the <a href="/dns-propagation-checker/" class="text-accent hover:underline">DNS Propagation Checker</a>, while confirming parent registry delegation consistency uses the <a href="/delegation-checker/" class="text-accent hover:underline">DNS Delegation Checker</a>.
-      </p>
-
-      <h2 id="4-dns-troubleshooting-error-codes-and-security-hardening">4. DNS Troubleshooting, Error Codes, and Security Hardening</h2>
-      <p>
-        Diagnosing a sudden website or email outage and hardening your zone against spoofing relies on 5 symptom-driven troubleshooting and cryptographic security guides.
-      </p>
-
-      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
-        <li class="leading-relaxed">
-          <strong class="text-ink">Resolve global domain resolution failures:</strong> Identify the root cause of NXDOMAIN, SERVFAIL, and registrar clientHold status codes using <a href="/website-not-resolving/" class="text-accent hover:underline">Website Not Resolving? How to Diagnose and Fix DNS Resolution Failures</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Triage post-migration website outages:</strong> Fix missing apex records, stale DS pointers, and SSL handshake mismatches using <a href="/site-down-after-dns-change/" class="text-accent hover:underline">Site Down After a DNS Change?</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Restore broken email delivery and routing:</strong> Repair overwritten mail authentication and exchange records using <a href="/email-not-working-after-dns-change/" class="text-accent hover:underline">Email Stopped Working After DNS Change</a> and diagnose mail routing errors with <a href="/mx-record-not-working/" class="text-accent hover:underline">MX Record Not Working?</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Decode DNS status codes and error strings:</strong> Reference every standard RCODE response and browser networking error message in <a href="/dns-error-messages/" class="text-accent hover:underline">DNS Error Messages: The Complete Reference</a>.
-        </li>
-        <li class="leading-relaxed">
-          <strong class="text-ink">Deploy cryptographic DNSSEC validation:</strong> Authenticate DNS responses and defend resolvers against cache poisoning using <a href="/what-is-dnssec/" class="text-accent hover:underline">What Is DNSSEC? How the Chain of Trust, Keys, and Signatures Secure DNS</a>, testing your cryptographic keys in the <a href="/dnssec-checker/" class="text-accent hover:underline"><abbr class="pd-term" data-tip="DNSSEC: DNS Security Extensions, cryptographic authentication for DNS responses using public key cryptography">DNSSEC</abbr> Checker</a>.
-        </li>
-      </ol>
-
-      <p>
-        Mastering foundational naming protocols and operational best practices forms the essential core of modern <a href="/dns-security/" class="text-accent hover:underline">DNS Security</a>. Applying this Domain Name System (DNS) complete guide, coordinating recursive resolvers and authoritative nameservers, configuring DNS record types and TTL caching, managing zero-downtime DNS migrations, and executing DNS troubleshooting and DNSSEC security safeguard web accessibility across global internet infrastructure.
-      </p>
-
-      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
-      <div class="mt-4 space-y-3">
-        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
-          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-            <span>What is the difference between a domain registrar and a DNS hosting provider?</span>
-            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
-          </summary>
-          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-            <p>A domain registrar (such as Namecheap, Porkbun, or GoDaddy) is where you register and renew ownership of your domain name and set its parent NS (Nameserver) delegation. A DNS hosting provider (such as Cloudflare, AWS Route 53, or Google Cloud DNS) operates the authoritative nameservers that actually store your zone file and answer queries for your A, MX, and TXT records.</p>
-          </div>
-        </details>
-
-        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
-          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-            <span>Which DNS records are required for every website and email domain?</span>
-            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
-          </summary>
-          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-            <p>Every valid DNS zone requires 1 SOA record and at least 2 NS records at the root (@). To load a website over IPv4 and IPv6, you add A and AAAA records on @ and a CNAME record on www. To send and receive email reliably, you add MX, SPF (TXT), DKIM (TXT/CNAME), and DMARC (_dmarc TXT) records.</p>
-          </div>
-        </details>
-
-        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
-          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-            <span>Can I use one company as my domain registrar and a different company for DNS hosting?</span>
-            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
-          </summary>
-          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-            <p>Yes, in practice separating your domain registrar from your DNS hosting provider is an engineering best practice. Keeping your domain registered at a low-cost registrar while pointing your NS records to a fast Anycast DNS provider (like Cloudflare or AWS Route 53) gives you sub-20ms global lookup speeds and advanced features without transferring your domain registration.</p>
-          </div>
-        </details>
-
-        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
-          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-            <span>Why did changing my website's nameservers break my company email?</span>
-            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
-          </summary>
-          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-            <p>In real-world migrations, changing your NS records moves authority for your entire domain, both web and email, to the new DNS provider. Email stops working immediately when a web agency switches nameservers to a new host and adds only the website's A record without copying over existing MX, SPF, and DKIM records, requiring administrators to recreate those mail records in the new DNS zone.</p>
-          </div>
-        </details>
-      </div>
+      <!-- Sidebar TocRail -->
+      <aside class="hidden lg:block lg:col-span-1">
+        <div class="sticky top-24 rounded-xl border border-line bg-panel/60 p-5">
+          <p class="text-xs font-semibold uppercase tracking-wider text-ink-faint">On this page</p>
+          <nav class="mt-3 flex flex-col space-y-2 text-sm text-ink-dim">
+            <a href="#overview" class="hover:text-accent transition-colors">Architecture Overview</a>
+            <a href="#fundamentals" class="hover:text-accent transition-colors">1. DNS Fundamentals</a>
+            <a href="#records-providers" class="hover:text-accent transition-colors">2. Record Types &amp; Providers</a>
+            <a href="#operations" class="hover:text-accent transition-colors">3. DNS Operations</a>
+            <a href="#troubleshooting-security" class="hover:text-accent transition-colors">4. Troubleshooting &amp; Security</a>
+            <a href="#faq" class="hover:text-accent transition-colors">Frequently Asked Questions</a>
+          </nav>
+        </div>
+      </aside>
     </div>
   </div>
 </BaseLayout>
