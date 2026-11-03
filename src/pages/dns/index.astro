@@ -258,256 +258,251 @@ const faqSchema = {
   description="Master hub for Domain Name System (DNS) architecture, resource records, TTL caching, zero-downtime migrations, and DNSSEC security."
   schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
-  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-    <nav class="mb-6 text-sm text-ink-faint" aria-label="Breadcrumb">
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent transition-colors">Home</a>
       <span aria-hidden="true" class="mx-2">/</span>
       <span class="text-ink-dim" aria-current="page">DNS Guide</span>
     </nav>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
       DNS: The Complete Guide to the Domain Name System, Records, Propagation, and Security
     </h1>
 
-    <div class="mt-6 rounded-2xl border border-line bg-panel/60 p-6 shadow-sm" data-vs="answer">
-      <p class="text-base leading-relaxed text-ink-dim sm:text-lg">
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
         The Domain Name System (DNS) is <strong class="text-ink">the hierarchical, distributed naming protocol that translates human-readable domain names into IPv4 and IPv6 addresses, routes inbound email, and publishes cryptographic domain policies</strong>. Recursive resolvers and authoritative nameservers coordinate every lookup in milliseconds. The 4 core layers span resolution, record types, operations, and security.
       </p>
     </div>
 
-    <div class="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-4">
-      <div class="space-y-14 lg:col-span-3">
-        <!-- Section 1: Overview & Table -->
-        <section id="overview" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            How the 4 Layers of the Domain Name System Fit Together (Architecture Overview)
-          </h2>
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            Managing a production domain requires coordinating both sides of the DNS resolution boundary: the recursive resolvers (<code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">1.1.1.1</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">8.8.8.8</code>, and ISP servers) that cache answers for visitors, and the authoritative nameservers that store your master zone file. Every web connection, email delivery, and TLS certificate check depends on 4 interconnected DNS subsystems. The table below maps the 4 subsystems of DNS by core infrastructure job, key protocol mechanics, and primary operational scope.
-          </p>
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#overview">Architecture Overview</a></li>
+        <li><a href="#fundamentals">1. DNS Fundamentals and Resolution Mechanics</a></li>
+        <li><a href="#records-providers">2. DNS Record Types and Provider Setup Playbooks</a></li>
+        <li><a href="#operations">3. DNS Operations: Propagation, Cache Flushing, and Migrations</a></li>
+        <li><a href="#troubleshooting-security">4. DNS Troubleshooting, Security Hardening, and Live Diagnostic Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
 
-          <div class="mt-6 overflow-x-auto">
-            <table class="min-w-full border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
-              <thead>
-                <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
-                  <th class="px-4 py-3">DNS Subsystem</th>
-                  <th class="px-4 py-3">Core Infrastructure Job</th>
-                  <th class="px-4 py-3">Key Protocol Mechanics</th>
-                  <th class="px-4 py-3">Operational Scope</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line">
-                <tr>
-                  <td class="px-4 py-3 font-medium text-ink">1. Resolution Architecture</td>
-                  <td class="px-4 py-3">Translates hostnames to IPs across stub, recursive, root, TLD, and authoritative servers.</td>
-                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">UDP/TCP Port 53</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">EDNS0 (4,096B)</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DoH (Port 443)</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DoT (Port 853)</code>, TTL caching.</td>
-                  <td class="px-4 py-3">Client devices, ISP recursors, and global Anycast hierarchy.</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 font-medium text-ink">2. Zone Resource Records</td>
-                  <td class="px-4 py-3">Stores typed routing, aliasing, mail, and verification instructions in the zone file.</td>
-                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">A</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">AAAA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">CNAME</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">ALIAS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">MX</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">TXT</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">NS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SOA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">PTR</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SRV</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">CAA</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSKEY</code>.</td>
-                  <td class="px-4 py-3">Authoritative DNS zone tables and provider control panels.</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 font-medium text-ink">3. Operations &amp; Migrations</td>
-                  <td class="px-4 py-3">Controls cache lifetimes, provider cutovers, zone backups, and registrar delegations.</td>
-                  <td class="px-4 py-3">Pre-migration <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">300s</code> TTL lowering, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">SOA</code> serial increments, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">172,800s</code> TLD NS caches.</td>
-                  <td class="px-4 py-3">Server migrations, registrar transfers, and cache flushing.</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 font-medium text-ink">4. Security &amp; Hardening</td>
-                  <td class="px-4 py-3">Authenticates DNS responses cryptographically and defends against hijacking and spoofing.</td>
-                  <td class="px-4 py-3"><code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSSEC</code> (<code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">RRSIG</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DNSKEY</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">DS</code>, <code class="rounded bg-panel-2 px-1 py-0.5 text-xs text-accent-soft">NSEC3</code>), Registrar/Registry locks, CAA allowlists.</td>
-                  <td class="px-4 py-3">Zone signing, parent DS delegation, and drift monitoring.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Overview & Table -->
+      <section id="overview" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 4 Layers of the Domain Name System Fit Together (Architecture Overview)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Managing a production domain requires coordinating both sides of the DNS resolution boundary: the recursive resolvers (<code>1.1.1.1</code>, <code>8.8.8.8</code>, and ISP servers) that cache answers for visitors, and the authoritative nameservers that store your master zone file. Every web connection, email delivery, and TLS certificate check depends on 4 interconnected DNS subsystems. The table below maps the 4 subsystems of DNS by core infrastructure job, key protocol mechanics, and primary operational scope.
+        </p>
 
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            Beginners learning how domain lookups work start with <strong class="text-ink">Section 1 (Fundamentals)</strong>, administrators configuring zone files use <strong class="text-ink">Section 2 (Record Types &amp; Providers)</strong>, and engineers executing cutovers or fixing outages jump to <strong class="text-ink">Section 3 (Operations)</strong> and <strong class="text-ink">Section 4 (Troubleshooting &amp; Security)</strong>.
-          </p>
-        </section>
-
-        <!-- Section 2: Fundamentals Grid -->
-        <section id="fundamentals" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            1. DNS Fundamentals and Resolution Mechanics (Start Here)
-          </h2>
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            Five foundational guides explain what the Domain Name System is, how local operating systems and recursive resolvers trace a lookup from the root zone down, how Time to Live (TTL) timers govern caching, and how modern encrypted DNS works. Select a guide below based on the resolution layer you are investigating:
-          </p>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {fundamentalsCards.map((card) => (
-              <a
-                href={card.href}
-                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
-              >
-                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  {card.badge}
-                </span>
-                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
-                  {card.title}
-                </h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
-                  {card.desc}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <!-- Section 3: Records & Providers Grid -->
-        <section id="records-providers" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            2. DNS Record Types and Provider Setup Playbooks
-          </h2>
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            Every routing, email, and verification rule in DNS is published as a specific resource record type inside your DNS hosting provider's zone panel. Explore the complete record reference hub, provider-specific playbooks, and the 6 most common everyday record guides below:
-          </p>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recordCards.map((card) => (
-              <a
-                href={card.href}
-                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
-              >
-                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  {card.badge}
-                </span>
-                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
-                  {card.title}
-                </h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
-                  {card.desc}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <!-- Section 4: Operations Grid -->
-        <section id="operations" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            3. DNS Operations: Propagation, Cache Flushing, and Migrations
-          </h2>
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            Changing web hosts, editing IP addresses, or switching authoritative nameservers requires coordinating TTL cache timers so visitors never hit a dead server. Use these 5 operational guides to flush local caches, back up zones, and execute zero-downtime cutovers:
-          </p>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {operationsCards.map((card) => (
-              <a
-                href={card.href}
-                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
-              >
-                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  {card.badge}
-                </span>
-                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
-                  {card.title}
-                </h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
-                  {card.desc}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <!-- Section 5: Troubleshooting, Security & Tools Grid -->
-        <section id="troubleshooting-security" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            4. DNS Troubleshooting, Security Hardening, and Live Diagnostic Tools
-          </h2>
-          <p class="mt-4 text-base leading-relaxed text-ink-dim">
-            When a domain fails to resolve, email bounces after a nameserver switch, or you need to harden your zone against cache poisoning, start with these 7 troubleshooting and security guides alongside our live browser-based DNS-over-HTTPS tools:
-          </p>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {troubleshootingCards.map((card) => (
-              <a
-                href={card.href}
-                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
-              >
-                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  {card.badge}
-                </span>
-                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
-                  {card.title}
-                </h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
-                  {card.desc}
-                </p>
-              </a>
-            ))}
-          </div>
-
-          <h3 class="mt-10 text-xl font-bold text-ink">
-            Flagship Live Diagnostic Tools
-          </h3>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {toolCards.map((card) => (
-              <a
-                href={card.href}
-                class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
-              >
-                <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  {card.badge}
-                </span>
-                <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
-                  {card.title}
-                </h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
-                  {card.desc}
-                </p>
-              </a>
-            ))}
-          </div>
-
-          <p class="mt-8 text-base leading-relaxed text-ink-dim">
-            Every guide and live diagnostic tool in this <strong class="text-ink">Domain Name System (DNS) hub</strong> works together to help you configure <strong class="text-ink">DNS record types</strong>, manage <strong class="text-ink">TTL caching and zero-downtime migrations</strong>, troubleshoot <strong class="text-ink">resolution failures</strong>, and enforce <strong class="text-ink">DNSSEC security</strong>.
-          </p>
-        </section>
-
-        <!-- Section 6: FAQs -->
-        <section id="faq" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            Frequently Asked Questions
-          </h2>
-          <div class="mt-6 space-y-3">
-            {faqs.map((faq) => (
-              <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
-                <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-                  <span>{faq.q}</span>
-                  <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
-                </summary>
-                <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-                  <p>{faq.a}</p>
-                </div>
-              </details>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <!-- Sidebar TocRail -->
-      <aside class="hidden lg:block lg:col-span-1">
-        <div class="sticky top-24 rounded-xl border border-line bg-panel/60 p-5">
-          <p class="text-xs font-semibold uppercase tracking-wider text-ink-faint">On this page</p>
-          <nav class="mt-3 flex flex-col space-y-2 text-sm text-ink-dim">
-            <a href="#overview" class="hover:text-accent transition-colors">Architecture Overview</a>
-            <a href="#fundamentals" class="hover:text-accent transition-colors">1. DNS Fundamentals</a>
-            <a href="#records-providers" class="hover:text-accent transition-colors">2. Record Types &amp; Providers</a>
-            <a href="#operations" class="hover:text-accent transition-colors">3. DNS Operations</a>
-            <a href="#troubleshooting-security" class="hover:text-accent transition-colors">4. Troubleshooting &amp; Security</a>
-            <a href="#faq" class="hover:text-accent transition-colors">Frequently Asked Questions</a>
-          </nav>
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">DNS Subsystem</th>
+                <th class="px-4 py-3">Core Infrastructure Job</th>
+                <th class="px-4 py-3">Key Protocol Mechanics</th>
+                <th class="px-4 py-3">Operational Scope</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. Resolution Architecture</td>
+                <td class="px-4 py-3">Translates hostnames to IPs across stub, recursive, root, TLD, and authoritative servers.</td>
+                <td class="px-4 py-3"><code>UDP/TCP Port 53</code>, <code>EDNS0 (4,096B)</code>, <code>DoH (Port 443)</code>, <code>DoT (Port 853)</code>, TTL caching.</td>
+                <td class="px-4 py-3">Client devices, ISP recursors, and global Anycast hierarchy.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. Zone Resource Records</td>
+                <td class="px-4 py-3">Stores typed routing, aliasing, mail, and verification instructions in the zone file.</td>
+                <td class="px-4 py-3"><code>A</code>, <code>AAAA</code>, <code>CNAME</code>, <code>ALIAS</code>, <code>MX</code>, <code>TXT</code>, <code>NS</code>, <code>SOA</code>, <code>PTR</code>, <code>SRV</code>, <code>CAA</code>, <code>DS</code>, <code>DNSKEY</code>.</td>
+                <td class="px-4 py-3">Authoritative DNS zone tables and provider control panels.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Operations &amp; Migrations</td>
+                <td class="px-4 py-3">Controls cache lifetimes, provider cutovers, zone backups, and registrar delegations.</td>
+                <td class="px-4 py-3">Pre-migration <code>300s</code> TTL lowering, <code>SOA</code> serial increments, <code>172,800s</code> TLD NS caches.</td>
+                <td class="px-4 py-3">Server migrations, registrar transfers, and cache flushing.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. Security &amp; Hardening</td>
+                <td class="px-4 py-3">Authenticates DNS responses cryptographically and defends against hijacking and spoofing.</td>
+                <td class="px-4 py-3"><code>DNSSEC</code> (<code>RRSIG</code>, <code>DNSKEY</code>, <code>DS</code>, <code>NSEC3</code>), Registrar/Registry locks, CAA allowlists.</td>
+                <td class="px-4 py-3">Zone signing, parent DS delegation, and drift monitoring.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </aside>
+
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Beginners learning how domain lookups work start with <strong class="text-ink">Section 1 (Fundamentals)</strong>, administrators configuring zone files use <strong class="text-ink">Section 2 (Record Types &amp; Providers)</strong>, and engineers executing cutovers or fixing outages jump to <strong class="text-ink">Section 3 (Operations)</strong> and <strong class="text-ink">Section 4 (Troubleshooting &amp; Security)</strong>.
+        </p>
+      </section>
+
+      <!-- Section 2: Fundamentals Grid -->
+      <section id="fundamentals" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. DNS Fundamentals and Resolution Mechanics (Start Here)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Five foundational guides explain what the Domain Name System is, how local operating systems and recursive resolvers trace a lookup from the root zone down, how Time to Live (TTL) timers govern caching, and how modern encrypted DNS works. Select a guide below based on the resolution layer you are investigating:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {fundamentalsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Records & Providers Grid -->
+      <section id="records-providers" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. DNS Record Types and Provider Setup Playbooks
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Every routing, email, and verification rule in DNS is published as a specific resource record type inside your DNS hosting provider's zone panel. Explore the complete record reference hub, provider-specific playbooks, and the 6 most common everyday record guides below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {recordCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: Operations Grid -->
+      <section id="operations" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. DNS Operations: Propagation, Cache Flushing, and Migrations
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Changing web hosts, editing IP addresses, or switching authoritative nameservers requires coordinating TTL cache timers so visitors never hit a dead server. Use these 5 operational guides to flush local caches, back up zones, and execute zero-downtime cutovers:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {operationsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: Troubleshooting, Security & Tools Grid -->
+      <section id="troubleshooting-security" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. DNS Troubleshooting, Security Hardening, and Live Diagnostic Tools
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          When a domain fails to resolve, email bounces after a nameserver switch, or you need to harden your zone against cache poisoning, start with these 7 troubleshooting and security guides alongside our live browser-based DNS-over-HTTPS tools:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {troubleshootingCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+
+        <h3 class="mt-10 text-xl font-bold text-ink">
+          Flagship Live Diagnostic Tools
+        </h3>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+
+        <p class="mt-8 text-base leading-relaxed text-ink-dim">
+          Every guide and live diagnostic tool in this <strong class="text-ink">Domain Name System (DNS) hub</strong> works together to help you configure <strong class="text-ink">DNS record types</strong>, manage <strong class="text-ink">TTL caching and zero-downtime migrations</strong>, troubleshoot <strong class="text-ink">resolution failures</strong>, and enforce <strong class="text-ink">DNSSEC security</strong>.
+        </p>
+      </section>
+
+      <!-- Section 6: FAQs -->
+      <section id="faq" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Frequently Asked Questions
+        </h2>
+        <div class="mt-6 space-y-3">
+          {faqs.map((faq) => (
+            <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+              <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+                <span>{faq.q}</span>
+                <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+              </summary>
+              <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+                <p>{faq.a}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>
