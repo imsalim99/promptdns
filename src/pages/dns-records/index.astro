@@ -1,53 +1,559 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const records = [
-  ['A', 'Maps a domain to an IPv4 address.', '/a-record/'],
-  ['AAAA', 'Maps a domain to an IPv6 address.', '/aaaa-record/'],
-  ['CNAME', 'Aliases one domain to another.', '/cname-record/'],
-  ['MX', 'Routes email to your mail servers.', '/mx-record/'],
-  ['TXT', 'Holds text: SPF, DKIM, verification codes.', '/txt-record/'],
-  ['NS', 'Delegates the domain to its nameservers.', '/ns-record/'],
-  ['SOA', 'Zone metadata: serial, refresh, retry, TTLs.', '/soa-record/'],
-  ['PTR', 'Reverse DNS: IP back to a hostname.', '/ptr-record/'],
-  ['SRV', 'Locates specific services (SIP, XMPP).', '/srv-record/'],
-  ['CAA', 'Restricts which CAs may issue certificates.', '/caa-record/'],
-  ['ALIAS', 'CNAME-like record that works at the apex.', '/alias-record/'],
-  ['DS / DNSKEY', 'DNSSEC signing and delegation records.', '/ds-record/'],
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const addressRoutingCards: HubCard[] = [
+  {
+    href: '/a-record/',
+    badge: 'Type 1 · IPv4',
+    title: 'A Record (IPv4 Address)',
+    desc: 'Map root domains (@), subdomains, and wildcards (*) to 32-bit IPv4 addresses and Round-Robin server pools.',
+  },
+  {
+    href: '/aaaa-record/',
+    badge: 'Type 28 · IPv6',
+    title: 'AAAA Record (IPv6 Quad-A)',
+    desc: 'Configure 128-bit IPv6 addresses, :: zero-compression rules, and dual-stack Happy Eyeballs routing.',
+  },
+  {
+    href: '/cname-record/',
+    badge: 'Type 5 · Alias',
+    title: 'CNAME Record (Canonical Name)',
+    desc: 'Point alias subdomains (www, shop, DKIM selectors) to target hostnames and prevent dangling takeovers.',
+  },
+  {
+    href: '/alias-record/',
+    badge: 'Virtual · Apex',
+    title: 'ALIAS and ANAME Records',
+    desc: 'Point your bare root domain (@) to a dynamic hostname while returning synthesized A and AAAA responses.',
+  },
+  {
+    href: '/cname-flattening/',
+    badge: 'Apex Routing',
+    title: 'CNAME Flattening',
+    desc: 'How Cloudflare and modern DNS hosts flatten root CNAMEs at the edge without breaking MX or SOA records.',
+  },
+  {
+    href: '/ptr-record/',
+    badge: 'Type 12 · Reverse DNS',
+    title: 'PTR Record (Reverse DNS)',
+    desc: 'Map IPv4 (.in-addr.arpa) and IPv6 (.ip6.arpa) addresses back to hostnames for FCrDNS email verification.',
+  },
+  {
+    href: '/srv-record/',
+    badge: 'Type 33 · Port Discovery',
+    title: 'SRV Record (Service Locator)',
+    desc: 'Specify priority, weight, TCP/UDP port numbers, and targets for Microsoft Teams, Autodiscover, and Minecraft.',
+  },
 ];
+
+const emailAuthorityCards: HubCard[] = [
+  {
+    href: '/mx-record/',
+    badge: 'Type 15 · Inbound Mail',
+    title: 'MX Record (Mail Exchange)',
+    desc: 'Route incoming email using priority numbers (0 to 65535), primary/backup failover, and Null MX (0 .) rules.',
+  },
+  {
+    href: '/how-to-add-mx-record/',
+    badge: 'Setup Guide',
+    title: 'How to Add MX Records for Email',
+    desc: 'Step-by-step setup for connecting Google Workspace, Microsoft 365, Proton Mail, or Zoho to your domain.',
+  },
+  {
+    href: '/mx-record-not-working/',
+    badge: 'Troubleshooting',
+    title: 'MX Record Not Working?',
+    desc: 'Fix bounced incoming emails caused by leftover provider MX rows, CNAME targets, or proxied mail hosts.',
+  },
+  {
+    href: '/txt-record/',
+    badge: 'Type 16 · Text Policy',
+    title: 'TXT Record (Text & Verification)',
+    desc: 'Publish SPF, DKIM, DMARC, MTA-STS, BIMI, and site-verification tokens within the 255-character limit.',
+  },
+  {
+    href: '/ns-record/',
+    badge: 'Type 2 · Delegation',
+    title: 'NS Record (Nameserver)',
+    desc: 'Understand parent TLD vs child zone NS records, subdomain delegation, Anycast redundancy, and glue records.',
+  },
+  {
+    href: '/soa-record/',
+    badge: 'Type 6 · Zone Header',
+    title: 'SOA Record (Start of Authority)',
+    desc: 'Decode the 7 SOA fields (MNAME, RNAME dot syntax, YYYYMMDDnn serials, Refresh, Retry, Expire, and Minimum TTL).',
+  },
+  {
+    href: '/email-authentication/',
+    badge: 'Sub-Hub',
+    title: 'Email Authentication Hub',
+    desc: 'Complete guides for SPF, DKIM, DMARC, BIMI, MTA-STS, TLS-RPT, and 44 email service provider setups.',
+  },
+];
+
+const securityCards: HubCard[] = [
+  {
+    href: '/caa-record/',
+    badge: 'Type 257 · SSL Policy',
+    title: 'CAA Record (Certificate Authority Authorization)',
+    desc: 'Lock SSL/TLS issuance to specific CAs (Let\'s Encrypt, DigiCert, Google) using issue, issuewild, and iodef tags.',
+  },
+  {
+    href: '/ds-record/',
+    badge: 'Type 43 · Parent Hash',
+    title: 'DS Record (Delegation Signer)',
+    desc: 'Publish the 64-character SHA-256 hash of your child KSK at your domain registrar without causing SERVFAIL.',
+  },
+  {
+    href: '/dnskey-record/',
+    badge: 'Type 48 · Public Keys',
+    title: 'DNSKEY Record (DNSSEC Public Key)',
+    desc: 'Understand Flags 256 (ZSK) vs 257 (KSK), Protocol 3, Algorithm 13 ECDSA, and dig +multiline key tags.',
+  },
+  {
+    href: '/what-is-dnssec/',
+    badge: 'Security Pillar',
+    title: 'What Is DNSSEC?',
+    desc: 'See how RRSIG, DNSKEY, DS, and NSEC3 records work together across the chain of trust to stop spoofing.',
+  },
+];
+
+const toolCards: HubCard[] = [
+  {
+    href: '/dns-record-lookup/',
+    badge: 'All-in-One Tool',
+    title: 'DNS Record Lookup',
+    desc: 'Query all major DNS record types on any domain in a single pass.',
+  },
+  {
+    href: '/a-record-lookup/',
+    badge: 'Type 1 Tool',
+    title: 'A Record Lookup',
+    desc: 'Inspect live IPv4 addresses and TTL timers for any hostname.',
+  },
+  {
+    href: '/aaaa-record-lookup/',
+    badge: 'Type 28 Tool',
+    title: 'AAAA Record Lookup (IPv6)',
+    desc: 'Check 128-bit IPv6 quad-A records and dual-stack resolution.',
+  },
+  {
+    href: '/cname-record-lookup/',
+    badge: 'Type 5 Tool',
+    title: 'CNAME Record Lookup',
+    desc: 'Trace alias subdomains to their canonical target hostnames.',
+  },
+  {
+    href: '/mx-record-lookup/',
+    badge: 'Type 15 Tool',
+    title: 'MX Record Lookup',
+    desc: 'Verify inbound mail servers, priority numbers, and target IPs.',
+  },
+  {
+    href: '/txt-record-lookup/',
+    badge: 'Type 16 Tool',
+    title: 'TXT Record Lookup',
+    desc: 'View all root and subdomain TXT strings, SPF, and verification tokens.',
+  },
+  {
+    href: '/ns-record-lookup/',
+    badge: 'Type 2 Tool',
+    title: 'NS Record Lookup',
+    desc: 'Check authoritative nameserver hostnames and TTLs for any zone.',
+  },
+  {
+    href: '/soa-record-lookup/',
+    badge: 'Type 6 Tool',
+    title: 'SOA Record Lookup',
+    desc: 'Inspect primary MNAME, RNAME, serial number, and negative cache timers.',
+  },
+  {
+    href: '/ptr-record-lookup/',
+    badge: 'Type 12 Tool',
+    title: 'PTR (Reverse DNS) Lookup',
+    desc: 'Query .in-addr.arpa and .ip6.arpa reverse hostnames for any IP address.',
+  },
+  {
+    href: '/srv-record-lookup/',
+    badge: 'Type 33 Tool',
+    title: 'SRV Record Lookup',
+    desc: 'Test _service._proto priority, weight, port, and target records.',
+  },
+  {
+    href: '/caa-record-lookup/',
+    badge: 'Type 257 Tool',
+    title: 'CAA Record Lookup',
+    desc: 'Check which Certificate Authorities are authorized on a domain.',
+  },
+  {
+    href: '/ds-record-lookup/',
+    badge: 'Type 43 Tool',
+    title: 'DS Record Lookup (DNSSEC)',
+    desc: 'Inspect parent TLD Delegation Signer key tags, algorithms, and SHA-256 digests.',
+  },
+  {
+    href: '/dnskey-record-lookup/',
+    badge: 'Type 48 Tool',
+    title: 'DNSKEY Record Lookup',
+    desc: 'Verify child zone ZSK (256) and KSK (257) public cryptographic keys.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Which DNS record types are mandatory in every DNS zone file?',
+    a: 'Every valid DNS zone file requires two mandatory administrative record types at the root (@): exactly one SOA (Start of Authority) record and at least two NS (Nameserver) records. All other record types (A, AAAA, CNAME, MX, TXT, CAA) are added based on whether the domain hosts a website or sends email.',
+  },
+  {
+    q: 'Which DNS records cannot coexist on the same hostname?',
+    a: 'A CNAME record cannot coexist with any other record type on the exact same hostname (@ or subdomain), except DNSSEC RRSIG and NSEC records. In addition, a hostname can only publish one SOA record, one SPF (v=spf1) TXT record, and one DMARC (v=DMARC1) TXT record.',
+  },
+  {
+    q: 'What is the difference between an A record, a CNAME record, and an MX record?',
+    a: 'In practice, these three records handle the three core jobs of an everyday domain: an A record points a hostname directly to a numerical IPv4 address (93.184.216.34) to load a website; a CNAME record points a subdomain (www.example.com) to another domain name (example.com); and an MX record tells mail servers where to deliver incoming email addressed to @example.com.',
+  },
+  {
+    q: "Why don't my subdomain records (_dmarc, DKIM, or SRV) show up when I query my root domain?",
+    a: 'In real-world troubleshooting, DNS lookups only return records attached to the exact hostname label you query, there is no "list all subdomains" query in public DNS. To see a DMARC, DKIM, or SRV record, you must query its specific prefix hostname (such as _dmarc.example.com, selector1._domainkey.example.com, or _sip._tls.example.com).',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'DNS Record Types: Complete Reference, IANA Type Codes, and Lookup Tools',
+  url: 'https://promptdns.com/dns-records/',
+  description: 'Complete reference for all 13 DNS resource record types by IANA code, syntax, value format, root domain compatibility, and live lookup tools.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'DNS Guide', item: 'https://promptdns.com/dns/' },
+    { '@type': 'ListItem', position: 3, name: 'Record Types', item: 'https://promptdns.com/dns-records/' },
+  ],
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
+
 <BaseLayout
-  title="DNS Record Types: The Complete Reference"
-  description="Every DNS record type explained: A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, ALIAS, DS and DNSKEY, what each does, syntax, and how to add them."
+  title="DNS Record Types: Complete Reference, IANA Type Codes, and Lookup Tools"
+  description="Complete reference for all 13 DNS resource record types by IANA code, syntax, value format, root domain compatibility, and live lookup tools."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Record Types</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <a href="/dns/" class="hover:text-accent transition-colors">DNS Guide</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">Record Types</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Record Types: The Complete Reference</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      A DNS zone is a set of records, and each record type answers a different question, where
-      is the server, where does mail go, who signs this zone, who may issue its certificates.
-      This reference covers every type with syntax, examples, and common errors.
-    </p>
 
-    <div class="mt-10 overflow-x-auto rounded-xl border border-line bg-panel/60 shadow-lg">
-      <table class="pdns-table">
-        <thead>
-          <tr><th>Type</th><th>What it does</th><th>Guide</th></tr>
-        </thead>
-        <tbody>
-          {records.map(([type, desc, href]) => (
-            <tr>
-              <td class="font-mono font-semibold text-accent">{type}</td>
-              <td class="text-ink-dim">{desc}</td>
-              <td><a href={href} class="font-medium text-accent hover:text-accent-soft">Read guide →</a></td>
-            </tr>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DNS Record Types: Complete Reference, IANA Type Codes, and Lookup Tools
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        DNS resource records (RRs) are <strong class="text-ink">typed text instructions stored inside an authoritative DNS zone file that tell recursive resolvers how to route web traffic, deliver email, and verify domain cryptographic keys</strong>. Each record type carries a numeric IANA code. The 13 core types govern every internet connection.
+      </p>
+    </div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#matrix">Master Reference Table (IANA Codes)</a></li>
+        <li><a href="#address-routing">1. Address, Alias, and Service Routing Records</a></li>
+        <li><a href="#email-authority">2. Email Routing, Text Verification, and Zone Authority Records</a></li>
+        <li><a href="#security-records">3. Certificate Authorization and DNSSEC Cryptographic Records</a></li>
+        <li><a href="#lookup-tools">4. Live Browser-Based DNS Record Lookup Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Master Reference Table -->
+      <section id="matrix" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Master Reference Table: All 13 DNS Resource Record Types by IANA Code
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Every entry in a BIND zone file or DNS control panel belongs to a standardized resource record type defined by the Internet Assigned Numbers Authority (IANA). While dozens of experimental or retired record types exist in historical RFCs, modern production domains rely on 12 official wire record types plus virtual apex alias records (<code>ALIAS</code> and <code>ANAME</code>). The table below compares all 13 DNS record types by decimal type code, value format, root-domain (<code>@</code>) compatibility, and core function.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Record Type</th>
+                <th class="px-4 py-3">IANA Type Code</th>
+                <th class="px-4 py-3">Value / RDATA Format</th>
+                <th class="px-4 py-3">Allowed at Root (@)?</th>
+                <th class="px-4 py-3">Core Infrastructure Function</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">A</td>
+                <td class="px-4 py-3"><code>Type 1</code></td>
+                <td class="px-4 py-3">32-bit IPv4 address (<code>93.184.216.34</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes</td>
+                <td class="px-4 py-3">Maps a domain or subdomain to an IPv4 server address.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">AAAA</td>
+                <td class="px-4 py-3"><code>Type 28</code></td>
+                <td class="px-4 py-3">128-bit IPv6 address (<code>2606:4700:4700::1111</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes</td>
+                <td class="px-4 py-3">Maps a domain or subdomain to an IPv6 server address.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">CNAME</td>
+                <td class="px-4 py-3"><code>Type 5</code></td>
+                <td class="px-4 py-3">Target domain name (<code>example.com.</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">No (Conflicts with SOA/NS)</td>
+                <td class="px-4 py-3">Points an alias subdomain (<code>www</code>) to a canonical target hostname.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">ALIAS / ANAME</td>
+                <td class="px-4 py-3">Virtual (<code>Type 1/28</code>)</td>
+                <td class="px-4 py-3">Target domain name (<code>app.paas.com.</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes (Synthesizes A/AAAA)</td>
+                <td class="px-4 py-3">Points the root domain (<code>@</code>) to a hostname by resolving IPs at the edge.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">MX</td>
+                <td class="px-4 py-3"><code>Type 15</code></td>
+                <td class="px-4 py-3">Priority integer + Mail host (<code>10 smtp.google.com.</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes</td>
+                <td class="px-4 py-3">Directs incoming domain email to authorized mail servers by priority.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">TXT</td>
+                <td class="px-4 py-3"><code>Type 16</code></td>
+                <td class="px-4 py-3">Quoted text string (<code>&lt;= 255</code> chars per chunk)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes</td>
+                <td class="px-4 py-3">Stores machine-readable SPF, DKIM, DMARC, and site-verification strings.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">NS</td>
+                <td class="px-4 py-3"><code>Type 2</code></td>
+                <td class="px-4 py-3">Nameserver FQDN (<code>ada.ns.cloudflare.com.</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes (Mandatory, 2+ min)</td>
+                <td class="px-4 py-3">Declares which authoritative DNS servers hold the master zone file.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">SOA</td>
+                <td class="px-4 py-3"><code>Type 6</code></td>
+                <td class="px-4 py-3">MNAME, RNAME, Serial, and 4 timers</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes (Mandatory, exactly 1)</td>
+                <td class="px-4 py-3">Defines primary zone authority, serial version, refresh, and NXDOMAIN TTL.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">PTR</td>
+                <td class="px-4 py-3"><code>Type 12</code></td>
+                <td class="px-4 py-3">Canonical hostname (<code>mail.example.com.</code>)</td>
+                <td class="px-4 py-3 font-semibold text-ink">Published in .arpa zones</td>
+                <td class="px-4 py-3">Maps an IPv4 or IPv6 address back to a hostname (Reverse DNS / rDNS).</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">SRV</td>
+                <td class="px-4 py-3"><code>Type 33</code></td>
+                <td class="px-4 py-3">Priority, Weight, Port, Target</td>
+                <td class="px-4 py-3 font-semibold text-ink">Published at _service._proto</td>
+                <td class="px-4 py-3">Discovers hostnames and TCP/UDP port numbers for VoIP, Teams, and games.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">CAA</td>
+                <td class="px-4 py-3"><code>Type 257</code></td>
+                <td class="px-4 py-3">Flags (<code>0/128</code>), Tag, CA Value</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes (Inherits to subdomains)</td>
+                <td class="px-4 py-3">Restricts which Certificate Authorities are allowed to issue SSL/TLS certs.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">DS</td>
+                <td class="px-4 py-3"><code>Type 43</code></td>
+                <td class="px-4 py-3">Key Tag, Algorithm, Digest Type, Digest</td>
+                <td class="px-4 py-3 font-semibold text-ink">Published in parent TLD zone</td>
+                <td class="px-4 py-3">Stores the SHA-256 hash of your child KSK at the registrar for DNSSEC.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-semibold text-accent">DNSKEY</td>
+                <td class="px-4 py-3"><code>Type 48</code></td>
+                <td class="px-4 py-3">Flags (<code>256/257</code>), Protocol 3, Alg, Key</td>
+                <td class="px-4 py-3 font-semibold text-ink">Yes</td>
+                <td class="px-4 py-3">Publishes the public ZSK and KSK cryptographic keys inside your zone.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Use <strong class="text-ink">Section 1</strong> below for web routing and alias records (A, AAAA, CNAME, ALIAS, PTR, SRV), <strong class="text-ink">Section 2</strong> for email and zone authority records (MX, TXT, NS, SOA), <strong class="text-ink">Section 3</strong> for cryptographic security records (CAA, DS, DNSKEY), and <strong class="text-ink">Section 4</strong> to run live browser-based lookups for any record type.
+        </p>
+      </section>
+
+      <!-- Section 2: Address, Alias, and Service Routing Records -->
+      <section id="address-routing" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. Address, Alias, Reverse DNS, and Service Routing Records (A, AAAA, CNAME, ALIAS, PTR, SRV)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Seven guides cover the records that connect hostnames to IPv4 and IPv6 addresses, alias subdomains and root domains to cloud targets, resolve IP addresses backward to hostnames, and locate custom TCP/UDP application ports. Choose a record guide below to view its syntax, rules, and examples:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {addressRoutingCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </section>
+
+      <!-- Section 3: Email Routing, Text Verification, and Zone Authority Records -->
+      <section id="email-authority" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. Email Routing, Text Verification, and Zone Authority Records (MX, TXT, NS, SOA)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Six guides explain the administrative records required at the top of every DNS zone (SOA and NS) alongside the records that route inbound mail (MX) and publish machine-readable email authentication and ownership policies (TXT). Select a guide below to configure or troubleshoot these records:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {emailAuthorityCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: Certificate Authorization and DNSSEC Cryptographic Records -->
+      <section id="security-records" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. Certificate Authorization and DNSSEC Cryptographic Records (CAA, DS, DNSKEY)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Four guides detail the cryptographic DNS records that restrict which Certificate Authorities are allowed to issue SSL/TLS certificates for your domain (CAA) and link your signed child zone (DNSKEY) to the parent TLD registry (DS). Open a guide below to harden your zone:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {securityCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: Live Browser-Based DNS Record Lookup Tools -->
+      <section id="lookup-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. Live Browser-Based DNS Record Lookup Tools (All 13 Lookups)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Query any DNS record type in real time directly from your browser over encrypted DNS-over-HTTPS (Cloudflare <code>1.1.1.1</code>, Google <code>8.8.8.8</code>, and AliDNS <code>223.5.5.5</code>) with zero server logging. Select the all-in-one lookup tool or a dedicated single-record checker below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+
+        <p class="mt-8 text-base leading-relaxed text-ink-dim">
+          Every resource record guide and live lookup tool in this <strong class="text-ink">DNS Record Types reference hub</strong> helps you configure <strong class="text-ink">IPv4 and IPv6 routing (A, AAAA, CNAME, ALIAS)</strong>, authenticate <strong class="text-ink">domain email (MX, TXT)</strong>, manage <strong class="text-ink">zone authority (NS, SOA, PTR, SRV)</strong>, and enforce <strong class="text-ink">cryptographic security (CAA, DS, DNSKEY)</strong>.
+        </p>
+      </section>
+
+      <!-- Section 6: FAQs -->
+      <section id="faq" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Frequently Asked Questions
+        </h2>
+        <div class="mt-6 space-y-3">
+          {faqs.map((faq) => (
+            <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+              <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+                <span>{faq.q}</span>
+                <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+              </summary>
+              <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+                <p>{faq.a}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>
