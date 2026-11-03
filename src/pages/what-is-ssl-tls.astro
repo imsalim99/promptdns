@@ -1,66 +1,327 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
+
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Is SSL different from TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "SSL is the old name (SSL 2.0/3.0, all broken and retired). Modern certificates are 'SSL certificates' colloquially, but the protocol in use is TLS 1.2/1.3." } },
-    {'@type': 'Question', 'name': "How long are certificates valid?", "acceptedAnswer": { '@type': 'Answer', "text": "Public certificates max out at 398 days (industry policy); Let's Encrypt issues 90-day ones meant for automated renewal." } },
-    {'@type': 'Question', 'name': "Does a certificate mean the site is safe?", "acceptedAnswer": { '@type': 'Answer', "text": "No: it means the connection is encrypted to THAT domain. Phishing sites get valid certificates too; TLS authenticates the domain, not the operator's honesty." } },
-    {'@type': 'Question', 'name': "What is a certificate chain?", "acceptedAnswer": { '@type': 'Answer', "text": "Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors." } },
-    {'@type': 'Question', 'name': "Do I need TLS on a site with no forms?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: content integrity, browser warnings, ranking signals, and referral data all depend on it." } },
-    {'@type': 'Question', 'name': "What breaks when certificates expire?", "acceptedAnswer": { '@type': 'Answer', "text": "Browsers block the page outright. Automated renewal (ACME) exists precisely to prevent this." } }
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why do people still call it an \"SSL certificate\" if SSL was replaced by TLS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The name \"SSL\" had already become the universal industry term used by web hosts, browsers, and customers by the time the IETF upgraded Netscape's SSL 3.0 to TLS 1.0 in 1999. Every \"SSL certificate\" you buy or generate today is actually a TLS certificate (X.509) that secures TLS 1.2 and TLS 1.3 connections."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SSL/TLS use symmetric or asymmetric encryption?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SSL/TLS uses both: during the initial millisecond TLS handshake, it uses asymmetric encryption (public and private keys via ECDSA or RSA and ECDHE) to verify the server's identity and safely agree on a shared secret. Once the handshake finishes, it switches to fast symmetric encryption (AES-GCM or ChaCha20-Poly1305) to encrypt all actual webpage data."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is a free Let's Encrypt SSL certificate just as secure as a paid $200 SSL certificate?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, in practice a free Let's Encrypt Domain Validated (DV) certificate provides the exact same 256-bit TLS 1.3 encryption strength and browser trust as a $200 commercial certificate. Paid Organization Validated (OV) and Extended Validation (EV) certificates only add manual human verification of your company's legal registration; they do not make the encryption itself any stronger."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does having an SSL/TLS certificate (HTTPS) improve my Google Search rankings?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, in real-world SEO, HTTPS has been a confirmed Google Search ranking signal since 2014 and is a mandatory baseline for Core Web Vitals and HTTP/2 or HTTP/3 performance. More importantly, modern browsers display a loud \"Not Secure\" warning on any http:// site, which causes visitors to bounce immediately and ruins conversion rates."
+      }
+    }
   ]
-}
+};
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["SSL/TLS Guides", "/ssl-tls/"],
+  ["What Is SSL/TLS"]
+];
 ---
+
 <BaseLayout
-  title="What Is SSL/TLS and Why HTTPS Matters"
-  description="SSL/TLS explained: how certificates and encryption secure web traffic, the handshake process, and why HTTPS is non-negotiable today."
+  title="What Is SSL/TLS? How HTTPS Encryption, Certificates, and Handshakes Work"
+  description="Learn what SSL/TLS is, how asymmetric and symmetric encryption power the TLS 1.3 handshake, certificate validation types (DV, OV, EV), and DNS touchpoints."
   schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["SSL/TLS Guides", "/ssl-tls/"], ["What Is SSL/TLS"]]}>
+  breadcrumb={breadcrumb}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ssl-tls/" class="hover:text-accent">SSL/TLS Guides</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">What Is SSL/TLS</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is SSL/TLS and Why HTTPS Matters</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">SSL is the retired name; TLS is the living protocol. Both refer to the encryption layer that turns HTTP into HTTPS: proving the server's identity with a certificate, then encrypting everything between browser and server so no one on the path can read or alter it.</p>
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      What Is SSL/TLS? How HTTPS Encryption, Certificates, and Handshakes Work
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        SSL/TLS (<abbr class="pd-term" data-tip="SSL: Secure Sockets Layer, original cryptographic protocol developed by Netscape">Secure Sockets Layer</abbr> and <abbr class="pd-term" data-tip="TLS: Transport Layer Security, modern cryptographic protocol replacing SSL">Transport Layer Security</abbr>) is <strong class="text-ink">the cryptographic protocol suite that encrypts internet connections between a client and a server, turning standard HTTP into secure HTTPS on port 443</strong>. Browsers verify the server's digital certificate during a millisecond handshake. The 3 guarantees provide encryption, authentication, and data integrity.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The TLS handshake in order</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Step</th><th>What happens</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">ClientHello</td><td class="text-sm text-ink-dim">Browser offers TLS versions and cipher suites</td></tr><tr><td class="font-medium text-ink">ServerHello + certificate</td><td class="text-sm text-ink-dim">Server picks the suite and presents the certificate chain</td></tr><tr><td class="font-medium text-ink">Verification</td><td class="text-sm text-ink-dim">Browser validates the chain against trusted root CAs</td></tr><tr><td class="font-medium text-ink">Key exchange</td><td class="text-sm text-ink-dim">Session keys established (ephemeral Diffie-Hellman in modern suites)</td></tr><tr><td class="font-medium text-ink">Encrypted connection</td><td class="text-sm text-ink-dim">Application data flows over the negotiated cipher</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
+    <Diagram name="resolution" caption="SSL/TLS encryption and handshake architecture: client initiates TLS handshake, validates X.509 certificate, establishes symmetric session key, and transmits encrypted HTTPS traffic" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#what-the-handshake-does">What the handshake does</a></li>
-        <li><a href="#what-tls-gives-you-precisely">What TLS gives you, precisely</a></li>
-        <li><a href="#https-is-table-stakes">HTTPS is table stakes</a></li>
+        <li><a href="#ssl-vs-tls-vs-https-what-is-the-difference-and-what-are-the-3-security-guarantees">SSL vs TLS vs HTTPS and 3 security guarantees</a></li>
+        <li><a href="#how-does-the-ssl-tls-handshake-work-asymmetric-key-exchange-to-symmetric-encryption">How the SSL/TLS handshake works</a></li>
+        <li><a href="#what-is-inside-an-ssl-tls-certificate-and-what-are-the-6-certificate-types">Inside a certificate and 6 certificate types</a></li>
+        <li><a href="#how-does-dns-connect-to-ssl-tls-5-critical-touchpoints">How DNS connects to SSL/TLS</a></li>
+        <li><a href="#how-to-enable-https-and-inspect-any-websites-ssl-tls-certificate-4-steps">Enable HTTPS and inspect certificates in 4 steps</a></li>
         <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="what-the-handshake-does">What the handshake does</h2>
-      <ol class="list-decimal space-y-1.5 pl-5"><li>The browser connects and proposes TLS versions and ciphers.</li><li>The server presents its certificate: identity + public key, signed by a Certificate Authority the browser already trusts.</li><li>The browser verifies the chain (and may check DNS-level CAA policy was respected at issuance).</li><li>Keys are agreed via ephemeral exchange; all further traffic is encrypted and tamper-evident.</li></ol>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="what-tls-gives-you-precisely">What TLS gives you, precisely</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li><strong class="text-ink">Confidentiality:</strong> no one on the network reads your traffic.</li><li><strong class="text-ink">Integrity:</strong> content cannot be modified in transit without detection.</li><li><strong class="text-ink">Authenticity:</strong> the certificate proves you are talking to the real domain.</li></ul><p>What it does not do: confirm the site is honest (a phishing site can have a valid certificate), or hide the domain you are visiting (that is <a href="/doh-vs-dot/">encrypted DNS</a> territory).</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="https-is-table-stakes">HTTPS is table stakes</h2>
-      <p>Browsers mark plain HTTP as Not Secure, rank it lower, and block its subresources on HTTPS pages. Free certificates (Let’s Encrypt) removed the cost excuse years ago. If any page of yours still serves HTTP, redirect it and enable HSTS; our homepage scanner checks the DNS-side trust signals that complement TLS.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is SSL different from TLS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SSL is the old name (SSL 2.0/3.0, all broken and retired). Modern certificates are 'SSL certificates' colloquially, but the protocol in use is TLS 1.2/1.3.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long are certificates valid?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Public certificates max out at 398 days (industry policy); Let's Encrypt issues 90-day ones meant for automated renewal.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a certificate mean the site is safe?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No: it means the connection is encrypted to THAT domain. Phishing sites get valid certificates too; TLS authenticates the domain, not the operator's honesty.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a certificate chain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need TLS on a site with no forms?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: content integrity, browser warnings, ranking signals, and referral data all depend on it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What breaks when certificates expire?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Browsers block the page outright. Automated renewal (ACME) exists precisely to prevent this.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/caa-record/" class="text-accent hover:text-accent-soft">CAA records →</a></li><li><a href="/what-is-dnssec/" class="text-accent hover:text-accent-soft">Enable DNSSEC →</a></li><li><a href="/what-is-ssl-tls/" class="text-accent hover:text-accent-soft">Free certificates →</a></li></ul>
+      <h2 id="ssl-vs-tls-vs-https-what-is-the-difference-and-what-are-the-3-security-guarantees">SSL vs TLS vs HTTPS: What Is the Difference and What Are the 3 Security Guarantees?</h2>
+      <p>
+        In everyday web terminology, hosting providers and developers use "SSL", "TLS", and "HTTPS" interchangeably, even though each acronym refers to a distinct piece of the security stack: SSL (Secure Sockets Layer, introduced by Netscape in 1995) is the original, now-retired encryption protocol; TLS (Transport Layer Security, standardized by the IETF in 1999) is the modern cryptographic protocol that replaced SSL; and <abbr class="pd-term" data-tip="HTTPS: Hypertext Transfer Protocol Secure, HTTP encapsulated in encrypted TLS on port 443">HTTPS</abbr> (Hypertext Transfer Protocol Secure) is the result of transmitting standard HTTP web pages inside an encrypted TLS tunnel on port 443. Every active SSL certificate sold or issued today actually runs TLS 1.2 and TLS 1.3 (compared across every release in <a href="/tls-versions-explained/" class="text-accent hover:underline">TLS Versions Explained: TLS 1.0, 1.1, 1.2, and TLS 1.3 Compared</a>) to deliver 3 cryptographic guarantees:
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Confidentiality (Encryption):</strong> Encrypts every HTTP request URL path, form payload, session cookie, API bearer token, and authorization credential into ciphertext so eavesdroppers on public networks or routing transit cannot read the data stream.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Origin Authentication (Identity Verification):</strong> Proves that the server responding at the network address genuinely controls the designated domain name by validating its public-key certificate against a trusted Certificate Authority.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Message Integrity (Tamper Detection):</strong> Appends an <abbr class="pd-term" data-tip="AEAD: Authenticated Encryption with Associated Data, modern cipher mode providing confidentiality and integrity">Authenticated Encryption with Associated Data (AEAD)</abbr> authentication tag to every record so the receiving client immediately detects and rejects modified or injected network packets.
+        </li>
+      </ol>
+
+      <p>
+        Combining all 3 guarantees ensures robust channel protection, because encrypting data to an unverified endpoint merely creates a private transmission tunnel to an impostor.
+      </p>
+
+      <h2 id="how-does-the-ssl-tls-handshake-work-asymmetric-key-exchange-to-symmetric-encryption">How Does the SSL/TLS Handshake Work? (Asymmetric Key Exchange to Symmetric Encryption)</h2>
+      <p class="text-sm font-medium text-ink">
+        Immediately after a browser resolves a domain's IP address via DNS and opens a TCP connection on port 443, the client and server execute the TLS handshake across 4 messages in a single network round-trip (1-RTT in TLS 1.3) to verify server identity and establish shared encryption keys. The table below details each step of the modern TLS 1.3 handshake.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-3 font-semibold text-ink">Step</th>
+              <th class="p-3 font-semibold text-ink">Message / Action</th>
+              <th class="p-3 font-semibold text-ink">Direction</th>
+              <th class="p-3 font-semibold text-ink">Cryptographic Function</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="p-3 font-medium text-ink">1. ClientHello + Key Share</td>
+              <td class="p-3">Browser sends supported TLS versions, cipher suites, and an ephemeral public key share.</td>
+              <td class="p-3">Client to Server</td>
+              <td class="p-3">Proposes modern encryption parameters and initiates Diffie-Hellman key exchange.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">2. ServerHello + Key Share</td>
+              <td class="p-3">Server selects the cipher suite, sends its ephemeral public key share, and derives encryption keys.</td>
+              <td class="p-3">Server to Client</td>
+              <td class="p-3">Completes the shared master secret computation using ECDHE.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">3. Encrypted Extensions + Cert</td>
+              <td class="p-3">Server transmits encrypted extensions, its X.509 certificate chain, and a cryptographic signature.</td>
+              <td class="p-3">Server to Client</td>
+              <td class="p-3">Authenticates server ownership and confirms handshake parameter integrity.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">4. Client Finished + App Data</td>
+              <td class="p-3">Browser validates the certificate against root CAs, sends Finished, and begins transmitting encrypted HTTP.</td>
+              <td class="p-3">Client to Server</td>
+              <td class="p-3">Switches the connection to symmetric session ciphers for full-duplex HTTPS data transfer.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        The handshake architecture combines <abbr class="pd-term" data-tip="asymmetric encryption: public-key cryptography using mathematically linked key pairs for authentication and key exchange">asymmetric encryption</abbr> and <abbr class="pd-term" data-tip="symmetric encryption: high-speed cryptography using a single shared secret key for bulk data encryption">symmetric encryption</abbr> to balance authentication security with computational speed. Asymmetric public-key algorithms (such as ECDSA or RSA paired with ephemeral Diffie-Hellman key exchange) solve the initial trust challenge between two unfamiliar machines over an insecure internet without transmitting secret keys. However, asymmetric mathematical calculations demand significant CPU cycles. Once the single round-trip handshake derives a shared ephemeral secret, both endpoints immediately transition to high-speed symmetric AEAD ciphers (such as AES-128-GCM, AES-256-GCM, or ChaCha20-Poly1305), encrypting large volumes of web assets at wire speed with minimal system latency.
+      </p>
+
+      <h2 id="what-is-inside-an-ssl-tls-certificate-and-what-are-the-6-certificate-types">What Is Inside an SSL/TLS Certificate and What Are the 6 Certificate Types?</h2>
+      <p class="text-sm font-medium text-ink">
+        An SSL/TLS certificate is a standardized <abbr class="pd-term" data-tip="X.509: ITU-T standard format defining the structure of public-key digital certificates">X.509</abbr> digital document signed by a publicly trusted Certificate Authority that binds a public key to verified domain names (<abbr class="pd-term" data-tip="SAN: Subject Alternative Name, X.509 extension specifying multiple hostnames secured by a single certificate">Subject Alternative Names</abbr> or SANs) for a defined validity window. Digital certificates categorize across 3 Identity Validation Levels (DV, OV, EV) and 3 Domain Scopes (Single-Domain, Wildcard, Multi-Domain SAN), compared in the table below.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-3 font-semibold text-ink">Certificate Type</th>
+              <th class="p-3 font-semibold text-ink">Category</th>
+              <th class="p-3 font-semibold text-ink">Validation Scope</th>
+              <th class="p-3 font-semibold text-ink">Issuance Timeline</th>
+              <th class="p-3 font-semibold text-ink">Typical Deployment</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="p-3 font-medium text-ink">1. Domain Validated (DV)</td>
+              <td class="p-3">Validation Level</td>
+              <td class="p-3">Confirms administrative domain control via automated DNS TXT or HTTP web challenges</td>
+              <td class="p-3 font-semibold text-accent">Under 5 minutes</td>
+              <td class="p-3">Websites, developer APIs, blogs, and SaaS platforms using automated issuance.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">2. Organization Validated (OV)</td>
+              <td class="p-3">Validation Level</td>
+              <td class="p-3">Confirms domain control plus legal corporate entity registration</td>
+              <td class="p-3">1 to 3 business days</td>
+              <td class="p-3">Corporate portals, enterprise systems, and business platforms displaying verified company records.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">3. Extended Validation (EV)</td>
+              <td class="p-3">Validation Level</td>
+              <td class="p-3">Enforces strict legal, physical, and operational verification of the corporate organization</td>
+              <td class="p-3">3 to 7 business days</td>
+              <td class="p-3">Banking portals, payment processors, and government domains requiring rigorous legal attestation.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">4. Single-Domain Certificate</td>
+              <td class="p-3">Domain Scope</td>
+              <td class="p-3">Protects one specific hostname (typically covering both domain apex and www)</td>
+              <td class="p-3">Matches validation level</td>
+              <td class="p-3">Standard websites that run without independent subdomains.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">5. Wildcard Certificate (*.example.com)</td>
+              <td class="p-3">Domain Scope</td>
+              <td class="p-3">Protects the apex domain plus all first-level subdomains</td>
+              <td class="p-3">Requires DNS-01 verification</td>
+              <td class="p-3">Applications deploying multiple dynamic subdomains under a common root.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">6. Multi-Domain (SAN / UCC)</td>
+              <td class="p-3">Domain Scope</td>
+              <td class="p-3">Protects multiple distinct domain names on a single shared certificate</td>
+              <td class="p-3">Matches validation level</td>
+              <td class="p-3">Multi-brand corporate networks, web agencies, and unified communications servers.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        All three validation tiers (DV, OV, and EV) enforce identical 256-bit symmetric encryption strength across the wire. The practical distinction between free automated certificates from <a href="/free-ssl-lets-encrypt/" class="text-accent hover:underline">Let's Encrypt: Free Certificates and ACME Automation</a> and commercial options relates entirely to the manual background checks performed by the <a href="/certificate-authorities-explained/" class="text-accent hover:underline">Certificate Authorities and the Web of Trust</a> prior to cryptographic signing.
+      </p>
+
+      <h2 id="how-does-dns-connect-to-ssl-tls-5-critical-touchpoints">How Does DNS Connect to SSL/TLS? (5 Critical Touchpoints)</h2>
+      <p>
+        Although SSL/TLS operates at the transport layer and DNS operates at the naming layer, 5 DNS mechanisms directly govern how SSL certificates are issued, selected, and enforced.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Resolving A and AAAA address records precedes every TLS connection:</strong> Browsers query DNS for host IP addresses before initiating TCP connections on port 443; orphaned IPv6 AAAA records pointing to decommissioned servers frequently cause domain mismatch warnings, analyzed in <a href="/ssl-certificate-errors/" class="text-accent hover:underline">SSL Certificate Errors: Common Browser Codes, Causes, and How to Fix Them</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Passing the hostname via Server Name Indication (SNI) enables multi-tenant hosting:</strong> Because modern edge proxies and CDNs host thousands of separate domains on shared IP addresses, the client includes the queried DNS hostname inside the <abbr class="pd-term" data-tip="SNI: Server Name Indication, TLS extension passing the target hostname in ClientHello">Server Name Indication (SNI)</abbr> extension during ClientHello so the server returns the matching certificate.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Restricting issuance authority using DNS CAA records protects domain apexes:</strong> Publishing a <a href="/caa-record/" class="text-accent hover:underline">CAA Record</a> restricts which Certificate Authorities receive permission to issue certificates for your hostname, validated through the <a href="/caa-record-lookup/" class="text-accent hover:underline">CAA Record Lookup</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Automating DNS-01 validation challenges powers wildcard certificate renewals:</strong> Issuing wildcard certificates requires proof of DNS zone ownership through automated <code>_acme-challenge</code> TXT records managed via DNS API integrations.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Securing downstream protocols expands TLS beyond standard web traffic:</strong> The same TLS protocol securing HTTPS encrypts domain queries in <a href="/doh-vs-dot/" class="text-accent hover:underline">DNS-over-HTTPS vs DNS-over-TLS</a> and protects email transit using <a href="/mta-sts/" class="text-accent hover:underline">MTA-STS</a>, testable with the <a href="/mta-sts-checker/" class="text-accent hover:underline">MTA-STS Record Checker</a> and the <a href="/smtp-tester/" class="text-accent hover:underline">SMTP Connectivity and STARTTLS Tester</a>.
+        </li>
+      </ol>
+
+      <p>
+        Evaluating transport-layer encryption alongside DNS cryptographic signing clarifies how both protocols secure web communications, compared in <a href="/https-vs-dnssec/" class="text-accent hover:underline">HTTPS vs DNSSEC: Encryption vs Authentication</a>.
+      </p>
+
+      <h2 id="how-to-enable-https-and-inspect-any-websites-ssl-tls-certificate-4-steps">How to Enable HTTPS and Inspect Any Website's SSL/TLS Certificate (4 Steps)</h2>
+      <p>
+        To deploy a trusted SSL/TLS certificate on your domain, enforce HTTPS redirects, and inspect the live certificate chain from your browser or terminal, complete 4 operational steps.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Provision an Automated TLS Certificate:</strong> Generate a trusted certificate covering both apex and www hostnames via Certbot and ACME or enable managed edge certificates through your cloud CDN provider.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Enforce Strict HTTPS Redirection:</strong> Configure permanent HTTP 301 redirects from port 80 to port 443 while publishing <a href="/hsts-explained/" class="text-accent hover:underline">HSTS: HTTP Strict Transport Security</a> response headers to prevent protocol downgrade attacks.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Inspect Certificate Details in Developer Tools:</strong> Review issuing authorities, signature algorithms, and cipher suite parameters directly inside browser developer tools under the dedicated Security panel.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Verify Handshake Negotiation via Command Line:</strong> Inspect server response headers, full intermediate certificate chains, and SNI parameters directly from your terminal using standard curl and OpenSSL utilities:
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code># 1. Check TLS version, cipher suite, and certificate dates via curl:
+curl -Iv https://example.com
+
+# 2. Inspect full certificate chain and SNI with OpenSSL:
+openssl s_client -connect example.com:443 -servername example.com</code></pre>
+        </li>
+      </ol>
+
+      <p>
+        Deploying automated certificate renewals, secure cipher suites, and complete DNS validation policies forms an essential requirement across modern <a href="/ssl-tls/" class="text-accent hover:underline">SSL/TLS and Web Security Basics</a>. Understanding what is SSL/TLS, analyzing SSL vs TLS vs HTTPS, enforcing encryption, authentication, and data integrity, mastering the TLS 1.3 1-RTT handshake, separating asymmetric key exchange and symmetric session keys, and maintaining DV, OV, EV, and wildcard X.509 certificates ensure private, authenticated communication across global networks.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="mt-4 space-y-3">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why do people still call it an "SSL certificate" if SSL was replaced by TLS?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>The name "SSL" had already become the universal industry term used by web hosts, browsers, and customers by the time the IETF upgraded Netscape's SSL 3.0 to TLS 1.0 in 1999. Every "SSL certificate" you buy or generate today is actually a TLS certificate (X.509) that secures TLS 1.2 and TLS 1.3 connections.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does SSL/TLS use symmetric or asymmetric encryption?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>SSL/TLS uses both: during the initial millisecond TLS handshake, it uses asymmetric encryption (public and private keys via ECDSA or RSA and ECDHE) to verify the server's identity and safely agree on a shared secret. Once the handshake finishes, it switches to fast symmetric encryption (AES-GCM or ChaCha20-Poly1305) to encrypt all actual webpage data.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Is a free Let's Encrypt SSL certificate just as secure as a paid $200 SSL certificate?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Yes, in practice a free Let's Encrypt Domain Validated (DV) certificate provides the exact same 256-bit TLS 1.3 encryption strength and browser trust as a $200 commercial certificate. Paid Organization Validated (OV) and Extended Validation (EV) certificates only add manual human verification of your company's legal registration; they do not make the encryption itself any stronger.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does having an SSL/TLS certificate (HTTPS) improve my Google Search rankings?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Yes, in real-world SEO, HTTPS has been a confirmed Google Search ranking signal since 2014 and is a mandatory baseline for Core Web Vitals and HTTP/2 or HTTP/3 performance. More importantly, modern browsers display a loud "Not Secure" warning on any http:// site, which causes visitors to bounce immediately and ruins conversion rates.</p>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 </BaseLayout>
