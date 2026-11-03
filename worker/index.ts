@@ -81,17 +81,3 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
 
     return env.ASSETS.fetch(request);
 }
-
-  // Monitoring engine: re-scan every monitored domain every 6 hours
-  // (crontab in wrangler.toml).
-  async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
-    if (!env.DB) return;
-    ctx.waitUntil(runScheduled(env));
-  },
-
-  // DMARC aggregate report ingestion: invoked by the Email Routing rule
-  // for reports@promptdns.com (rule created in the Cloudflare dashboard).
-  async email(message: ForwardableEmailMessage, env: Env & AuthEnv, _ctx: ExecutionContext): Promise<void> {
-    await handleDmarcEmail(message, env);
-  },
-} satisfies ExportedHandler<Env & AuthEnv>;
