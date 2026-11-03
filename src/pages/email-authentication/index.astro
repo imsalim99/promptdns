@@ -1,169 +1,799 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-/** slug -> display name, built from the ESP matrix filenames via the tools data is not
- *  available here, so maintain the mapping used by the generator in one place. */
-const espNames: Record<string, string> = Object.fromEntries([
-  ['sendgrid','SendGrid'],['mailchimp','Mailchimp'],['hubspot','HubSpot'],['zoho-mail','Zoho Mail'],
-  ['brevo','Brevo (Sendinblue)'],['klaviyo','Klaviyo'],['postmark','Postmark'],['mailgun','Mailgun'],
-  ['mandrill','Mandrill'],['salesforce','Salesforce'],['pipedrive','Pipedrive'],['zendesk','Zendesk'],
-  ['freshdesk','Freshdesk'],['atlassian','Atlassian (Jira/Confluence)'],['intercom','Intercom'],
-  ['activecampaign','ActiveCampaign'],['constant-contact','Constant Contact'],['mailerlite','MailerLite'],
-  ['getresponse','GetResponse'],['aweber','AWeber'],['mailjet','Mailjet'],['moosend','Moosend'],
-  ['campaign-monitor','Campaign Monitor'],['customer-io','Customer.io'],['sparkpost','SparkPost'],
-  ['amazon-ses','Amazon SES'],['smtp2go','SMTP2GO'],['socketlabs','SocketLabs'],['shopify-email','Shopify Email'],
-  ['woocommerce','WooCommerce'],['bigcommerce','BigCommerce'],['woodpecker','Woodpecker'],
-  ['instantly','Instantly'],['lemlist','Lemlist'],['reply-io','Reply.io'],['gmass','GMass'],
-  ['sendy','Sendy'],['drip','Drip'],['dotdigital','Dotdigital'],['ongage','Ongage'],
-  ['pepipost','Pepipost (Netcore)'],['mailer-send','MailerSend'],
-]);
-const slugToName = (slug: string) => espNames[slug] ?? slug;
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
 
-const sections = [
-  { href: '/spf-record/', title: 'SPF, Sender Policy Framework', desc: 'Which servers may send mail as your domain. Syntax, examples, and the 10-lookup limit.' },
-  { href: '/dkim/', title: 'DKIM, DomainKeys Identified Mail', desc: 'Cryptographic signing that proves mail wasn\u2019t tampered with in transit.' },
-  { href: '/dmarc/', title: 'DMARC, Policy + Reporting', desc: 'The policy layer that tells receivers what to do when SPF/DKIM fail, and reports back.' },
-  { href: '/spf-permerror/', title: 'SPF PermError', desc: 'What it means when SPF cannot be evaluated, and how to fix it safely.' },
-  { href: '/dmarc-alignment/', title: 'DMARC Alignment', desc: 'Why mail can pass SPF and still fail DMARC: relaxed vs strict alignment.' },
-  { href: '/spf-softfail-vs-hardfail/', title: 'Softfail vs Hardfail', desc: '~all vs -all: what each means and how to choose based on your senders.' },
-  { href: '/bimi/', title: 'BIMI', desc: 'Display your verified logo in inboxes.' },
-  { href: '/mta-sts/', title: 'MTA-STS & TLS-RPT', desc: 'Enforce TLS for inbound mail and get failure reports.' },
-  { href: '/email-ports-587-465-25/', title: 'Email Ports Explained', desc: '25 vs 465 vs 587: which port for which purpose.' },
-  { href: '/how-to-read-email-headers/', title: 'How to Read Email Headers', desc: 'The delivery story: authentication verdicts, hops, red flags.' },
-  { href: '/spf-dkim-dmarc-google-workspace/', title: 'Google Workspace Setup', desc: 'SPF, DKIM, and DMARC step by step for Google Workspace.' },
-  { href: '/spf-dkim-dmarc-microsoft-365/', title: 'Microsoft 365 Setup', desc: 'SPF, DKIM, and DMARC step by step for Microsoft 365.' },
-  { href: '/email-deliverability/', title: 'Email Deliverability', desc: 'Sender reputation, bounce handling, warm-up schedules, and staying out of spam.' },
-  { href: '/ssl-tls/', title: 'SSL/TLS Guides', desc: 'Certificates, HSTS, TLS versions, and HTTPS best practices.' },
+const spfCards: HubCard[] = [
+  {
+    href: '/spf-record/',
+    badge: 'Pillar Guide',
+    title: 'SPF Record: The Complete Guide',
+    desc: 'How SPF evaluation works during SMTP delivery, mechanism lookup costs, the 7 RFC 7208 outcomes, and setup.',
+  },
+  {
+    href: '/spf-record-syntax/',
+    badge: 'Syntax Reference',
+    title: 'SPF Record Syntax',
+    desc: 'Complete reference for every SPF mechanism (ip4, ip6, include, a, mx, exists), qualifier (+, -, ~, ?), and modifier.',
+  },
+  {
+    href: '/spf-mechanisms-explained/',
+    badge: 'Core Concept',
+    title: 'SPF Mechanisms Explained',
+    desc: 'Deep breakdown of include, ip4, ip6, a, mx, ptr (deprecated), and all with zone examples.',
+  },
+  {
+    href: '/spf-record-examples/',
+    badge: 'Examples',
+    title: 'SPF Record Examples',
+    desc: 'Copy-paste v=spf1 configurations for Google Workspace, Microsoft 365, SendGrid, multi-ESP domains, and parked domains.',
+  },
+  {
+    href: '/how-to-create-spf-record/',
+    badge: 'Setup Guide',
+    title: 'How to Create an SPF Record',
+    desc: 'Step-by-step workflow to inventory your senders, merge includes into one record, and publish at @.',
+  },
+  {
+    href: '/spf-lookup-limit/',
+    badge: 'RFC 7208 Limit',
+    title: 'The SPF 10-Lookup Limit Explained',
+    desc: 'Why RFC 7208 caps DNS-querying mechanisms at 10 (and void lookups at 2) and how to stay under the ceiling.',
+  },
+  {
+    href: '/spf-flattening/',
+    badge: 'Optimization',
+    title: 'SPF Flattening Explained',
+    desc: 'How resolving nested vendor includes into flat IPv4 and IPv6 addresses eliminates PermError lookup failures.',
+  },
+  {
+    href: '/spf-permerror/',
+    badge: 'Troubleshooting',
+    title: 'SPF PermError: Causes and Fixes',
+    desc: 'Fix permanent SPF failures caused by duplicate v=spf1 records, >10 lookups, syntax typos, or lookup loops.',
+  },
+  {
+    href: '/spf-temperror/',
+    badge: 'Troubleshooting',
+    title: 'SPF TempError: Causes and Fixes',
+    desc: 'Diagnose transient 4xx DNS timeout and SERVFAIL errors during receiving MTA SPF evaluation.',
+  },
+  {
+    href: '/spf-softfail-vs-hardfail/',
+    badge: 'Comparison',
+    title: 'SPF Softfail (~all) vs Hardfail (-all)',
+    desc: 'Compare how receiving servers and DMARC treat ~all versus -all and when to use each qualifier.',
+  },
+  {
+    href: '/spf-record-too-long/',
+    badge: 'Troubleshooting',
+    title: 'SPF Record Too Long? (255-Char Limit)',
+    desc: 'Split long SPF strings across multiple quoted 255-character TXT segments and keep UDP packets compact.',
+  },
+  {
+    href: '/spf-vs-dkim/',
+    badge: 'Comparison',
+    title: 'SPF vs DKIM: Why You Need Both',
+    desc: 'Compare IP-based envelope verification (SPF) against cryptographic header signing (DKIM) and forwarding survival.',
+  },
+  {
+    href: '/spf-vs-dmarc/',
+    badge: 'Comparison',
+    title: 'SPF vs DMARC: How They Work Together',
+    desc: 'Understand why SPF checks the hidden Return-Path while DMARC protects the visible From: address.',
+  },
 ];
+
+const dkimCards: HubCard[] = [
+  {
+    href: '/dkim/',
+    badge: 'Pillar Guide',
+    title: 'DKIM Explained: Cryptographic Email Signing',
+    desc: 'The 7-step signing and verification flow, header vs DNS tags, default ESP selectors, and replay protection.',
+  },
+  {
+    href: '/how-dkim-works/',
+    badge: 'Core Mechanism',
+    title: 'How DKIM Works Step by Step',
+    desc: 'Trace header/body hashing (bh=), private-key signing (b=), and public-key DNS lookup verification.',
+  },
+  {
+    href: '/dkim-selector/',
+    badge: 'Core Concept',
+    title: 'What Is a DKIM Selector (s=)?',
+    desc: 'How selectors namespace multiple public keys under _domainkey and how to find your selector in raw headers.',
+  },
+  {
+    href: '/dkim-key-length/',
+    badge: 'Security Standard',
+    title: 'DKIM Key Length: 1024-Bit vs 2048-Bit RSA',
+    desc: 'Why RFC 8301 revoked <1024-bit keys, how to split 2048-bit keys in DNS, and Ed25519 (RFC 8463) adoption.',
+  },
+  {
+    href: '/how-to-add-dkim-record/',
+    badge: 'Setup Guide',
+    title: 'How to Add a DKIM Record',
+    desc: 'Publish TXT public keys or delegated CNAME selectors at your DNS host without proxy or quote errors.',
+  },
+  {
+    href: '/dkim-not-signing/',
+    badge: 'Troubleshooting',
+    title: 'DKIM Failing? Diagnosis and Fixes',
+    desc: 'Fix dkim=fail errors caused by body modification in transit, proxied CNAMEs, or mismatched selectors.',
+  },
+  {
+    href: '/dkim-vs-dmarc/',
+    badge: 'Comparison',
+    title: 'DKIM vs DMARC: How They Work Together',
+    desc: 'How DKIM provides the cryptographic d= domain signature that DMARC checks for Identifier Alignment.',
+  },
+  {
+    href: '/multiple-dkim-selectors/',
+    badge: 'Operations',
+    title: 'Multiple DKIM Selectors & Key Rotation',
+    desc: 'Run Google Workspace, SendGrid, and Mailchimp simultaneously on one domain using independent selectors.',
+  },
+  {
+    href: '/dkim-canonicalization/',
+    badge: 'RFC 6376 Spec',
+    title: 'DKIM Canonicalization: relaxed vs simple',
+    desc: 'Why c=relaxed/relaxed prevents whitespace and header-folding changes from breaking signatures in transit.',
+  },
+];
+
+const dmarcCards: HubCard[] = [
+  {
+    href: '/dmarc/',
+    badge: 'Pillar Guide',
+    title: 'DMARC: Policy, Alignment, and Reporting',
+    desc: 'How DMARC unifies SPF and DKIM, the 6-step evaluation flow, 3-stage rollout, and 2026 compliance rules.',
+  },
+  {
+    href: '/dmarc-record/',
+    badge: 'Pillar Guide',
+    title: 'DMARC Record: Syntax & 8 Examples',
+    desc: 'Tag-by-tag _dmarc TXT anatomy, 8 copy-paste production recipes, alignment matrix, and 7 syntax errors.',
+  },
+  {
+    href: '/dmarc-record-syntax/',
+    badge: 'Tag Reference',
+    title: 'DMARC Tags Explained',
+    desc: 'Complete specification for v, p, sp, rua, ruf, adkim, aspf, pct, fo, rf, and ri tags.',
+  },
+  {
+    href: '/dmarc-policies/',
+    badge: 'Core Concept',
+    title: 'DMARC Policies: none, quarantine, reject',
+    desc: 'Compare monitoring mode (p=none), spam-folder routing (p=quarantine), and SMTP blocking (p=reject).',
+  },
+  {
+    href: '/dmarc-alignment/',
+    badge: 'Core Concept',
+    title: 'DMARC Identifier Alignment Explained',
+    desc: 'How Relaxed (r) organizational domain matching and Strict (s) exact FQDN matching work for SPF and DKIM.',
+  },
+  {
+    href: '/dmarc-enforcement-roadmap/',
+    badge: 'Rollout Playbook',
+    title: 'From p=none to p=reject: Enforcement Roadmap',
+    desc: 'Step-by-step phased rollout schedule to reach full p=reject enforcement without blocking legitimate mail.',
+  },
+  {
+    href: '/dmarc-aggregate-reports/',
+    badge: 'Reporting',
+    title: 'DMARC Aggregate Reports (RUA)',
+    desc: 'What daily compressed XML reports contain, how rua=mailto: works, and how to spot unknown senders.',
+  },
+  {
+    href: '/dmarc-forensic-reports/',
+    badge: 'Reporting',
+    title: 'DMARC Forensic Reports (RUF)',
+    desc: 'How per-message AFRF failure reports work (fo= tag) and why major receivers dropped RUF for privacy.',
+  },
+  {
+    href: '/how-to-read-dmarc-reports/',
+    badge: 'Tutorial',
+    title: 'How to Read DMARC XML Reports',
+    desc: 'Annotated walkthrough of raw DMARC XML tags (<record>, <row>, <policy_evaluated>, <auth_results>).',
+  },
+  {
+    href: '/how-to-create-dmarc-record/',
+    badge: 'Setup Guide',
+    title: 'How to Create a DMARC Record',
+    desc: 'Generate and publish your _dmarc TXT record in DNS after completing the 48-hour SPF/DKIM warm-up.',
+  },
+  {
+    href: '/dmarc-pct-tag/',
+    badge: 'Tag Guide',
+    title: 'DMARC pct Tag: Phased Sampling',
+    desc: 'How pct=25 to pct=100 samples quarantine/reject policies during rollout and DMARCbis updates.',
+  },
+  {
+    href: '/dmarc-subdomain-policy/',
+    badge: 'Tag Guide',
+    title: 'DMARC sp Tag: Subdomain Lockdown',
+    desc: 'Use sp=reject to lock down unused and wildcard subdomains even while your root domain is at p=none.',
+  },
+  {
+    href: '/dmarc-vs-spf-vs-dkim/',
+    badge: 'Master Comparison',
+    title: 'DMARC vs SPF vs DKIM Compared',
+    desc: 'Side-by-side architectural matrix comparing what SPF, DKIM, and DMARC verify, where they live, and how they interact.',
+  },
+  {
+    href: '/bimi/',
+    badge: 'Brand Trust',
+    title: 'BIMI: Brand Logo in Inboxes',
+    desc: 'Display your verified brand logo next to authenticated emails in Gmail, Apple Mail, and Yahoo.',
+  },
+  {
+    href: '/bimi-record/',
+    badge: 'Syntax Guide',
+    title: 'BIMI Record Syntax (default._bimi)',
+    desc: 'Format v=BIMI1; l= (SVG Tiny P/S logo URL) and a= (VMC / CMC certificate URL) in DNS.',
+  },
+  {
+    href: '/bimi-vmc/',
+    badge: 'Certificate Guide',
+    title: 'BIMI VMC: Verified Mark Certificates',
+    desc: 'Trademark requirements, VMC vs CMC certificates, and DMARC enforcement prerequisites for Gmail checkmarks.',
+  },
+  {
+    href: '/mta-sts/',
+    badge: 'Transport Security',
+    title: 'MTA-STS: Enforcing Inbound SMTP TLS',
+    desc: 'Prevent STARTTLS downgrade and man-in-the-middle attacks on inbound email with RFC 8461 policies.',
+  },
+  {
+    href: '/mta-sts-record/',
+    badge: 'Setup Guide',
+    title: 'MTA-STS Record & Policy File Setup',
+    desc: 'Publish _mta-sts TXT records and host /.well-known/mta-sts.txt in testing or enforce mode.',
+  },
+  {
+    href: '/tls-rpt/',
+    badge: 'TLS Reporting',
+    title: 'TLS-RPT: SMTP TLS Failure Reporting',
+    desc: 'Receive daily JSON reports from Gmail and Microsoft detailing TLS handshake and certificate failures.',
+  },
+  {
+    href: '/tls-rpt-record/',
+    badge: 'Syntax Guide',
+    title: 'TLS-RPT Record Syntax (_smtp._tls)',
+    desc: 'Configure v=TLSRPTv1; rua=mailto: or https: reporting endpoints in your DNS zone.',
+  },
+  {
+    href: '/arc-seal-explained/',
+    badge: 'Forwarding Standard',
+    title: 'ARC Explained (RFC 8617)',
+    desc: 'How Authenticated Received Chain headers (ARC-Seal, ARC-Message-Signature, AAR) preserve auth across forwarders.',
+  },
+  {
+    href: '/check-spf-dkim-dmarc-dig/',
+    badge: 'CLI Tutorial',
+    title: 'Check SPF, DKIM, and DMARC with dig',
+    desc: 'Exact terminal dig and nslookup commands to query and decode email authentication records.',
+  },
+  {
+    href: '/gmail-yahoo-bulk-sender-requirements/',
+    badge: '2026 Mandate',
+    title: 'Gmail & Yahoo Bulk Sender Requirements',
+    desc: 'Full compliance checklist for 5,000+ daily senders: SPF, DKIM, DMARC, <0.10% spam rate, and RFC 8058 unsubscribe.',
+  },
+  {
+    href: '/pci-dss-4-0-dmarc-requirements/',
+    badge: 'Compliance',
+    title: 'PCI-DSS 4.0 and DMARC Requirements',
+    desc: 'How payment-processing entities satisfy PCI DSS v4.0.1 anti-phishing controls with DMARC, SPF, and DKIM.',
+  },
+  {
+    href: '/nis2-dns-and-email-security-requirements/',
+    badge: 'EU Directive',
+    title: 'NIS2 DNS and Email Security Requirements',
+    desc: 'Map EU NIS2 Article 21 cybersecurity obligations to DMARC enforcement, DNSSEC, and MTA-STS.',
+  },
+];
+
+const espCards: HubCard[] = [
+  { href: '/spf-dkim-dmarc-google-workspace/', badge: 'ESP Playbook', title: 'Google Workspace', desc: 'SPF include:_spf.google.com, 2048-bit DKIM selector setup, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-microsoft-365/', badge: 'ESP Playbook', title: 'Microsoft 365', desc: 'SPF include:spf.protection.outlook.com, dual CNAME selector DKIM, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-amazon-ses/', badge: 'ESP Playbook', title: 'Amazon SES', desc: 'Custom MAIL FROM subdomain SPF, Easy DKIM CNAME tokens, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-sendgrid/', badge: 'ESP Playbook', title: 'SendGrid', desc: 'Automated security CNAMEs, custom Return-Path SPF, and DKIM signing.' },
+  { href: '/spf-dkim-dmarc-mailchimp/', badge: 'ESP Playbook', title: 'Mailchimp', desc: 'Custom domain authentication, k2/k3 CNAME DKIM selectors, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-postmark/', badge: 'ESP Playbook', title: 'Postmark', desc: 'Dedicated Return-Path CNAME for SPF, 2048-bit DKIM TXT keys, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-mailgun/', badge: 'ESP Playbook', title: 'Mailgun', desc: 'Sending subdomain setup, k1/k2 DKIM selectors, and MX routing rules.' },
+  { href: '/spf-dkim-dmarc-klaviyo/', badge: 'ESP Playbook', title: 'Klaviyo', desc: 'Branded sending domain setup, dual CNAME DKIM keys, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-hubspot/', badge: 'ESP Playbook', title: 'HubSpot', desc: 'Email sending domain connection, dual CNAME DKIM records, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-zoho-mail/', badge: 'ESP Playbook', title: 'Zoho Mail', desc: 'SPF include:zoho.com, TXT selector DKIM configuration, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-brevo/', badge: 'ESP Playbook', title: 'Brevo (Sendinblue)', desc: 'Sender domain validation, mail._domainkey DKIM configuration, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-activecampaign/', badge: 'ESP Playbook', title: 'ActiveCampaign', desc: 'Custom domain verification, CNAME DKIM delegation, and Return-Path SPF.' },
+  { href: '/spf-dkim-dmarc-mailerlite/', badge: 'ESP Playbook', title: 'MailerLite', desc: 'Domain authentication, ml._domainkey DKIM record, and SPF include setup.' },
+  { href: '/spf-dkim-dmarc-mailer-send/', badge: 'ESP Playbook', title: 'MailerSend', desc: 'Sending domain configuration, custom Return-Path, and 2048-bit DKIM keys.' },
+  { href: '/spf-dkim-dmarc-drip/', badge: 'ESP Playbook', title: 'ConvertKit / Drip', desc: 'Automated email sending authentication, custom DKIM records, and Return-Path SPF.' },
+  { href: '/spf-dkim-dmarc-customer-io/', badge: 'ESP Playbook', title: 'Customer.io', desc: 'Custom tracking and sending domains, dual CNAME DKIM, and SPF setup.' },
+  { href: '/spf-dkim-dmarc-intercom/', badge: 'ESP Playbook', title: 'Intercom', desc: 'Outbound email verification, custom Return-Path, and CNAME DKIM records.' },
+  { href: '/spf-dkim-dmarc-zendesk/', badge: 'ESP Playbook', title: 'Zendesk', desc: 'Support address SPF include:mail.zendesk.com and zendesk1/zendesk2 DKIM setup.' },
+  { href: '/spf-dkim-dmarc-freshdesk/', badge: 'ESP Playbook', title: 'Freshdesk', desc: 'Helpdesk email SPF include:email.freshdesk.com and CNAME DKIM configuration.' },
+  { href: '/spf-dkim-dmarc-salesforce/', badge: 'ESP Playbook', title: 'Salesforce', desc: 'DKIM Key Management, 2048-bit selector publication, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-pipedrive/', badge: 'ESP Playbook', title: 'Pipedrive', desc: 'Sales CRM email sync authentication, custom SPF include, and DKIM records.' },
+  { href: '/spf-dkim-dmarc-atlassian/', badge: 'ESP Playbook', title: 'Atlassian (Jira)', desc: 'Jira Service Management notification SPF and custom DKIM selector setup.' },
+  { href: '/spf-dkim-dmarc-shopify-email/', badge: 'ESP Playbook', title: 'Shopify Email', desc: 'Store notification SPF include:shops.shopify.com and 4 CNAME records setup.' },
+  { href: '/spf-dkim-dmarc-woocommerce/', badge: 'ESP Playbook', title: 'WooCommerce', desc: 'Transactional store email routing, SMTP plugin configuration, and SPF/DKIM.' },
+  { href: '/spf-dkim-dmarc-bigcommerce/', badge: 'ESP Playbook', title: 'BigCommerce', desc: 'Ecommerce storefront notification SPF include:outmail.bigcommerce.com and DKIM.' },
+  { href: '/spf-dkim-dmarc-constant-contact/', badge: 'ESP Playbook', title: 'Constant Contact', desc: 'Self-authentication setup, custom domain DKIM CNAMEs, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-getresponse/', badge: 'ESP Playbook', title: 'GetResponse', desc: 'Email marketing domain authentication, TXT DKIM keys, and SPF include.' },
+  { href: '/spf-dkim-dmarc-aweber/', badge: 'ESP Playbook', title: 'AWeber', desc: 'Custom domain authentication, 3 CNAME DKIM selectors, and SPF alignment.' },
+  { href: '/spf-dkim-dmarc-campaign-monitor/', badge: 'ESP Playbook', title: 'Campaign Monitor', desc: 'Client sending domain verification, custom Return-Path, and DKIM keys.' },
+  { href: '/spf-dkim-dmarc-mailjet/', badge: 'ESP Playbook', title: 'Mailjet', desc: 'Domain validation, mailjet._domainkey TXT configuration, and SPF include.' },
+  { href: '/spf-dkim-dmarc-mandrill/', badge: 'ESP Playbook', title: 'Mandrill', desc: 'Mailchimp transactional sending, custom Return-Path, and mandrill._domainkey DKIM.' },
+  { href: '/spf-dkim-dmarc-sparkpost/', badge: 'ESP Playbook', title: 'SparkPost', desc: 'Sending domain configuration, CNAME/TXT DKIM verification, and bounce domains.' },
+  { href: '/spf-dkim-dmarc-smtp2go/', badge: 'ESP Playbook', title: 'SMTP2GO', desc: 'Sender domain authentication, 3 CNAME records, and automated Return-Path SPF.' },
+  { href: '/spf-dkim-dmarc-socketlabs/', badge: 'ESP Playbook', title: 'SocketLabs', desc: 'Custom bounce domain SPF, automated DKIM signing, and DMARC alignment.' },
+  { href: '/spf-dkim-dmarc-pepipost/', badge: 'ESP Playbook', title: 'Netcore (Pepipost)', desc: 'Transactional email domain verification, TXT DKIM, and custom Return-Path.' },
+  { href: '/spf-dkim-dmarc-instantly/', badge: 'ESP Playbook', title: 'Instantly', desc: 'Cold email inbox warmup, custom tracking domain, SPF, and DKIM configuration.' },
+  { href: '/spf-dkim-dmarc-lemlist/', badge: 'ESP Playbook', title: 'Lemlist', desc: 'Sales outreach domain setup, custom tracking domain, and SPF/DKIM verification.' },
+  { href: '/spf-dkim-dmarc-woodpecker/', badge: 'ESP Playbook', title: 'Woodpecker', desc: 'Cold email campaign domain authentication, SPF include, and DKIM configuration.' },
+  { href: '/spf-dkim-dmarc-reply-io/', badge: 'ESP Playbook', title: 'Reply.io', desc: 'Sales engagement domain verification, custom Return-Path, and DKIM keys.' },
+  { href: '/spf-dkim-dmarc-gmass/', badge: 'ESP Playbook', title: 'GMass', desc: 'Gmail mail merge authentication, custom tracking domain, and SPF/DKIM verification.' },
+  { href: '/spf-dkim-dmarc-sendy/', badge: 'ESP Playbook', title: 'Sendy', desc: 'Self-hosted Amazon SES integration, custom MAIL FROM, and DKIM setup.' },
+  { href: '/spf-dkim-dmarc-moosend/', badge: 'ESP Playbook', title: 'Moosend', desc: 'Email marketing domain authentication, TXT DKIM keys, and SPF include.' },
+  { href: '/spf-dkim-dmarc-dotdigital/', badge: 'ESP Playbook', title: 'Dotdigital', desc: 'Custom sender domain verification, CNAME DKIM delegation, and Return-Path SPF.' },
+  { href: '/spf-dkim-dmarc-ongage/', badge: 'ESP Playbook', title: 'Ongage', desc: 'Multi-vendor SMTP relay authentication, custom Return-Path, and DKIM signing.' },
+];
+
+const toolCards: HubCard[] = [
+  {
+    href: '/spf-record-checker/',
+    badge: 'Free Tool',
+    title: 'SPF Record Checker',
+    desc: 'Validate v=spf1 syntax, expand nested includes, and audit the 10-DNS-lookup limit live.',
+  },
+  {
+    href: '/spf-flattener/',
+    badge: 'Free Tool',
+    title: 'SPF Flattener',
+    desc: 'Resolve nested ESP includes into flat ip4 and ip6 CIDR blocks to fix SPF PermErrors.',
+  },
+  {
+    href: '/spf-record-generator/',
+    badge: 'Free Builder',
+    title: 'SPF Record Generator',
+    desc: 'Build a clean, single v=spf1 TXT record for your mail servers and third-party ESPs.',
+  },
+  {
+    href: '/dkim-record-checker/',
+    badge: 'Free Tool',
+    title: 'DKIM Record Checker',
+    desc: 'Verify _domainkey public keys, selector resolution, and 2048-bit RSA key strength.',
+  },
+  {
+    href: '/dkim-record-generator/',
+    badge: 'Free Builder',
+    title: 'DKIM Record Generator',
+    desc: 'Generate 2048-bit RSA public/private DKIM key pairs and properly split DNS TXT strings.',
+  },
+  {
+    href: '/dmarc-record-checker/',
+    badge: 'Free Tool',
+    title: 'DMARC Record Checker',
+    desc: 'Audit _dmarc policy (none, quarantine, reject), alignment modes, and RUA reporting URIs.',
+  },
+  {
+    href: '/dmarc-record-generator/',
+    badge: 'Free Builder',
+    title: 'DMARC Record Generator',
+    desc: 'Create a valid v=DMARC1 TXT record tailored to your rollout stage in seconds.',
+  },
+  {
+    href: '/dmarc-report-analyzer/',
+    badge: 'XML Parser',
+    title: 'DMARC Report Analyzer',
+    desc: 'Upload .xml, .zip, or .gz RUA reports locally in your browser to inspect sending IPs and pass rates.',
+  },
+  {
+    href: '/bimi-record-checker/',
+    badge: 'Free Tool',
+    title: 'BIMI Record Checker',
+    desc: 'Validate default._bimi TXT records, SVG Tiny P/S logos, and VMC certificates.',
+  },
+  {
+    href: '/mta-sts-checker/',
+    badge: 'Free Tool',
+    title: 'MTA-STS Record Checker',
+    desc: 'Verify both _mta-sts DNS TXT records and hosted /.well-known/mta-sts.txt HTTPS policies.',
+  },
+  {
+    href: '/tls-rpt-checker/',
+    badge: 'Free Tool',
+    title: 'TLS-RPT Record Checker',
+    desc: 'Check _smtp._tls TXT syntax and reporting endpoints for SMTP TLS failure reports.',
+  },
+  {
+    href: '/email-header-analyzer/',
+    badge: 'Local Parser',
+    title: 'Email Header Analyzer',
+    desc: 'Paste raw email headers to inspect Received hops, SPF, DKIM, DMARC, and ARC verdicts.',
+  },
+  {
+    href: '/autodiscover-checker/',
+    badge: 'Free Tool',
+    title: 'Autodiscover / Autoconfig Checker',
+    desc: 'Test Outlook Autodiscover and Thunderbird Autoconfig DNS records and XML endpoints.',
+  },
+  {
+    href: '/dmarc-monitoring/',
+    badge: 'Continuous Monitoring',
+    title: 'Automated DMARC & DNS Monitoring',
+    desc: 'Ingest daily RUA XML reports automatically, identify senders, and get 6-hour DNS drift alerts.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Why do I need all three of SPF, DKIM, and DMARC instead of just one?',
+    a: 'Each protocol solves a different vulnerability that the other two cannot fix alone: SPF authorizes outbound server IP addresses on the hidden Return-Path (but breaks when an email is forwarded); DKIM attaches a cryptographic signature that survives forwarding (but does not prevent spoofing of the visible From: address); and DMARC ties both together by requiring the From: address to align with SPF or DKIM and telling receivers to block unauthenticated mail.',
+  },
+  {
+    q: 'In what order should I set up email authentication on a new domain?',
+    a: 'Always deploy email authentication from the bottom of the stack upward: first, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.',
+  },
+  {
+    q: 'Does passing SPF, DKIM, and DMARC guarantee my emails will land in the primary inbox?',
+    a: 'No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder (explored in our Email Deliverability hub).',
+  },
+  {
+    q: 'How do I authenticate 5 different email tools (Google Workspace, SendGrid, Mailchimp, HubSpot, Zendesk) on one domain?',
+    a: 'In real-world multi-sender setups, remember the cardinality rule for each protocol: your domain publishes only ONE root SPF record (merging all 5 tools into a single v=spf1 string, or using CNAME Return-Path subdomains to save lookups) and only ONE _dmarc record, while publishing 5 separate DKIM records (because each service gets its own unique <selector>._domainkey subdomain).',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Email Authentication: The Complete Guide to SPF, DKIM, DMARC, BIMI, and MTA-STS',
+  url: 'https://promptdns.com/email-authentication/',
+  description: 'Master hub for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Authentication', item: 'https://promptdns.com/email-authentication/' },
+  ],
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
+
 <BaseLayout
-  title="Email Authentication: SPF, DKIM & DMARC"
-  description="Set up SPF, DKIM, and DMARC to stop spoofing and land in the inbox. Complete guides with syntax, examples, and provider-specific steps."
+  title="Email Authentication: The Complete Guide to SPF, DKIM, DMARC, BIMI, and MTA-STS"
+  description="Master hub for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Email Authentication</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">Email Authentication</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Email Authentication: SPF, DKIM & DMARC</h1>
-    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      Email authentication proves your mail is really from you. Since Gmail, Yahoo, and Microsoft
-      began requiring SPF, DKIM, and DMARC for bulk senders, it is no longer optional. These
-      guides take you from first record to full enforcement.
-    </p>
 
-    <div class="mt-10 grid gap-4">
-      {sections.map((s) => (
-        <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
-          <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-        </a>
-      ))}
-    </div>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      Email Authentication: The Complete Guide to SPF, DKIM, DMARC, BIMI, and MTA-STS
+    </h1>
 
-    <!-- Deep guides: mechanism syntax, policies, reports, and the newer protocols -->
-    <div class="mt-16">
-      <div class="flex flex-wrap items-center gap-4 border-b border-line pb-4">
-        <span class="h-9 w-1.5 rounded-full bg-gradient-to-b from-accent to-violet" aria-hidden="true"></span>
-        <div class="flex-1">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Deep guides</h2>
-          <p class="mt-0.5 text-sm text-ink-faint">Mechanism syntax, policies, reports, and the protocols beyond DMARC</p>
-        </div>
-      </div>
-
-      {(
-        [
-          ['SPF', [
-            ['/spf-mechanisms-explained/', 'SPF mechanisms explained'],
-            ['/spf-record-examples/', 'SPF record examples'],
-            ['/how-to-create-spf-record/', 'How to create an SPF record'],
-            ['/spf-flattening/', 'SPF flattening'],
-            ['/spf-temperror/', 'SPF TempError'],
-            ['/spf-record-too-long/', 'SPF record too long'],
-            ['/spf-vs-dkim/', 'SPF vs DKIM'],
-            ['/spf-vs-dmarc/', 'SPF vs DMARC'],
-          ]],
-          ['DKIM', [
-            ['/how-dkim-works/', 'How DKIM works'],
-            ['/dkim-key-length/', 'DKIM key length'],
-            ['/dkim-not-signing/', 'DKIM not signing'],
-            ['/dkim-vs-dmarc/', 'DKIM vs DMARC'],
-            ['/multiple-dkim-selectors/', 'Multiple DKIM selectors'],
-            ['/dkim-canonicalization/', 'DKIM canonicalization'],
-          ]],
-          ['DMARC', [
-            ['/dmarc-record-syntax/', 'DMARC record syntax'],
-            ['/dmarc-policies/', 'DMARC policies'],
-            ['/dmarc-aggregate-reports/', 'DMARC aggregate reports'],
-            ['/dmarc-forensic-reports/', 'DMARC forensic reports'],
-            ['/how-to-create-dmarc-record/', 'How to create a DMARC record'],
-            ['/dmarc-enforcement-roadmap/', 'DMARC enforcement roadmap'],
-            ['/dmarc-pct-tag/', 'DMARC pct tag'],
-            ['/dmarc-subdomain-policy/', 'DMARC subdomain policy'],
-            ['/dmarc-vs-spf-vs-dkim/', 'DMARC vs SPF vs DKIM'],
-          ]],
-          ['Beyond DMARC', [
-            ['/bimi-record/', 'BIMI record'],
-            ['/bimi-vmc/', 'BIMI VMC certificate'],
-            ['/mta-sts-record/', 'MTA-STS record'],
-            ['/tls-rpt/', 'TLS-RPT'],
-            ['/tls-rpt-record/', 'TLS-RPT record'],
-            ['/arc-seal-explained/', 'ARC seal explained'],
-          ]],
-        ] as [string, [string, string][]][]
-      ).map(([label, links]) => (
-        <div class="mt-6">
-          <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{label}</p>
-          <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {links.map(([href, name]) => (
-              <a href={href} class="rounded-lg border border-line bg-panel/60 px-4 py-2.5 text-sm text-ink-dim transition-all hover:border-accent/40 hover:text-accent">
-                {name}
-              </a>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <!-- Per-service setup matrix -->
-    <div class="mt-16">
-      <div class="flex flex-wrap items-center gap-4 border-b border-line pb-4">
-        <span class="h-9 w-1.5 rounded-full bg-gradient-to-b from-accent to-violet" aria-hidden="true"></span>
-        <div class="flex-1">
-          <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Setup guides for every service</h2>
-          <p class="mt-0.5 text-sm text-ink-faint">SPF, DKIM, and DMARC setup, step by step, for 42 sending platforms</p>
-        </div>
-      </div>
-
-      {(
-        [
-          ['Email & marketing platforms', ['sendgrid','mailchimp','brevo','klaviyo','mailgun','mandrill','postmark','mailjet','moosend','campaign-monitor','customer-io','sparkpost','smtp2go','socketlabs','drip','dotdigital','ongage','pepipost','mailer-send','amazon-ses','activecampaign','constant-contact','mailerlite','getresponse','aweber','zoho-mail']],
-          ['CRM & business tools', ['hubspot','salesforce','pipedrive','zendesk','freshdesk','atlassian','intercom']],
-          ['Ecommerce', ['shopify-email','woocommerce','bigcommerce']],
-          ['Cold outreach', ['woodpecker','instantly','lemlist','reply-io','gmass']],
-          ['Self-hosted', ['sendy']],
-        ] as [string, string[]][]
-      ).map(([label, slugs]) => (
-        <div class="mt-6">
-          <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">{label}</p>
-          <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {slugs.map((slug) => (
-              <a href={`/spf-dkim-dmarc-${slug}/`} class="rounded-lg border border-line bg-panel/60 px-4 py-2.5 text-sm text-ink-dim transition-all hover:border-accent/40 hover:text-accent">
-                {slugToName[slug] ?? slug}
-              </a>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <div class="mt-12 rounded-xl border border-violet/25 bg-gradient-to-br from-violet/10 to-accent/10 p-6">
-      <h2 class="font-display font-semibold text-ink">Scan your domain</h2>
-      <p class="mt-1 text-sm text-ink-dim">
-        Check your SPF, DKIM, and DMARC in one pass with the
-        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a>,
-        live results, no signup.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        Email authentication is <strong class="text-ink">a stack of DNS-based security standards (SPF, DKIM, DMARC, ARC, BIMI, MTA-STS, and TLS-RPT) that verify sender identity, protect message integrity, and block domain spoofing</strong>. Standard SMTP lacks built-in sender verification. The 7 protocols work together in DNS to secure inbox delivery.
       </p>
+    </div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#stack">Protocol Overview (Master Table)</a></li>
+        <li><a href="#spf-guides">1. SPF Guides &amp; Limits</a></li>
+        <li><a href="#dkim-guides">2. DKIM Guides &amp; Selectors</a></li>
+        <li><a href="#dmarc-bimi-tls">3. DMARC, BIMI, MTA-STS &amp; Compliance</a></li>
+        <li><a href="#esp-guides">4. Per-Service ESP Setup Playbooks (44 Platforms)</a></li>
+        <li><a href="#auth-tools">5. Email Authentication Tools &amp; Checkers (14 Tools)</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Protocol Overview -->
+      <section id="stack" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 7 Email Authentication Protocols Work Together (Master Reference Table)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Simple Mail Transfer Protocol (<code>SMTP</code>, <code>RFC 5321</code>) was designed without built-in sender identity verification, allowing any server on the internet to claim any <code>From:</code> address. Over the past two decades, the IETF and mailbox providers standardized 7 complementary DNS-based protocols, where each layer closes a specific security gap left open by the layer beneath it. The table below compares all 7 email authentication and transport protocols by DNS record location, what each verifies, the gap it closes, and its governing specification.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Protocol</th>
+                <th class="px-4 py-3">DNS Record Location</th>
+                <th class="px-4 py-3">What It Verifies</th>
+                <th class="px-4 py-3">Gap It Closes / Main Limitation</th>
+                <th class="px-4 py-3">Standard</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. SPF</td>
+                <td class="px-4 py-3"><code>@</code> (or Return-Path subdomain) <code>TXT</code></td>
+                <td class="px-4 py-3">Whether the connecting mail server's IP is authorized to send for the envelope <code>MAIL FROM</code> (<code>Return-Path</code>) domain.</td>
+                <td class="px-4 py-3">Stops unauthorized IP sending; limited to <strong class="text-ink">10 DNS lookups</strong> and breaks when email is auto-forwarded.</td>
+                <td class="px-4 py-3"><code>RFC 7208</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. DKIM</td>
+                <td class="px-4 py-3"><code>&lt;selector&gt;._domainkey</code> <code>TXT</code> / <code>CNAME</code></td>
+                <td class="px-4 py-3">Cryptographic RSA or Ed25519 digital signature over the message headers and body hash (<code>bh=</code>).</td>
+                <td class="px-4 py-3">Proves message integrity and <strong class="text-ink">survives email forwarding</strong>, but does not prevent spoofing of the visible <code>From:</code> header alone.</td>
+                <td class="px-4 py-3"><code>RFC 6376</code> / <code>RFC 8301</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. DMARC</td>
+                <td class="px-4 py-3"><code>_dmarc</code> <code>TXT</code></td>
+                <td class="px-4 py-3">Whether <code>SPF</code> or <code>DKIM</code> passes <strong class="text-ink">and aligns</strong> (<code>aspf</code>/<code>adkim</code>) with the human-visible <code>From:</code> domain.</td>
+                <td class="px-4 py-3">Closes the <code>Header From</code> spoofing gap, enforces disposition (<code>none</code>, <code>quarantine</code>, <code>reject</code>), and sends daily <code>RUA</code> XML reports.</td>
+                <td class="px-4 py-3"><code>RFC 7489</code> / <code>IETF DMARCbis</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. ARC</td>
+                <td class="px-4 py-3">Signed in message headers (<code>ARC-Seal</code>)</td>
+                <td class="px-4 py-3">Preserves the original pre-forwarding <code>Authentication-Results</code> across intermediate mailing lists and forwarders.</td>
+                <td class="px-4 py-3">Rescues legitimate forwarded mail when <code>SPF</code> breaks and mailing lists modify the body (breaking <code>DKIM</code>).</td>
+                <td class="px-4 py-3"><code>RFC 8617</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. BIMI</td>
+                <td class="px-4 py-3"><code>default._bimi</code> <code>TXT</code></td>
+                <td class="px-4 py-3">Displays the sender's verified SVG brand logo and checkmark next to authenticated messages in the inbox.</td>
+                <td class="px-4 py-3">Provides visual brand trust in Gmail, Apple Mail, and Yahoo; <strong class="text-ink">strictly requires DMARC at <code>p=quarantine</code> (100%) or <code>p=reject</code></strong>.</td>
+                <td class="px-4 py-3"><code>BIMI Group Spec</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. MTA-STS</td>
+                <td class="px-4 py-3"><code>_mta-sts</code> <code>TXT</code> + HTTPS policy file</td>
+                <td class="px-4 py-3">Enforces TLS 1.2/1.3 encryption and valid certificates on inbound SMTP connections to your <code>MX</code> servers.</td>
+                <td class="px-4 py-3">Closes the <code>STARTTLS</code> downgrade hole where an active network attacker strips encryption on port 25.</td>
+                <td class="px-4 py-3"><code>RFC 8461</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">7. TLS-RPT</td>
+                <td class="px-4 py-3"><code>_smtp._tls</code> <code>TXT</code></td>
+                <td class="px-4 py-3">Sends daily JSON diagnostic reports detailing succeeded and failed inbound TLS handshakes and certificate errors.</td>
+                <td class="px-4 py-3">Provides visibility into silent <code>MTA-STS</code> or <code>DANE</code> encryption failures that would otherwise drop mail unseen.</td>
+                <td class="px-4 py-3"><code>RFC 8460</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Deploying the stack in the right order prevents accidental email blocking: start with <strong class="text-ink">Section 1 (SPF)</strong> and <strong class="text-ink">Section 2 (DKIM)</strong>, unify and monitor them in <strong class="text-ink">Section 3 (DMARC, MTA-STS, BIMI, and Compliance)</strong>, follow provider-specific instructions in <strong class="text-ink">Section 4 (44 ESP Playbooks)</strong>, and audit your live records in <strong class="text-ink">Section 5 (14 Free Tools)</strong>.
+        </p>
+      </section>
+
+      <!-- Section 2: SPF Guides -->
+      <section id="spf-guides" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. SPF (Sender Policy Framework) Guides (v=spf1 and the 10-Lookup Limit)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Thirteen guides cover every aspect of Sender Policy Framework (RFC 7208), from v=spf1 mechanisms and qualifiers (~all vs -all) to diagnosing PermError failures and staying under the strict 10-DNS-lookup limit. Select a guide below to configure or repair your SPF record:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {spfCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: DKIM Guides -->
+      <section id="dkim-guides" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. DKIM (DomainKeys Identified Mail) Guides (Selectors, Keys, and Signing)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Nine guides explain how asymmetric public-key cryptography signs outbound messages (DKIM-Signature), how &lt;selector&gt;._domainkey DNS records store 2048-bit RSA and Ed25519 keys, and how to fix signature verification failures in transit. Choose a DKIM guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {dkimCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: DMARC, BIMI, MTA-STS, TLS-RPT, ARC & Compliance -->
+      <section id="dmarc-bimi-tls" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. DMARC, BIMI, MTA-STS, TLS-RPT, ARC, and 2026 Compliance Guides
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Twenty-five guides cover DMARC policy enforcement (p=none to p=reject), Identifier Alignment (adkim and aspf), XML aggregate reporting, BIMI inbox logos, MTA-STS and TLS-RPT transport encryption, ARC forwarding chains, and 2026 regulatory mandates. Select a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {dmarcCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: ESP Setup Playbooks -->
+      <section id="esp-guides" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. Per-Service SPF, DKIM, and DMARC Setup Playbooks (All 44 Email Platforms)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Every Email Service Provider (ESP), CRM, helpdesk, and billing platform uses its own SPF include mechanism, Return-Path subdomain, and DKIM selector names. Select your email platform below for exact copy-paste DNS records and alignment rules:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {espCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 6: Diagnostic & Lookup Tools -->
+      <section id="auth-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          5. Free Browser-Based Email Authentication Checkers, Flatteners, and Generators (14 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Audit your live email authentication records, flatten SPF lookup trees, generate RFC-compliant TXT strings, and parse zipped DMARC XML reports in your browser with zero server logging. Select a diagnostic tool or monitoring overview below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+
+        <p class="mt-8 text-base leading-relaxed text-ink-dim">
+          Every protocol guide, ESP playbook, and diagnostic tool in this <strong class="text-ink">Email Authentication hub</strong> works together to help you deploy <strong class="text-ink">SPF (v=spf1)</strong>, sign messages with <strong class="text-ink">2048-bit DKIM keys</strong>, enforce <strong class="text-ink">DMARC p=reject alignment</strong>, and secure inbound transport with <strong class="text-ink">MTA-STS and BIMI</strong>.
+        </p>
+      </section>
+
+      <!-- Section 7: FAQs -->
+      <section id="faq" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Frequently Asked Questions
+        </h2>
+        <div class="mt-6 space-y-3">
+          <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+            <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+              <span>Why do I need all three of SPF, DKIM, and DMARC instead of just one?</span>
+              <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+              <p>Each protocol solves a different vulnerability that the other two cannot fix alone: SPF authorizes outbound server IP addresses on the hidden Return-Path (but breaks when an email is forwarded); DKIM attaches a cryptographic signature that survives forwarding (but does not prevent spoofing of the visible From: address); and DMARC ties both together by requiring the From: address to align with SPF or DKIM and telling receivers to block unauthenticated mail.</p>
+            </div>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+            <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+              <span>In what order should I set up email authentication on a new domain?</span>
+              <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+              <p>Always deploy email authentication from the bottom of the stack upward: first, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.</p>
+            </div>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+            <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+              <span>Does passing SPF, DKIM, and DMARC guarantee my emails will land in the primary inbox?</span>
+              <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+              <p>No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder (explored in our <a href="/email-deliverability/" class="text-accent hover:underline">Email Deliverability</a> hub).</p>
+            </div>
+          </details>
+
+          <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+            <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+              <span>How do I authenticate 5 different email tools (Google Workspace, SendGrid, Mailchimp, HubSpot, Zendesk) on one domain?</span>
+              <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+              <p>In real-world multi-sender setups, remember the cardinality rule for each protocol: your domain publishes only ONE root SPF record (merging all 5 tools into a single v=spf1 string, or using CNAME Return-Path subdomains to save lookups) and only ONE _dmarc record, while publishing 5 separate DKIM records (because each service gets its own unique &lt;selector&gt;._domainkey subdomain).</p>
+            </div>
+          </details>
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>
