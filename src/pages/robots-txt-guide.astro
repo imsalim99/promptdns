@@ -1,100 +1,421 @@
 ---
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Does robots.txt guarantee compliance?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead." } },
-    {'@type': 'Question', 'name': "Where must robots.txt be served from?", "acceptedAnswer": { '@type': 'Answer', "text": "The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored." } },
-    {'@type': 'Question', 'name': "What happens with an empty robots.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules." } }
-  ],
-};
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does every website need a robots.txt file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Technically no: when a website returns 404 Not Found for /robots.txt, search engines simply assume all public pages are allowed to be crawled. However, publishing a clean /robots.txt file is best practice for every production site so you can declare your XML Sitemap URL, block internal search or cart URLs, and manage AI crawler access."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does it take for Google to notice changes to my robots.txt file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Under RFC 9309, Googlebot and other compliant crawlers cache your robots.txt file for up to 24 hours, so changes typically take effect automatically within a day. To force Google to refresh it immediately, open Google Search Console -> Settings -> robots.txt and click Request a recrawl."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is Google Search Console warning me \"Indexed, though blocked by robots.txt\" on pages I tried to hide?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, this is the #1 SEO trap with robots.txt: Disallow blocks crawling, not indexing. A noindex meta tag placed on a page that is also blocked in robots.txt remains unread because Googlebot cannot visit the URL to parse the tag. Removing the Disallow line from robots.txt allows Googlebot to crawl the page, see the noindex tag, and drop it from search results."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is my specific bot rule (like User-agent: Googlebot) ignoring the Disallow lines I put under User-agent: *?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309, User-agent groups never merge: a bot matches only its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well."
+      }
+    }
+  ]
+};
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["AI Web Infrastructure", "/ai-web-infrastructure/"],
+  ["robots.txt Guide"]
+];
 ---
-<BaseLayout title="robots.txt: The Complete Guide With Examples" description="robots.txt explained: syntax, user-agent groups, Disallow vs Allow, crawl-delay, sitemap directives, and the mistakes that deindex sites."  
- breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["robots.txt Guide"]]}>
+
+<BaseLayout
+  title="robots.txt: The Complete Guide to Syntax, Rules, Wildcards, and Examples"
+  description="Master robots.txt syntax under RFC 9309. Learn User-agent matching, Allow vs Disallow, wildcard rules, copy-paste templates, and crawl budget controls."
+  schema={[faq]}
+  breadcrumb={breadcrumb}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">robots.txt Guide</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">robots.txt: The Complete Guide</h1>
-    <div class="pd-answer" data-vs="answer">
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      robots.txt: The Complete Guide to Syntax, Rules, Wildcards, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      robots.txt is the first file crawlers request on every site: a plain-text rulebook saying which
-      user-agents may fetch which paths. It cannot force anything, but every major search and AI
-      crawler respects it, which makes it the single highest-use file in technical SEO.
-    </p>
+        A <abbr class="pd-term" data-tip="robots.txt: plain-text file at website root instructing web crawlers which URL paths to fetch">robots.txt</abbr> file is <strong class="text-ink">a plain-text configuration file placed at the root of your website (https://example.com/robots.txt) that instructs search engine and AI crawlers which URL paths to request or avoid</strong>. Automated bots read robots.txt before crawling any page. The directives manage crawl budget and AI access permissions globally.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Core directives</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Directive</th><th>Example</th><th>Meaning</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">User-agent</td><td class="text-sm text-ink-dim">User-agent: GPTBot</td><td class="text-sm text-ink-dim">Target crawler</td></tr><tr><td class="font-medium text-ink">Disallow</td><td class="text-sm text-ink-dim">Disallow: /private/</td><td class="text-sm text-ink-dim">Blocked paths</td></tr><tr><td class="font-medium text-ink">Allow</td><td class="text-sm text-ink-dim">Allow: /public/</td><td class="text-sm text-ink-dim">Exceptions</td></tr><tr><td class="font-medium text-ink">Sitemap</td><td class="text-sm text-ink-dim">Sitemap: https://...</td><td class="text-sm text-ink-dim">Index location</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-<nav class="pd-toc" aria-label="On this page">
+    <Diagram name="resolution" caption="robots.txt evaluation flow: crawler fetches /robots.txt, matches User-agent group, selects longest-path rule, and evaluates access permissions" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#anatomy">Anatomy</a></li>
-        <li><a href="#the-rules-behind-the-rules">The rules behind the rules</a></li>
-        <li><a href="#mistakes-that-cost-real-traffic">Mistakes that cost real traffic</a></li>
-        <li><a href="#check-yours">Check yours</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#what-is-a-robots-txt-file-and-what-are-its-core-directives-syntax-table">What is robots.txt and core directives</a></li>
+        <li><a href="#how-do-crawlers-evaluate-robots-txt-rules-group-precedence-and-longest-path-matching">Group precedence and longest-path matching</a></li>
+        <li><a href="#5-copy-paste-robots-txt-examples-standard-seo-ai-split-policy-saas-e-commerce-and-staging">5 copy-paste robots.txt examples</a></li>
+        <li><a href="#how-do-googlebot-and-crawlers-react-to-robots-txt-http-status-codes-200-vs-404-vs-500">HTTP status code behavior on robots.txt</a></li>
+        <li><a href="#4-critical-seo-mistakes-to-avoid-in-robots-txt-disallow-vs-noindex-and-css-js-files">4 critical SEO mistakes to avoid</a></li>
+        <li><a href="#how-to-test-and-validate-your-robots-txt-file-and-pair-it-with-llms-txt-and-agents-txt">Test and validate your robots.txt file</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 id="anatomy">Anatomy</h2>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft">User-agent: Googlebot
-Disallow: /admin/
-Allow: /admin/public/
+      <h2 id="what-is-a-robots-txt-file-and-what-are-its-core-directives-syntax-table">What Is a robots.txt File and What Are Its Core Directives? (Syntax Table)</h2>
+      <p>
+        Created by Martijn Koster in 1994 and standardized by the IETF in RFC 9309 in September 2022, a <abbr class="pd-term" data-tip="Robots Exclusion Protocol: IETF RFC 9309 standard for crawler access rules">robots.txt</abbr> file operates at the root of a domain as a <abbr class="pd-term" data-tip="UTF-8: character encoding standard required for robots.txt files under RFC 9309">UTF-8</abbr> plain-text document with a lowercase filename. Compliant web crawlers fetch <code>/robots.txt</code> before requesting any page on your host, parsing up to 500 KiB (512 KB) of rules organized into <abbr class="pd-term" data-tip="User-agent: directive naming target web crawlers such as Googlebot or GPTBot">User-agent</abbr> groups. The table below defines the 5 core directives and 2 <abbr class="pd-term" data-tip="wildcard: pattern-matching characters such as asterisk and dollar sign in RFC 9309">wildcard</abbr> operators.
+      </p>
 
+      <div class="my-6 rounded-xl border border-line bg-panel/60 p-4">
+        <pre class="overflow-x-auto text-xs font-mono text-ink"><code># Group 1: Rules for all crawlers (*)
 User-agent: *
-Disallow: /cart/
-Disallow: /search
+Disallow: /admin/
+Disallow: /api/private/
+Allow: /api/public/
 
-Sitemap: https://example.com/sitemap.xml</pre>
-      <p>
-        Rules group by user-agent: consecutive <code>User-agent</code> lines share the block that
-        follows. <code>*</code> matches any bot without its own group. <code>Disallow</code> blocks a
-        path prefix; an empty value disallows nothing. <code>Allow</code> carves exceptions inside
-        disallowed trees. <code>Sitemap</code> lines can appear anywhere and should.
-      </p>
-      <h2 id="the-rules-behind-the-rules">The rules behind the rules</h2>
-      <ul>
-        <li>It lives at the root, exactly <code>/robots.txt</code>, one per host, served as text/plain.</li>
-        <li>Most-specific group wins: a named bot ignores the wildcard group entirely.</li>
-        <li>Path matching is prefix-based; <code>/blog</code> also blocks <code>/blogroll</code>. Use trailing slashes deliberately.</li>
-        <li>Case matters for paths, not for directives.</li>
-        <li>Some crawlers stop reading after 500 KB.</li>
-      </ul>
-      <h2 id="mistakes-that-cost-real-traffic">Mistakes that cost real traffic</h2>
-      <ul>
-        <li><code>Disallow: /</code> shipped from staging: the classic site-wide deindex.</li>
-        <li>Blocking CSS/JS paths that pages need to render, degrading how search engines see the page.</li>
-        <li>Expecting robots.txt to hide content: it only prevents crawling, not indexing of linked URLs; use noindex or auth for that.</li>
-        <li>AI-era oversight: wildcard blocks written years ago now exclude GPTBot, ClaudeBot, and PerplexityBot too.</li>
-      </ul>
-      <h2 id="check-yours">Check yours</h2>
-      <p>
-        The <a href="/robots-txt-checker/">robots.txt checker</a> validates syntax line by line and
-        shows AI-bot verdicts; the <a href="/ai-crawler-checker/">AI crawler checker</a> goes deeper
-        per bot.
-      </p>
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/ai-crawlers-list/">The complete AI crawler list</a></li>
-        <li><a href="/how-to-block-ai-crawlers/">Blocking AI crawlers</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does robots.txt guarantee compliance?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It is a request that well-behaved crawlers honor. For agents that ignore it, enforce at the WAF or edge level instead.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where must robots.txt be served from?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The root of every hostname: https://yoursite.com/robots.txt. A file anywhere else is ignored.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens with an empty robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Crawlers assume everything is allowed. That is a valid posture; the file only matters when you want per-crawler or per-path rules.</p></details></div>
+# Absolute URL to your XML sitemap:
+Sitemap: https://example.com/sitemap-index.xml</code></pre>
       </div>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">Directive / Operator</th>
+              <th class="py-2.5 px-3">Syntax Example</th>
+              <th class="py-2.5 px-3">Supported by Google & Bing?</th>
+              <th class="py-2.5 px-3">Exact Function in Crawler Control</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>User-agent</code></td>
+              <td class="py-2.5 px-3"><code>User-agent: Googlebot</code> or <code>*</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (Required)</td>
+              <td class="py-2.5 px-3">Starts a rule group and names specific crawler tokens (or <code>*</code> for all bots) to which subsequent lines apply.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="Disallow: directive instructing crawlers not to request matching URL path prefixes">Disallow</abbr></td>
+              <td class="py-2.5 px-3"><code>Disallow: /admin/</code> or <code>/</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes</td>
+              <td class="py-2.5 px-3">Instructs matched crawlers not to request URL paths beginning with the specified string; empty <code>Disallow:</code> allows all.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="Allow: directive explicitly granting crawl permission for a specific path within a disallowed folder">Allow</abbr></td>
+              <td class="py-2.5 px-3"><code>Allow: /admin/public.html</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes</td>
+              <td class="py-2.5 px-3">Carves out an allowed exception for specific files or subfolders inside a broader <code>Disallow</code> directory.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><abbr class="pd-term" data-tip="Sitemap: directive declaring absolute URL of XML sitemap files for search indexers">Sitemap</abbr></td>
+              <td class="py-2.5 px-3"><code>Sitemap: https://example.com/sitemap.xml</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes</td>
+              <td class="py-2.5 px-3">Declares absolute <code>https://</code> URLs of XML sitemaps; applies globally across all search engines regardless of placement.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>Crawl-delay</code></td>
+              <td class="py-2.5 px-3"><code>Crawl-delay: 10</code></td>
+              <td class="py-2.5 px-3 text-amber-600 font-semibold">Ignored by Google & Bing</td>
+              <td class="py-2.5 px-3">Requests delays in seconds between requests; honored by Yandex and select scrapers, ignored by Googlebot.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>*</code> (Wildcard)</td>
+              <td class="py-2.5 px-3"><code>Disallow: /*.pdf$</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (RFC 9309)</td>
+              <td class="py-2.5 px-3">Matches zero or more sequential characters across URL paths and query strings.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>$</code> (End Anchor)</td>
+              <td class="py-2.5 px-3"><code>Disallow: /*.json$</code></td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Yes (RFC 9309)</td>
+              <td class="py-2.5 px-3">Anchors matches to the very end of URL paths, blocking <code>/data.json</code> without matching <code>/json-guide/</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Path matching in <code>Disallow</code> and <code>Allow</code> remains strictly case-sensitive, meaning <code>Disallow: /Admin/</code> fails to block <code>/admin/</code>. In addition, Google officially retired support for unofficial <code>noindex:</code> lines inside <code>robots.txt</code> in September 2019; search engines process only <code>User-agent</code>, <code>Disallow</code>, <code>Allow</code>, and <code>Sitemap</code>. Test syntax health directly in the <a href="/robots-txt-checker/" class="text-accent hover:underline">robots.txt Checker and Validator</a>.
+      </p>
+
+      <h2 id="how-do-crawlers-evaluate-robots-txt-rules-group-precedence-and-longest-path-matching">How Do Crawlers Evaluate robots.txt Rules? (Group Precedence and Longest-Path Matching)</h2>
+      <p>
+        Search engines and AI bots do not read <code>robots.txt</code> from top to bottom; instead, parsers evaluate your file across <strong class="text-ink">4 strict RFC 9309 matching steps where the most specific User-agent group wins and the longest path pattern takes precedence</strong>.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Locate the Most Specific Group:</strong> Parsers select the single most specific <code>User-agent</code> block matching their crawler token and ignore all other groups. A crawler matching <code>User-agent: Googlebot</code> obeys only that specific group, completely ignoring rules under <code>User-agent: *</code> because groups never merge.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Compare Candidate Paths:</strong> Parsers evaluate target URL paths against every <code>Allow</code> and <code>Disallow</code> directive inside that single matched group.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Select the Longest Path Match:</strong> Parsers choose the rule with the highest character count when both <code>Allow</code> and <code>Disallow</code> match the target URL, regardless of which line appears first.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Apply Allow on Tie Lengths:</strong> Parsers choose <code>Allow</code> as the decisive tie-breaker when matching <code>Allow</code> and <code>Disallow</code> paths share identical character lengths.
+        </li>
+      </ol>
+
+      <div class="my-6 rounded-xl border border-line bg-panel/60 p-4">
+        <pre class="overflow-x-auto text-xs font-mono text-ink"><code>User-agent: *
+Disallow: /admin/
+Disallow: /checkout/
+
+User-agent: GPTBot
+Disallow: /private-docs/
+# TRAP: Because GPTBot has its own specific group above, GPTBot IGNORES User-agent: *
+# and crawls /admin/ and /checkout/ unless repeated under GPTBot!</code></pre>
+      </div>
+
+      <p>
+        Creating a dedicated <code>User-agent</code> block for a specific crawler such as <a href="/gptbot/" class="text-accent hover:underline">GPTBot</a> mandates duplicating global disallow directives into that block to preserve baseline restrictions.
+      </p>
+
+      <h2 id="5-copy-paste-robots-txt-examples-standard-seo-ai-split-policy-saas-e-commerce-and-staging">5 Copy-Paste robots.txt Examples (Standard SEO, AI Split Policy, SaaS, E-Commerce, and Staging)</h2>
+      <p>
+        Five production <code>robots.txt</code> templates cover <strong class="text-ink">95% of real-world website architectures</strong>, from standard SEO and AI search visibility to e-commerce filter blocking and staging lockdowns.
+      </p>
+
+      <ol class="list-decimal space-y-6 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Modern Default (Allow Search Engines & AI Search Citations, Block AI Model Training):</strong>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code>User-agent: *
+Disallow: /admin/
+Disallow: /account/
+
+# Block AI Model Training Crawlers
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+Disallow: /
+
+# Explicitly Allow AI Search Indexing
+User-agent: OAI-SearchBot
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://example.com/sitemap-index.xml</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">SaaS & Web Application (Allow Marketing Site, Disallow App & API Routes):</strong>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code>User-agent: *
+Disallow: /app/
+Disallow: /dashboard/
+Disallow: /api/
+Allow: /api/docs/
+
+Sitemap: https://example.com/sitemap.xml</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">E-Commerce & Faceted Search (Prevent Crawl Waste on Cart & Filter Parameters):</strong>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code>User-agent: *
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /*?sort=
+Disallow: /*&filter=
+Disallow: /*?q=
+
+Sitemap: https://example.com/sitemap.xml</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Open Documentation or Content Site (Allow Everything):</strong>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code>User-agent: *
+Disallow:
+
+Sitemap: https://example.com/sitemap.xml</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Total Crawl Lockdown (Maintenance / Non-Public Staging):</strong>
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code>User-agent: *
+Disallow: /</code></pre>
+        </li>
+      </ol>
+
+      <p>
+        Selecting an appropriate configuration depends on content licensing and infrastructure capacity. Web publishers implement granular controls via <a href="/how-to-block-ai-crawlers/" class="text-accent hover:underline">How to Block AI Crawlers</a>, permit discovery using <a href="/how-to-allow-ai-crawlers/" class="text-accent hover:underline">How to Allow AI Crawlers</a>, manage Google training tokens via <a href="/google-extended/" class="text-accent hover:underline">Google-Extended</a>, and consult <a href="/ai-crawlers-list/" class="text-accent hover:underline">The Complete List of AI Crawlers and Bots</a> while validating live directives in the <a href="/ai-crawler-checker/" class="text-accent hover:underline">AI Crawler Checker</a>.
+      </p>
+
+      <h2 id="how-do-googlebot-and-crawlers-react-to-robots-txt-http-status-codes-200-vs-404-vs-500">How Do Googlebot and Crawlers React to robots.txt HTTP Status Codes? (200 vs 404 vs 500)</h2>
+      <p>
+        The HTTP status code your web server returns when a crawler requests <code>https://example.com/robots.txt</code> <strong class="text-ink">directly controls whether Googlebot crawls your entire website normally or halts all crawling for up to 30 days</strong>. The table below defines how compliant crawlers handle every HTTP response status on <code>/robots.txt</code> under RFC 9309 and Google Search Central rules.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-line text-ink font-semibold">
+              <th class="py-2.5 px-3">HTTP Status Code on <code>/robots.txt</code></th>
+              <th class="py-2.5 px-3">Meaning of Status</th>
+              <th class="py-2.5 px-3">How Googlebot & Compliant Crawlers React</th>
+              <th class="py-2.5 px-3">SEO Impact on Your Website</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>200 OK</code></td>
+              <td class="py-2.5 px-3">File found and served</td>
+              <td class="py-2.5 px-3">Parses UTF-8 text up to 500 KiB and caches rules for up to 24 hours.</td>
+              <td class="py-2.5 px-3 text-emerald-600 font-semibold">Normal operation; crawler obeys all declared rules.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>301</code> or <code>302</code> Redirect</td>
+              <td class="py-2.5 px-3">File redirects to another URL</td>
+              <td class="py-2.5 px-3">Follows up to 5 redirect hops to locate the target file.</td>
+              <td class="py-2.5 px-3">Safe if final destination returns 200 OK; fails on redirect loops.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>404 Not Found</code> or <code>410 Gone</code></td>
+              <td class="py-2.5 px-3">No robots.txt file exists</td>
+              <td class="py-2.5 px-3">Treats missing files as full access (Allow All).</td>
+              <td class="py-2.5 px-3">Full crawling permitted; missing files never block indexing.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>401</code> or <code>403 Forbidden</code></td>
+              <td class="py-2.5 px-3">Access denied on <code>/robots.txt</code></td>
+              <td class="py-2.5 px-3">Googlebot treats 401 and 403 as equivalent to 404 (Allow All).</td>
+              <td class="py-2.5 px-3 text-amber-600 font-semibold">Putting WAF 403 blocks on <code>/robots.txt</code> fails open and allows crawling.</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium text-ink"><code>429</code> or <code>5xx</code> (500, 503)</td>
+              <td class="py-2.5 px-3">Server error or rate limit</td>
+              <td class="py-2.5 px-3">Treats entire host as <code>Disallow: /</code> (Halt All Crawling).</td>
+              <td class="py-2.5 px-3 text-rose-600 font-semibold">Severe SEO risk; sustained 5xx errors halt Googlebot for up to 30 days.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Server administrators prevent catastrophic deindexing by ensuring firewall rate limiters never return 500 or 503 errors when automated crawlers fetch <code>/robots.txt</code>. In addition, returning 403 Forbidden fails open under RFC 9309 specifications, removing all crawling restrictions rather than enforcing lockdown.
+      </p>
+
+      <h2 id="4-critical-seo-mistakes-to-avoid-in-robots-txt-disallow-vs-noindex-and-css-js-files">4 Critical SEO Mistakes to Avoid in robots.txt (Disallow vs noindex and CSS/JS Files)</h2>
+      <p>
+        Four common <code>robots.txt</code> misconceptions cause site owners to <strong class="text-ink">leave private pages indexed in Google, break mobile-first rendering, or expose hidden URLs to attackers</strong>.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Using Disallow to Remove Pages from Search Results:</strong> <code>Disallow</code> blocks crawling, not indexing. Pages linked externally still appear in search results with the snippet "Indexed, though blocked by robots.txt". Blocking a page in <code>robots.txt</code> prevents Googlebot from discovering <code>&lt;meta name="robots" content="noindex"&gt;</code> tags. Deindexing requires allowing crawl access while serving on-page <abbr class="pd-term" data-tip="noindex: robots directive preventing search engines from indexing a webpage in search results">noindex</abbr> tags or HTTP headers.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Blocking CSS, JavaScript, or Font Files:</strong> Googlebot renders pages using headless Chromium to assess mobile layouts and visual hierarchy. Blocking styling and script assets causes Googlebot to perceive broken layouts, degrading rankings.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Assuming Root Files Cover Subdomains:</strong> Each protocol, subdomain, and port requires its own independent <code>/robots.txt</code> file at host root.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Listing Sensitive Unprotected URLs:</strong> The file is completely public; publishing hidden folder names provides attackers with an immediate directory enumeration roadmap.
+        </li>
+      </ol>
+
+      <p>
+        Evaluating crawler rules across both search engines and AI agents helps maintain organic rankings, detailed in our analysis on <a href="/does-blocking-ai-crawlers-hurt-seo/" class="text-accent hover:underline">Does Blocking AI Crawlers Hurt SEO?</a>
+      </p>
+
+      <h2 id="how-to-test-and-validate-your-robots-txt-file-and-pair-it-with-llms-txt-and-agents-txt">How to Test and Validate Your robots.txt File (And Pair It With llms.txt and agents.txt)</h2>
+      <p>
+        To verify that your <code>/robots.txt</code> file serves a clean 200 OK status, contains zero syntax errors, and pairs with modern AI discovery files, complete <strong class="text-ink">3 validation steps</strong>.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Test Server Response Headers via Terminal:</strong> Running curl inspects headers and confirms plain-text delivery:
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code># Verify HTTP 200 status, Content-Type: text/plain, and raw rules via curl:
+curl -i https://example.com/robots.txt</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Audit AI Discovery Protocols:</strong> Modern web architectures pair crawler access rules with <a href="/what-is-llms-txt/" class="text-accent hover:underline">llms.txt: What It Is and Why Sites Are Adding One</a> produced via the <a href="/llms-txt-generator/" class="text-accent hover:underline">llms.txt Generator</a>, validate autonomous agent permissions with the <a href="/agents-txt-checker/" class="text-accent hover:underline">agents.txt Checker</a>, and benchmark machine readiness using the composite <a href="/ai-readiness-checker/" class="text-accent hover:underline">AI Readiness Score Audit</a>.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Inspect Google Search Console Crawling Reports:</strong> Navigating to Settings and opening the robots.txt report verifies that Googlebot ingested your latest file version with zero syntax warnings.
+        </li>
+      </ol>
+
+      <p>
+        Completing these diagnostic checks confirms that search indexers and AI agents receive correct parsing directives without unexpected crawler dropouts.
+      </p>
+
+      <p>
+        Establishing a compliant robots.txt file serves as the baseline for modern <a href="/ai-web-infrastructure/" class="text-accent hover:underline">AI Web Infrastructure</a>. Implementing the Robots Exclusion Protocol (RFC 9309), mastering User-agent, Disallow, Allow, and Sitemap directives, applying most-specific group and longest-path matching, respecting the Disallow vs noindex SEO rule, and running structured validation ensure reliable crawler coordination across search platforms.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="mt-4 space-y-3">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does every website need a robots.txt file?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Technically no: when a website returns 404 Not Found for /robots.txt, search engines simply assume all public pages are allowed to be crawled. However, publishing a clean /robots.txt file is best practice for every production site so you can declare your XML Sitemap URL, block internal search or cart URLs, and manage AI crawler access.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>How long does it take for Google to notice changes to my robots.txt file?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Under RFC 9309, Googlebot and other compliant crawlers cache your robots.txt file for up to 24 hours, so changes typically take effect automatically within a day. To force Google to refresh it immediately, open Google Search Console -> Settings -> robots.txt and click Request a recrawl.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why is Google Search Console warning me "Indexed, though blocked by robots.txt" on pages I tried to hide?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In practice, this is the #1 SEO trap with robots.txt: Disallow blocks crawling, not indexing. A noindex meta tag placed on a page that is also blocked in robots.txt remains unread because Googlebot cannot visit the URL to parse the tag. Removing the Disallow line from robots.txt allows Googlebot to crawl the page, see the noindex tag, and drop it from search results.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Why is my specific bot rule (like User-agent: Googlebot) ignoring the Disallow lines I put under User-agent: *?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309, User-agent groups never merge: a bot matches only its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
