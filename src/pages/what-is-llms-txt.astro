@@ -1,98 +1,336 @@
 ---
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Who reads llms.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "AI tools and agents that use it for curated context: it points models to your best pages in Markdown. Adoption is growing across AI products and agent frameworks." } },
-    {'@type': 'Question', 'name': "Does llms.txt improve AI citations?", "acceptedAnswer": { '@type': 'Answer', "text": "It helps models find your canonical pages quickly, which improves the odds of accurate citations, but it is not a guarantee: content quality and crawler access still decide." } },
-    {'@type': 'Question', 'name': "Is llms.txt required?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is a strong recommendation for AI-facing sites. Missing llms.txt is scored in our AI readiness check as a gap, not an error." } }
-  ],
-};
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does llms.txt replace robots.txt or sitemap.xml?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, llms.txt complements robots.txt and sitemap.xml rather than replacing them. Your robots.txt file controls which bots are permitted to crawl your site, sitemap.xml lists every indexable URL for search engines, and llms.txt provides a curated Markdown summary of your most important pages for AI models."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where do I put the llms.txt file on my website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Place the file at the exact root directory of your domain so it is publicly accessible at https://yourdomain.com/llms.txt (and optionally https://yourdomain.com/llms-full.txt), served over HTTPS with a text/plain; charset=utf-8 or text/markdown content type."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many links should I include in my llms.txt file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In practice, keep your main /llms.txt file concise, typically between 15 and 50 curated links (around 1,000 to 3,000 tokens total). Dumping hundreds of minor URLs into /llms.txt defeats its entire purpose of saving context-window tokens; put secondary links under the ## Optional heading and use /llms-full.txt for full-text documentation dumps."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will adding an llms.txt file stop AI companies from training on my website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, in real-world deployments llms.txt is purely an informational guide to help AI understand your content, not an opt-out or blocking mechanism. Website administrators wanting to block AI companies from scraping content for model training configure Disallow: / rules in /robots.txt and enforce them with a Cloudflare WAF or server 403 block."
+      }
+    }
+  ]
+};
+
+const breadcrumb = [
+  ["Home", "/"],
+  ["AI Web Infrastructure", "/ai-web-infrastructure/"],
+  ["What Is llms.txt"]
+];
 ---
-<BaseLayout schema={[faqSchema]} title="What Is llms.txt? The AI Content Map Explained" description="llms.txt explained: the proposed markdown standard that helps language models understand your site, how it differs from robots.txt, and how to publish one."  
- breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["What Is llms.txt"]]}>
+
+<BaseLayout
+  title="llms.txt: What It Is, How It Works, Markdown Format, and Examples"
+  description="Learn what an llms.txt file is, how Jeremy Howard's Markdown standard works, how it compares to robots.txt and sitemap.xml, and how to create one."
+  schema={[faqSchema]}
+  breadcrumb={breadcrumb}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a>
-       <span aria-hidden="true">/</span>
+      <span aria-hidden="true">/</span>
       <span class="text-ink-dim">What Is llms.txt</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is llms.txt?</h1>
-    <div class="pd-answer" data-vs="answer">
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      llms.txt: What It Is, How It Works, Markdown Format, and Examples
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      llms.txt is a proposed standard: a markdown file at your site root that gives language models
-      a curated map of what your content is and where the important pages live. Think of it as an
-      abstract and table of contents written for machines that read your whole site anyway.
-    </p>
+        An <abbr class="pd-term" data-tip="llms.txt: proposed open standard Markdown file helping language models parse website documentation">llms.txt</abbr> file is <strong class="text-ink">a proposed open standard that places a concise Markdown index at the root of your website (https://example.com/llms.txt) to help large language models understand your core pages</strong>. AI assistants read llms.txt to bypass noisy HTML menus and scripts. The file curates clean links and descriptions for <abbr class="pd-term" data-tip="inference: model execution phase processing live user prompts">inference</abbr>.
+      </p>
     </div>
 
-    
-<nav class="pd-toc" aria-label="On this page">
+    <Diagram name="resolution" caption="llms.txt discovery and context resolution flow: AI agents fetch /llms.txt to discover canonical Markdown endpoints and bypass heavy HTML rendering" />
+
+    <nav class="pd-toc my-8" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#the-problem-it-solves">The problem it solves</a></li>
-        <li><a href="#what-it-looks-like">What it looks like</a></li>
-        <li><a href="#llmstxt-vs-robotstxt">llms.txt vs robots.txt</a></li>
-        <li><a href="#publish-yours-in-two-minutes">Publish yours in two minutes</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#why-does-llmstxt-exist-and-how-does-it-differ-from-robotstxt-and-sitemapxml">Why does llms.txt exist and comparison</a></li>
+        <li><a href="#how-is-an-llmstxt-file-formatted-the-4-part-markdown-specification-and-example">The 4-part Markdown specification and example</a></li>
+        <li><a href="#what-is-the-difference-between-llmstxt-llms-fulltxt-and-md-page-mirrors">/llms.txt vs /llms-full.txt vs .md mirrors</a></li>
+        <li><a href="#who-actually-reads-llmstxt-in-2026-adoption-reality-vs-seo-myths">Who reads llms.txt in 2026</a></li>
+        <li><a href="#how-to-create-deploy-and-validate-your-llmstxt-file-in-4-steps">Create, deploy, and validate in 4 steps</a></li>
+        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
       </ul>
     </nav>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">llms.txt and robots.txt side by side</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Aspect</th><th>robots.txt</th><th>llms.txt</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Controls</td><td class="text-sm text-ink-dim">Crawling</td><td class="text-sm text-ink-dim">Curation</td></tr><tr><td class="font-medium text-ink">Audience</td><td class="text-sm text-ink-dim">All crawlers</td><td class="text-sm text-ink-dim">AI models</td></tr><tr><td class="font-medium text-ink">Format</td><td class="text-sm text-ink-dim">Directives</td><td class="text-sm text-ink-dim">Markdown</td></tr></tbody>
+    <div class="rich-text mt-8">
+      <h2 id="why-does-llmstxt-exist-and-how-does-it-differ-from-robotstxt-and-sitemapxml">Why Does llms.txt Exist and How Does It Differ From robots.txt and sitemap.xml?</h2>
+      <p>
+        Proposed by Jeremy Howard (co-founder of fast.ai and Answer.AI) in September 2024 at llmstxt.org, the <abbr class="pd-term" data-tip="llms.txt: proposed open standard Markdown file helping language models parse website documentation">llms.txt</abbr> standard operates as an open convention to solve <abbr class="pd-term" data-tip="context window: token capacity an AI model processes in a single prompt">context window</abbr> token bloat. Large language models struggle when processing raw web pages filled with navigation wrappers, advertisements, styling code, and JavaScript bundles during interactive chat prompts. Serving a concise, human-readable <abbr class="pd-term" data-tip="Markdown: lightweight formatting syntax used by llmstxt.org">Markdown</abbr> briefing at the site root hands AI assistants, <abbr class="pd-term" data-tip="RAG: retrieval-augmented generation combining search with LLM generation">RAG</abbr> pipelines, and answer engines a high-signal map of relevant documentation and services. The table below compares llms.txt against <abbr class="pd-term" data-tip="robots.txt: plain-text crawler access control file at website root">robots.txt</abbr>, sitemap.xml, and <abbr class="pd-term" data-tip="agents.txt: emerging configuration file defining allowed autonomous agent workflows">agents.txt</abbr>.
+      </p>
+
+      <p class="text-sm font-medium text-ink">
+        The table below compares llms.txt against robots.txt, sitemap.xml, and agents.txt across file formats, consumers, scope, and crawler rules.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-3 font-semibold text-ink">Feature / Dimension</th>
+              <th class="p-3 font-semibold text-ink">/llms.txt</th>
+              <th class="p-3 font-semibold text-ink">/robots.txt</th>
+              <th class="p-3 font-semibold text-ink">/sitemap.xml</th>
+              <th class="p-3 font-semibold text-ink">/agents.txt</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="p-3 font-medium text-ink">Primary Job</td>
+              <td class="p-3">Curated context map explaining site purpose and linking flagship pages</td>
+              <td class="p-3">Access and crawl governance declaring allowed or blocked paths</td>
+              <td class="p-3">Exhaustive URL inventory for search engine crawlers</td>
+              <td class="p-3">Agent action permissions, API rate limits, and endpoint rules</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">File Format</td>
+              <td class="p-3">Markdown (text/plain or text/markdown)</td>
+              <td class="p-3">Plain text (User-agent and Disallow syntax)</td>
+              <td class="p-3">Structured XML (urlset and loc schema)</td>
+              <td class="p-3">Plain text or structured JSON</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">Target Consumer</td>
+              <td class="p-3">LLM inference engines, AI coding assistants (Cursor, Claude), RAG systems</td>
+              <td class="p-3">Search engine crawlers (Googlebot) and AI scrapers (GPTBot)</td>
+              <td class="p-3">Search engine indexers (Google, Bing)</td>
+              <td class="p-3">Autonomous AI task agents and browser execution bots</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">Content Scope</td>
+              <td class="p-3">Selective (top 15 to 50 URLs) with 1-sentence page summaries</td>
+              <td class="p-3">Path-based allow and disallow pattern rules</td>
+              <td class="p-3">Complete domain inventory (hundreds to millions of URLs)</td>
+              <td class="p-3">Tool calling parameters, authorization scopes, and allowed actions</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">Does It Block Crawlers?</td>
+              <td class="p-3">No (strictly informational guidance; blocks zero requests)</td>
+              <td class="p-3">Yes (enforces exclusion under RFC 9309 rules)</td>
+              <td class="p-3">No (serves discovery metadata)</td>
+              <td class="p-3">Yes (sets task and execution boundaries)</td>
+            </tr>
+          </tbody>
         </table>
       </div>
-    </section>
-    <div class="rich-text mt-8">
-      <h2 id="the-problem-it-solves">The problem it solves</h2>
-      <p>
-        Models and AI agents visiting your site today crawl pages the way a stranger walks into a
-        building: everything is technically visible, nothing is labeled, and the important rooms look
-        identical to the boilerplate. llms.txt states the thesis of your site in one blockquote line
-        and then lists the pages that matter, each with a one-sentence description. Retrieval systems
-        and agents that support the convention get a clean entry point; those that don't simply
-        ignore the file, so there is no downside to publishing one.
-      </p>
-      <h2 id="what-it-looks-like">What it looks like</h2>
-      <pre class="rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-accent-soft"># PromptDNS
 
-> Free DNS, email authentication, and domain health tools with guides for every record type.
-
-## Tools
-- [DNS Propagation Checker](https://promptdns.com/dns-propagation-checker/): check changes across public resolvers.
-- [SPF Flattener](https://promptdns.com/spf-flattener/): fix the 10-lookup limit free.
-
-## Guides
-- [What Is DNS?](https://promptdns.com/what-is-dns/): the Domain Name System explained.</pre>
-      <h2 id="llmstxt-vs-robotstxt">llms.txt vs robots.txt</h2>
       <p>
-        Opposite jobs. <a href="/robots-txt-guide/">robots.txt</a> restricts: which crawlers may fetch
-        what. llms.txt explains: what this site is and what is worth reading. You need both thinking
-        behind them, but they never conflict: one gates access, the other guides comprehension.
+        XML sitemaps often enumerate thousands of raw URLs without descriptive summaries, exhausting context tokens without informing language models which pages hold core documentation. Understanding how crawler boundaries and discovery indexes interact ensures balanced machine accessibility, explained in our guide to <a href="/robots-txt-guide/" class="text-accent hover:underline">robots.txt: The Complete Guide With Examples</a>. System designers verify autonomous machine policies using the dedicated <a href="/agents-txt-checker/" class="text-accent hover:underline">agents.txt Checker</a>.
       </p>
-      <h2 id="publish-yours-in-two-minutes">Publish yours in two minutes</h2>
+
+      <h2 id="how-is-an-llmstxt-file-formatted-the-4-part-markdown-specification-and-example">How Is an llms.txt File Formatted? (The 4-Part Markdown Specification and Example)</h2>
       <p>
-        The <a href="/llms-txt-generator/">free llms.txt generator</a> builds the file from your site
-        name, a one-line summary, and your link list (it can even fetch your title and description
-        automatically), then hands you copy-paste or download output. Verify the result with the
-        <a href="/ai-readiness-checker/">AI readiness audit</a>.
+        The official llmstxt.org specification requires 4 specific Markdown sections in strict top-to-bottom order so deterministic parsers and language models extract structural context reliably.
       </p>
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/llms-txt-syntax/">llms.txt syntax rules</a></li>
-        <li><a href="/how-to-allow-ai-crawlers/">Allowing AI crawlers</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who reads llms.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">AI tools and agents that use it for curated context: it points models to your best pages in Markdown. Adoption is growing across AI products and agent frameworks.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does llms.txt improve AI citations?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It helps models find your canonical pages quickly, which improves the odds of accurate citations, but it is not a guarantee: content quality and crawler access still decide.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is llms.txt required?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It is a strong recommendation for AI-facing sites. Missing llms.txt is scored in our AI readiness check as a gap, not an error.</p></details></div>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Declare an H1 Brand Title:</strong> The very first element in /llms.txt consists of a single Markdown level-1 heading (<code># PromptDNS</code>) establishing the official project or website identity.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Provide a Blockquote Summary:</strong> Positioned immediately below the H1 heading, a concise blockquote (<code>&gt; Summary</code>) spanning 1 to 3 sentences defines what the platform offers, its intended audience, and key technical capabilities.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Supply Explanatory Context Paragraphs:</strong> Optional unadorned text blocks placed before the links articulate operational rules, API baselines, protocol support, or data privacy practices.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Organize H2 Link Sections:</strong> One or more level-2 headings group related resources using standard Markdown list items formatted as <code>- [Page Title](url): 1-sentence description</code>. The specification reserves the exact heading name <code>## Optional</code> for supplementary links that automated parsers skip whenever token capacity runs low.
+        </li>
+      </ol>
+
+      <p>
+        Reviewing PromptDNS's live production file illustrates how clean structural hierarchy coordinates diagnostic utilities and technical guides:
+      </p>
+
+      <pre class="mt-4 overflow-x-auto rounded-lg border border-line bg-panel/60 p-4 text-xs font-mono text-ink"><code># PromptDNS
+
+> PromptDNS provides 56 free browser-based DNS, email authentication (SPF, DKIM, DMARC), and AI web infrastructure diagnostic tools alongside 6-hour domain drift monitoring.
+
+All interactive lookup tools execute in the browser over DNS-over-HTTPS (RFC 8484) across Cloudflare, Google, and AliDNS resolvers without logging queried hostnames.
+
+## Core Diagnostic Tools
+- [DNS Propagation Checker](https://promptdns.com/dns-propagation-checker/): Query A, AAAA, CNAME, MX, NS, TXT, SOA, PTR, SRV, CAA, DS, and DNSKEY records across 3 global DoH vantages.
+- [SPF Record Checker](https://promptdns.com/spf-record-checker/): Validate v=spf1 syntax and count the 10-DNS-lookup limit.
+- [DMARC Record Checker](https://promptdns.com/dmarc-record-checker/): Audit _dmarc policy (none, quarantine, reject), alignment, and RUA reporting.
+- [AI Crawler Checker](https://promptdns.com/ai-crawler-checker/): Test whether robots.txt allows or blocks GPTBot, OAI-SearchBot, ClaudeBot, and PerplexityBot.
+
+## Technical Reference Guides
+- [What Is DNS?](https://promptdns.com/what-is-dns/): Complete architecture of the Domain Name System, 4 server tiers, and 8-step resolution.
+- [Email Authentication Hub](https://promptdns.com/email-authentication/): Implementation guides for SPF, DKIM, DMARC, BIMI, MTA-STS, and TLS-RPT.
+
+## Optional
+- [Methodology](https://promptdns.com/methodology/): Scoring weights (0-100) and RFC standards used by PromptDNS tools.
+- [Pricing](https://promptdns.com/pricing/): Free browser tools and upcoming Starter and Pro monitoring tiers.</code></pre>
+
+      <p>
+        Adhering to strict line breaks, absolute HTTPS URLs, and valid heading structures prevents parsing errors across automated tool chains, detailed in our deep dive on <a href="/llms-txt-syntax/" class="text-accent hover:underline">llms.txt Syntax and Format Rules</a>.
+      </p>
+
+      <h2 id="what-is-the-difference-between-llmstxt-llms-fulltxt-and-md-page-mirrors">What Is the Difference Between /llms.txt, /llms-full.txt, and .md Page Mirrors?</h2>
+      <p class="text-sm font-medium text-ink">
+        The llmstxt.org specification defines a 3-tier ecosystem of Markdown files (/llms.txt, /llms-full.txt, and .md URL mirrors) so AI tools choose between a lightweight table of contents, a single-file documentation dump, or an individual clean article. The table below compares all 3 file types.
+      </p>
+
+      <div class="overflow-x-auto my-6">
+        <table class="pdns-table w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-3 font-semibold text-ink">File Path / Pattern</th>
+              <th class="p-3 font-semibold text-ink">What It Contains</th>
+              <th class="p-3 font-semibold text-ink">Typical Size (Tokens)</th>
+              <th class="p-3 font-semibold text-ink">How AI Tools & Developers Use It</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line text-ink-dim">
+            <tr>
+              <td class="p-3 font-medium text-ink">/llms.txt</td>
+              <td class="p-3">Curated Index Map: H1 title, blockquote summary, section headings, and links with 1-sentence descriptions.</td>
+              <td class="p-3">Compact (500 to 4,000 tokens)</td>
+              <td class="p-3">Parsed during interactive prompts or agent browsing to quickly identify specific canonical URLs.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">/llms-full.txt</td>
+              <td class="p-3">Complete Documentation Archive: The full body copy of all core guides, API endpoints, and references concatenated into a unified text file.</td>
+              <td class="p-3">Substantial (30,000 to 300,000+ tokens)</td>
+              <td class="p-3">Ingested directly into large-context models (Claude, Gemini) or vectorized into local RAG systems for offline querying.</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-medium text-ink">&lt;url&gt;.md or &lt;url&gt;/index.html.md</td>
+              <td class="p-3">Clean Single-Page Mirror: The isolated Markdown text of an individual HTML web page, stripped of headers, sidebars, and scripts.</td>
+              <td class="p-3">Targeted (800 to 3,000 tokens per page)</td>
+              <td class="p-3">Fetched on demand after an agent inspects /llms.txt and selects a specific page to read in pure Markdown.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+
+      <p>
+        Major developer platforms including Cloudflare, Anthropic, Stripe, Vercel, and Mintlify publish both indexes to accommodate distinct machine workflows. Conversational assistants rely on the compact <code>/llms.txt</code> file for low-latency link discovery, whereas developers building complex software load <code>/llms-full.txt</code> directly into IDE assistants such as Cursor or Claude Code to provide complete API context in a single operation.
+      </p>
+
+      <h2 id="who-actually-reads-llmstxt-in-2026-adoption-reality-vs-seo-myths">Who Actually Reads llms.txt in 2026? (Adoption Reality vs SEO Myths)</h2>
+      <p>
+        Understanding the practical value of llms.txt in 2026 requires separating 3 proven technical use cases from unverified search engine ranking claims.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Powering AI Coding Assistants, IDE Agents, and RAG Ingestion:</strong> Developer platforms and coding tools actively consume /llms.txt and /llms-full.txt. Cursor users leverage the <code>@Docs</code> feature to ingest documentation directly from an llms.txt endpoint. Windsurf, Claude Code, and developer RAG frameworks routinely check for /llms.txt to index third-party libraries without maintaining custom HTML scrapers.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Operating Independently of Traditional Search Ranking Signals:</strong> Traditional search engines do not calculate organic rankings from /llms.txt files. Search representatives clarify that Google Search treats the file as arbitrary plain text rather than a direct algorithmic ranking boost. Autonomous search crawlers continue to discover, parse, and rank websites primarily through standard HTML documents, schema markup, and XML sitemaps.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Improving Citation Precision and Reducing Inference Hallucinations:</strong> Grounding language models with structured descriptions and canonical links dramatically improves answer quality. Language models reference canonical documentation directly during user queries when an llms.txt file provides clean Markdown links, preventing hallucinated pricing figures, broken URLs, or outdated technical parameters.
+        </li>
+      </ol>
+
+      <p>
+        Publishing an llms.txt file requires minimal maintenance while improving conversational discovery, forming an integral component of modern <a href="/generative-engine-optimization/" class="text-accent hover:underline">Generative Engine Optimization (GEO): The Complete Guide</a> and overall domain preparation in <a href="/ai-readiness-guide/" class="text-accent hover:underline">AI Readiness: Is Your Domain Machine-Readable?</a>
+      </p>
+
+      <h2 id="how-to-create-deploy-and-validate-your-llmstxt-file-in-4-steps">How to Create, Deploy, and Validate Your llms.txt File in 4 Steps</h2>
+      <p>
+        To build and publish a spec-compliant llms.txt file on your domain, complete 4 curation, generation, deployment, and crawler-access steps.
+      </p>
+
+      <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Curate Flagship Canonical URLs:</strong> Select 15 to 40 core pages that represent your primary services, documentation hubs, pricing structures, and technical guides. Avoid dumping entire blog archives, category tags, or paginated search results into the file.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Generate Valid Markdown Syntax:</strong> Construct your file using our free browser-based <a href="/llms-txt-generator/" class="text-accent hover:underline">llms.txt Generator</a>, which formats the mandatory H1 title, blockquote summary, and categorized link sections automatically.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Deploy the File to Your Site Root:</strong> Save the output as <code>llms.txt</code> inside your project static directory (such as <code>public/llms.txt</code> in Astro, Next.js, or SvelteKit) so the server returns HTTP 200 OK with <code>Content-Type: text/plain; charset=utf-8</code>:
+          <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-panel/60 p-3 text-xs font-mono text-ink"><code># Verify live llms.txt headers and plain-text delivery via terminal:
+curl -i https://promptdns.com/llms.txt</code></pre>
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Verify Machine Accessibility and Permissions:</strong> Ensure your CDN edge and crawler policies permit automated tools to read the file. Audit your configuration with the <a href="/ai-readiness-checker/" class="text-accent hover:underline">AI Readiness Score Audit</a>, inspect bot permissions in the <a href="/ai-crawler-checker/" class="text-accent hover:underline">AI Crawler Checker</a>, validate syntax in the <a href="/robots-txt-checker/" class="text-accent hover:underline">robots.txt Checker and Validator</a>, and follow operational guides detailing <a href="/how-to-allow-ai-crawlers/" class="text-accent hover:underline">How to Allow AI Crawlers</a> or restrict specific scrapers in <a href="/how-to-block-ai-crawlers/" class="text-accent hover:underline">How to Block AI Crawlers</a>.
+        </li>
+      </ol>
+
+      <p>
+        Publishing clean Markdown maps establishes modern standards across <a href="/ai-web-infrastructure/" class="text-accent hover:underline">AI Web Infrastructure</a>. Mastering what is llms.txt, adopting the llmstxt.org Markdown standard, contrasting llms.txt vs llms-full.txt, aligning llms.txt vs robots.txt and sitemap.xml, and driving LLM context window optimization ensure that both autonomous agents and interactive language models digest your digital assets with maximum fidelity.
+      </p>
+
+      <h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="mt-4 space-y-3">
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Does llms.txt replace robots.txt or sitemap.xml?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, llms.txt complements robots.txt and sitemap.xml rather than replacing them. Your robots.txt file controls which bots are permitted to crawl your site, sitemap.xml lists every indexable URL for search engines, and llms.txt provides a curated Markdown summary of your most important pages for AI models.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Where do I put the llms.txt file on my website?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>Place the file at the exact root directory of your domain so it is publicly accessible at https://yourdomain.com/llms.txt (and optionally https://yourdomain.com/llms-full.txt), served over HTTPS with a text/plain; charset=utf-8 or text/markdown content type.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>How many links should I include in my llms.txt file?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>In practice, keep your main /llms.txt file concise, typically between 15 and 50 curated links (around 1,000 to 3,000 tokens total). Dumping hundreds of minor URLs into /llms.txt defeats its entire purpose of saving context-window tokens; put secondary links under the ## Optional heading and use /llms-full.txt for full-text documentation dumps.</p>
+          </div>
+        </details>
+
+        <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
+            <span>Will adding an llms.txt file stop AI companies from training on my website?</span>
+            <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-3 text-sm leading-relaxed text-ink-dim">
+            <p>No, in real-world deployments llms.txt is purely an informational guide to help AI understand your content, not an opt-out or blocking mechanism. Website administrators wanting to block AI companies from scraping content for model training configure Disallow: / rules in /robots.txt and enforce them with a Cloudflare WAF or server 403 block.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
