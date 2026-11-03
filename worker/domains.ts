@@ -53,7 +53,7 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
 
   const rows = await env.DB
     .prepare(
-      `SELECT d.id, d.domain, d.created_at, d.paused, d.verified,
+      `SELECT d.id, d.domain, d.created_at, d.paused,
               COALESCE(d.last_checked_at, s.checked_at) AS checked_at,
               s.score, s.grade, s.checks_json, d.records_json AS records_json
          FROM domains d
@@ -64,14 +64,13 @@ export async function handleDomainsList(request: Request, env: SessionEnv): Prom
         ORDER BY d.id`,
     )
     .bind(userOrRes.id)
-    .all<{ id: number; domain: string; created_at: string; paused: number; verified: number; score: number | null; grade: string | null; checks_json: string | null; records_json: string | null; checked_at: string | null }>();
+    .all<{ id: number; domain: string; created_at: string; paused: number; score: number | null; grade: string | null; checks_json: string | null; records_json: string | null; checked_at: string | null }>();
 
   const domains = (rows.results ?? []).map((r) => ({
     id: r.id,
     domain: r.domain,
     addedAt: r.created_at,
     paused: Boolean(r.paused),
-    verified: Boolean(r.verified),
     score: r.score,
     grade: r.grade,
     checkedAt: r.checked_at,

@@ -151,7 +151,7 @@ const lg = (n, s) => {
     };const nm = (n, b) => E('span', { class: 'fx', style: 'gap:8px;flex-wrap:nowrap' }, lg(n) || '', b ? E('b', {}, n) : n);
 
     // ================= data =================
-    type DRow = { id: number; n: string; paused: boolean; verified: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
+    type DRow = { id: number; n: string; paused: boolean; score: number | null; grade: string | null; checkedAt: string | null; checks: { id: string; label: string; status: string; value: string }[] | null; records: { type: string; name: string; value: string }[] | null };
     let DOMS: DRow[] = [];
     let OV: any = null;
     let ALERTS: { id: number; severity: string; title: string; detail: string; created_at: string; read_at: string | null; domain: string }[] = [];
@@ -178,7 +178,7 @@ const lg = (n, s) => {
     async function refreshAll() {
       const [d, o, a] = await Promise.all([getJSON('/api/domains'), getJSON('/api/overview'), getJSON('/api/alerts')]);
       if (d && d.ok) {
-        DOMS = (d.domains || []).map((x: any) => ({ id: x.id, n: x.domain, paused: !!x.paused, verified: !!x.verified, score: x.score, grade: x.grade, checkedAt: x.checkedAt, checks: x.checks || [], records: x.records || [] }));
+        DOMS = (d.domains || []).map((x: any) => ({ id: x.id, n: x.domain, paused: !!x.paused, score: x.score, grade: x.grade, checkedAt: x.checkedAt, checks: x.checks || [], records: x.records || [] }));
         MAXD = d.max || 3;
       }
       OV = o && o.ok ? o : null;
@@ -281,7 +281,7 @@ const lg = (n, s) => {
         E('tbody', {}, rows.length ? rows.map((d) => {
           const i = DOMS.indexOf(d);
           return E('tr', { class: 'cl' },
-            E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : '', d.verified ? ' ' : '', d.verified ? pill('Verified', 'ok') : ''),
+            E('td', {}, E('button', { class: 'lk', onclick: () => openDomain(i) }, d.n), d.paused ? ' ' : '', d.paused ? pill('paused', 'wn') : ''),
             E('td', {}, nm(providerOf(d), 1) || E('span', { class: 'sub' }, providerOf(d))),
             E('td', { class: 'm' }, String((d.records || []).length)),
             E('td', {}, checkChips(d)),
@@ -437,41 +437,9 @@ const lg = (n, s) => {
     }
         // ================= DMARC reports =================
     async function rep() {
-      const ruaCache = new Map<string, string | null>();
       const d = curDom();
       if (!d) return E('div', { class: 'cd' }, E('h3', {}, 'No domain selected'), E('p', { class: 'sub' }, 'Add a domain on the Overview screen to see its DMARC reports.'));
       const DM = await loadDmarc();
-      const dmarcRec = (d ? chk(d, 'dmarc')?.value : '') || '';
-      let ruaRec: string | null | undefined = dmarcRec.toLowerCase().includes('v=dmarc') ? dmarcRec : undefined;
-      if (d && ruaRec === undefined) {
-        if (ruaCache.has(d.n)) ruaRec = ruaCache.get(d.n);
-        else {
-          try {
-            const res = await fetch('https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent('_dmarc.' + d.n) + '&type=TXT', { headers: { accept: 'application/dns-json' } });
-            const json = await res.json();
-            const txts = (json.Answer || []).filter((a: any) => a.type === 16).map((a: any) => String(a.data).replace(/"/g, ''));
-            ruaRec = txts.find((t: string) => t.toLowerCase().startsWith('v=dmarc1')) || null;
-          } catch { ruaRec = null; }
-          ruaCache.set(d.n, ruaRec);
-        }
-      }
-      const ruaMatch = ruaRec ? ruaRec.match(/rua=([^;]+)/i) : null;
-      const lastReport = DM && DM.reports && DM.reports[0] ? DM.reports[0].received_at : null;
-      const noticeChecking = () => E('div', { class: 'cd', style: 'background:var(--as)' },
-        E('p', { class: 'sub', style: 'margin:0' }, 'Checking the rua= tag on the live DMARC record...'));
-      const noticeNoRecord = () => E('div', { class: 'cd', style: 'background:var(--ws)' },
-        E('b', {}, 'This domain cannot receive aggregate reports yet.'),
-        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'No DMARC record was found in live DNS, so providers have nowhere to send reports. Publish the record below at your DNS provider.'),
-        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Recommended record: ', E('span', { class: 'm' }, 'v=DMARC1; p=none; rua=mailto:reports@promptdns.com')));
-      const noticeNoRua = () => E('div', { class: 'cd', style: 'background:var(--ws)' },
-        E('b', {}, 'Your DMARC record is missing the rua= tag.'),
-        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'The live record is ', E('span', { class: 'm' }, ruaRec), ' - it has no rua= tag, so providers have nowhere to send reports. Update the record at your DNS provider to:'),
-        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Updated record: ', E('span', { class: 'm' }, ruaRec.replace(/;\s*$/, '') + '; rua=mailto:reports@promptdns.com')));
-      const noticeOk = () => E('div', { class: 'cd', style: 'background:var(--as)' },
-        E('p', { class: 'sub', style: 'margin:0' }, 'rua= is configured (' + ruaMatch[1].trim() + '). Aggregate reports arrive on the schedule of each receiving provider - typically daily, and only when mail is sent from this domain. They are not tied to the 6 hour scan.' + (lastReport ? ' Last report received ' + fmtWhen(lastReport) + '.' : ' No reports have arrived yet - they start within about a day of outbound mail.')),
-        E('p', { class: 'sub', style: 'margin:4px 0 0' }, 'Live record: ', E('span', { class: 'm' }, ruaRec)));
-      const notices = E('div', { style: 'margin-bottom:14px' },
-        ruaRec === undefined ? noticeChecking() : !ruaRec ? noticeNoRecord() : !ruaMatch ? noticeNoRua() : noticeOk());
       const sum = DM ? DM.summary : { reports: 0, messages: 0, orgs: 0, passRate: null };
       const tot = sum.messages || 0, rate = sum.passRate;
       const head = E('div', { class: 'fx sp', style: 'margin-bottom:8px' },
@@ -538,7 +506,7 @@ const lg = (n, s) => {
         else toast((j && j.error) || 'Upload failed.');
       } });
       const upBtn = E('button', { class: 'btn p', onclick: () => upl.click() }, 'Upload report');
-      return E('div', {}, notices, E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
+      return E('div', {}, E('div', { class: 'fx sp', style: 'margin-bottom:14px' },
         E('p', { class: 'sub', style: 'margin:0' }, 'Reports arrive by forwarding rua mail to PromptDNS, or upload one directly.'),
         E('div', { class: 'fx' }, upBtn, upl)),
         E('div', { class: 'g g21' }, chartCard, side), E('div', { class: 'cd' }, tabs, table));
@@ -551,13 +519,12 @@ const lg = (n, s) => {
       const recVal = dmarcChk && dmarcChk.value ? dmarcChk.value : '';
       const pm = recVal.match(/p=([a-z]+)/i);
       const cur = pm ? pm[1].toLowerCase() : null;
-      if (cur === 'none' || cur === 'quarantine' || cur === 'reject') S.pol = cur; else if (!cur) S.pol = 'none';
       const P = [['none', 'None', 'Failing messages still deliver to the inbox'], ['quarantine', 'Quarantine', 'Failing messages are marked as spam'], ['reject', 'Reject', 'Failing messages are rejected']];
       const policyCard = E('div', { class: 'cd' },
         E('div', { class: 'fx sp', style: 'margin-bottom:8px' }, E('h3', {}, 'DMARC policy rollout'), cur ? pill('current: p=' + cur, cur === 'reject' ? 'ok' : cur === 'quarantine' ? 'wn' : 'in2') : prev()),
         E('p', { class: 'sub', style: 'margin:0 0 10px' }, recVal ? E('span', { class: 'm' }, recVal) : 'No DMARC record found on ' + (d ? d.n : 'this domain') + ' yet. Managed records publish one for you.'),
-        E('div', { class: 'fx', style: 'margin:14px 0;gap:12px' }, P.map(([v, t, dd]) => E('button', { class: 'rad' + (S.pol === v ? ' on' : ''), 'aria-pressed': S.pol === v, onclick: () => { S.pol = v; go(); } }, E('b', {}, t), E('span', { class: 'sub' }, dd)))),
-        E('div', { class: 'fx', style: 'margin:16px 0;padding:12px 0' },
+        P.map(([v, t, dd]) => E('button', { class: 'rad' + (S.pol === v ? ' on' : ''), 'aria-pressed': S.pol === v, onclick: () => { S.pol = v; go(); } }, E('b', {}, t), E('span', { class: 'sub' }, dd))),
+        E('div', { class: 'fx', style: 'margin-top:10px' },
           E('label', { for: 'pc' }, 'Apply to ', E('b', {}, S.pct + '%'), ' of failing mail'),
           E('input', { id: 'pc', type: 'range', min: 10, max: 100, step: 10, value: S.pct, oninput: (e: any) => { S.pct = +e.target.value; e.target.previousSibling.children[0].textContent = S.pct + '%'; } }),
           E('button', { class: 'btn p', onclick: () => toast('Preview: hosted DMARC records ship with managed enforcement.') }, 'Publish change')),
@@ -830,9 +797,8 @@ const lg = (n, s) => {
       const head = E('div', { class: 'cd' }, E('div', { class: 'fx sp' },
         E('div', { class: 'fx' }, ring(d.score), E('div', {},
           E('b', { style: 'font-size:16px' }, d.n),
-          E('div', { class: 'sub' }, 'grade ' + gradeOf(d.score) + ' - ' + (d.paused ? 'monitoring paused' : 'monitoring active') + (d.checkedAt ? ' - last check ' + fmtWhen(d.checkedAt) : ' - not checked yet') + ' - ' + (d.verified ? 'verified' : 'not verified')), d.verified ? pill('Verified', 'ok') : pill('Not verified', 'wn'))),
+          E('div', { class: 'sub' }, 'grade ' + gradeOf(d.score) + ' - ' + (d.paused ? 'monitoring paused' : 'monitoring active') + (d.checkedAt ? ' - last check ' + fmtWhen(d.checkedAt) : ' - not checked yet')))),
         E('div', { class: 'fx' },
-          d.verified ? '' : E('button', { class: 'btn', onclick: () => verifyModal(d) }, 'Verify ownership'),
           E('button', { class: 'btn p', onclick: () => doRescan(d.id).then(() => go()) }, 'Rescan'),
           E('button', { class: 'btn', onclick: () => doPause(d).then(() => go()) }, d.paused ? 'Resume' : 'Pause'),
           E('button', { class: 'btn', style: 'color:var(--bd)', onclick: () => doDelete(d) }, 'Remove domain'))));
@@ -884,38 +850,6 @@ const lg = (n, s) => {
         bad.length && (S.dtab || 'ov') === 'ov' ? E('div', { class: 'cd', style: 'margin-bottom:14px;background:var(--ws)' },
           E('b', {}, bad.length + ' check' + (bad.length === 1 ? '' : 's') + ' need attention.'),
           E('p', { class: 'sub', style: 'margin:4px 0 0' }, bad.map((c) => c.label).join(', ') + ' did not pass on the last scan.')) : '', body);
-    }
-
-    // ================= ownership verification =================
-    async function verifyModal(d: DRow) {
-      const j = await postJSON('/api/domains/verify/start?id=' + d.id);
-      if (!j || !j.ok) return toast((j && j.error) || 'Could not start verification.');
-      if (j.verified) {
-        toast('Domain is already verified.');
-        await refreshAll();
-        return;
-      }
-      const value = j.record.value;
-      const copyBtn = E('button', { class: 'btn p', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(value); toast('Copied to clipboard'); } }, 'Copy value');
-      const checkBtn = E('button', { class: 'btn p', onclick: async () => {
-        checkBtn.disabled = true;
-        toast('Checking DNS for the TXT record...');
-        const r = await postJSON('/api/domains/verify/check?id=' + d.id);
-        if (r && r.ok && r.verified) { cdr(); toast('Domain verified. Ownership confirmed.'); await refreshAll(); }
-        else if (r && r.ok) { checkBtn.disabled = false; toast(r.message || 'TXT record not found yet. Check the value and propagation.'); }
-        else { checkBtn.disabled = false; toast((r && r.error) || 'Check failed. Try again.'); }
-      } }, 'Check now');
-      $('#ly').replaceChildren(
-        E('div', { class: 'ov', onclick: cdr }),
-        E('aside', { class: 'dr', role: 'dialog', 'aria-label': 'Verify ownership' },
-          E('div', { class: 'fx sp' }, E('h1', {}, 'Verify ownership'), E('button', { class: 'btn', onclick: cdr }, 'Close')),
-          E('p', { class: 'sub', style: 'margin:10px 0 12px' }, 'Prove you control ' + d.n + ' by publishing this TXT record at your DNS provider. Verification unlocks managed records and paid features.'),
-          E('div', { class: 'cd', style: 'margin-bottom:12px' },
-            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Type'), E('span', { class: 'm' }, 'TXT')),
-            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Name'), E('span', { class: 'm' }, '@ (your domain)')),
-            E('div', { class: 'li' }, E('span', { class: 'sub' }, 'Value'), E('span', { class: 'm' }, value))),
-          E('div', { class: 'fx', style: 'margin-bottom:12px' }, copyBtn, checkBtn),
-          E('p', { class: 'sub' }, 'DNS changes can take a few minutes to propagate. Keep the record published - re-verification may use it again.')));
     }
 
     // ================= workspaces (sample until the agency release) =================

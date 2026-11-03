@@ -11,7 +11,6 @@ import { handleMagicLink, handleVerify, handleMe, handleLogout, type AuthEnv } f
 import { handleDomainsList, handleDomainsAdd, handleDomainsDelete, handleDomainsPause } from './domains';
 import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleHistory } from './monitor';
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload } from './dmarc-ingest';
-import { handleVerifyStart, handleVerifyCheck } from './verify';
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 
@@ -45,8 +44,6 @@ export default {
     if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
     if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
     if (path === '/api/domains/dmarc/upload' && method === 'POST') return handleDmarcUpload(request, env);
-    if (path === '/api/domains/verify/start' && method === 'POST') return handleVerifyStart(request, env);
-    if (path === '/api/domains/verify/check' && method === 'POST') return handleVerifyCheck(request, env);
     if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
     if (path === '/api/domains/rescan') return handleRescan(request, env);
     if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);

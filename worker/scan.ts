@@ -49,12 +49,6 @@ async function doh(name: string, type: string): Promise<DohJson> {
 const answersOf = (r: DohJson) => r.Answer ?? [];
 const txts = (r: DohJson) => answersOf(r).filter((a) => a.type === 16).map((a) => a.data.replace(/^"|"$/g, ''));
 
-/** TXT records for a name (quotes stripped) - shared with the verify flow. */
-export async function txtRecords(name: string): Promise<string[]> {
-  const r = await doh(name, 'TXT');
-  return txts(r);
-}
-
 const SPF_LOOKUP_PREFIXES = ['include:', 'a:', 'a/', 'mx:', 'mx/', 'exists:', 'redirect='];
 const isSpfLookupTerm = (t: string) => {
   const l = t.toLowerCase();
@@ -146,7 +140,7 @@ export async function scanDomainServer(domain: string): Promise<ScanResult> {
   checks.push({
     id: 'dmarc', label: 'DMARC', weight: 25,
     status: policy === 'reject' ? 'pass' : policy ? 'warn' : 'fail',
-    value: rec ?? 'No DMARC record',
+    value: policy ? `p=${policy}` : 'No DMARC record',
     earned: dmarcEarned,
   });
 
