@@ -2,147 +2,422 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
 
-const faqs: [string, string][] = [
-  ['What is the DNS security section?', "It's a curated collection of guides and tools focused on dns security, organized from fundamentals to advanced configurations."],
-  ['Are all these pages free?', 'Yes: every guide and tool on PromptDNS is free forever, with no account and no limits.'],
-  ['How do I navigate this section?', 'Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding.'],
-  ['How often is this content updated?', 'Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands.'],
-  ['Can I suggest a topic that\'s missing?', 'Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback.'],
-  ['Is this content written by experts?', 'Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details.'],
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const attackCards: HubCard[] = [
+  {
+    href: '/dns-hijacking/',
+    badge: 'Security Pillar',
+    title: 'DNS Hijacking: Redirection & Prevention',
+    desc: 'How local malware, router DHCP tampering, MITM, and registrar account takeovers (Sea Turtle) work and how to lock them down.',
+  },
+  {
+    href: '/dns-cache-poisoning/',
+    badge: 'Threat Guide',
+    title: 'DNS Cache Poisoning (Spoofing) Explained',
+    desc: 'Anatomy of the 2008 Dan Kaminsky TXID flaw, bailiwick rules, port randomization, and why DNSSEC eliminates spoofing.',
+  },
+  {
+    href: '/dns-amplification-attack/',
+    badge: 'DDoS Threat',
+    title: 'DNS Amplification Attacks Explained',
+    desc: 'How botnets abuse open resolvers and large UDP responses for reflection DDoS, and how RRL and BCP 38 stop them.',
+  },
+  {
+    href: '/dns-tunneling/',
+    badge: 'Exfiltration Threat',
+    title: 'DNS Tunneling (Port 53 Data Exfiltration)',
+    desc: 'How malware smuggles data and C2 commands through DNS TXT and CNAME queries, and how to detect anomalous entropy.',
+  },
+  {
+    href: '/nxdomain-attack/',
+    badge: 'DDoS Threat',
+    title: 'NXDOMAIN & Random Subdomain Attacks',
+    desc: 'How "Water Torture" floods bypass recursive caches to exhaust authoritative nameservers and how Anycast absorbs them.',
+  },
+  {
+    href: '/dns-rebinding-explained/',
+    badge: 'Browser / LAN Threat',
+    title: 'DNS Rebinding Attacks Explained',
+    desc: 'How attackers use ultra-short TTLs to bypass browser Same-Origin Policy and reach internal 192.168.x.x devices.',
+  },
 ];
 
+const defenseCards: HubCard[] = [
+  {
+    href: '/what-is-dnssec/',
+    badge: 'Security Pillar',
+    title: 'What Is DNSSEC? Chain of Trust & Keys',
+    desc: 'Complete guide to RFC 4033-4035 origin authentication, RRSIG, DNSKEY, DS, NSEC3, Algorithm 13 ECDSA, and safe rollovers.',
+  },
+  {
+    href: '/ds-record/',
+    badge: 'Record Pillar',
+    title: 'DS Record (Delegation Signer)',
+    desc: 'Understand Key Tag, Algorithm 13, Digest Type 2 (SHA-256 64-hex hash), registrar publication, and SERVFAIL prevention.',
+  },
+  {
+    href: '/dnskey-record/',
+    badge: 'Record Pillar',
+    title: 'DNSKEY Record (ZSK 256 vs KSK 257)',
+    desc: 'How public Zone Signing Keys and Key Signing Keys work in your child zone and how to inspect key IDs with dig +multiline.',
+  },
+  {
+    href: '/enable-dnssec-cloudflare/',
+    badge: 'Provider Setup',
+    title: 'How to Enable DNSSEC in Cloudflare',
+    desc: 'Step-by-step walkthrough to activate Algorithm 13 signing in Cloudflare and publish the DS hash at your registrar.',
+  },
+  {
+    href: '/doh-vs-dot/',
+    badge: 'Transport Encryption',
+    title: 'DNS-over-HTTPS vs DNS-over-TLS (DoH vs DoT)',
+    desc: 'Compare port 443 HTTPS, port 853 TLS, and QUIC (DoQ) across speed, privacy, firewall governance, and public endpoints.',
+  },
+  {
+    href: '/https-vs-dnssec/',
+    badge: 'Architecture Comparison',
+    title: 'HTTPS vs DNSSEC: Why You Need Both',
+    desc: 'Understand why DNSSEC authenticates the IP lookup while HTTPS/TLS encrypts the web connection after resolution.',
+  },
+  {
+    href: '/caa-record/',
+    badge: 'Record Pillar',
+    title: 'CAA Record (Certificate Authority Authorization)',
+    desc: "Lock SSL/TLS issuance to approved CAs (Let's Encrypt, DigiCert, Google) using issue, issuewild, and ACME accounturi pinning.",
+  },
+  {
+    href: '/dns-threat-protection-checklist/',
+    badge: 'Actionable Checklist',
+    title: 'DNS Hardening Checklist: 15 Steps',
+    desc: 'Audit your domain across hardware 2FA, Registry Lock, DNSSEC, AXFR lockdown, CAA, SPF/DMARC, and drift monitoring.',
+  },
+  {
+    href: '/nis2-dns-and-email-security-requirements/',
+    badge: 'Compliance',
+    title: 'NIS2 DNS and Email Security Requirements',
+    desc: 'How essential and important entities meet EU NIS2 Article 21 mandates using DNSSEC, registry locks, and DMARC.',
+  },
+];
+
+const toolCards: HubCard[] = [
+  {
+    href: '/dnssec-checker/',
+    badge: 'Free Security Tool',
+    title: 'DNSSEC Checker and Validator',
+    desc: 'Verify parent DS presence, child DNSKEY (256/257) matching, RRSIG validity, and Authenticated Data (AD=1) flags.',
+  },
+  {
+    href: '/ds-record-lookup/',
+    badge: 'Type 43 Tool',
+    title: 'DS Record Lookup (DNSSEC)',
+    desc: 'Inspect live Delegation Signer key tags, algorithms, digest types, and SHA-256 hashes at the parent TLD.',
+  },
+  {
+    href: '/dnskey-record-lookup/',
+    badge: 'Type 48 Tool',
+    title: 'DNSKEY Record Lookup',
+    desc: 'Verify child zone ZSK (256) and KSK (257) public cryptographic keys.',
+  },
+  {
+    href: '/caa-record-lookup/',
+    badge: 'Type 257 Tool',
+    title: 'CAA Record Lookup',
+    desc: 'Check which Certificate Authorities are authorized to issue SSL/TLS certificates for your domain.',
+  },
+  {
+    href: '/axfr-checker/',
+    badge: 'Security Audit Tool',
+    title: 'AXFR Zone Transfer Checker',
+    desc: 'Test whether authoritative nameservers leak the full zone file to unauthorized clients over TCP port 53.',
+  },
+  {
+    href: '/delegation-checker/',
+    badge: 'Delegation Tool',
+    title: 'DNS Delegation Checker',
+    desc: 'Verify that your parent TLD registrar NS records match your child authoritative zone NS records.',
+  },
+  {
+    href: '/dns-leak-test/',
+    badge: 'Privacy Tool',
+    title: 'DNS Leak Test',
+    desc: 'Detect if your operating system or VPN leaks unencrypted DNS queries to ISP recursors.',
+  },
+  {
+    href: '/dns-resolver-tester/',
+    badge: 'Resolver Audit',
+    title: 'DNS Resolver Tester',
+    desc: 'Benchmark resolver response times and test EDNS0, DNSSEC, and DoH support.',
+  },
+  {
+    href: '/dns-monitoring/',
+    badge: 'Continuous Audit',
+    title: 'Automated DNS Security Monitoring',
+    desc: 'Track unauthorized nameserver changes, zone drift, and DNSSEC validation errors with 6-hour polling.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What is the difference between DNSSEC and HTTPS/TLS?',
+    a: 'DNSSEC and HTTPS protect two completely different stages of a web connection: DNSSEC authenticates the initial DNS lookup, proving that the IP address returned belongs to the legitimate domain owner and was not forged in cache; HTTPS/TLS encrypts the web traffic after resolution, protecting user passwords and data in transit between the browser and that server IP.',
+  },
+  {
+    q: 'Does enabling DNSSEC slow down website performance?',
+    a: 'No, in practice DNSSEC validation adds negligible latency (typically less than 2 milliseconds) on recursive resolvers during cold lookups, while cached queries resolve with zero latency penalty. Using compact Algorithm 13 (ECDSA P-256) keeps DNS response packets under the standard 1,472-byte UDP MTU ceiling, preventing packet fragmentation.',
+  },
+  {
+    q: 'Why do domains get hijacked even when DNSSEC is turned on?',
+    a: 'In real-world security incidents, DNSSEC validates data integrity in transit but does not stop an attacker who compromises your domain registrar account or DNS hosting dashboard. To prevent registrar takeovers, administrators enforce hardware security keys (FIDO2/WebAuthn), mandate multi-admin approval, and enable Registry Lock at the top-level domain registry.',
+  },
+  {
+    q: "What happens if a domain's DNSSEC keys or DS records become out of sync?",
+    a: 'When the parent TLD DS hash fails to match the child zone DNSKEY, validating recursive resolvers reject all DNS responses with a SERVFAIL error code. This completely takes down website resolution and email delivery for visitors on validating networks (including Google 8.8.8.8 and Cloudflare 1.1.1.1) until the parent DS record is updated or removed.',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'DNS Security: Threats, Attacks, DNSSEC, Encrypted Transport, and Hardening',
+  url: 'https://promptdns.com/dns-security/',
+  description: 'Master hub for DNS security: cache poisoning, hijacking, amplification DDoS, tunneling, DNSSEC cryptographic signing, DoH/DoT transport, and 9 free audit tools.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'DNS Security', item: 'https://promptdns.com/dns-security/' },
+  ],
+};
+
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-  {
-   "@type": "Question",
-   "name": "What is the DNS security section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "It's a curated collection of guides and tools focused on dns security, organized from fundamentals to advanced configurations."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Are all these pages free?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How do I navigate this section?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "How often is this content updated?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Can I suggest a topic that's missing?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback."
-   }
-  },
-  {
-   "@type": "Question",
-   "name": "Is this content written by experts?",
-   "acceptedAnswer": {
-    "@type": "Answer",
-    "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details."
-   }
-  }
- ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
+
 <BaseLayout
-  title="DNS Security: Hijacking, Poisoning, Tunneling & Defense"
-  description="DNS security cluster: hijacking, cache poisoning, amplification attacks, tunneling, rebinding - how each attack works and the layered defense that stops them."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Security"]]}>
+  title="DNS Security: Threats, Attacks, DNSSEC, Encrypted Transport, and Hardening"
+  description="Master hub for DNS security: cache poisoning, hijacking, amplification DDoS, tunneling, DNSSEC cryptographic signing, DoH/DoT transport, and 9 free audit tools."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
+>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">DNS Security</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">DNS Security</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Security</h1>
-    <div class="pd-answer" data-vs="answer">
+
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DNS Security: Threats, Attacks, DNSSEC, Encrypted Transport, and Hardening
+    </h1>
+
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      DNS is the internet's trust layer: every website visit, email delivery, and API call
-      depends on DNS answers being correct. These guides cover the attacks that exploit DNS
-      and the defenses that stop them.
-    </p>
-    </div>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">DNS threat overview</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Threat</th><th>Defense</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Poisoning</td><td class="text-sm text-ink-dim">DNSSEC</td></tr><tr><td class="font-medium text-ink">Hijacking</td><td class="text-sm text-ink-dim">Monitoring + locks</td></tr><tr><td class="font-medium text-ink">Tunneling</td><td class="text-sm text-ink-dim">Analytics</td></tr><tr><td class="font-medium text-ink">Floods</td><td class="text-sm text-ink-dim">Rate limiting</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Attack Types</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/dns-hijacking/', title: 'DNS Hijacking', desc: 'Registrar compromise, on-path interception, cache poisoning. How attacks work and the layered defense.' },
-          { href: '/dns-cache-poisoning/', title: 'Cache Poisoning', desc: 'How forged records end up in resolver caches, the Kaminsky attack, and why DNSSEC is the answer.' },
-          { href: '/dns-amplification-attack/', title: 'Amplification Attacks', desc: 'How open resolvers are weaponized for DDoS, and how to prevent your server from being used.' },
-          { href: '/dns-tunneling/', title: 'DNS Tunneling', desc: 'Data exfiltration through DNS queries, detection signals, and prevention.' },
-          { href: '/dns-rebinding-explained/', title: 'DNS Rebinding', desc: 'Bypassing the same-origin policy using DNS time gaps to access internal networks.' },
-          { href: '/nxdomain-attack/', title: 'NXDOMAIN Attacks', desc: 'Random subdomain floods that exhaust nameservers and resolvers.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Defense</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/dns-threat-protection-checklist/', title: 'DNS Threat Protection Checklist', desc: 'A prioritized checklist to harden your DNS against hijacking, poisoning, tunneling, and amplification.' },
-          { href: '/what-is-dnssec/', title: 'DNSSEC', desc: 'Cryptographically signed answers that make forgeries detectable.' },
-          { href: '/dnssec-checker/', title: 'DNSSEC Checker', desc: 'Verify your DS records, DNSKEYs, and algorithm strength.' },
-          { href: '/caa-record/', title: 'CAA Records', desc: 'Restrict which CAs can issue certificates for your domain.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={faqs} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <p class="text-sm leading-relaxed text-ink-dim">
-        <strong class="text-ink">Verify your security posture:</strong> run the
-        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> (DNSSEC,
-        SPF, DKIM, DMARC in one pass), then confirm records with the
-        <a href="/dns-record-lookup/" class="font-medium text-accent hover:text-accent-soft">DNS record lookup</a>.
+        DNS security is <strong class="text-ink">the set of cryptographic protocols, access controls, and network defenses that protect domain name lookups from spoofing, hijacking, eavesdropping, and DDoS abuse</strong>. Original port 53 DNS lacked built-in authentication or encryption. The 4 defense layers combine <code>DNSSEC</code>, <code>DoH</code>/<code>DoT</code>, registrar locks, and monitoring.
       </p>
+    </div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#threat-matrix">DNS Threat and Defense Matrix</a></li>
+        <li><a href="#attack-guides">1. DNS Attack Vectors and Threat Guides</a></li>
+        <li><a href="#dnssec-transport">2. Cryptographic Signing, Encrypted Transport, and Hardening</a></li>
+        <li><a href="#security-tools">3. Free Browser-Based DNS Security Checkers and Audit Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Threat Matrix Table -->
+      <section id="threat-matrix" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          DNS Threat and Defense Matrix: 7 Attack Vectors and Technical Controls
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Original 1980s DNS (<code>RFC 1035</code>) was engineered for fast, distributed hostname lookups over unencrypted UDP port 53 without cryptographic origin verification. Because almost every web visit, API call, and email delivery begins with a DNS query, attackers target both recursive resolvers and authoritative zones across 7 distinct attack patterns. The table below maps the 7 primary DNS threats by target layer, attack mechanism, blast radius, and primary technical defense.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">DNS Threat / Attack Vector</th>
+                <th class="px-4 py-3">Target Layer</th>
+                <th class="px-4 py-3">How the Attack Executes</th>
+                <th class="px-4 py-3">Primary Technical Defense</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. DNS Cache Poisoning (Spoofing)</td>
+                <td class="px-4 py-3">Recursive Resolver RAM Cache</td>
+                <td class="px-4 py-3">Attacker injects forged UDP port 53 responses with guessed 16-bit Transaction IDs before the real server answers.</td>
+                <td class="px-4 py-3"><strong><code>DNSSEC</code> validation</strong> (<code>RRSIG</code>, <code>DNSKEY</code>, <code>DS</code>) and source-port randomization (<code>RFC 5452</code>).</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. DNS Hijacking (Redirection)</td>
+                <td class="px-4 py-3">Registrar Account, Router, or OS</td>
+                <td class="px-4 py-3">Compromises registrar credentials to rewrite <code>NS</code>/<code>A</code> records, or alters router/device DHCP DNS settings.</td>
+                <td class="px-4 py-3"><strong>Hardware 2FA (<code>FIDO2</code>)</strong>, <strong>Registrar &amp; Registry Locks</strong>, <code>DoH</code>/<code>DoT</code>, and 6-hour drift monitoring.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. DNS Amplification DDoS</td>
+                <td class="px-4 py-3">Open Recursive Resolvers &amp; Victim Bandwidth</td>
+                <td class="px-4 py-3">Sends small queries (<code>ANY</code> or <code>DNSKEY</code>) with a spoofed victim source IP to reflect massive UDP responses (25x to 70x).</td>
+                <td class="px-4 py-3">Disabling open recursion, <strong>Response Rate Limiting (<code>RRL</code>)</strong>, <code>BCP 38</code> ingress filtering, and <code>Algorithm 13</code> ECDSA keys.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. DNS Tunneling</td>
+                <td class="px-4 py-3">Outbound Port 53 Firewall Channel</td>
+                <td class="px-4 py-3">Encodes stolen data or Command-and-Control (<code>C2</code>) payloads inside high-entropy subdomain queries (<code>&lt;base64&gt;.evil.com</code>).</td>
+                <td class="px-4 py-3">Inspecting DNS query logs, <strong>Response Policy Zones (<code>RPZ</code>)</strong>, and blocking unknown high-entropy TXT/NULL queries.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. NXDOMAIN Flood (Water Torture)</td>
+                <td class="px-4 py-3">Authoritative Nameserver CPU</td>
+                <td class="px-4 py-3">Floods a domain with millions of random non-existent subdomain queries (<code>a8f92.example.com</code>) that bypass resolver caches.</td>
+                <td class="px-4 py-3">Global <strong>Anycast DNS networks</strong>, aggressive <code>NXDOMAIN</code> rate limiting, and <code>RFC 8198</code> aggressive <code>NSEC</code> caching.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. DNS Rebinding</td>
+                <td class="px-4 py-3">Visitor Web Browser &amp; Private LAN (<code>RFC 1918</code>)</td>
+                <td class="px-4 py-3">Serves a 1-second TTL public IP first, then swaps the <code>A</code> record to <code>127.0.0.1</code> or <code>192.168.1.1</code> to attack local IoT/admin APIs.</td>
+                <td class="px-4 py-3">Blocking private <code>RFC 1918</code> IPs in public DNS responses (<code>rebind-domain-ok</code> filters) and validating <code>Host</code> headers.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">7. Unauthorized AXFR Zone Transfer</td>
+                <td class="px-4 py-3">Authoritative Nameserver TCP Port 53</td>
+                <td class="px-4 py-3">Requests a full <code>AXFR</code> zone dump (<code>dig @ns1.example.com example.com AXFR</code>) to map every internal host in one query.</td>
+                <td class="px-4 py-3">Restricting <code>allow-transfer</code> to specific secondary server IPs and requiring <strong>TSIG cryptographic keys</strong>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Securing a domain requires pairing threat awareness with active protocol controls: explore <strong class="text-ink">Section 1</strong> below for deep dives into each attack vector, <strong class="text-ink">Section 2</strong> for cryptographic signing (<code>DNSSEC</code>), encrypted transport (<code>DoH</code>/<code>DoT</code>), and hardening checklists, and <strong class="text-ink">Section 3</strong> to audit your domain live with our 9 browser-based security checkers.
+        </p>
+      </section>
+
+      <!-- Section 2: Attack Guides Grid -->
+      <section id="attack-guides" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. DNS Attack Vectors and Threat Guides (Hijacking, Poisoning, DDoS, and Tunneling)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Six guides dissect the mechanics of major DNS cyberattacks, showing how attackers exploit unauthenticated port 53 traffic, registrar accounts, and local networks, along with the exact steps to stop each threat. Select an attack guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {attackCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Defense Guides Grid -->
+      <section id="dnssec-transport" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. Cryptographic Signing (DNSSEC), Encrypted Transport (DoH/DoT), and Hardening
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Nine guides cover the defensive protocols and compliance frameworks that harden your domain: cryptographic zone signing (<code>DNSSEC</code>, <code>DS</code>, and <code>DNSKEY</code>), encrypted last-mile transport (<code>DoH</code> and <code>DoT</code>), Certificate Authority restrictions (<code>CAA</code>), and our 15-step hardening checklist. Open a defense guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {defenseCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: Security Tools Grid -->
+      <section id="security-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. Free Browser-Based DNS Security Checkers and Audit Tools (9 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Test your domain's live cryptographic signatures, parent-child delegation consistency, zone transfer exposure, CAA restrictions, and resolver privacy directly from your browser with zero server logging. Select a security audit tool below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every threat guide, cryptographic standard, and audit tool in this <strong class="text-ink">DNS Security hub</strong> works together to help you defend against <strong class="text-ink">cache poisoning and hijacking</strong>, deploy <strong class="text-ink">DNSSEC and CAA validation</strong>, encrypt transport with <strong class="text-ink">DoH and DoT</strong>, and audit <strong class="text-ink">zone exposure live</strong>.
+        </p>
+      </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
     </div>
   </div>
 </BaseLayout>
