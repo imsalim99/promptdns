@@ -1,123 +1,472 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
+
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const guideCards: HubCard[] = [
+  {
+    href: '/robots-txt-guide/',
+    badge: 'Pillar Guide',
+    title: 'robots.txt: Complete Guide & Examples',
+    desc: 'Master RFC 9309 directives (User-agent, Disallow, Allow, Sitemap), * and $ wildcards, HTTP status rules, and AI split templates.',
+  },
+  {
+    href: '/what-is-llms-txt/',
+    badge: 'Pillar Guide',
+    title: 'llms.txt: What It Is & Markdown Format',
+    desc: 'Understand the llmstxt.org specification (# H1, > Summary, ## Optional), /llms-full.txt, .md mirrors, and 2026 adoption.',
+  },
+  {
+    href: '/llms-txt-syntax/',
+    badge: 'Syntax Reference',
+    title: 'llms.txt Syntax and Format Rules',
+    desc: 'Detailed formatting rules, link description grammar, token budgeting, and common validation errors for llms.txt files.',
+  },
+  {
+    href: '/generative-engine-optimization/',
+    badge: 'Pillar Guide',
+    title: 'Generative Engine Optimization (GEO)',
+    desc: 'How RAG and Query Fan-Out work, the Princeton KDD 2024 9-method benchmark, SSR HTML requirements, and brand consensus.',
+  },
+  {
+    href: '/ai-readiness-guide/',
+    badge: 'Audit Guide',
+    title: 'AI Readiness: Is Your Domain Machine-Readable?',
+    desc: 'How HTTPS, DNSSEC, robots.txt, llms.txt, agents.txt, Schema.org JSON-LD, and security headers combine into one readiness score.',
+  },
+  {
+    href: '/ai-crawlers-list/',
+    badge: 'Master Directory',
+    title: 'The Complete List of AI Crawlers & Bots',
+    desc: 'Reference table of every active AI crawler user-agent token classified by operator, job (training vs search), and IP verification.',
+  },
+  {
+    href: '/how-to-allow-ai-crawlers/',
+    badge: 'Setup Guide',
+    title: 'How to Allow AI Crawlers for Visibility',
+    desc: 'Explicitly allow OAI-SearchBot, PerplexityBot, and ClaudeBot in robots.txt and Cloudflare WAF so AI engines cite your site.',
+  },
+  {
+    href: '/how-to-block-ai-crawlers/',
+    badge: 'Security Guide',
+    title: 'How to Block AI Crawlers (robots.txt & WAF)',
+    desc: 'Copy-paste robots.txt templates, NGINX map 403 blocks, Apache .htaccess rules, Cloudflare WAF expressions, and X-Robots-Tag headers.',
+  },
+  {
+    href: '/does-blocking-ai-crawlers-hurt-seo/',
+    badge: 'SEO Analysis',
+    title: 'Does Blocking AI Crawlers Hurt Google SEO?',
+    desc: 'Why blocking GPTBot, ClaudeBot, and Google-Extended has zero impact on Googlebot rankings while blocking OAI-SearchBot drops AI citations.',
+  },
+  {
+    href: '/chatgpt-search-operators/',
+    badge: 'Technical Guide',
+    title: 'How ChatGPT Search Fetches the Web',
+    desc: 'Understand how OAI-SearchBot indexing and live ChatGPT-User fetches retrieve, parse, and cite web pages.',
+  },
+];
+
+const botCards: HubCard[] = [
+  {
+    href: '/gptbot/',
+    badge: 'OpenAI · Training',
+    title: 'GPTBot (OpenAI Training Crawler)',
+    desc: 'User-agent token, openai.com/gptbot.json IP CIDR verification, and robots.txt rules to opt out of GPT model training.',
+  },
+  {
+    href: '/oai-searchbot/',
+    badge: 'OpenAI · AI Search',
+    title: 'OAI-SearchBot (ChatGPT Search)',
+    desc: "OpenAI's dedicated search indexing crawler that powers clickable link citations inside ChatGPT Search answers.",
+  },
+  {
+    href: '/claudebot/',
+    badge: 'Anthropic · Training',
+    title: 'ClaudeBot (Anthropic Crawler)',
+    desc: "Anthropic's web crawler user-agent, crawl-rate controls, IP verification, and robots.txt allow/disallow syntax.",
+  },
+  {
+    href: '/perplexitybot/',
+    badge: 'Perplexity · AI Search',
+    title: 'PerplexityBot (Perplexity AI)',
+    desc: "How Perplexity's search indexer discovers pages, published IP ranges, and why blocking it removes Perplexity citations.",
+  },
+  {
+    href: '/google-extended/',
+    badge: 'Google · Control Token',
+    title: 'Google-Extended (Gemini Training Token)',
+    desc: 'How to opt out of Gemini foundation model training in robots.txt without affecting Googlebot Search rankings.',
+  },
+  {
+    href: '/applebot-extended/',
+    badge: 'Apple · Control Token',
+    title: 'Applebot-Extended (Apple Intelligence)',
+    desc: 'Opt out of Apple Intelligence generative training while keeping your website indexed in Siri and Spotlight via Applebot.',
+  },
+  {
+    href: '/meta-externalagent/',
+    badge: 'Meta · Training & RAG',
+    title: 'Meta-ExternalAgent (Meta AI Crawler)',
+    desc: "Meta's crawler for Llama model training and Meta AI assistant grounding, with robots.txt and WAF blocking rules.",
+  },
+  {
+    href: '/ccbot/',
+    badge: 'Common Crawl · Dataset',
+    title: 'CCBot (Common Crawl Bot)',
+    desc: 'The open web archive crawler used to pre-train dozens of commercial and open-source large language models.',
+  },
+  {
+    href: '/bytespider/',
+    badge: 'ByteDance · Scraper',
+    title: 'Bytespider (ByteDance / Doubao Bot)',
+    desc: "How to block ByteDance's high-volume LLM scraper using both robots.txt and hard Cloudflare WAF / NGINX 403 rules.",
+  },
+  {
+    href: '/amazonbot/',
+    badge: 'Amazon · Alexa & Rufus',
+    title: 'Amazonbot (Amazon AI & Search Crawler)',
+    desc: "Amazon's web crawler powering Alexa answers, Rufus shopping AI, and AWS Q, with FCrDNS verification steps.",
+  },
+  {
+    href: '/cohere-ai/',
+    badge: 'Cohere · Enterprise AI',
+    title: 'cohere-ai (Cohere LLM Crawler)',
+    desc: "User-agent details and robots.txt rules for Cohere's enterprise retrieval and command model crawler.",
+  },
+  {
+    href: '/diffbot/',
+    badge: 'Diffbot · Knowledge Graph',
+    title: 'Diffbot (AI Web Data Extractor)',
+    desc: "How Diffbot's machine-vision web crawler extracts structured knowledge-graph entities and how to manage access.",
+  },
+  {
+    href: '/youbot/',
+    badge: 'You.com · AI Search',
+    title: 'YouBot (You.com AI Search Crawler)',
+    desc: "User-agent specifications and robots.txt configuration for You.com's conversational search engine crawler.",
+  },
+  {
+    href: '/gptbot-vs-claudebot/',
+    badge: 'Bot Comparison',
+    title: 'GPTBot vs ClaudeBot Compared',
+    desc: 'Side-by-side comparison of OpenAI and Anthropic crawler behavior, IP verification transparency, and search vs training split.',
+  },
+];
+
+const toolCards: HubCard[] = [
+  {
+    href: '/ai-crawler-checker/',
+    badge: 'Flagship AI Tool',
+    title: 'AI Crawler Checker',
+    desc: 'Audit your domain\'s robots.txt live across 12+ AI bots (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended).',
+  },
+  {
+    href: '/ai-readiness-checker/',
+    badge: '7-Check Composite',
+    title: 'AI Readiness Score Audit',
+    desc: 'Grade your domain 0-100 across HTTPS, DNSSEC, robots.txt AI rules, llms.txt, agents.txt, Schema.org, and headers.',
+  },
+  {
+    href: '/robots-txt-checker/',
+    badge: 'RFC 9309 Validator',
+    title: 'robots.txt Checker and Validator',
+    desc: 'Inspect User-agent groups, test specific paths against * and $ wildcards, and verify Sitemap declarations.',
+  },
+  {
+    href: '/llms-txt-generator/',
+    badge: 'Markdown Builder',
+    title: 'llms.txt Generator',
+    desc: 'Build a clean, llmstxt.org-compliant /llms.txt file (# H1, > Summary, and ## Section links) in 60 seconds.',
+  },
+  {
+    href: '/agents-txt-checker/',
+    badge: 'Agent Spec Tool',
+    title: 'agents.txt Checker',
+    desc: 'Test whether your domain serves a valid /agents.txt policy file for autonomous AI agents.',
+  },
+  {
+    href: '/schema-validator/',
+    badge: 'JSON-LD Auditor',
+    title: 'Structured Data / Schema Validator',
+    desc: 'Validate Organization, Article, FAQPage, and WebApplication JSON-LD markup for entity extraction.',
+  },
+  {
+    href: '/ai-log-analyzer/',
+    badge: 'Local Log Parser',
+    title: 'AI Crawler Log Analyzer',
+    desc: 'Drop NGINX, Apache, or Cloudflare access logs into your browser (zero server upload) to see real AI bot visits.',
+  },
+  {
+    href: '/reverse-ip-lookup/',
+    badge: 'Bot IP Verifier',
+    title: 'Reverse IP Lookup (PTR)',
+    desc: 'Verify whether a visiting bot IP genuinely belongs to OpenAI, Google, Anthropic, or Apple via reverse DNS.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What is the difference between AI training crawlers and AI search crawlers?',
+    a: 'AI training crawlers (such as GPTBot, ClaudeBot, CCBot, and the Google-Extended token) scrape web pages to build datasets for training future foundation language models. AI search crawlers (such as OAI-SearchBot and PerplexityBot) index pages so ChatGPT Search and Perplexity display your website with clickable link citations in live answers.',
+  },
+  {
+    q: 'How do I verify if a bot claiming to be GPTBot or Googlebot in my server logs is real or a fake scraper?',
+    a: "Because any scraper easily spoofs the User-Agent HTTP header, always verify the bot's IP address using two methods: either match the IP against the operator's official published CIDR JSON list (such as openai.com/gptbot.json), or run a Forward-Confirmed Reverse DNS (FCrDNS) check in our Reverse IP Lookup tool to confirm the IP's PTR record resolves to the operator's domain and resolves back to the same IP.",
+  },
+  {
+    q: 'Should I block all AI bots in robots.txt, allow all of them, or use a split policy?',
+    a: 'In practice, for most SaaS, e-commerce, and B2B websites that want referral traffic from AI search engines, we recommend a split robots.txt policy: set Disallow: / for pure training scrapers (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot, Bytespider) while explicitly setting Allow: / for AI search indexers (OAI-SearchBot and PerplexityBot). This protects your proprietary content from bulk training scrapes while keeping your brand cited in AI answers.',
+  },
+  {
+    q: 'Do I need both a robots.txt file and an llms.txt file on my domain?',
+    a: 'Yes, in real-world deployments the two files perform completely different jobs: /robots.txt is your access gatekeeper (telling bots which folders they are allowed or forbidden to crawl), whereas /llms.txt is your curated briefing map (giving AI coding assistants and RAG tools a clean Markdown index of your 20 to 40 most important pages so they avoid wasting context tokens parsing raw HTML menus).',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'AI Web Infrastructure: Crawlers, robots.txt, llms.txt, agents.txt, and GEO',
+  url: 'https://promptdns.com/ai-web-infrastructure/',
+  description: 'Master hub for AI web infrastructure: crawler access rules, robots.txt directives, llms.txt markdown context, agents.txt policies, generative engine optimization (GEO), and 8 free audit tools.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'AI Web Infrastructure', item: 'https://promptdns.com/ai-web-infrastructure/' },
+  ],
+};
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "What is AI web infrastructure?", "acceptedAnswer": { '@type': 'Answer', "text": "The layer of DNS records, crawling policy, and content signals that decides whether AI systems can read, cite, and trust your site: robots.txt rules per crawler, llms.txt, authentication records, and resolver health." } },
-    {'@type': 'Question', 'name': "Why do AI crawlers matter for my site?", "acceptedAnswer": { '@type': 'Answer', "text": "AI answer engines crawl the web to build their indexes and training sets. If your policy blocks them, your content is absent from their answers; if your DNS is broken, they cannot verify you at all." } },
-    {'@type': 'Question', 'name': "How do I make my site AI-ready?", "acceptedAnswer": { '@type': 'Answer', "text": "Publish explicit per-crawler rules in robots.txt, add llms.txt, keep SPF, DKIM, and DMARC aligned, and sign the zone with DNSSEC. The AI readiness checker scores all of it in one pass." } },
-    {'@type': 'Question', 'name': "Should I allow or block AI crawlers?", "acceptedAnswer": { '@type': 'Answer', "text": "There is no universally correct answer. Allowing puts your content into AI training and answers (visibility, but uncompensated reuse). Blocking protects content but removes you from AI answers as they become a discovery channel. The failure mode to fix is the accidental one: stale wildcard rules that quietly exclude everything." } },
-    {'@type': 'Question', 'name': "What is llms.txt?", "acceptedAnswer": { '@type': 'Answer', "text": "A proposed standard: a markdown file at your site root that gives language models a curated map of your content. Unlike robots.txt which restricts, llms.txt explains. Publishing one is forward-compatible and carries no downside." } },
-    {'@type': 'Question', 'name': "How do I know which AI crawlers visit my site?", "acceptedAnswer": { '@type': 'Answer', "text": "Upload your server access logs to the AI Log Analyzer: it scans for all 12 documented AI crawler user-agents and shows request counts and fetched paths." } },
-    {'@type': 'Question', 'name': "Does blocking AI crawlers affect Google Search?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if you block Googlebot itself. Blocking Google-Extended stops Gemini training without affecting Search rankings. Each AI bot has a separate user-agent, so you can allow search and block training independently." } },
-    {'@type': 'Question', 'name': "What is the fastest way to improve AI readiness?", "acceptedAnswer": { '@type': 'Answer', "text": "Run the AI Readiness Checker: it scores DNS health, DNSSEC, email authentication, AI crawler access, and llms.txt in one pass, with per-check guidance on what to fix." } },
-    {'@type': 'Question', 'name': "What is generative engine optimization (GEO)?", "acceptedAnswer": { '@type': 'Answer', "text": "Optimizing content to be cited by AI answer engines (ChatGPT, Perplexity, Gemini) rather than ranked by traditional search. The signals overlap with SEO (authority, structure) but add machine-readability and llms.txt." } }
-  ],
-};---
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
+---
+
 <BaseLayout
-  title="AI Web Infrastructure"
-  description="AI web infrastructure guides: AI crawler management, llms.txt, generative engine optimization, and making your domain machine-readable for answer engines."
-  schema={[faqSchema]}
+  title="AI Web Infrastructure: Crawlers, robots.txt, llms.txt, agents.txt, and GEO"
+  description="Master hub for AI web infrastructure: crawler access rules, robots.txt directives, llms.txt markdown context, agents.txt policies, generative engine optimization (GEO), and 8 free audit tools."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">AI Web Infrastructure</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">AI Web Infrastructure</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Web Infrastructure</h1>
 
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">AI web infrastructure is the layer of DNS records, crawler policy, and content signals that decides whether AI systems can read, cite, and trust your site. It spans per-crawler robots.txt rules, llms.txt, mail authentication, and resolver health.</p>
-    </div>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      AI Web Infrastructure: Crawlers, robots.txt, llms.txt, agents.txt, and GEO
+    </h1>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">The AI web infrastructure layer</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Component</th><th>What it decides</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Per-crawler rules</td><td class="text-sm text-ink-dim">Who may fetch what</td></tr><tr><td class="font-medium text-ink">llms.txt</td><td class="text-sm text-ink-dim">What models get pointed at</td></tr><tr><td class="font-medium text-ink">Authentication</td><td class="text-sm text-ink-dim">Whether mail is trusted</td></tr><tr><td class="font-medium text-ink">DNS health</td><td class="text-sm text-ink-dim">Whether answers are reachable</td></tr></tbody>
-        </table>
-      </div>
-    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      AI answer engines and agents evaluate domains on signals machines can verify:
-      crawler access, content maps, structured data, and domain-level trust. This cluster
-      covers every piece and the tools to audit yours.
-    </p>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Crawler access</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/ai-crawlers-list/', title: 'The Complete AI Crawler List', desc: 'Every AI bot that matters: GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and the robots.txt gotchas.' },
-          { href: '/ai-crawler-checker/', title: 'AI Crawler Checker', desc: 'Audit your robots.txt against 12 AI crawlers and see exactly who’s allowed or blocked.' },
-          { href: '/robots-txt-checker/', title: 'robots.txt Checker', desc: 'Validate syntax line by line: errors, unknown directives, AI-bot verdicts.' },
-          { href: '/how-to-block-ai-crawlers/', title: 'Block AI Crawlers', desc: 'The exact robots.txt rules, WAF rules, and legal walls for each layer.' },
-          { href: '/how-to-allow-ai-crawlers/', title: 'Allow AI Crawlers', desc: 'Clean rules that keep AI bots welcome while protecting private areas.' },
-          { href: '/ai-log-analyzer/', title: 'AI Log Analyzer', desc: 'Upload access logs: see which AI bots visit, how often, and what they fetch.' },
-          { href: '/chatgpt-search-operators/', title: 'How ChatGPT Search Works', desc: 'How ChatGPT Search indexes the web and how to optimize for AI-powered search.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Content maps &amp; structured data</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/what-is-llms-txt/', title: 'What Is llms.txt?', desc: 'The markdown standard that tells language models what your site is and where the important pages live.' },
-          { href: '/llms-txt-generator/', title: 'llms.txt Generator', desc: 'Build a valid llms.txt with auto-fetch, live preview, and download.' },
-          { href: '/llms-txt-syntax/', title: 'llms.txt Syntax', desc: 'The required shape: H1, blockquote summary, sections, and absolute links.' },
-          { href: '/schema-validator/', title: 'Schema Validator', desc: 'Fetch any page, extract JSON-LD blocks, and validate the data machines parse.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Audit &amp; monitor</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/ai-readiness-checker/', title: 'AI Readiness Checker', desc: 'One score for machine-readability: DNS, DNSSEC, auth, crawler access, llms.txt.' },
-          { href: '/ai-readiness-guide/', title: 'AI Readiness Guide', desc: 'The seven machine-verifiable signals answer engines check, and how to fix each.' },
-          { href: '/generative-engine-optimization/', title: 'Generative Engine Optimization', desc: 'The complete GEO guide: optimizing content for AI answer citations.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={[
-        ["Should I allow or block AI crawlers?","There is no universally correct answer. Allowing puts your content into AI training and answers (visibility, but uncompensated reuse). Blocking protects content but removes you from AI answers as they become a discovery channel. The failure mode to fix is the accidental one: stale wildcard rules that quietly exclude everything."],
-        ["What is llms.txt?","A proposed standard: a markdown file at your site root that gives language models a curated map of your content. Unlike robots.txt which restricts, llms.txt explains. Publishing one is forward-compatible and carries no downside."],
-        ["How do I know which AI crawlers visit my site?","Upload your server access logs to the AI Log Analyzer: it scans for all 12 documented AI crawler user-agents and shows request counts and fetched paths."],
-        ["Does blocking AI crawlers affect Google Search?","Only if you block Googlebot itself. Blocking Google-Extended stops Gemini training without affecting Search rankings. Each AI bot has a separate user-agent, so you can allow search and block training independently."],
-        ["What is the fastest way to improve AI readiness?","Run the AI Readiness Checker: it scores DNS health, DNSSEC, email authentication, AI crawler access, and llms.txt in one pass, with per-check guidance on what to fix."],
-        ["What is generative engine optimization (GEO)?","Optimizing content to be cited by AI answer engines (ChatGPT, Perplexity, Gemini) rather than ranked by traditional search. The signals overlap with SEO (authority, structure) but add machine-readability and llms.txt."],
-      ]} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <p class="text-sm leading-relaxed text-ink-dim">
-        <strong class="text-ink">Start with the audit:</strong> run the
-        <a href="/ai-readiness-checker/" class="font-medium text-accent hover:text-accent-soft">AI Readiness Checker</a>
-        to score your domain, then fix what it flags with the tools and guides above.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        AI web infrastructure is <strong class="text-ink">the stack of domain-level files, HTTP headers, structured data, and DNS security controls that govern how AI crawlers, answer engines, and agents access and cite your website</strong>. Modern bots split into training scrapers and search indexers. The 6 layers control access, context, and verification.
       </p>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is AI web infrastructure?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The layer of DNS records, crawling policy, and content signals that decides whether AI systems can read, cite, and trust your site: robots.txt rules per crawler, llms.txt, authentication records, and resolver health.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do AI crawlers matter for my site?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">AI answer engines crawl the web to build their indexes and training sets. If your policy blocks them, your content is absent from their answers; if your DNS is broken, they cannot verify you at all.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I make my site AI-ready?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish explicit per-crawler rules in robots.txt, add llms.txt, keep SPF, DKIM, and DMARC aligned, and sign the zone with DNSSEC. The AI readiness checker scores all of it in one pass.</p></details></div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#stack">How the 6 Layers of AI Web Infrastructure Fit Together</a></li>
+        <li><a href="#guides-pillars">1. AI Crawler Control, llms.txt, and GEO Guides</a></li>
+        <li><a href="#bot-directory">2. Individual AI Crawler and Bot Entity Directory</a></li>
+        <li><a href="#ai-tools">3. Free Browser-Based AI Audit Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Master Reference Table -->
+      <section id="stack" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 6 Layers of AI Web Infrastructure Fit Together (Master Reference Table)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          AI companies operate three distinct classes of automated web clients: foundation model training crawlers (<code>GPTBot</code>, <code>ClaudeBot</code>, <code>CCBot</code>), AI search citation indexers (<code>OAI-SearchBot</code>, <code>PerplexityBot</code>), and user-triggered live fetchers (<code>ChatGPT-User</code>). Managing which bots access your server and how language models interpret your pages requires coordinating 6 technical layers across your domain. The table below compares all 6 layers of AI web infrastructure by file or protocol location, core job, enforcement mechanism, and primary AI consumer.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Infrastructure Layer</th>
+                <th class="px-4 py-3">File or Protocol Location</th>
+                <th class="px-4 py-3">What It Controls</th>
+                <th class="px-4 py-3">Enforcement Type</th>
+                <th class="px-4 py-3">Primary AI Consumer</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. Crawler Access Policy</td>
+                <td class="px-4 py-3"><code>/robots.txt</code> &amp; <code>X-Robots-Tag</code></td>
+                <td class="px-4 py-3">Declares per-bot <code>Allow</code> and <code>Disallow</code> path rules (<code>GPTBot</code> vs <code>OAI-SearchBot</code>).</td>
+                <td class="px-4 py-3">Voluntary (<code>RFC 9309</code>); honored by reputable operators.</td>
+                <td class="px-4 py-3">Search crawlers (<code>Googlebot</code>), AI search bots, and compliant training bots.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. Edge WAF &amp; Bot Verification</td>
+                <td class="px-4 py-3">CDN Firewall, CIDR IPs, &amp; <code>PTR</code> DNS</td>
+                <td class="px-4 py-3">Enforces <code>HTTP 403</code> blocks on non-compliant scrapers and verifies bot authenticity via Reverse DNS (<code>FCrDNS</code>).</td>
+                <td class="px-4 py-3">Hard network/edge enforcement (<code>HTTP 403</code> / Challenge).</td>
+                <td class="px-4 py-3">Aggressive scrapers (<code>Bytespider</code>) and spoofed User-Agent bots.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Curated Markdown Context</td>
+                <td class="px-4 py-3"><code>/llms.txt</code> &amp; <code>/llms-full.txt</code></td>
+                <td class="px-4 py-3">Provides a clean, token-efficient Markdown map of your core documentation and pages.</td>
+                <td class="px-4 py-3">Informational context aid (never blocks crawlers).</td>
+                <td class="px-4 py-3">AI coding assistants (<code>Cursor</code>, <code>Claude</code>), RAG pipelines, and live prompt fetchers.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. Autonomous Agent Rules</td>
+                <td class="px-4 py-3"><code>/agents.txt</code></td>
+                <td class="px-4 py-3">Defines machine-readable boundaries, rate limits, and API endpoints for task-executing AI agents.</td>
+                <td class="px-4 py-3">Emerging specification for agentic workflows.</td>
+                <td class="px-4 py-3">Browser-operating AI agents and automated task runners.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. Entity &amp; Passage Semantics</td>
+                <td class="px-4 py-3"><code>Schema.org</code> JSON-LD &amp; <code>SSR</code> HTML</td>
+                <td class="px-4 py-3">Supplies Server-Side Rendered HTML, <code>AnswerBlocks</code>, native tables, and entity disambiguation (<code>sameAs</code>).</td>
+                <td class="px-4 py-3">Retrieval &amp; extraction optimization (<code>RAG</code>).</td>
+                <td class="px-4 py-3"><code>ChatGPT Search</code>, <code>Google AI Overviews</code>, <code>Perplexity</code>, and <code>Copilot</code>.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. Cryptographic Domain Trust</td>
+                <td class="px-4 py-3"><code>HTTPS</code> (TLS 1.3), <code>DNSSEC</code>, &amp; <code>CAA</code></td>
+                <td class="px-4 py-3">Certifies domain origin integrity (<code>AD=1</code>) and encrypted transport so AI fetchers trust the source.</td>
+                <td class="px-4 py-3">Cryptographic protocol verification.</td>
+                <td class="px-4 py-3">Validating resolvers, headless browser fetchers, and security auditors.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Navigate this hub across three directories: <strong class="text-ink">Section 1</strong> covers our 10 pillar and implementation guides (<code>robots.txt</code>, <code>llms.txt</code>, <code>GEO</code>, and allow/block strategies), <strong class="text-ink">Section 2</strong> provides the complete 14-page <strong class="text-ink">AI Crawler &amp; Bot Entity Directory</strong> (with exact <code>robots.txt</code> snippets and IP/PTR verification methods for every bot), and <strong class="text-ink">Section 3</strong> links to our 8 free browser-based AI audit tools.
+        </p>
+      </section>
+
+      <!-- Section 2: Guides & Pillars Grid -->
+      <section id="guides-pillars" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. AI Crawler Control, llms.txt, and Generative Engine Optimization (GEO) Guides (10 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Ten guides explain how to configure <code>/robots.txt</code> and <code>/llms.txt</code>, separate AI model training scrapers from AI search indexers, structure pages for Retrieval-Augmented Generation (<code>RAG</code>) citations, and audit your domain's machine readability. Select a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {guideCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Bot Directory Grid -->
+      <section id="bot-directory" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. Individual AI Crawler and Bot Entity Directory (14 Bot Profiles and Comparisons)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Fourteen entity reference profiles document the exact <code>User-Agent</code> strings, operator companies, purpose classifications (<code>Model Training</code> vs <code>AI Search Indexing</code> vs <code>Control Token</code>), official published IP CIDR JSON lists, Reverse DNS (<code>PTR</code>) suffixes, and copy-paste <code>robots.txt</code> rules for each major AI bot. Open a bot profile below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {botCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: AI Tools Grid -->
+      <section id="ai-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. Free Browser-Based AI Readiness, Crawler, and Schema Audit Tools (8 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Test which AI bots your <code>/robots.txt</code> file currently allows or blocks, generate a spec-compliant <code>/llms.txt</code> file, validate your <code>Schema.org</code> JSON-LD markup, and analyze real AI bot hits in your server access logs using our 8 free tools below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {toolCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every guide, bot profile, and diagnostic tool in this <strong class="text-ink">AI Web Infrastructure hub</strong> helps you govern <strong class="text-ink">AI crawler access (<code>robots.txt</code> and WAF)</strong>, publish <strong class="text-ink">machine-readable context (<code>llms.txt</code>, <code>agents.txt</code>, and <code>Schema.org</code>)</strong>, and earn <strong class="text-ink">citations in generative AI search (<code>GEO</code>)</strong>.
+        </p>
       </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
+    </div>
+  </div>
 </BaseLayout>
