@@ -2,125 +2,607 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
 
-const majors = [
-  ['Cloudflare', 'cloudflare'], ['GoDaddy', 'godaddy'], ['Namecheap', 'namecheap'],
-  ['AWS Route 53', 'route53'], ['Azure DNS', 'azure-dns'], ['Google Cloud DNS', 'google-cloud-dns'],
-  ['cPanel', 'cpanel'], ['Plesk', 'plesk'],
-];
-const minors = [
-  ['Wix', 'wix'], ['Squarespace', 'squarespace'], ['Shopify', 'shopify'], ['Netlify', 'netlify'],
-];
-const comparisons = [
-  ['Cloudflare DNS vs Google Cloud DNS', '/cloudflare-dns-vs-google-dns/'],
-  ['Cloudflare vs AWS Route 53', '/cloudflare-vs-route53/'],
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const cloudAnycastCards: HubCard[] = [
+  {
+    href: '/manage-dns-in-cloudflare/',
+    badge: 'Cloudflare · Records',
+    title: 'Manage DNS Records in Cloudflare',
+    desc: 'Add A, AAAA, CNAME, MX, and TXT records, configure CNAME flattening, and set DNS-Only vs Proxied status.',
+  },
+  {
+    href: '/cloudflare-change-nameservers/',
+    badge: 'Cloudflare · Delegation',
+    title: 'Change Nameservers to Cloudflare',
+    desc: "Replace your registrar's default nameservers with your assigned *.ns.cloudflare.com pair without downtime.",
+  },
+  {
+    href: '/cloudflare-dns-troubleshooting/',
+    badge: 'Cloudflare · Fixes',
+    title: 'Cloudflare DNS Troubleshooting',
+    desc: 'Fix Error 1000/1001, broken DKIM/MX proxy conflicts, ERR_TOO_MANY_REDIRECTS (Flexible SSL), and stale DS records.',
+  },
+  {
+    href: '/manage-dns-in-route53/',
+    badge: 'AWS Route 53 · Records',
+    title: 'Manage DNS Records in AWS Route 53',
+    desc: 'Create records in Public Hosted Zones, configure Route 53 Alias targets (ELB/CloudFront), and set routing policies.',
+  },
+  {
+    href: '/route53-change-nameservers/',
+    badge: 'AWS Route 53 · Delegation',
+    title: 'Change Nameservers in AWS Route 53',
+    desc: 'Copy your 4 TLD-diverse awsdns nameservers from the Hosted Zone into Route 53 Registered Domains or an external registrar.',
+  },
+  {
+    href: '/route53-dns-troubleshooting/',
+    badge: 'AWS Route 53 · Fixes',
+    title: 'AWS Route 53 DNS Troubleshooting',
+    desc: 'Resolve mismatched Hosted Zone vs Registrar NS sets, multi-string TXT quoting errors, and KMS DNSSEC failures.',
+  },
+  {
+    href: '/manage-dns-in-google-cloud-dns/',
+    badge: 'Google Cloud · Records',
+    title: 'Manage DNS in Google Cloud DNS',
+    desc: 'Create record sets in Cloud DNS managed zones, format trailing dots, and configure geolocation/weighted routing.',
+  },
+  {
+    href: '/google-cloud-dns-change-nameservers/',
+    badge: 'Google Cloud · Delegation',
+    title: 'Google Cloud DNS Change Nameservers',
+    desc: 'Delegate your domain to ns-cloud-a1..a4.googledomains.com and verify parent-child zone synchronization.',
+  },
+  {
+    href: '/google-cloud-dns-dns-troubleshooting/',
+    badge: 'Google Cloud · Fixes',
+    title: 'Google Cloud DNS Troubleshooting',
+    desc: 'Fix missing trailing periods on FQDNs, SOA serial sync issues, and Cloud Domains registrar DS mismatches.',
+  },
+  {
+    href: '/manage-dns-in-azure-dns/',
+    badge: 'Azure DNS · Records',
+    title: 'Manage DNS Records in Azure DNS',
+    desc: 'Add record sets in Azure Public DNS zones and link root @ records to Azure Front Door, Traffic Manager, or Public IPs.',
+  },
+  {
+    href: '/azure-dns-change-nameservers/',
+    badge: 'Azure DNS · Delegation',
+    title: 'Change Nameservers to Azure DNS',
+    desc: 'Point your external domain registrar to your 4 assigned ns1-xx.azure-dns.com/.net/.org/.info nameservers.',
+  },
+  {
+    href: '/azure-dns-dns-troubleshooting/',
+    badge: 'Azure DNS · Fixes',
+    title: 'Azure DNS Troubleshooting',
+    desc: 'Diagnose custom domain verification delays, CNAME conflict errors at @, and child zone delegation failures.',
+  },
+  {
+    href: '/cloudflare-vs-route53/',
+    badge: 'Head-to-Head',
+    title: 'Cloudflare DNS vs AWS Route 53',
+    desc: 'Compare Anycast latency, free tier vs per-query pricing, CNAME flattening vs AWS Alias, and health-check failover.',
+  },
+  {
+    href: '/cloudflare-dns-vs-google-dns/',
+    badge: 'Head-to-Head',
+    title: 'Cloudflare DNS vs Google Cloud DNS',
+    desc: 'Compare authoritative zone management, edge security features, API automation, and public resolver performance.',
+  },
 ];
 
-const faqs: [string, string][] = [
-  ['What is the DNS providers section?', "It's a curated collection of guides and tools focused on dns providers, organized from fundamentals to advanced configurations."],
-  ['Are all these pages free?', 'Yes: every guide and tool on PromptDNS is free forever, with no account and no limits.'],
-  ['How do I navigate this section?', 'Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding.'],
-  ['How often is this content updated?', 'Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands.'],
-  ['Can I suggest a topic that\'s missing?', 'Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback.'],
-  ['Is this content written by experts?', 'Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details.'],
+const registrarsPanelsCards: HubCard[] = [
+  {
+    href: '/manage-dns-in-godaddy/',
+    badge: 'GoDaddy · Records',
+    title: 'Manage DNS Records in GoDaddy',
+    desc: 'Add A, CNAME, MX, and TXT records in GoDaddy Domain Portfolio without doubling your domain name in the Host field.',
+  },
+  {
+    href: '/godaddy-change-nameservers/',
+    badge: 'GoDaddy · Delegation',
+    title: 'How to Change Nameservers in GoDaddy',
+    desc: 'Switch from GoDaddy default domaincontrol.com nameservers to Cloudflare, Route 53, or custom web hosting.',
+  },
+  {
+    href: '/godaddy-dns-troubleshooting/',
+    badge: 'GoDaddy · Fixes',
+    title: 'GoDaddy DNS Troubleshooting',
+    desc: 'Fix locked parked A records, 600-second minimum TTL delays, Microsoft 365 MX conflicts, and forwarding loops.',
+  },
+  {
+    href: '/manage-dns-in-namecheap/',
+    badge: 'Namecheap · Records',
+    title: 'Manage DNS Records in Namecheap',
+    desc: 'Configure Host Records in Namecheap Advanced DNS, use ALIAS records at @, and set up Custom MX email routing.',
+  },
+  {
+    href: '/namecheap-change-nameservers/',
+    badge: 'Namecheap · Delegation',
+    title: 'Change Nameservers in Namecheap',
+    desc: 'Switch between Namecheap BasicDNS, Web Hosting DNS, and Custom Nameservers in the Domain List tab.',
+  },
+  {
+    href: '/namecheap-dns-troubleshooting/',
+    badge: 'Namecheap · Fixes',
+    title: 'Namecheap DNS Troubleshooting',
+    desc: 'Resolve missing Advanced DNS Host Records tab (when using external NS), URL Redirect conflicts, and DKIM splitting.',
+  },
+  {
+    href: '/manage-dns-in-cpanel/',
+    badge: 'cPanel · Records',
+    title: 'Manage DNS Records in cPanel',
+    desc: 'Use cPanel Zone Editor to publish A, CNAME, MX, SPF, and DKIM records and configure Local vs Remote Mail Exchanger.',
+  },
+  {
+    href: '/cpanel-change-nameservers/',
+    badge: 'cPanel / WHM · NS',
+    title: 'Change Nameservers in cPanel & WHM',
+    desc: 'Configure custom private nameservers (ns1/ns2), register glue records, and point your domain to a cPanel host.',
+  },
+  {
+    href: '/cpanel-dns-troubleshooting/',
+    badge: 'cPanel · Fixes',
+    title: 'cPanel DNS Troubleshooting',
+    desc: 'Fix the primary cPanel bug: editing records inside cPanel Zone Editor when your domain actually uses Cloudflare or registrar NS!',
+  },
+  {
+    href: '/manage-dns-in-plesk/',
+    badge: 'Plesk · Records',
+    title: 'Manage DNS Records in Plesk',
+    desc: 'Add and edit zone records in Plesk Websites & Domains -> DNS Settings and manage SOA serial formats.',
+  },
+  {
+    href: '/plesk-change-nameservers/',
+    badge: 'Plesk · Delegation',
+    title: 'Change Nameservers in Plesk',
+    desc: 'Switch Plesk between primary/secondary DNS server modes or delegate authority to an external cloud DNS provider.',
+  },
+  {
+    href: '/plesk-dns-troubleshooting/',
+    badge: 'Plesk · Fixes',
+    title: 'Plesk DNS Troubleshooting',
+    desc: 'Fix local mail loop delivery errors when using external Google Workspace/M365 email alongside a Plesk web server.',
+  },
 ];
+
+const websitePlatformsCards: HubCard[] = [
+  {
+    href: '/manage-dns-in-shopify/',
+    badge: 'Shopify · DNS',
+    title: 'Manage DNS Records in Shopify',
+    desc: 'Edit A, CNAME, MX, and TXT records on Shopify-managed domains and configure Shopify Email SPF/DKIM.',
+  },
+  {
+    href: '/shopify-connect-domain/',
+    badge: 'Shopify · Custom Domain',
+    title: 'Connect a Third-Party Domain to Shopify',
+    desc: 'Point your root @ A record (23.227.38.65), IPv6 AAAA record, and www CNAME (shops.myshopify.com) to Shopify.',
+  },
+  {
+    href: '/manage-dns-in-wix/',
+    badge: 'Wix · DNS',
+    title: 'Manage DNS Records in Wix',
+    desc: 'Add MX, TXT, and CNAME records inside the Wix Domains panel when your domain uses Wix nameservers.',
+  },
+  {
+    href: '/wix-connect-domain/',
+    badge: 'Wix · Custom Domain',
+    title: 'Connect a Domain to Wix (NS vs Pointing)',
+    desc: 'Compare Wix Nameserver delegation against Pointing (A + CNAME) so you never break existing company email.',
+  },
+  {
+    href: '/manage-dns-in-squarespace/',
+    badge: 'Squarespace · DNS',
+    title: 'Manage DNS Records in Squarespace',
+    desc: 'Manage custom records and presets in Squarespace Domains (including migrated Google Domains accounts).',
+  },
+  {
+    href: '/squarespace-connect-domain/',
+    badge: 'Squarespace · Connect',
+    title: 'Connect a Third-Party Domain to Squarespace',
+    desc: 'Publish the verification CNAME, ext-cust.squarespace.com www CNAME, and 4 root A records cleanly.',
+  },
+  {
+    href: '/manage-dns-in-netlify/',
+    badge: 'Netlify · DNS',
+    title: 'Manage DNS Records in Netlify DNS',
+    desc: 'Configure zones in Netlify DNS, use NETLIFY apex records, and copy over existing email authentication records.',
+  },
+  {
+    href: '/netlify-connect-domain/',
+    badge: 'Netlify · Custom Domain',
+    title: 'Connect an External Domain to Netlify',
+    desc: 'Point your root @ ALIAS/A record (75.2.60.5) and www CNAME (<site>.netlify.app) while keeping DNS at Cloudflare.',
+  },
+];
+
+const providerToolsCards: HubCard[] = [
+  {
+    href: '/nameserver-lookup/',
+    badge: 'Provider Detector',
+    title: 'Nameserver Lookup (Find NS + IPs)',
+    desc: 'Instantly identify which DNS provider (Cloudflare, Route 53, GoDaddy, Namecheap) is authoritative for any domain.',
+  },
+  {
+    href: '/delegation-checker/',
+    badge: 'Consistency Tool',
+    title: 'DNS Delegation Checker',
+    desc: "Verify that your registrar's parent TLD NS delegation matches your DNS provider's child zone NS records.",
+  },
+  {
+    href: '/dns-propagation-checker/',
+    badge: 'Global DoH Tool',
+    title: 'DNS Propagation Checker',
+    desc: "Confirm your provider's record edits are live across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5).",
+  },
+  {
+    href: '/dns-speed-test/',
+    badge: 'Resolver Benchmark',
+    title: 'DNS Speed Test',
+    desc: 'Measure live DoH query latency from your location across major public DNS providers.',
+  },
+  {
+    href: '/dns-response-time-test/',
+    badge: 'Authoritative Benchmark',
+    title: 'DNS Response Time Test',
+    desc: "Test cold vs cached authoritative resolution speed for your domain's current DNS hosting provider.",
+  },
+  {
+    href: '/dns-migration-checklist/',
+    badge: 'Migration Playbook',
+    title: 'The Complete DNS Migration Checklist',
+    desc: 'Follow our zero-downtime checklist when moving your zone between any two DNS providers.',
+  },
+];
+
+const faqs = [
+  {
+    q: "How do I find out where my domain's DNS is currently hosted?",
+    a: 'Run your domain through our Nameserver Lookup tool and inspect the NS (Nameserver) records returned. Your DNS is always managed at the company that owns those nameservers, for example, if your NS records say *.ns.cloudflare.com, your DNS is hosted at Cloudflare (even if you registered the domain name at GoDaddy or Namecheap).',
+  },
+  {
+    q: 'Why are the DNS records I added in GoDaddy, Namecheap, or cPanel not working?',
+    a: "The most common reason DNS edits have zero effect is editing records in the wrong control panel. If you previously changed your domain's nameservers (NS records) to point to Cloudflare, Wix, or a web host, your domain registrar's built-in DNS table is inactive. Always edit DNS records inside the dashboard of your active authoritative nameserver provider.",
+  },
+  {
+    q: 'Should I connect my domain to Wix, Squarespace, or Netlify by changing Nameservers or by Pointing (A + CNAME records)?',
+    a: 'In practice, if your domain already has active company email (Google Workspace, Microsoft 365, or custom MX/SPF/DKIM records) or uses DNSSEC, we strongly recommend Pointing via A and CNAME records while keeping your authoritative DNS on a full-featured provider like Cloudflare or AWS Route 53. Switching your entire domain\'s nameservers to a website builder moves your whole zone and often strips DNSSEC support.',
+  },
+  {
+    q: 'Why did my subdomain become sub.example.com.example.com after I saved it?',
+    a: 'In real-world setups across Cloudflare, GoDaddy, Namecheap, and Squarespace, the DNS control panel automatically appends your root domain name to whatever you type in the Host/Name box. When creating a record for sub.example.com, type only sub in the Host field (or @ for the root domain) so the panel does not double your domain suffix.',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'DNS Provider Playbooks: Setup, Nameservers, and Troubleshooting for 12 Platforms',
+  url: 'https://promptdns.com/dns-providers/',
+  description: 'Master hub for DNS provider playbooks: setup records, change nameservers, and troubleshoot Cloudflare, AWS Route 53, Google Cloud DNS, Azure DNS, GoDaddy, Namecheap, cPanel, and more.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'DNS Providers', item: 'https://promptdns.com/dns-providers/' },
+  ],
+};
 
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "What is the DNS providers section?", "acceptedAnswer": { '@type': 'Answer', "text": "It&#39;s a curated collection of guides and tools focused on dns providers, organized from fundamentals to advanced configurations." } },
-    {'@type': 'Question', 'name': "Are all these pages free?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits." } },
-    {'@type': 'Question', 'name': "How do I navigate this section?", "acceptedAnswer": { '@type': 'Answer', "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding." } },
-    {'@type': 'Question', 'name': "How often is this content updated?", "acceptedAnswer": { '@type': 'Answer', "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands." } },
-    {'@type': 'Question', 'name': "Can I suggest a topic that&#39;s missing?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback." } },
-    {'@type': 'Question', 'name': "Is this content written by experts?", "acceptedAnswer": { '@type': 'Answer', "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
+
 <BaseLayout
-  title="DNS Provider Guides - Playbooks for Every Platform"
-  description="DNS playbooks for every provider: manage records and change nameservers in Cloudflare, GoDaddy, Namecheap, Route 53, Azure, cPanel, Wix, Shopify and more, plus troubleshooting guides."
-  schema={[faqSchema]}
+  title="DNS Provider Playbooks: Setup, Nameservers, and Troubleshooting for 12 Platforms"
+  description="Master hub for DNS provider playbooks: setup records, change nameservers, and troubleshoot Cloudflare, AWS Route 53, Google Cloud DNS, Azure DNS, GoDaddy, Namecheap, cPanel, and more."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
-  <div class="mx-auto max-w-5xl px-4 py-12">
+  <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Provider Guides</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">DNS Providers</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Provider Playbooks</h1>
 
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">DNS providers are the services that answer queries for your domain: they host the records, run the nameservers, and decide how fast changes go live. The registrar and the DNS host are two different roles.</p>
-    </div>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      DNS Provider Playbooks: Setup, Nameservers, and Troubleshooting for 12 Platforms
+    </h1>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Provider dimensions</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Dimension</th><th>Why</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Anycast</td><td class="text-sm text-ink-dim">Latency</td></tr><tr><td class="font-medium text-ink">Change speed</td><td class="text-sm text-ink-dim">Fast edits</td></tr><tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">One-click DS</td></tr><tr><td class="font-medium text-ink">API</td><td class="text-sm text-ink-dim">Automation</td></tr></tbody>
-        </table>
-      </div>
-    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      Every DNS host works differently: different panels, different defaults, different ways to
-      break things. These playbooks cover each platform's exact flow, its quirks, and its most
-      common failures.
-    </p>
-
-    <div class="mt-12">
-      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Major providers</h2>
-      <div class="mt-6 grid gap-4">
-        {majors.map(([name, slug]) => (
-          <div class="rounded-xl border border-line bg-panel/60 p-5">
-            <h3 class="font-display font-bold text-ink">{name}</h3>
-            <div class="mt-3 grid gap-2 sm:grid-cols-3">
-              <a href={`/manage-dns-in-${slug}/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Manage DNS records</a>
-              <a href={`/${slug}-change-nameservers/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Change nameservers</a>
-              <a href={`/${slug}-dns-troubleshooting/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Troubleshooting</a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-12">
-      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Website builders & platforms</h2>
-      <div class="mt-6 grid gap-4">
-        {minors.map(([name, slug]) => (
-          <div class="rounded-xl border border-line bg-panel/60 p-5">
-            <h3 class="font-display font-bold text-ink">{name}</h3>
-            <div class="mt-3 grid gap-2 sm:grid-cols-2">
-              <a href={`/manage-dns-in-${slug}/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Manage DNS records</a>
-              <a href={`/${slug}-connect-domain/`} class="rounded-lg border border-line bg-panel-2 px-3 py-2 text-center text-xs font-medium text-ink-dim transition hover:border-accent/40 hover:text-accent">Connect a domain</a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-12">
-      <h2 class="font-display text-2xl font-bold tracking-tight text-ink">Choosing a provider</h2>
-      <div class="mt-6 grid gap-3">
-        {comparisons.map(([label, href]) => (
-          <a href={href} class="rounded-xl border border-line bg-panel/60 p-5 font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:text-accent">{label} →</a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={faqs} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <p class="text-sm leading-relaxed text-ink-dim">
-        After any provider change: verify records with the
-        <a href="/dns-record-lookup/" class="font-medium text-accent hover:text-accent-soft">DNS record lookup</a>
-        and confirm worldwide agreement with the
-        <a href="/dns-propagation-checker/" class="font-medium text-accent hover:text-accent-soft">propagation checker</a>.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A DNS hosting provider <strong class="text-ink">operates the authoritative nameservers that store your domain's zone file and answer global queries for your <code>A</code>, <code>MX</code>, <code>CNAME</code>, and <code>TXT</code> records</strong>. Control panels differ in apex notation (<code>@</code> vs blank), minimum TTLs, and <code>CNAME</code> flattening. These 34 playbooks cover 12 major platforms.
       </p>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#provider-matrix">12 Major DNS Providers Compared</a></li>
+        <li><a href="#cloud-anycast">1. Cloud and Anycast DNS Provider Playbooks</a></li>
+        <li><a href="#registrars-panels">2. Domain Registrar and Server Control Panel DNS Guides</a></li>
+        <li><a href="#website-platforms">3. Website Builder, E-Commerce, and Frontend Hosting DNS Guides</a></li>
+        <li><a href="#provider-tools">4. Live DNS Provider Verification and Migration Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: Provider Comparison Table -->
+      <section id="provider-matrix" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          12 Major DNS Providers Compared: Apex Aliasing, DNSSEC, Minimum TTL, and Pricing
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Every authoritative DNS platform exposes the same underlying IETF record types (<code>A</code>, <code>AAAA</code>, <code>CNAME</code>, <code>MX</code>, <code>TXT</code>, <code>NS</code>, <code>SRV</code>, <code>CAA</code>), yet each control panel enforces different field formatting rules, root-domain aliasing mechanisms, minimum Time to Live (TTL) floors, and DNSSEC signing workflows. The table below compares all 12 DNS platforms covered in our playbooks across 5 technical dimensions: platform category, root (<code>@</code>) hostname aliasing support, one-click DNSSEC availability, minimum custom TTL, and pricing model.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">DNS Platform</th>
+                <th class="px-4 py-3">Platform Category</th>
+                <th class="px-4 py-3">Root (<code>@</code>) Aliasing Mechanism</th>
+                <th class="px-4 py-3">One-Click DNSSEC</th>
+                <th class="px-4 py-3">Minimum Custom TTL</th>
+                <th class="px-4 py-3">Pricing Model</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. Cloudflare DNS</td>
+                <td class="px-4 py-3">Enterprise Anycast Cloud</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Automatic <code>CNAME Flattening</code>)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>Algorithm 13</code> ECDSA)</td>
+                <td class="px-4 py-3"><code>60 s</code> (<code>30 s</code> Enterprise; <code>Auto = 300 s</code>)</td>
+                <td class="px-4 py-3"><strong>Free tier</strong> (Unlimited queries) + Pro/Business</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. AWS Route 53</td>
+                <td class="px-4 py-3">Hyperscale Cloud DNS</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>Route 53 Alias</code> record)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>KMS</code>-backed signing)</td>
+                <td class="px-4 py-3"><code>1 s</code> (<code>60 s</code> standard)</td>
+                <td class="px-4 py-3">$0.50/zone/mo + per-million query fee (<code>Alias</code> queries to AWS free)</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Google Cloud DNS</td>
+                <td class="px-4 py-3">Hyperscale Cloud DNS</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>ALIAS</code> / Routing Policies)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Automated <code>ZSK</code>/<code>KSK</code>)</td>
+                <td class="px-4 py-3"><code>1 s</code> (<code>300 s</code> default)</td>
+                <td class="px-4 py-3">$0.20/zone/mo + per-million query fee</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. Microsoft Azure DNS</td>
+                <td class="px-4 py-3">Hyperscale Cloud DNS</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>Azure Alias Record Set</code>)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Public Zone DNSSEC)</td>
+                <td class="px-4 py-3"><code>1 s</code> (<code>3600 s</code> default)</td>
+                <td class="px-4 py-3">$0.50/zone/mo + per-million query fee</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. GoDaddy DNS</td>
+                <td class="px-4 py-3">Domain Registrar DNS</td>
+                <td class="px-4 py-3"><strong>No</strong> (Requires <code>A</code> record or HTTP forward)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Basic &amp; Premium DNS)</td>
+                <td class="px-4 py-3"><code>600 s</code> (<code>10 minutes</code>)</td>
+                <td class="px-4 py-3">Free with domain registration (+ Paid Premium DNS)</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. Namecheap DNS</td>
+                <td class="px-4 py-3">Domain Registrar DNS</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>ALIAS</code> record polling every 1 to 5m)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>BasicDNS</code> &amp; <code>PremiumDNS</code>)</td>
+                <td class="px-4 py-3"><code>60 s</code> (<code>1 minute</code>)</td>
+                <td class="px-4 py-3">Free <code>BasicDNS</code> with domain (+ $4.88/yr <code>PremiumDNS</code>)</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">7. cPanel (BIND / PowerDNS)</td>
+                <td class="px-4 py-3">Self-Hosted Server Panel</td>
+                <td class="px-4 py-3"><strong>No</strong> (<code>Zone Editor</code> requires <code>A</code> at <code>@</code>)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (In PowerDNS Zone Editor)</td>
+                <td class="px-4 py-3"><code>60 s</code> (<code>14400 s</code> default)</td>
+                <td class="px-4 py-3">Included with cPanel web hosting license</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">8. Plesk</td>
+                <td class="px-4 py-3">Self-Hosted Server Panel</td>
+                <td class="px-4 py-3"><strong>No</strong> (Requires <code>A</code> record at <code>@</code>)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Via Plesk DNSSEC extension)</td>
+                <td class="px-4 py-3"><code>60 s</code> (<code>86400 s</code> default)</td>
+                <td class="px-4 py-3">Included with Plesk server license</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">9. Shopify</td>
+                <td class="px-4 py-3">E-Commerce Platform</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Managed root <code>A</code> + <code>shops.myshopify.com</code>)</td>
+                <td class="px-4 py-3">Managed on external DNS</td>
+                <td class="px-4 py-3"><code>300 s</code> to <code>3600 s</code></td>
+                <td class="px-4 py-3">Included with Shopify store subscription</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">10. Wix</td>
+                <td class="px-4 py-3">Website Builder Platform</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (Managed root <code>A</code> records on Wix NS)</td>
+                <td class="px-4 py-3"><strong>No</strong> (When using Wix NS; use Pointing method for external DNSSEC)</td>
+                <td class="px-4 py-3"><code>300 s</code> to <code>3600 s</code></td>
+                <td class="px-4 py-3">Included with Wix Premium plan</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">11. Squarespace</td>
+                <td class="px-4 py-3">Website Builder &amp; Registrar</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>ALIAS</code> record + Squarespace preset)</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (In Squarespace Domains DNSSEC panel)</td>
+                <td class="px-4 py-3"><code>300 s</code> to <code>3600 s</code></td>
+                <td class="px-4 py-3">Included with Squarespace domain / site plan</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">12. Netlify</td>
+                <td class="px-4 py-3">Frontend Cloud / Jamstack</td>
+                <td class="px-4 py-3"><strong>Yes</strong> (<code>NETLIFY</code> / <code>ALIAS</code> apex record)</td>
+                <td class="px-4 py-3"><strong>No</strong> (On Netlify DNS; use external Cloudflare/Route 53 for DNSSEC)</td>
+                <td class="px-4 py-3"><code>60 s</code> (<code>3600 s</code> default)</td>
+                <td class="px-4 py-3">Included on Netlify starter and team plans</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Navigate the 34 provider playbooks below by platform type: <strong class="text-ink">Section 1</strong> covers hyperscale Anycast cloud DNS platforms (<code>Cloudflare</code>, <code>AWS Route 53</code>, <code>Google Cloud DNS</code>, <code>Azure DNS</code>), <strong class="text-ink">Section 2</strong> covers domain registrars and server control panels (<code>GoDaddy</code>, <code>Namecheap</code>, <code>cPanel</code>, <code>Plesk</code>), <strong class="text-ink">Section 3</strong> covers website builders and frontend hosts (<code>Shopify</code>, <code>Wix</code>, <code>Squarespace</code>, <code>Netlify</code>), and <strong class="text-ink">Section 4</strong> provides live verification tools.
+        </p>
+      </section>
+
+      <!-- Section 2: Cloud & Anycast Grid -->
+      <section id="cloud-anycast" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. Cloud and Anycast DNS Provider Playbooks (Cloudflare, Route 53, Google Cloud, Azure)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Fourteen playbooks and head-to-head comparisons cover the 4 enterprise Anycast cloud DNS platforms, detailing record creation, proxy toggles (<code>Orange Cloud</code> vs <code>Grey Cloud</code>), hosted zone delegation, and troubleshooting. Choose your cloud DNS provider below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cloudAnycastCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Registrars & Panels Grid -->
+      <section id="registrars-panels" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. Domain Registrar and Server Control Panel DNS Guides (GoDaddy, Namecheap, cPanel, Plesk)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Twelve playbooks cover the two largest retail domain registrars (<code>GoDaddy</code> and <code>Namecheap</code>) and the two most widely deployed web hosting control panels (<code>cPanel</code> and <code>Plesk</code>), preventing doubled domain suffixes and broken mail routing. Select your platform below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {registrarsPanelsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: Website Platforms Grid -->
+      <section id="website-platforms" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. Website Builder, E-Commerce, and Frontend Hosting DNS Guides (Shopify, Wix, Squarespace, Netlify)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Eight playbooks explain how to connect custom domains and manage DNS records across managed website builders and Jamstack hosts (<code>Shopify</code>, <code>Wix</code>, <code>Squarespace</code>, and <code>Netlify</code>), comparing full nameserver delegation against <code>A</code> + <code>CNAME</code> pointing. Open your platform guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {websitePlatformsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: Verification & Migration Tools Grid -->
+      <section id="provider-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. Live DNS Provider Verification and Migration Tools (6 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Not sure which company currently hosts your authoritative DNS, or verifying that a recent record edit saved properly? Run these 6 free browser-based lookup tools and migration checklists to audit any provider:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {providerToolsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every platform playbook, comparison matrix, and live verification tool in this <strong class="text-ink">DNS Providers hub</strong> helps you configure <strong class="text-ink">authoritative zone records</strong>, execute <strong class="text-ink">zero-downtime nameserver switches</strong>, and resolve <strong class="text-ink">provider-specific DNS quirks</strong>.
+        </p>
       </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
+    </div>
+  </div>
 </BaseLayout>
