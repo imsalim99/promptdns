@@ -2,93 +2,479 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
 
-const faqs: [string, string][] = [
-  ['What is the email deliverability section?', "It's a curated collection of guides and tools focused on email deliverability, organized from fundamentals to advanced configurations."],
-  ['Are all these pages free?', 'Yes: every guide and tool on PromptDNS is free forever, with no account and no limits.'],
-  ['How do I navigate this section?', 'Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding.'],
-  ['How often is this content updated?', 'Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands.'],
-  ['Can I suggest a topic that\'s missing?', 'Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback.'],
-  ['Is this content written by experts?', 'Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details.'],
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const spamWarmupCards: HubCard[] = [
+  {
+    href: '/why-emails-go-to-spam/',
+    badge: 'Deliverability Pillar',
+    title: 'Why Your Emails Go to Spam (14 Causes)',
+    desc: 'Complete diagnostic checklist covering authentication gaps, spam-trap hits, broken PTR records, content triggers, and low engagement.',
+  },
+  {
+    href: '/cold-email-deliverability/',
+    badge: 'Outreach Playbook',
+    title: 'Cold Email Deliverability Guide',
+    desc: 'Protect your primary corporate domain using secondary outreach domains, custom tracking CNAMEs, daily volume caps, and reply signals.',
+  },
+  {
+    href: '/how-to-warm-up-email-server/',
+    badge: 'Warm-Up Schedule',
+    title: 'How to Warm Up an Email Server or Domain',
+    desc: 'Day-by-day volume ramp-up schedule for new domains and dedicated IPs so mailbox providers build positive reputation without throttling.',
+  },
+  {
+    href: '/gmail-yahoo-bulk-sender-requirements/',
+    badge: '2026 Mandate',
+    title: 'Gmail and Yahoo Bulk Sender Requirements',
+    desc: 'Mandatory rules for 5,000+ daily senders: aligned SPF/DKIM/DMARC, <0.10% Postmaster spam rate, FCrDNS, and one-click unsubscribe.',
+  },
+  {
+    href: '/list-unsubscribe-header/',
+    badge: 'RFC 8058 Standard',
+    title: 'List-Unsubscribe Headers Explained',
+    desc: 'Implement both List-Unsubscribe (HTTPS + mailto:) and List-Unsubscribe-Post: List-Unsubscribe=One-Click headers for marketing mail.',
+  },
+  {
+    href: '/how-to-read-email-headers/',
+    badge: 'Diagnostic Tutorial',
+    title: 'How to Read Email Headers',
+    desc: 'Decode Received hop chains, Authentication-Results (spf, dkim, dmarc), Return-Path, and X-Spam scores in Gmail and Outlook.',
+  },
+  {
+    href: '/email-ports-587-465-25/',
+    badge: 'Transport Reference',
+    title: 'Email Ports Explained: 25 vs 465 vs 587',
+    desc: 'Understand when to use Port 25 (MTA-to-MTA relay), Port 587 (STARTTLS submission), and Port 465 (implicit TLS) for outbound mail.',
+  },
+  {
+    href: '/imap-vs-smtp/',
+    badge: 'Protocol Comparison',
+    title: 'IMAP vs SMTP vs POP3 Explained',
+    desc: 'Compare how SMTP handles outbound mail transmission and relay while IMAP and POP3 handle inbox retrieval and synchronization.',
+  },
 ];
 
+const bouncesBlocklistsCards: HubCard[] = [
+  {
+    href: '/email-bounced-reasons/',
+    badge: 'Bounce Reference',
+    title: 'Why Emails Bounce: Hard vs Soft Bounces',
+    desc: 'Distinguish 4xx transient deferrals (full mailbox, throttling) from 5xx permanent hard bounces (invalid recipient, policy block).',
+  },
+  {
+    href: '/smtp-550-5-7-26/',
+    badge: 'Gmail Bounce Code',
+    title: 'SMTP 550 5.7.26: Unauthenticated Email Fix',
+    desc: 'Resolve Gmail\'s "Unauthenticated email is not accepted" rejection by aligning SPF, DKIM, and DMARC policies.',
+  },
+  {
+    href: '/smtp-550-5-7-1/',
+    badge: 'Policy / Relay Bounce',
+    title: 'SMTP 550 5.7.1: Relay Denied & Blocklists',
+    desc: 'Fix "Unable to relay" and policy rejections caused by Spamhaus DNSBL listings, missing PTR records, or M365 connector errors.',
+  },
+  {
+    href: '/smtp-554-5-4-14/',
+    badge: 'Routing Loop Bounce',
+    title: 'SMTP 554 5.4.14: Hop Count Exceeded',
+    desc: 'Diagnose and break infinite mail routing loops between Exchange Online connectors, spam gateways, and mispointed MX records.',
+  },
+  {
+    href: '/smtp-421-temporary-error/',
+    badge: '4xx Deferral Code',
+    title: 'SMTP 421: Rate Limits & TLS Deferrals',
+    desc: 'Handle 421-4.7.0 and 421-4.7.28 temporary throttling, greylisting, and STARTTLS handshake failures without losing mail.',
+  },
+  {
+    href: '/remove-from-spamhaus-blocklist/',
+    badge: 'Delisting Playbook',
+    title: 'Remove Your IP/Domain From Spamhaus',
+    desc: 'Step-by-step delisting instructions for Spamhaus SBL, XBL, PBL (dynamic IP policy list), and DBL (Domain Block List).',
+  },
+  {
+    href: '/get-off-barracuda-blocklist/',
+    badge: 'Delisting Playbook',
+    title: 'Get Off the Barracuda Blocklist (BRBL)',
+    desc: 'Identify why your sending IP triggered Barracuda Reputation System blocks, secure open relays, and submit a removal request.',
+  },
+  {
+    href: '/sorbs-delisting-guide/',
+    badge: 'Delisting Playbook',
+    title: 'SORBS Delisting Guide',
+    desc: 'Check which SORBS sub-zone (DUHL, SPAM, WEB) listed your server IP and complete the verification and delisting workflow.',
+  },
+];
+
+const authFoundationsCards: HubCard[] = [
+  {
+    href: '/email-authentication/',
+    badge: 'Master Sub-Hub',
+    title: 'Email Authentication Hub (All 44 ESPs)',
+    desc: 'Complete library of SPF, DKIM, DMARC, BIMI, MTA-STS, and TLS-RPT guides plus setup playbooks for 44 email platforms.',
+  },
+  {
+    href: '/spf-record/',
+    badge: 'Core Pillar',
+    title: 'SPF Record: Complete Setup Guide',
+    desc: 'Authorize your sending IPs and ESPs in v=spf1 while staying under the strict 10-DNS-lookup limit.',
+  },
+  {
+    href: '/dkim/',
+    badge: 'Core Pillar',
+    title: 'DKIM Explained: 2048-Bit Email Signing',
+    desc: 'Publish _domainkey public keys, configure c=relaxed/relaxed canonicalization, and ensure signatures survive forwarding.',
+  },
+  {
+    href: '/dmarc/',
+    badge: 'Core Pillar',
+    title: 'DMARC: Alignment, Policies & Reporting',
+    desc: 'Link SPF and DKIM to your visible From: address and advance safely from p=none to p=quarantine and p=reject.',
+  },
+  {
+    href: '/how-to-read-dmarc-reports/',
+    badge: 'XML Reporting',
+    title: 'How to Read DMARC Reports',
+    desc: 'Use daily RUA XML reports to spot unauthorized spoofing servers and misconfigured marketing tools hurting your reputation.',
+  },
+  {
+    href: '/ptr-record/',
+    badge: 'Reverse DNS Pillar',
+    title: 'PTR Record: Forward-Confirmed rDNS',
+    desc: 'Set up matching .in-addr.arpa and .ip6.arpa reverse DNS at your cloud host so Gmail (550-5.7.25) accepts your mail.',
+  },
+];
+
+const deliverabilityToolsCards: HubCard[] = [
+  {
+    href: '/blacklist-checker/',
+    badge: 'DNSBL Scanner',
+    title: 'MX and IP Blacklist Checker',
+    desc: 'Query your domain and mail server IP across major DNSBL blocklists (Spamhaus, Barracuda, SpamCop, SORBS) live via DoH.',
+  },
+  {
+    href: '/ip-reputation-checker/',
+    badge: 'Sender Audit',
+    title: 'IP Reputation Checker',
+    desc: 'Inspect sending IP blocklist status, ASN ownership, and reverse DNS PTR alignment in one pass.',
+  },
+  {
+    href: '/email-header-analyzer/',
+    badge: '100% Local Parser',
+    title: 'Email Header Analyzer',
+    desc: 'Paste "Show Original" email headers to decode hop-by-hop latency, SPF, DKIM, DMARC, and ARC results locally in your browser.',
+  },
+  {
+    href: '/smtp-tester/',
+    badge: 'Live Diagnostic',
+    title: 'SMTP Connectivity & STARTTLS Tester',
+    desc: 'Verify MX resolution, banner responses, and TLS encryption support for any mail domain.',
+  },
+  {
+    href: '/dmarc-report-analyzer/',
+    badge: 'Local XML Viewer',
+    title: 'DMARC Report Analyzer',
+    desc: 'Drop .xml, .zip, or .gz aggregate reports into your browser to see which sending IPs are passing or failing.',
+  },
+  {
+    href: '/spf-record-checker/',
+    badge: 'Auth Validator',
+    title: 'SPF Record Checker',
+    desc: 'Test your v=spf1 record for syntax errors, multiple-record collisions, and 10-lookup PermErrors.',
+  },
+  {
+    href: '/dmarc-record-checker/',
+    badge: 'Policy Validator',
+    title: 'DMARC Record Checker',
+    desc: 'Audit your _dmarc TXT policy, subdomain sp= rules, and rua= reporting destinations.',
+  },
+  {
+    href: '/dmarc-monitoring/',
+    badge: 'Continuous Guard',
+    title: 'Automated DMARC & Reputation Monitoring',
+    desc: 'Receive automated alerts whenever a new sender uses your domain, a DNS record drifts, or DMARC pass rates drop.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What is the difference between email delivery rate and email deliverability (inbox placement)?',
+    a: "Email delivery rate (Accepted Rate) measures the percentage of sent emails that the receiving mail server accepted (250 OK) without returning a hard or soft bounce. Email deliverability (Inbox Placement Rate) measures how many of those accepted emails actually landed in the recipient's primary inbox rather than being silently routed to the Spam or Junk folder. Senders achieve a 99% delivery rate yet still suffer poor deliverability when emails route straight to spam.",
+  },
+  {
+    q: 'Why are my emails still going to spam even though SPF, DKIM, and DMARC all pass?',
+    a: 'Passing SPF, DKIM, and DMARC proves that the email genuinely came from your domain, which prevents outright 550 5.7.26 rejection, but it does not guarantee inbox placement. If your sending IP is on a DNSBL blocklist, your new domain was not warmed up gradually, your user spam complaint rate exceeds 0.10% in Google Postmaster Tools, or your message lacks a Reverse DNS (PTR) record, Gmail and Outlook still route your authenticated email to spam.',
+  },
+  {
+    q: 'Should I send cold outbound sales emails from my main company domain?',
+    a: "No, in practice never send cold outbound prospecting emails from your primary corporate domain. Even well-targeted cold outreach generates higher spam complaint rates than opt-in newsletters; if your main domain hits Google's 0.30% spam complaint ceiling, Gmail routes your CEO's everyday client emails, password resets, and invoices to spam. Always use a separate, warmed-up secondary domain for cold outreach.",
+  },
+  {
+    q: 'What is the fastest way to diagnose why a specific email bounced or went to spam?',
+    a: 'In real-world troubleshooting, follow a 2-step check: if the email bounced back, look at the 3-digit and enhanced status code in the bounce message (such as 550 5.7.26 for authentication failure or 550 5.7.1 for a blocklist) and run your domain through the Blacklist Checker. If the email landed in the recipient\'s spam folder, open the email, click "Show Original" (in Gmail), and paste the raw text into our Email Header Analyzer to inspect the exact spf=, dkim=, and dmarc= verdicts.',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Email Deliverability: Inbox Placement, Blocklists, SMTP Bounces, and Warm-Up',
+  url: 'https://promptdns.com/email-deliverability/',
+  description: 'Master hub for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Email Deliverability', item: 'https://promptdns.com/email-deliverability/' },
+  ],
+};
+
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "What is the email deliverability section?", "acceptedAnswer": { '@type': 'Answer', "text": "It&#39;s a curated collection of guides and tools focused on email deliverability, organized from fundamentals to advanced configurations." } },
-    {'@type': 'Question', 'name': "Are all these pages free?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: every guide and tool on PromptDNS is free forever, with no account and no limits." } },
-    {'@type': 'Question', 'name': "How do I navigate this section?", "acceptedAnswer": { '@type': 'Answer', "text": "Start with the first card and follow the internal links. Each page connects to related topics so you naturally build understanding." } },
-    {'@type': 'Question', 'name': "How often is this content updated?", "acceptedAnswer": { '@type': 'Answer', "text": "Money pages are reviewed and refreshed every 90 days. New guides are added weekly as the topical map expands." } },
-    {'@type': 'Question', 'name': "Can I suggest a topic that&#39;s missing?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: email hello@promptdns.com with your suggestion. We prioritize based on search demand and user feedback." } },
-    {'@type': 'Question', 'name': "Is this content written by experts?", "acceptedAnswer": { '@type': 'Answer', "text": "Every page follows a documented editorial standard: verified processes, tool-verified instructions, and regular reviews. See the About page for details." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
 ---
+
 <BaseLayout
-  title="Email Deliverability: The Complete Guide"
-  description="Email deliverability explained: authentication, sender reputation, blocklists, warm-up, and the infrastructure decisions that keep mail in the inbox."
-  schema={[faqSchema]}
+  title="Email Deliverability: Inbox Placement, Blocklists, SMTP Bounces, and Warm-Up"
+  description="Master hub for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a>
-       <span aria-hidden="true">/</span>
-      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Email Deliverability</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">Email Deliverability</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Email Deliverability</h1>
 
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">Email deliverability is the measure of whether your mail reaches the inbox instead of spam, driven by authentication (SPF, DKIM, DMARC), sender reputation, and recipient engagement.</p>
-    </div>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      Email Deliverability: Inbox Placement, Blocklists, SMTP Bounces, and Warm-Up
+    </h1>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Deliverability factors</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Factor</th><th>Impact</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Authentication</td><td class="text-sm text-ink-dim">Foundational</td></tr><tr><td class="font-medium text-ink">Reputation</td><td class="text-sm text-ink-dim">High</td></tr><tr><td class="font-medium text-ink">Engagement</td><td class="text-sm text-ink-dim">Moderate</td></tr></tbody>
-        </table>
-      </div>
-    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      Deliverability is the discipline of getting mail delivered to the inbox instead of the spam
-      folder or a bounce. It rests on four pillars: authentication (proving you are you),
-      reputation (earned by behavior), infrastructure (IPs, PTR, TLS), and recipient engagement.
-      This hub connects every piece.
-    </p>
-
-    <div class="mt-10 grid gap-4">
-      {[
-        { href: '/why-emails-go-to-spam/', title: 'Why emails go to spam', desc: 'The 14 causes, strongest first, with the fix for each.' },
-        { href: '/email-bounced-reasons/', title: 'Why emails bounce', desc: 'Hard vs soft bounces, SMTP codes, and the handling routine.' },
-        { href: '/email-sending-reputation/', title: 'Sender reputation', desc: 'How IP and domain reputation are built, damaged, and repaired.' },
-        { href: '/how-to-warm-up-email-server/', title: 'Warm-up schedule', desc: 'Ramp a new server or domain over 4-6 weeks safely.' },
-        { href: '/dedicated-vs-shared-ip/', title: 'Dedicated vs shared IP', desc: 'Which sending infrastructure your volume actually needs.' },
-        { href: '/list-unsubscribe-header/', title: 'List-Unsubscribe headers', desc: 'The one-click unsubscribe requirement, implemented.' },
-        { href: '/imap-vs-smtp/', title: 'IMAP vs SMTP vs POP3', desc: 'Which protocol does what, and ports that matter.' },
-        { href: '/cold-email-deliverability/', title: 'Cold Email Deliverability', desc: 'Authentication, warm-up, volume control, and list quality for outbound campaigns.' },
-      ].map((s) => (
-        <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-          <h2 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h2>
-          <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-        </a>
-      ))}
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={faqs} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <h2 class="font-display font-semibold text-ink">Start with the diagnosis</h2>
-      <p class="mt-1 text-sm text-ink-dim">
-        Run the <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> (SPF, DKIM,
-        DMARC, DNSSEC in one pass), then the <a href="/blacklist-checker/" class="font-medium text-accent hover:text-accent-soft">blacklist checker</a>.
-        Authentication and listings account for most deliverability failures.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        Email deliverability is <strong class="text-ink">the rate at which your outbound emails land in the recipient's primary inbox rather than being routed to the spam folder or rejected with an SMTP bounce</strong>. Mailbox providers score sender reputation continuously. The 5 pillars combine authentication, IP reputation, infrastructure, list hygiene, and engagement.
       </p>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#pillars">How the 5 Pillars of Email Deliverability Work Together</a></li>
+        <li><a href="#spam-warmup">1. Inbox Placement, Domain Warm-Up, and Bulk-Sender Compliance Guides</a></li>
+        <li><a href="#bounces-blocklists">2. SMTP Bounce Codes and DNSBL Blacklist Delisting Guides</a></li>
+        <li><a href="#auth-foundations">3. DNS Authentication Foundations for Deliverability</a></li>
+        <li><a href="#deliverability-tools">4. Free Browser-Based Deliverability, Blacklist, and Header Diagnostic Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: 5 Pillars Master Table -->
+      <section id="pillars" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 5 Pillars of Email Deliverability Work Together (Master Reference Table)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Email platforms frequently report a high "Delivery Rate" (Accepted Rate, the share of messages that received a <code>250 OK</code> response from the receiving server instead of bouncing), even when half of those accepted messages are silently routed into the recipient's spam folder. True <strong class="text-ink">Email Deliverability (Inbox Placement)</strong> requires passing 5 sequential filtering gates enforced by Gmail, Microsoft 365, Yahoo, and corporate spam gateways. The table below compares the 5 pillars of email deliverability by what receiving servers inspect, key technical thresholds, and primary failure symptoms.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Deliverability Pillar</th>
+                <th class="px-4 py-3">What Receiving Mail Servers Inspect</th>
+                <th class="px-4 py-3">Key Technical Thresholds &amp; Rules</th>
+                <th class="px-4 py-3">Failure Symptom When Broken</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. Domain Authentication</td>
+                <td class="px-4 py-3"><code>SPF</code> (<code>v=spf1</code>), <code>DKIM</code> (<code>2048-bit</code>), and <code>DMARC</code> (<code>_dmarc</code>) alignment with the visible <code>From:</code> address.</td>
+                <td class="px-4 py-3">Both <code>SPF</code> and <code>DKIM</code> required for bulk senders (<code>5,000+/day</code>); &lt;= 10 SPF lookups.</td>
+                <td class="px-4 py-3">Hard bounce <strong><code>550 5.7.26</code></strong> (Gmail) or <strong><code>550 5.7.515</code></strong> (Outlook) rejection.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. IP &amp; Domain Reputation</td>
+                <td class="px-4 py-3">Presence on DNSBL blocklists (<code>Spamhaus</code>, <code>Barracuda</code>, <code>SORBS</code>) and historical domain trust in Google Postmaster Tools.</td>
+                <td class="px-4 py-3">Zero active DNSBL listings; dedicated IPs warmed gradually over 2 to 4 weeks.</td>
+                <td class="px-4 py-3">Immediate <strong><code>550 5.7.1</code></strong> connection block or bulk spam-folder routing.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Sending Infrastructure</td>
+                <td class="px-4 py-3">Forward-Confirmed Reverse DNS (<code>FCrDNS</code> <code>PTR</code> match), <code>EHLO</code> banner, <code>STARTTLS</code> encryption, and <code>MTA-STS</code>.</td>
+                <td class="px-4 py-3"><code>PTR</code> hostname resolves back to sending IP (<code>A</code>/<code>AAAA</code>); TLS 1.2 or TLS 1.3 active.</td>
+                <td class="px-4 py-3"><strong><code>550-5.7.25</code></strong> missing <code>PTR</code> rejection or <strong><code>421 4.7.0</code></strong> TLS deferral.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. List Hygiene &amp; Bounces</td>
+                <td class="px-4 py-3">Hard bounce rates (non-existent <code>550 5.1.1</code> addresses), spam-trap hits, and role-account sending.</td>
+                <td class="px-4 py-3">Hard bounce rate kept <strong>below 2%</strong>; zero pristine or recycled spam-trap hits.</td>
+                <td class="px-4 py-3">Sudden IP throttling (<strong><code>421</code></strong>) and rapid domain reputation degradation.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. Engagement &amp; Compliance</td>
+                <td class="px-4 py-3">User spam complaints, open/reply rates, and one-click <code>List-Unsubscribe</code> headers (<code>RFC 8058</code>).</td>
+                <td class="px-4 py-3">User-reported spam rate kept <strong>below 0.10%</strong> and <strong>never reaching 0.30%</strong> (Google/Yahoo rule).</td>
+                <td class="px-4 py-3">Messages accepted (<code>250 OK</code>) but filtered straight into the Spam/Junk folder.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Navigate this hub by diagnostic task: <strong class="text-ink">Section 1</strong> covers inbox placement, domain warm-up, and bulk-sender compliance, <strong class="text-ink">Section 2</strong> provides step-by-step fixes for SMTP bounce codes and DNSBL blocklist delisting, <strong class="text-ink">Section 3</strong> links to core authentication guides, and <strong class="text-ink">Section 4</strong> provides 8 free browser-based deliverability checkers.
+        </p>
+      </section>
+
+      <!-- Section 2: Inbox Placement & Warm-Up Grid -->
+      <section id="spam-warmup" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. Inbox Placement, Domain Warm-Up, and Bulk-Sender Compliance Guides (8 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Eight guides explain why authenticated emails still land in the spam folder, how to warm up a new domain or dedicated IP schedule, how to satisfy Gmail and Yahoo's bulk-sender mandates, and how to configure email headers and ports. Select a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {spamWarmupCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Bounces & Blocklists Grid -->
+      <section id="bounces-blocklists" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. SMTP Bounce Codes and DNSBL Blacklist Delisting Guides (8 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Receiving a 5xx permanent rejection or 4xx temporary deferral in your bounce logs, or discovering your sending IP on a spam blocklist, requires immediate targeted remediation. Open the matching bounce code or blocklist delisting guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {bouncesBlocklistsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: Auth Foundations Grid -->
+      <section id="auth-foundations" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. DNS Authentication Foundations for Deliverability (6 Core Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Every modern spam filter checks your domain's DNS authentication records before evaluating content or sender reputation. Use these 6 core guides to configure your underlying SPF, DKIM, DMARC, and Reverse DNS (<code>PTR</code>) records:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {authFoundationsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: Diagnostic Tools Grid -->
+      <section id="deliverability-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. Free Browser-Based Deliverability, Blacklist, and Header Diagnostic Tools (8 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Check whether your domain or mail server IP is listed on major DNSBL blocklists, paste raw headers from a spam-foldered email to see exact authentication verdicts, and test live SMTP TLS handshakes using our 8 free tools below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {deliverabilityToolsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every guide, bounce-code reference, delisting playbook, and diagnostic tool in this <strong class="text-ink">Email Deliverability hub</strong> helps you protect <strong class="text-ink">sender reputation</strong>, resolve <strong class="text-ink">SMTP 550 and 421 bounces</strong>, stay off <strong class="text-ink">Spamhaus and Barracuda blocklists</strong>, and maximize <strong class="text-ink">primary inbox placement</strong>.
+        </p>
       </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
+    </div>
+  </div>
 </BaseLayout>
