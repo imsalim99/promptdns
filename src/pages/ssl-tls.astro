@@ -1,121 +1,424 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
+
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const coreSslCards: HubCard[] = [
+  {
+    href: '/what-is-ssl-tls/',
+    badge: 'SSL/TLS Pillar',
+    title: 'What Is SSL/TLS? Encryption, Certificates & Handshakes',
+    desc: 'How SSL vs TLS vs HTTPS work, the 3 security guarantees, asymmetric vs symmetric encryption, and the 6 certificate types (DV, OV, EV, Wildcard).',
+  },
+  {
+    href: '/tls-versions-explained/',
+    badge: 'Protocol Comparison',
+    title: 'TLS Versions Explained: TLS 1.0, 1.1, 1.2, and TLS 1.3',
+    desc: 'Release dates (1999 to August 2018), 1-RTT vs 2-RTT handshakes, the 5 AEAD cipher suites, RFC 8996 deprecations, and NGINX/Apache configs.',
+  },
+  {
+    href: '/ssl-certificate-errors/',
+    badge: 'Troubleshooting Guide',
+    title: 'SSL Certificate Errors: Browser Codes & Fixes',
+    desc: 'Fix ERR_CERT_COMMON_NAME_INVALID, ERR_CERT_DATE_INVALID, ERR_CERT_AUTHORITY_INVALID (missing fullchain.pem), and Cloudflare 525/526 errors.',
+  },
+  {
+    href: '/certificate-authorities-explained/',
+    badge: 'PKI Architecture',
+    title: 'Certificate Authorities (CAs) and the Web of Trust',
+    desc: 'How Root CAs, Intermediate CAs, root stores, Certificate Transparency (CT) logs, and OCSP/CRL revocation validate domain identity.',
+  },
+  {
+    href: '/free-ssl-lets-encrypt/',
+    badge: 'ACME Automation',
+    title: "Let's Encrypt: Free Certificates & ACME Automation",
+    desc: 'Automate 90-day certificates with Certbot using HTTP-01 (port 80) and DNS-01 (_acme-challenge TXT) validation for wildcard domains.',
+  },
+  {
+    href: '/hsts-explained/',
+    badge: 'Security Header',
+    title: 'HSTS: HTTP Strict Transport Security Explained',
+    desc: 'Prevent SSL-stripping downgrade attacks with max-age, includeSubDomains, and the browser HSTS Preload List.',
+  },
+  {
+    href: '/mixed-content-fix/',
+    badge: 'HTTPS Repair',
+    title: 'Mixed Content Warnings: Causes and Fixes',
+    desc: 'Find and fix insecure http:// images, scripts, and stylesheets that break the HTTPS padlock on secure pages.',
+  },
+  {
+    href: '/https-vs-dnssec/',
+    badge: 'Layer Comparison',
+    title: 'HTTPS vs DNSSEC: Encryption vs Authentication',
+    desc: 'Understand why HTTPS encrypts the web session while DNSSEC verifies that the DNS IP lookup itself was not spoofed.',
+  },
+];
+
+const dnsEmailTlsCards: HubCard[] = [
+  {
+    href: '/caa-record/',
+    badge: 'Record Pillar',
+    title: 'CAA Record (Certificate Authority Authorization)',
+    desc: 'Restrict which CAs are authorized to issue certificates for your domain using issue, issuewild, iodef, and RFC 8657 ACME accounturi pinning.',
+  },
+  {
+    href: '/doh-vs-dot/',
+    badge: 'Encrypted DNS',
+    title: 'DNS-over-HTTPS (443) vs DNS-over-TLS (853)',
+    desc: 'Compare how DoH, DoT, and DNS over QUIC (DoQ) use TLS 1.3 to encrypt DNS queries between devices and recursive resolvers.',
+  },
+  {
+    href: '/what-is-dnssec/',
+    badge: 'DNS Cryptography',
+    title: 'What Is DNSSEC? Chain of Trust & Signatures',
+    desc: 'How RRSIG, DNSKEY, and DS records authenticate DNS lookups and prevent SERVFAIL errors during CAA validation.',
+  },
+  {
+    href: '/mta-sts/',
+    badge: 'Email TLS Policy',
+    title: 'MTA-STS: Enforcing TLS for Inbound Email',
+    desc: 'Publish RFC 8461 policies that require sending mail servers to negotiate TLS 1.2 or TLS 1.3 with a valid certificate.',
+  },
+  {
+    href: '/mta-sts-record/',
+    badge: 'Setup Guide',
+    title: 'MTA-STS Record & Policy File Setup',
+    desc: 'Configure _mta-sts DNS TXT records and host the /.well-known/mta-sts.txt HTTPS file without certificate mismatches.',
+  },
+  {
+    href: '/tls-rpt/',
+    badge: 'TLS Reporting',
+    title: 'TLS-RPT: SMTP TLS Failure Reporting',
+    desc: 'Receive daily JSON telemetry from Gmail and Microsoft whenever an inbound SMTP TLS handshake or certificate check fails.',
+  },
+  {
+    href: '/tls-rpt-record/',
+    badge: 'Syntax Guide',
+    title: 'TLS-RPT Record Syntax (_smtp._tls)',
+    desc: 'Format v=TLSRPTv1; rua=mailto: reporting records in DNS to monitor MTA-STS and DANE encryption health.',
+  },
+  {
+    href: '/bimi-vmc/',
+    badge: 'Brand Certificates',
+    title: 'BIMI VMC: Verified Mark Certificates',
+    desc: 'How Certificate Authorities issue VMC and CMC cryptographic certificates to display verified brand logos in email inboxes.',
+  },
+];
+
+const tlsToolsCards: HubCard[] = [
+  {
+    href: '/caa-record-lookup/',
+    badge: 'Type 257 Tool',
+    title: 'CAA Record Lookup',
+    desc: 'Check which Certificate Authorities are authorized to issue single-domain and wildcard SSL certificates for your domain.',
+  },
+  {
+    href: '/smtp-tester/',
+    badge: 'TLS Mail Tester',
+    title: 'SMTP Connectivity & STARTTLS Tester',
+    desc: 'Test live mail server connections, banner responses, and STARTTLS encryption support across MX hosts.',
+  },
+  {
+    href: '/mta-sts-checker/',
+    badge: 'HTTPS Policy Tool',
+    title: 'MTA-STS Record Checker',
+    desc: 'Verify both your _mta-sts DNS TXT record and your hosted https://mta-sts.<domain>/.well-known/mta-sts.txt policy file.',
+  },
+  {
+    href: '/tls-rpt-checker/',
+    badge: 'Reporting Tool',
+    title: 'TLS-RPT Record Checker',
+    desc: 'Validate your _smtp._tls TXT record syntax and reporting URI for SMTP TLS failure reports.',
+  },
+  {
+    href: '/dnssec-checker/',
+    badge: 'Chain Validator',
+    title: 'DNSSEC Checker',
+    desc: "Ensure your DNSSEC chain is healthy (AD=1) so broken DS records never block Let's Encrypt CAA validation checks.",
+  },
+  {
+    href: '/a-record-lookup/',
+    badge: 'IPv4 Origin Check',
+    title: 'A Record Lookup',
+    desc: 'Verify the exact IPv4 address your domain resolves to when troubleshooting SSL hostname mismatch errors.',
+  },
+  {
+    href: '/aaaa-record-lookup/',
+    badge: 'IPv6 Origin Check',
+    title: 'AAAA Record Lookup (IPv6)',
+    desc: 'Check for leftover IPv6 AAAA records pointing to old web hosts that trigger ERR_CERT_COMMON_NAME_INVALID on mobile networks.',
+  },
+  {
+    href: '/dns-monitoring/',
+    badge: 'Continuous Guard',
+    title: 'Automated 6-Hour DNS & Security Monitoring',
+    desc: 'Get alerted via email whenever your A, AAAA, CAA, MX, or DNSSEC DS records drift or expire unexpectedly.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What is the difference between SSL, TLS, and HTTPS?',
+    a: 'SSL (Secure Sockets Layer) is the original 1995 encryption protocol that is now retired. TLS (Transport Layer Security) is the modern cryptographic upgrade (TLS 1.2 and TLS 1.3) that replaced SSL, even though people still casually call the certificates "SSL certificates". HTTPS is simply the standard HTTP web protocol running inside an encrypted TLS connection on port 443.',
+  },
+  {
+    q: 'How do DNS records affect my SSL/TLS certificate?',
+    a: "DNS directly controls three parts of SSL/TLS: first, your A and AAAA records determine which server IP the browser connects to on port 443; second, your CAA record restricts which Certificate Authorities are allowed to issue certificates for your domain; and third, automated _acme-challenge TXT or CNAME records prove domain ownership so Let's Encrypt and CDNs auto-renew certificates every 60 to 90 days.",
+  },
+  {
+    q: 'Why does my website show an SSL error right after I pointed my domain to a new web host?',
+    a: 'In practice, post-migration SSL errors almost always come from one of two causes: either you updated your IPv4 A record to the new host but forgot to delete an old IPv6 AAAA record (so IPv6 visitors still hit your old server which no longer has a cert for your domain), or your new web host/CDN waits for DNS propagation to finish before completing its automated ACME (HTTP-01) certificate validation.',
+  },
+  {
+    q: 'Why does Cloudflare show "ERR_TOO_MANY_REDIRECTS" after I enabled SSL?',
+    a: "In real-world Cloudflare setups, an infinite redirect loop happens when Cloudflare's SSL/TLS mode is set to Flexible while your origin web server (NGINX, Apache, or WordPress) is configured to redirect all http:// requests to https://. Under Flexible mode, Cloudflare connects to your origin over port 80 (http://), your origin redirects Cloudflare back to https://, and the loop repeats forever. Switch Cloudflare's SSL/TLS mode to Full (Strict) (with a valid Let's Encrypt or Cloudflare Origin CA certificate on your server) to fix it immediately.",
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'SSL/TLS and Web Security: Certificates, HTTPS, TLS 1.3, CAA, HSTS, and Errors',
+  url: 'https://promptdns.com/ssl-tls/',
+  description: 'Master hub for SSL/TLS and web security: TLS 1.2 and 1.3 encryption, digital certificates, CAA records, HSTS headers, MTA-STS email security, and 8 free audit tools.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'SSL/TLS & Web Security', item: 'https://promptdns.com/ssl-tls/' },
+  ],
+};
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Are SSL and TLS the same thing?", "acceptedAnswer": { '@type': 'Answer', "text": "TLS is the modern successor to SSL; the names are used interchangeably but every current certificate actually uses TLS. SSL 3.0 and older are deprecated and insecure." } },
-    {'@type': 'Question', 'name': "Which TLS version should I run?", "acceptedAnswer": { '@type': 'Answer', "text": "TLS 1.2 as the floor and TLS 1.3 as the default. TLS 1.0 and 1.1 fail modern compliance scans." } },
-    {'@type': 'Question', 'name': "How do I check my certificate?", "acceptedAnswer": { '@type': 'Answer', "text": "Visit the site and inspect the certificate in the browser, or run our SSL checker for expiry, chain, and protocol details." } },
-    {'@type': 'Question', 'name': "Does this site use TLS?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be." } },
-    {'@type': 'Question', 'name': "SSL vs TLS in one line?", "acceptedAnswer": { '@type': 'Answer', "text": "Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol." } },
-    {'@type': 'Question', 'name': "Do I still need DNSSEC if I have HTTPS?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap." } },
-    {'@type': 'Question', 'name': "How long are certificates valid?", "acceptedAnswer": { '@type': 'Answer', "text": "Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal." } },
-    {'@type': 'Question', 'name': "Does a certificate mean the site is safe?", "acceptedAnswer": { '@type': 'Answer', "text": "No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty." } },
-    {'@type': 'Question', 'name': "What is a certificate chain?", "acceptedAnswer": { '@type': 'Answer', "text": "Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors." } }
-  ],
-};---
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
+---
+
 <BaseLayout
-  title="SSL/TLS Guides"
-  description="SSL/TLS hub: certificates, HTTPS, encryption basics, HSTS, TLS versions, and the guides that secure your connection from browser to server."
-  schema={[faqSchema]}
+  title="SSL/TLS and Web Security: Certificates, HTTPS, TLS 1.3, CAA, HSTS, and Errors"
+  description="Master hub for SSL/TLS and web security: TLS 1.2 and 1.3 encryption, digital certificates, CAA records, HSTS headers, MTA-STS email security, and 8 free audit tools."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">SSL/TLS Guides</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">SSL/TLS &amp; Web Security</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SSL/TLS Guides</h1>
 
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">SSL and TLS are the cryptographic protocols that encrypt connections between browsers and servers. Modern certificates use TLS; the handshake, chain of trust, and versions decide whether visitors see a padlock or a warning.</p>
-    </div>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      SSL/TLS and Web Security: Certificates, HTTPS, TLS 1.3, CAA, HSTS, and Errors
+    </h1>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">TLS versions in current use</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Version</th><th>Status</th><th>Notes</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">TLS 1.3</td><td class="text-sm text-ink-dim">Current standard</td><td class="text-sm text-ink-dim">Faster handshake, no legacy ciphers</td></tr><tr><td class="font-medium text-ink">TLS 1.2</td><td class="text-sm text-ink-dim">Widely supported floor</td><td class="text-sm text-ink-dim">Acceptable with modern cipher suites</td></tr><tr><td class="font-medium text-ink">TLS 1.1 / 1.0</td><td class="text-sm text-ink-dim">Deprecated</td><td class="text-sm text-ink-dim">Fail modern compliance scans</td></tr><tr><td class="font-medium text-ink">SSL 3.0 and older</td><td class="text-sm text-ink-dim">Dead</td><td class="text-sm text-ink-dim">POODLE-class attacks; disable entirely</td></tr></tbody>
-        </table>
-      </div>
-    </section>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      TLS is the encryption and authentication layer that turns HTTP into HTTPS. This hub
-      collects everything a webmaster needs: what certificates are, how encryption works,
-      and the configurations that keep connections trusted.
-    </p>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Core guides</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/what-is-ssl-tls/', title: 'What Is SSL/TLS?', desc: 'The protocol, the handshake, and what TLS actually protects.' },
-          { href: '/certificate-authorities-explained/', title: 'Certificate Authorities', desc: 'Who vouches for certificates, validation levels, and the web of trust.' },
-          { href: '/https-vs-dnssec/', title: 'HTTPS vs DNSSEC', desc: 'Encryption vs DNS authentication: different layers, both needed.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Practical setup</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/free-ssl-lets-encrypt/', title: "Let's Encrypt", desc: 'Free certificates via ACME: issuance, renewal, and the 90-day model.' },
-          { href: '/tls-versions-explained/', title: 'TLS Versions', desc: '1.0 through 1.3: what changed, which to disable, how to test.' },
-          { href: '/hsts-explained/', title: 'HSTS', desc: 'Forcing HTTPS permanently: the header, the preload list, the risks.' },
-          { href: '/mixed-content-fix/', title: 'Mixed Content', desc: 'Why HTTPS pages loading HTTP resources break, and the fix.' },
-          { href: '/ssl-certificate-errors/', title: 'Certificate Errors', desc: 'Every error decoded: expired, name mismatch, untrusted chain.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Tools</h2>
-      <div class="grid gap-4 sm:grid-cols-2">
-        {[
-          { href: '/dns-record-lookup/', title: 'CAA Record Lookup', desc: 'Check which CAs may issue certificates for any domain.' },
-          { href: '/', title: 'Security Scanner', desc: 'TLS alongside DNS, DNSSEC, and auth checks in one pass.' },
-        ].map((t) => (
-          <a href={t.href} class="group rounded-xl border border-line bg-panel/60 p-4 transition hover:border-accent/40">
-            <h4 class="font-display font-semibold text-sm text-ink group-hover:text-accent">{t.title}</h4>
-            <p class="mt-1 text-xs text-ink-dim">{t.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={[
-        ["Does this site use TLS?","Yes: promptdns.com is served over HTTPS with automated certificates, like every modern site should be."],
-        ["SSL vs TLS in one line?","Same family: SSL is the retired name, TLS 1.2/1.3 is the living protocol."],
-        ["Do I still need DNSSEC if I have HTTPS?","Yes: TLS cannot help if DNS redirects users before they reach your real server. DNSSEC closes that pre-connection gap."],
-        ["How long are certificates valid?","Public certificates max out at 398 days per industry policy. Let's Encrypt issues 90-day certificates designed for automated renewal."],
-        ["Does a certificate mean the site is safe?","No: it means the connection is encrypted to that domain. Phishing sites get valid certificates too. TLS authenticates the domain, not the operator's honesty."],
-        ["What is a certificate chain?","Your certificate signed by an intermediate, signed by a root CA pre-trusted in browsers. Missing intermediates cause the classic 'works for me' errors."],
-      ]} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <p class="text-sm leading-relaxed text-ink-dim">
-        <strong class="text-ink">Verify your setup:</strong> run the
-        <a href="/" class="font-medium text-accent hover:text-accent-soft">homepage security scanner</a> to check TLS,
-        DNSSEC, and authentication in one pass.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        SSL/TLS and web security is <strong class="text-ink">the stack of cryptographic protocols (<code>TLS 1.2</code> and <code>TLS 1.3</code>), <code>X.509</code> digital certificates, DNS <code>CAA</code> policies, and HTTP headers (<code>HSTS</code>) that encrypt connections and authenticate server identity</strong>. Browsers and mail servers verify certificates on every handshake. The 6 layers secure web, email, and DNS.
       </p>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Are SSL and TLS the same thing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TLS is the modern successor to SSL; the names are used interchangeably but every current certificate actually uses TLS. SSL 3.0 and older are deprecated and insecure.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which TLS version should I run?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TLS 1.2 as the floor and TLS 1.3 as the default. TLS 1.0 and 1.1 fail modern compliance scans.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check my certificate?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Visit the site and inspect the certificate in the browser, or run our SSL checker for expiry, chain, and protocol details.</p></details></div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#stack">How the 6 Layers of SSL/TLS, PKI, and Transport Security Fit Together</a></li>
+        <li><a href="#core-ssl-guides">1. Core SSL/TLS Protocols, Certificates, Let's Encrypt, HSTS, and Error Guides</a></li>
+        <li><a href="#dns-email-tls">2. DNS Certificate Authorization, Encrypted DNS, and Email TLS Guides</a></li>
+        <li><a href="#tls-tools">3. Free Browser-Based SSL/TLS, CAA, MTA-STS, and DNS Security Checkers</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: 6 Layers Master Table -->
+      <section id="stack" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 6 Layers of SSL/TLS, PKI, and Transport Security Fit Together (Master Reference Table)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Securing a modern domain requires more than installing an SSL certificate file on port 443: certificate issuance, handshake negotiation, browser downgrade prevention, inbound email encryption, and encrypted DNS lookups all depend on 6 interconnected layers across DNS, TLS, and HTTP. The table below compares the 6 layers of transport security covered in this hub by protocol mechanism, what each layer protects, governing IETF/CA standards, and primary failure symptom.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Security Layer</th>
+                <th class="px-4 py-3">Protocol / Mechanism</th>
+                <th class="px-4 py-3">What It Secures</th>
+                <th class="px-4 py-3">Governing Standards</th>
+                <th class="px-4 py-3">Primary Failure Symptom</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. TLS Handshake Protocol</td>
+                <td class="px-4 py-3"><strong>TLS 1.3</strong> (<code>1-RTT</code>, <code>0-RTT</code>) &amp; <strong>TLS 1.2</strong> (<code>ECDHE</code> + <code>AEAD</code> ciphers).</td>
+                <td class="px-4 py-3">Encrypts data in transit and enforces Perfect Forward Secrecy (<code>PFS</code>).</td>
+                <td class="px-4 py-3"><code>RFC 8446</code> (TLS 1.3), <code>RFC 5246</code> (TLS 1.2), <code>RFC 8996</code></td>
+                <td class="px-4 py-3"><code>ERR_SSL_VERSION_OR_CIPHER_MISMATCH</code> or <code>ERR_SSL_PROTOCOL_ERROR</code>.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. Public Key Infrastructure (<code>PKI</code>)</td>
+                <td class="px-4 py-3"><strong><code>X.509</code> Certificates</strong> (<code>SANs</code>, leaf + intermediate CA chain <code>fullchain.pem</code>).</td>
+                <td class="px-4 py-3">Proves the server at the IP address genuinely owns the domain name.</td>
+                <td class="px-4 py-3"><code>RFC 5280</code> &amp; CA/Browser Forum Baseline Requirements</td>
+                <td class="px-4 py-3"><code>NET::ERR_CERT_COMMON_NAME_INVALID</code>, <code>ERR_CERT_DATE_INVALID</code>, or <code>ERR_CERT_AUTHORITY_INVALID</code>.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Automated Issuance &amp; DNS Policy</td>
+                <td class="px-4 py-3"><strong><code>ACME</code> (<code>HTTP-01</code> / <code>DNS-01</code>)</strong> &amp; <strong>DNS <code>CAA</code> Records</strong> (<code>Type 257</code>).</td>
+                <td class="px-4 py-3">Automates 90-day renewals (<code>Let's Encrypt</code>) and restricts which CAs are authorized to issue certificates.</td>
+                <td class="px-4 py-3"><code>RFC 8555</code> (<code>ACME</code>) &amp; <code>RFC 8659</code> (<code>CAA</code>)</td>
+                <td class="px-4 py-3">Silent renewal failure when <code>CAA</code> blocks a CDN's CA or <code>DNSSEC</code> returns <code>SERVFAIL</code>.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. Browser HTTPS Enforcement</td>
+                <td class="px-4 py-3"><strong><code>HSTS</code> Header</strong> (<code>Strict-Transport-Security</code>) &amp; Mixed Content controls.</td>
+                <td class="px-4 py-3">Forces browsers to use <code>HTTPS</code> exclusively and blocks insecure <code>http://</code> sub-resources.</td>
+                <td class="px-4 py-3"><code>RFC 6797</code> (<code>HSTS</code>) &amp; W3C Mixed Content Spec</td>
+                <td class="px-4 py-3">Broken padlock icon, blocked scripts/styles, or <code>ERR_TOO_MANY_REDIRECTS</code> loops.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. Email Transport Encryption</td>
+                <td class="px-4 py-3"><strong>SMTP <code>STARTTLS</code></strong>, <strong><code>MTA-STS</code></strong> (<code>_mta-sts</code>), &amp; <strong><code>TLS-RPT</code></strong> (<code>_smtp._tls</code>).</td>
+                <td class="px-4 py-3">Prevents downgrade attacks on inbound email between mail servers on port 25.</td>
+                <td class="px-4 py-3"><code>RFC 3207</code>, <code>RFC 8461</code> (<code>MTA-STS</code>), &amp; <code>RFC 8460</code></td>
+                <td class="px-4 py-3">Cleartext email interception or <code>421</code> / <code>550</code> TLS policy rejection in <code>TLS-RPT</code> JSON logs.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. Encrypted DNS &amp; Origin Signing</td>
+                <td class="px-4 py-3"><strong><code>DoH</code></strong> (Port 443), <strong><code>DoT</code></strong> (Port 853), <strong><code>DoQ</code></strong>, &amp; <strong><code>DNSSEC</code></strong>.</td>
+                <td class="px-4 py-3">Encrypts DNS queries to recursive resolvers and cryptographically signs zone records.</td>
+                <td class="px-4 py-3"><code>RFC 8484</code> (<code>DoH</code>), <code>RFC 7858</code> (<code>DoT</code>), &amp; <code>RFC 4033-4035</code></td>
+                <td class="px-4 py-3">ISP DNS snooping/hijacking or <code>SERVFAIL</code> when parent <code>DS</code> mismatches child <code>DNSKEY</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Navigate this hub across three directories: <strong class="text-ink">Section 1</strong> covers core SSL/TLS protocols, Certificate Authorities, Let's Encrypt automation, HSTS, and browser error fixes, <strong class="text-ink">Section 2</strong> covers DNS certificate restrictions (<code>CAA</code>), encrypted DNS (<code>DoH</code>/<code>DoT</code>), and email TLS (<code>MTA-STS</code>/<code>TLS-RPT</code>), and <strong class="text-ink">Section 3</strong> links to our 8 free browser-based diagnostic checkers.
+        </p>
+      </section>
+
+      <!-- Section 2: Core SSL Guides Grid -->
+      <section id="core-ssl-guides" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. Core SSL/TLS Protocols, Certificates, Let's Encrypt, HSTS, and Error Guides (8 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Eight guides explain how SSL/TLS encryption and the 1-RTT handshake work, compare TLS 1.0 through TLS 1.3, walk through free Let's Encrypt <code>ACME</code> automation, and show how to fix every browser certificate warning and mixed-content error. Select a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {coreSslCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: DNS & Email TLS Grid -->
+      <section id="dns-email-tls" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. DNS Certificate Authorization (CAA), Encrypted DNS (DoH/DoT), and Email TLS (MTA-STS) Guides (8 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Eight guides cover the DNS records that control certificate issuance (<code>CAA</code>), encrypt DNS queries (<code>DoH</code> and <code>DoT</code>), enforce TLS on inbound email (<code>MTA-STS</code> and <code>TLS-RPT</code>), and bind brand logos to verified mark certificates (<code>BIMI VMC</code>). Open a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {dnsEmailTlsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: TLS Tools Grid -->
+      <section id="tls-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. Free Browser-Based SSL/TLS, CAA, MTA-STS, and DNS Security Checkers (8 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Audit your domain's <code>CAA</code> certificate restrictions, test live mail server <code>STARTTLS</code> handshakes, validate <code>MTA-STS</code> and <code>TLS-RPT</code> policies, and verify that both IPv4 (<code>A</code>) and IPv6 (<code>AAAA</code>) records point to servers with valid certificates using our 8 tools below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {tlsToolsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every protocol guide, troubleshooting playbook, and diagnostic tool in this <strong class="text-ink">SSL/TLS and Web Security hub</strong> helps you deploy <strong class="text-ink">TLS 1.2 and TLS 1.3 encryption</strong>, automate <strong class="text-ink">Let's Encrypt (<code>ACME</code>) renewals</strong>, lock issuance with <strong class="text-ink">DNS <code>CAA</code> records</strong>, and enforce <strong class="text-ink">HSTS and <code>MTA-STS</code> transport security</strong>.
+        </p>
       </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
+    </div>
+  </div>
 </BaseLayout>
