@@ -1,113 +1,468 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FaqAccordion from '../components/FaqAccordion.astro';
+
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+}
+
+const ipAddressingCards: HubCard[] = [
+  {
+    href: '/asn-explained/',
+    badge: 'BGP & Routing Guide',
+    title: 'What Is an ASN (Autonomous System Number)?',
+    desc: 'How BGP uses 16-bit and 32-bit ASNs to route IP prefixes, Stub vs Multihomed vs Transit ASes, the 5 RIRs, and ASN lookup.',
+  },
+  {
+    href: '/static-vs-dynamic-ip/',
+    badge: 'Comparison Guide',
+    title: 'Static vs Dynamic IP Address',
+    desc: 'How DHCP leases work, how to check if your IP is static or dynamic on Windows/Mac/Linux, and why servers need static IPs.',
+  },
+  {
+    href: '/ipv4-vs-ipv6/',
+    badge: 'Protocol Comparison',
+    title: 'IPv4 vs IPv6: Key Differences Explained',
+    desc: 'Compare 32-bit dotted-decimal IPv4 (4.3B addresses) against 128-bit hexadecimal IPv6 (340 undecillion), headers, and dual-stack speed.',
+  },
+  {
+    href: '/public-vs-private-ip/',
+    badge: 'Core Concept',
+    title: 'Public vs Private IP Addresses',
+    desc: 'Understand external WAN IPs vs internal LAN IPs (10.x.x.x, 172.16.x.x, 192.168.x.x) and why private IPs fail in public DNS.',
+  },
+  {
+    href: '/reserved-ip-ranges/',
+    badge: 'RFC Reference',
+    title: 'Reserved and Private IP Ranges (RFC 1918 & More)',
+    desc: 'Complete reference table for RFC 1918 private LANs, 127.0.0.0/8 loopback, 100.64.0.0/10 CGNAT, link-local, and TEST-NET blocks.',
+  },
+  {
+    href: '/nat-explained/',
+    badge: 'Router Mechanics',
+    title: 'NAT Explained (Network Address Translation)',
+    desc: 'How home and enterprise routers use SNAT, DNAT, Port Address Translation (PAT), and Carrier-Grade NAT to share one public IP.',
+  },
+];
+
+const routingProxiesCards: HubCard[] = [
+  {
+    href: '/common-network-ports/',
+    badge: 'Port Reference',
+    title: 'Common Network Ports: The Reference List',
+    desc: 'Master cheat sheet for DNS (53, 853), Web (80, 443), Email (25, 465, 587, 993), SSH (22), and database TCP/UDP ports.',
+  },
+  {
+    href: '/dns-load-balancing/',
+    badge: 'Traffic Steering',
+    title: 'DNS Load Balancing (Round-Robin, GeoDNS & GSLB)',
+    desc: 'Compare Round-Robin, Weighted, Latency-Based, GeoDNS, and Active Failover against L4/L7 application load balancers.',
+  },
+  {
+    href: '/reverse-proxy-explained/',
+    badge: 'Server Architecture',
+    title: 'Reverse Proxy Explained (NGINX & Cloudflare)',
+    desc: 'How reverse proxies sit in front of backend servers to terminate SSL/TLS, hide origin IPs, cache assets, and route ports.',
+  },
+  {
+    href: '/what-is-a-cdn/',
+    badge: 'Edge Performance',
+    title: 'What Is a CDN (Content Delivery Network)?',
+    desc: 'How Anycast edge networks cache static and dynamic assets across global PoPs to cut latency and absorb DDoS attacks.',
+  },
+  {
+    href: '/doh-vs-dot/',
+    badge: 'Encrypted DNS Ports',
+    title: 'DNS-over-HTTPS (443) vs DNS-over-TLS (853)',
+    desc: 'How encrypted DNS encapsulates port 53 queries inside HTTPS port 443 and TLS/QUIC port 853 connections.',
+  },
+  {
+    href: '/email-ports-587-465-25/',
+    badge: 'SMTP & Mail Ports',
+    title: 'Email Ports Explained: 25 vs 465 vs 587',
+    desc: 'Why ISPs block outbound TCP port 25 and when to configure port 587 (STARTTLS) or port 465 (Implicit TLS).',
+  },
+];
+
+const ipDnsRecordsCards: HubCard[] = [
+  {
+    href: '/a-record/',
+    badge: 'Type 1 · IPv4',
+    title: 'A Record (IPv4 Address Mapping)',
+    desc: 'Point domains and subdomains to 32-bit IPv4 server addresses and avoid RFC 1918 private IP and port syntax mistakes.',
+  },
+  {
+    href: '/aaaa-record/',
+    badge: 'Type 28 · IPv6',
+    title: 'AAAA Record (IPv6 Quad-A Mapping)',
+    desc: 'Configure 128-bit IPv6 addresses, :: zero-compression shorthand, and dual-stack Happy Eyeballs connection racing.',
+  },
+  {
+    href: '/ptr-record/',
+    badge: 'Type 12 · Reverse DNS',
+    title: 'PTR Record (Reverse DNS / rDNS)',
+    desc: 'How .in-addr.arpa and .ip6.arpa map IP addresses back to hostnames at your cloud host/ISP for FCrDNS mail verification.',
+  },
+  {
+    href: '/srv-record/',
+    badge: 'Type 33 · Port Discovery',
+    title: 'SRV Record (TCP/UDP Port Locator)',
+    desc: 'Publish _service._proto priority, weight, and custom port numbers in DNS for SIP, Teams, Active Directory, and Minecraft.',
+  },
+  {
+    href: '/dns/',
+    badge: 'Master Root Hub',
+    title: 'DNS: The Complete Guide Hub',
+    desc: 'Return to the main Domain Name System hub covering resolution architecture, propagation, migrations, and troubleshooting.',
+  },
+];
+
+const networkToolsCards: HubCard[] = [
+  {
+    href: '/my-ip/',
+    badge: 'Instant Detector',
+    title: 'What Is My IP Address',
+    desc: 'View your current public IPv4/IPv6 address, ISP organization, ASN number, and geographic location instantly.',
+  },
+  {
+    href: '/ip-lookup/',
+    badge: 'IP & ASN Inspector',
+    title: 'IP Lookup (Location, ASN & PTR)',
+    desc: 'Enter any IPv4 or IPv6 address to inspect its originating ASN, network owner, country, and reverse DNS hostname.',
+  },
+  {
+    href: '/reverse-ip-lookup/',
+    badge: 'rDNS Tool',
+    title: 'Reverse IP Lookup (PTR)',
+    desc: 'Query .in-addr.arpa and .ip6.arpa PTR records across 3 global DoH resolvers to verify FCrDNS server identity.',
+  },
+  {
+    href: '/cidr-calculator/',
+    badge: 'Subnet Calculator',
+    title: 'CIDR / Subnet Calculator',
+    desc: 'Calculate network address, broadcast IP, netmask, wildcard mask, and usable host count for any IPv4 or IPv6 CIDR block.',
+  },
+  {
+    href: '/ipv4-to-ipv6-converter/',
+    badge: 'Address Converter',
+    title: 'IPv4 to IPv6 Converter',
+    desc: 'Convert 32-bit IPv4 addresses into IPv4-mapped IPv6 (::ffff:x.x.x.x) and 6to4 (2002::) hexadecimal formats.',
+  },
+  {
+    href: '/whois-lookup/',
+    badge: 'RDAP Client',
+    title: 'WHOIS / RDAP Lookup',
+    desc: 'Query official ICANN and RIR RDAP registries for domain and IP registration data, EPP lock status, and abuse contacts.',
+  },
+  {
+    href: '/domain-age-checker/',
+    badge: 'Lifecycle Tool',
+    title: 'Domain Age Checker',
+    desc: 'Check exact domain creation date, age in years/days, last-updated timestamp, and registration expiry date via RDAP.',
+  },
+  {
+    href: '/nameserver-lookup/',
+    badge: 'NS + IP Tool',
+    title: 'Nameserver Lookup (Find NS + IPs)',
+    desc: "Discover a domain's authoritative nameservers along with their underlying IPv4 (A) and IPv6 (AAAA) glue addresses.",
+  },
+  {
+    href: '/punycode-converter/',
+    badge: 'IDN Tool',
+    title: 'Punycode / IDN Converter',
+    desc: 'Translate Unicode internationalized domain names (IDNs with accents, scripts, or emojis) to and from ASCII xn-- Punycode.',
+  },
+  {
+    href: '/dns-leak-test/',
+    badge: 'Resolver Audit',
+    title: 'DNS Leak Test',
+    desc: 'Test which recursive DNS server IPs and ISP ASNs are resolving your browser queries when using a VPN or DoH.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'How do IP addresses and DNS work together when loading a website?',
+    a: 'IP addresses (93.184.216.34 or 2606:2800:220:1::) are the numerical network addresses that internet routers use to deliver packets from your device to a web server. DNS (the Domain Name System) is the lookup layer that translates a human-readable domain name (example.com) into that numerical IP address before your browser opens the TCP and HTTPS connection.',
+  },
+  {
+    q: 'Why does my computer show 192.168.1.x in ipconfig, while "What Is My IP" shows a completely different address?',
+    a: "The 192.168.1.x address shown in ipconfig is your Private LAN IP (from the RFC 1918 private block), assigned to your computer by your home or office Wi-Fi router for local communication. The address shown by What Is My IP Address is your router's Public WAN IP, assigned by your ISP. Your router uses NAT (Network Address Translation) to let all devices on your Wi-Fi share that single public WAN IP on the internet.",
+  },
+  {
+    q: 'What does the "/24" or "/32" at the end of an IP address mean in firewall and SPF rules?',
+    a: 'In practice, that slash number is CIDR (Classless Inter-Domain Routing) notation, which tells the server how many leading bits of the 32-bit IPv4 address are fixed as the network prefix. A /32 means one exact single IP address (32 - 32 = 0 host bits, giving 2^0 = 1 IP), whereas a /24 (netmask 255.255.255.0) covers a block of 256 contiguous IP addresses (giving 2^8 = 256 IPs, such as 198.51.100.0 through 198.51.100.255). Use our CIDR Calculator whenever adding ip4: ranges to an SPF record or firewall allowlist.',
+  },
+  {
+    q: 'How can I find out which cloud provider or ISP hosts a specific IP address or website?',
+    a: 'In real-world infrastructure investigations, follow a 2-step lookup: first, run the domain in our A Record Lookup to get its IPv4 address; second, paste that IP address into our IP Lookup tool. Inspect the ASN (Autonomous System Number) and Organization fields returned, for example, AS13335 means the IP sits behind Cloudflare, AS16509 means AWS, AS15169 means Google Cloud, and AS14061 means DigitalOcean.',
+  },
+];
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'IP and Networking: IPv4 vs IPv6, CIDR Subnetting, ASNs, NAT, Ports, and Tools',
+  url: 'https://promptdns.com/ip-and-networking/',
+  description: 'Master hub for IP and networking infrastructure: IPv4 vs IPv6 addressing, RFC 1918 private ranges, CIDR subnetting, BGP ASNs, NAT routing, network ports, and 10 free network utilities.',
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://promptdns.com/' },
+    { '@type': 'ListItem', position: 2, name: 'IP & Networking', item: 'https://promptdns.com/ip-and-networking/' },
+  ],
+};
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "What is the difference between an IP and a port?", "acceptedAnswer": { '@type': 'Answer', "text": "The IP addresses the machine; the port addresses the service on it. DNS finds the address, the port routes to the application." } },
-    {'@type': 'Question', 'name': "Why do some IPs have no PTR record?", "acceptedAnswer": { '@type': 'Answer', "text": "PTR is optional and set by the network owner, not the IP user. Missing PTR is common on residential ranges and hurts mail delivery." } },
-    {'@type': 'Question', 'name': "How do I check who owns an IP?", "acceptedAnswer": { '@type': 'Answer', "text": "ASN and netblock lookups show the operator. Our IP lookup shows ownership, geolocation, and the PTR in one view." } },
-    {'@type': 'Question', 'name': "Is DNS part of networking?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic." } },
-    {'@type': 'Question', 'name': "Where should a beginner start?", "acceptedAnswer": { '@type': 'Answer', "text": "What is an IP address, then IPv4 vs IPv6, then NAT. Those three reveal most of the rest." } },
-    {'@type': 'Question', 'name': "Do I need this for basic website management?", "acceptedAnswer": { '@type': 'Answer', "text": "Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs." } },
-    {'@type': 'Question', 'name': "What is the difference between NAT and a firewall?", "acceptedAnswer": { '@type': 'Answer', "text": "NAT translates addresses to share one public IP. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy." } },
-    {'@type': 'Question', 'name': "What is an ASN and why does it matter?", "acceptedAnswer": { '@type': 'Answer', "text": "An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to." } },
-    {'@type': 'Question', 'name': "How many private IP ranges are there?", "acceptedAnswer": { '@type': 'Answer', "text": "Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, defined in RFC 1918, never routing on the public internet." } }
-  ],
-};---
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
+---
+
 <BaseLayout
-  title="IP & Networking"
-  description="IP and networking guides: IP addresses, NAT, ASNs, ports, CDNs, and the concepts every webmaster eventually needs."
-  schema={[faqSchema]}
+  title="IP and Networking: IPv4 vs IPv6, CIDR Subnetting, ASNs, NAT, Ports, and Tools"
+  description="Master hub for IP and networking infrastructure: IPv4 vs IPv6 addressing, RFC 1918 private ranges, CIDR subnetting, BGP ASNs, NAT routing, network ports, and 10 free network utilities."
+  schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">IP &amp; Networking</span>
+      <a href="/" class="hover:text-accent transition-colors">Home</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink-dim" aria-current="page">IP &amp; Networking</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IP &amp; Networking</h1>
 
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">IP and networking is the layer beneath DNS: how addresses are allocated and routed, how ports move traffic, and how networks talk to each other. Every DNS answer ends in an IP connection.</p>
-    </div>    <p class="mt-5 text-lg leading-relaxed text-ink-dim">
-      The concepts under every DNS decision: what addresses mean, who operates networks,
-      how traffic flows, and where the web ends and the network begins.
-    </p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+      IP and Networking: IPv4 vs IPv6, CIDR Subnetting, ASNs, NAT, Ports, and Tools
+    </h1>
 
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Start here</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/public-vs-private-ip/', title: 'Public vs Private IP', desc: 'Addresses from first principles: public, private, static, dynamic.' },
-          { href: '/ipv4-vs-ipv6/', title: 'IPv4 vs IPv6', desc: 'The two protocol generations compared: address space, notation, NAT.' },
-          { href: '/public-vs-private-ip/', title: 'Public vs Private IP', desc: 'The RFC 1918 ranges, NAT translation, and where the confusion bites.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Digging deeper</h2>
-      <div class="grid gap-4">
-        {[
-          { href: '/nat-explained/', title: 'NAT Explained', desc: 'How one public IP serves a whole network, and what it breaks.' },
-          { href: '/asn-explained/', title: 'What Is an ASN?', desc: 'The autonomous systems behind addresses, and BGP routing.' },
-          { href: '/static-vs-dynamic-ip/', title: 'Static vs Dynamic IP', desc: 'When address stability matters and the workarounds.' },
-          { href: '/reverse-proxy-explained/', title: 'Reverse Proxy', desc: 'Nginx, Cloudflare, and the servers that hide your infrastructure.' },
-          { href: '/dns-load-balancing/', title: 'DNS Load Balancing', desc: 'Round-robin, weighted, latency-based, and health-checked failover.' },
-          { href: '/common-network-ports/', title: 'Common Network Ports', desc: 'Web, mail, DNS, SSH: the reference list with safe defaults.' },
-          { href: '/reserved-ip-ranges/', title: 'Reserved IP Ranges', desc: 'Private, loopback, link-local, and documentation ranges.' },
-        ].map((s) => (
-          <a href={s.href} class="group rounded-xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
-            <h3 class="font-display font-semibold text-ink group-hover:text-accent">{s.title}</h3>
-            <p class="mt-1 text-sm text-ink-dim">{s.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <h2 class="font-display text-xl font-bold text-ink border-b border-line pb-3 mb-4">Tools</h2>
-      <div class="grid gap-4 sm:grid-cols-2">
-        {[
-          { href: '/my-ip/', title: 'What Is My IP', desc: 'Your public IP with PTR, ASN, and location.' },
-          { href: '/ip-lookup/', title: 'IP Lookup', desc: 'Geo, ASN, owner, and reverse DNS for any address.' },
-          { href: '/cidr-calculator/', title: 'CIDR Calculator', desc: 'Subnet math: ranges, masks, broadcast, hosts.' },
-          { href: '/reverse-ip-lookup/', title: 'Reverse IP Lookup', desc: 'Forward-confirmed reverse DNS for any address.' },
-        ].map((t) => (
-          <a href={t.href} class="group rounded-xl border border-line bg-panel/60 p-4 transition hover:border-accent/40">
-            <h4 class="font-display font-semibold text-sm text-ink group-hover:text-accent">{t.title}</h4>
-            <p class="mt-1 text-xs text-ink-dim">{t.desc}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="mt-10">
-      <FaqAccordion faqs={[
-        ["Is DNS part of networking?","DNS is the internet's addressing layer: pure networking, but with its own deep specialization, which is why this site treats it as a first-class topic."],
-        ["Where should a beginner start?","What is an IP address, then IPv4 vs IPv6, then NAT. Those three reveal most of the rest."],
-        ["Do I need this for basic website management?","Only the DNS layer. The deeper networking pages matter when troubleshooting mail, running servers, or reading logs."],
-        ["What is the difference between NAT and a firewall?","NAT translates addresses to share one public IP. A firewall filters traffic by rules. NAT blocks unsolicited inbound as a side effect, but it is not a configurable security policy."],
-        ["What is an ASN and why does it matter?","An Autonomous System Number identifies a network operated under one administration. In IP lookups, the ASN tells you who operates the network an address belongs to."],
-        ["How many private IP ranges are there?","Three: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, defined in RFC 1918, never routing on the public internet."],
-      ]} heading="Frequently asked questions" />
-    </div>
-
-    <div class="mt-12 rounded-xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
-      <p class="text-sm leading-relaxed text-ink-dim">
-        <strong class="text-ink">Verify your network:</strong> run the
-        <a href="/my-ip/" class="font-medium text-accent hover:text-accent-soft">What Is My IP tool</a> or the
-        <a href="/ip-lookup/" class="font-medium text-accent hover:text-accent-soft">IP lookup</a>
-        to see your public address, reverse DNS, and network owner.
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        IP and networking infrastructure is <strong class="text-ink">the system of numerical host addresses (<code>IPv4</code> and <code>IPv6</code>), CIDR subnet masks, Autonomous System Numbers (<code>ASNs</code>), and TCP/UDP transport ports that route packets after DNS resolution</strong>. Routers forward traffic across BGP and NAT boundaries. The 6 layers connect domain names to servers.
       </p>
     </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between an IP and a port?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The IP addresses the machine; the port addresses the service on it. DNS finds the address, the port routes to the application.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do some IPs have no PTR record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">PTR is optional and set by the network owner, not the IP user. Missing PTR is common on residential ranges and hurts mail delivery.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check who owns an IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">ASN and netblock lookups show the operator. Our IP lookup shows ownership, geolocation, and the PTR in one view.</p></details></div>
+
+    <nav class="pd-toc" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#layers">How the 6 Layers of IP Addressing and Network Routing Fit Together</a></li>
+        <li><a href="#ip-addressing">1. IPv4, IPv6, Private Ranges, Static vs Dynamic IPs, NAT, and ASNs</a></li>
+        <li><a href="#routing-proxies">2. Network Ports, Reverse Proxies, CDNs, and DNS Load Balancing</a></li>
+        <li><a href="#ip-dns-records">3. IP-to-Domain DNS Record Guides</a></li>
+        <li><a href="#network-tools">4. Free Browser-Based IP, CIDR Subnet, RDAP, and Network Utility Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="mt-12 space-y-16">
+      <!-- Section 1: 6 Layers Master Table -->
+      <section id="layers" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          How the 6 Layers of IP Addressing and Network Routing Fit Together (Master Reference Table)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Resolving a domain name in DNS is only step one of a network connection: once the browser or mail server receives an IPv4 or IPv6 address, operating systems and internet routers rely on 6 networking layers to address, subnet, translate, route, and transport packets to the destination service. The table below compares the 6 core networking layers covered in this hub by technical scope, governing standards, and primary operational role.
+        </p>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
+            <thead>
+              <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
+                <th class="px-4 py-3">Networking Layer</th>
+                <th class="px-4 py-3">Technical Scope &amp; Format</th>
+                <th class="px-4 py-3">Governing Standards</th>
+                <th class="px-4 py-3">Operational Role in Web &amp; Email Infrastructure</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">1. IP Protocol Versions</td>
+                <td class="px-4 py-3"><strong>IPv4</strong> (<code>32-bit</code> dotted decimal) and <strong>IPv6</strong> (<code>128-bit</code> colon hexadecimal).</td>
+                <td class="px-4 py-3"><code>RFC 791</code> (IPv4) &amp; <code>RFC 8200</code> (IPv6)</td>
+                <td class="px-4 py-3">Provides unique numerical interface addresses for every server, router, and client device.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">2. Address Scope &amp; NAT</td>
+                <td class="px-4 py-3"><strong>Public WAN IPs</strong> vs <strong>Private LAN IPs</strong> (<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>) &amp; <strong>CGNAT</strong> (<code>100.64.0.0/10</code>).</td>
+                <td class="px-4 py-3"><code>RFC 1918</code>, <code>RFC 6598</code>, &amp; <code>RFC 3022</code> (<code>NAT</code>)</td>
+                <td class="px-4 py-3">Separates globally routable internet server IPs from internal local networks behind routers.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">3. Assignment Stability</td>
+                <td class="px-4 py-3"><strong>Static IP</strong> (fixed server address) vs <strong>Dynamic IP</strong> (temporary <code>DHCP</code> lease).</td>
+                <td class="px-4 py-3"><code>RFC 2131</code> (<code>DHCP</code>)</td>
+                <td class="px-4 py-3">Ensures production DNS <code>A</code>/<code>AAAA</code> and <code>PTR</code> mail records point to permanent, non-rotating server IPs.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">4. CIDR &amp; Subnetting</td>
+                <td class="px-4 py-3">Prefix-length bitmasks (<code>/8</code> to <code>/32</code> in IPv4; <code>/48</code> to <code>/128</code> in IPv6).</td>
+                <td class="px-4 py-3"><code>RFC 4632</code> (<code>CIDR</code>)</td>
+                <td class="px-4 py-3">Divides IP blocks into subnets, defines firewall allowlists, and formats <code>SPF</code> <code>ip4:</code>/<code>ip6:</code> ranges.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">5. BGP &amp; ASN Ownership</td>
+                <td class="px-4 py-3"><strong>16-bit and 32-bit ASNs</strong> (<code>AS13335</code>, <code>AS15169</code>) allocated by the 5 RIRs (<code>ARIN</code>, <code>RIPE</code>, <code>APNIC</code>, <code>LACNIC</code>, <code>AFRINIC</code>).</td>
+                <td class="px-4 py-3"><code>RFC 4271</code> (<code>BGP-4</code>) &amp; <code>RFC 6793</code></td>
+                <td class="px-4 py-3">Routes IP prefixes across internet backbones, powers Anycast DNS, and scores sender reputation.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-ink">6. Ports, Proxies &amp; CDNs</td>
+                <td class="px-4 py-3"><strong>16-bit TCP/UDP ports</strong> (<code>53</code>, <code>80</code>, <code>443</code>, <code>25</code>, <code>587</code>), Reverse Proxies (<code>NGINX</code>), CDNs, and <code>GSLB</code>.</td>
+                <td class="px-4 py-3"><code>RFC 6335</code> (IANA Ports)</td>
+                <td class="px-4 py-3">Directs packets arriving at a server IP to the exact application daemon and balances global load.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-6 text-base leading-relaxed text-ink-dim">
+          Navigate this hub across four directories: <strong class="text-ink">Section 1</strong> covers IP addressing, private ranges, DHCP vs static IPs, NAT, and BGP ASNs, <strong class="text-ink">Section 2</strong> covers network ports, reverse proxies, CDNs, and load balancing, <strong class="text-ink">Section 3</strong> links to the DNS records that map IPs (<code>A</code>, <code>AAAA</code>, <code>PTR</code>, <code>SRV</code>), and <strong class="text-ink">Section 4</strong> provides 10 free browser-based IP, CIDR, and RDAP tools.
+        </p>
+      </section>
+
+      <!-- Section 2: IP Addressing Grid -->
+      <section id="ip-addressing" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          1. IPv4, IPv6, Private Ranges, Static vs Dynamic IPs, NAT, and ASNs (6 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Six guides explain how IPv4 and IPv6 addresses are structured, which IP blocks are reserved for private local networks (<code>RFC 1918</code> and <code>CGNAT</code>), how to check if your IP is static or dynamic, how routers translate addresses with NAT, and how BGP uses Autonomous System Numbers (<code>ASNs</code>). Select a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ipAddressingCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 3: Routing, Proxies & CDNs Grid -->
+      <section id="routing-proxies" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          2. Network Ports, Reverse Proxies, CDNs, and DNS Load Balancing (6 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Six guides cover what happens after a packet reaches a target IP address: how TCP and UDP port numbers route traffic to the right service (<code>53</code>, <code>80</code>, <code>443</code>, <code>25</code>, <code>587</code>), and how reverse proxies, CDNs, and DNS load balancers distribute global traffic. Open a guide below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {routingProxiesCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 4: IP-to-Domain DNS Records Grid -->
+      <section id="ip-dns-records" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          3. IP-to-Domain DNS Record Guides (A, AAAA, PTR, SRV, and Core DNS) (5 Guides)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Four specialized DNS record types bridge the gap between human domain names and numerical IP addresses and ports: <code>A</code> and <code>AAAA</code> for forward resolution, <code>PTR</code> for reverse IP-to-hostname lookups, and <code>SRV</code> for port discovery. Explore the record guides below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ipDnsRecordsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 5: Network Tools Grid -->
+      <section id="network-tools" class="scroll-mt-24">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          4. Free Browser-Based IP, CIDR Subnet, RDAP, and Network Utility Tools (10 Tools)
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-ink-dim">
+          Inspect your own public IP and ASN, look up geolocation and reverse DNS (<code>PTR</code>) for any server IP, calculate IPv4/IPv6 CIDR subnet ranges, query RDAP registration dates, and convert Punycode or IPv6 formats using our 10 free tools below:
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {networkToolsCards.map((card) => (
+            <a
+              href={card.href}
+              class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80"
+            >
+              <span class="inline-block rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {card.badge}
+              </span>
+              <h3 class="mt-2.5 text-base font-semibold text-ink transition-colors group-hover:text-accent">
+                {card.title}
+              </h3>
+              <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">
+                {card.desc}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Closing Callout Box -->
+      <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
+        <p class="text-sm leading-relaxed text-ink-dim">
+          Every guide, protocol comparison, and diagnostic utility in this <strong class="text-ink">IP and Networking hub</strong> helps you manage <strong class="text-ink">IPv4 and IPv6 addressing</strong>, calculate <strong class="text-ink">CIDR subnets</strong>, understand <strong class="text-ink">BGP ASN routing and NAT</strong>, and audit <strong class="text-ink">reverse DNS (<code>PTR</code>) and network ports</strong>.
+        </p>
       </div>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="scroll-mt-24">
+        <FaqAccordion
+          faqs={faqs.map((f) => [f.q, f.a])}
+          heading="Frequently asked questions"
+        />
+      </section>
+    </div>
+  </div>
 </BaseLayout>
