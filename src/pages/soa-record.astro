@@ -164,7 +164,7 @@ example.com.  3600   IN     SOA   ns1.example.com.        hostmaster.example.com
               <td class="py-2.5 px-3 font-mono font-medium text-ink">7. Minimum (Negative Cache TTL)</td>
               <td class="py-2.5 px-3 font-mono">3600 (1 hour)</td>
               <td class="py-2.5 px-3">Seconds</td>
-              <td class="py-2.5 px-3">Cache duration for negative NXDOMAIN and NODATA resolver responses.</td>
+              <td class="py-2.5 px-3">Negative cache ceiling for NXDOMAIN and NODATA responses (effective TTL is min(SOA TTL, MINIMUM) per RFC 2308 §3).</td>
             </tr>
           </tbody>
         </table>
@@ -268,7 +268,7 @@ example.com.  3600   IN     SOA   ns1.example.com.        hostmaster.example.com
       </div>
 
       <p>
-        The historical evolution of the 7th SOA field explains common operational confusion. RFC 1035 originally defined MINIMUM as the default zone TTL for records lacking explicit values. RFC 2308 redefined this parameter exclusively as the Negative Caching TTL. Resolvers querying non-existent names (such as <code>missing.example.com</code>) receive an NXDOMAIN answer containing the SOA record in the authority section. Resolvers cache this negative response for the duration specified in SOA MINIMUM, shielding authoritative nameservers from repeated query floods. Coordinating zone lifetimes requires balancing values in <a href="/what-is-ttl-in-dns/" class="text-accent underline hover:text-accent-hover">DNS TTL Explained</a>, tracking propagation velocity in <a href="/dns-propagation/" class="text-accent underline hover:text-accent-hover">DNS Propagation</a>, and verifying query pathways in <a href="/how-dns-works/" class="text-accent underline hover:text-accent-hover">How DNS Works</a>.
+        The historical evolution of the 7th SOA field explains common operational confusion. RFC 1035 originally defined MINIMUM as the default zone TTL for records lacking explicit values. RFC 2308 redefined this parameter exclusively as the Negative Caching TTL. Resolvers querying non-existent names (such as <code>missing.example.com</code>) receive an NXDOMAIN answer containing the SOA record in the authority section. Under RFC 2308 Section 3, resolvers cache this negative response for the smaller of the SOA MINIMUM field and the SOA record's own TTL (min(SOA TTL, SOA.MINIMUM)), shielding authoritative nameservers from repeated query floods. Coordinating zone lifetimes requires balancing values in <a href="/what-is-ttl-in-dns/" class="text-accent underline hover:text-accent-hover">DNS TTL Explained</a>, tracking propagation velocity in <a href="/dns-propagation/" class="text-accent underline hover:text-accent-hover">DNS Propagation</a>, and verifying query pathways in <a href="/how-dns-works/" class="text-accent underline hover:text-accent-hover">How DNS Works</a>.
       </p>
 
       <h2 id="how-to-check-your-soa-record-and-detect-out-of-sync-nameservers-dig-nssearch">How to Check Your SOA Record and Detect Out-of-Sync Nameservers (dig +nssearch)</h2>

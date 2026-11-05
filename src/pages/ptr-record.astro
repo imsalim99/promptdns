@@ -11,7 +11,7 @@ const faq = {
       "name": "Why can't I add a PTR record in Cloudflare, GoDaddy, or Namecheap for my server IP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Because a PTR record maps an IP address to a domain name, the reverse DNS zone (.in-addr.arpa) is controlled by the entity owning your IP address block. Your cloud provider (such as AWS, DigitalOcean, Hetzner, or Linode) or ISP manages reverse delegation, meaning domain registrars hold zero authority over server IP addresses."
+        "text": "The reverse DNS zone (.in-addr.arpa or .ip6.arpa) is controlled by the network operator that owns your IP address block because a PTR record maps an IP address back to a domain name. Your cloud provider (such as AWS, DigitalOcean, Hetzner, or Linode) or ISP manages reverse delegation, meaning domain registrars hold zero authority over server IP addresses."
       }
     },
     {
@@ -302,7 +302,7 @@ nslookup 198.51.100.25 1.1.1.1</code></pre>
       <div class="mt-3 grid gap-3">
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why can't I add a PTR record in Cloudflare, GoDaddy, or Namecheap for my server IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because a PTR record maps an IP address to a domain name, the reverse DNS zone (.in-addr.arpa) is controlled by the entity owning your IP address block. Your cloud provider (such as AWS, DigitalOcean, Hetzner, or Linode) or ISP manages reverse delegation, meaning domain registrars hold zero authority over server IP addresses.</p>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">The reverse DNS zone (.in-addr.arpa or .ip6.arpa) is controlled by the network operator that owns your IP address block because a PTR record maps an IP address back to a domain name. Your cloud provider (such as AWS, DigitalOcean, Hetzner, or Linode) or ISP manages reverse delegation, meaning domain registrars hold zero authority over server IP addresses.</p>
         </details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need to set up a PTR record if I use Google Workspace, Microsoft 365, or SendGrid?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>

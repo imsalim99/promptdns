@@ -35,7 +35,7 @@ const faq = {
       "name": "Why is my specific bot rule (like User-agent: Googlebot) ignoring the Disallow lines I put under User-agent: *?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309, User-agent groups never merge: a bot matches only its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well."
+        "text": "In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309 Section 2.2.1, a specific named User-agent group never merges with the wildcard User-agent: * group (only duplicate groups sharing the exact same User-agent token combine): a bot matches its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well."
       }
     }
   ]
@@ -173,7 +173,7 @@ Sitemap: https://example.com/sitemap-index.xml</code></pre>
 
       <ol class="list-decimal space-y-4 my-6 pl-6 text-ink-dim">
         <li class="leading-relaxed">
-          <strong class="text-ink">Locate the Most Specific Group:</strong> Parsers select the single most specific <code>User-agent</code> block matching their crawler token and ignore all other groups. A crawler matching <code>User-agent: Googlebot</code> obeys only that specific group, completely ignoring rules under <code>User-agent: *</code> because groups never merge.
+          <strong class="text-ink">Locate the Most Specific Group:</strong> Parsers select the single most specific <code>User-agent</code> block matching their crawler token and ignore all other groups. A crawler matching <code>User-agent: Googlebot</code> obeys only that specific group, completely ignoring rules under <code>User-agent: *</code> because a specific named User-agent group never merges with the wildcard * group (whereas duplicate groups sharing the exact same User-agent token are combined under RFC 9309 Section 2.2.1).
         </li>
         <li class="leading-relaxed">
           <strong class="text-ink">Compare Candidate Paths:</strong> Parsers evaluate target URL paths against every <code>Allow</code> and <code>Disallow</code> directive inside that single matched group.
@@ -203,7 +203,7 @@ Disallow: /private-docs/
 
       <h2 id="5-copy-paste-robots-txt-examples-standard-seo-ai-split-policy-saas-e-commerce-and-staging">5 Copy-Paste robots.txt Examples (Standard SEO, AI Split Policy, SaaS, E-Commerce, and Staging)</h2>
       <p>
-        Five production <code>robots.txt</code> templates cover <strong class="text-ink">95% of real-world website architectures</strong>, from standard SEO and AI search visibility to e-commerce filter blocking and staging lockdowns.
+        Five production <code>robots.txt</code> templates cover <strong class="text-ink">the 5 primary website architectures</strong>, from standard SEO and AI search visibility to e-commerce filter blocking and staging lockdowns.
       </p>
 
       <ol class="list-decimal space-y-6 my-6 pl-6 text-ink-dim">
@@ -312,8 +312,8 @@ Disallow: /</code></pre>
             <tr>
               <td class="py-2.5 px-3 font-medium text-ink"><code>429</code> or <code>5xx</code> (500, 503)</td>
               <td class="py-2.5 px-3">Server error or rate limit</td>
-              <td class="py-2.5 px-3">Treats entire host as <code>Disallow: /</code> (Halt All Crawling).</td>
-              <td class="py-2.5 px-3 text-rose-600 font-semibold">Severe SEO risk; sustained 5xx errors halt Googlebot for up to 30 days.</td>
+              <td class="py-2.5 px-3">Googlebot halts all crawling for the first 12 hours while retrying.</td>
+              <td class="py-2.5 px-3 text-rose-600 font-semibold">After 12 hours, falls back to the last good cached copy (up to 30 days) or resumes crawling if no cached copy exists.</td>
             </tr>
           </tbody>
         </table>
@@ -412,7 +412,7 @@ curl -i https://example.com/robots.txt</code></pre>
             <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
           </summary>
           <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-            <p>In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309, User-agent groups never merge: a bot matches only its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well.</p>
+            <p>In real-world robots.txt audits, people often assume a specific bot inherits the rules from User-agent: * and adds its own rules on top. Under RFC 9309 Section 2.2.1, a specific named User-agent group never merges with the wildcard User-agent: * group (only duplicate groups sharing the exact same User-agent token combine): a bot matches its most specific group and ignores User-agent: * completely. Domain owners copy any shared Disallow lines into the specific bot's group as well.</p>
           </div>
         </details>
       </div>

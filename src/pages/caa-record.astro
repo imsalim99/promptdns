@@ -231,7 +231,7 @@ example.com.      3600   IN     CAA   0      iodef         "mailto:security@exam
           <strong class="text-ink">Query</strong> the exact hostname (<code>sub.app.example.com</code>) for a CAA record; finding records terminates the climb to evaluate only those entries.
         </li>
         <li>
-          <strong class="text-ink">Follow</strong> any <a href="/cname-record/" class="text-accent underline hover:text-accent-hover">CNAME Record</a> or DNAME alias attached to <code>sub.app.example.com</code> and query the canonical target if the alias host publishes none.
+          <strong class="text-ink">Follow</strong> any <a href="/cname-record/" class="text-accent underline hover:text-accent-hover">CNAME Record</a> or DNAME alias attached to <code>sub.app.example.com</code> to check for a CAA record at the exact canonical target hostname; if no CAA record exists at that target, RFC 8659 climbs the original requested domain's parent tree (app.example.com -> example.com) rather than the CNAME target's parent tree.
         </li>
         <li>
           <strong class="text-ink">Climb</strong> one label up to parent subdomain (<code>app.example.com</code>) and query for CAA records when the child label returns no records.

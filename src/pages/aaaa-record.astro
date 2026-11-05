@@ -27,7 +27,7 @@ const faq = {
       "name": "What happens if my domain only has an A record and no AAAA record?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "In practice, your website still works normally for 99.9% of internet users. Almost all consumer ISPs and mobile carriers run dual-stack networks or NAT64 gateways, so when a visitor's browser sees no AAAA record, it immediately connects to your IPv4 A record with zero error."
+        "text": "In practice, your website still works normally for visitors on standard IPv4 and dual-stack networks. Almost all consumer ISPs and mobile carriers run dual-stack networks or NAT64 gateways, so when a visitor's browser sees no AAAA record, it immediately connects to your IPv4 A record with zero error."
       }
     },
     {
@@ -93,7 +93,7 @@ const breadcrumb = [
     <div class="rich-text mt-8">
       <h2 id="why-is-it-called-an-aaaa-record-and-what-does-its-syntax-look-like">Why Is It Called an AAAA Record and What Does Its Syntax Look Like?</h2>
       <p>
-        An AAAA record (pronounced "Quad-A", IANA Type 28, representing the official DNS AAAA record full form) <strong class="text-ink">takes its four-letter name from the fact that a 128-bit IPv6 address is exactly four times the bit length of a 32-bit IPv4 <code>A</code> (Address) record</strong>. Engineers exploring why is it called aaaa record discover that standard IPv4 infrastructure provides 4.3 billion addresses written in dotted-decimal notation (<code>93.184.216.34</code>), whereas IPv6 provides 340 undecillion addresses written as eight 16-bit <abbr class="pd-term" data-tip="Hexadecimal: base-16 numeral system using digits 0-9 and letters a-f to represent IPv6 groups">hexadecimal</abbr> groups separated by colons (<code>2606:2800:220:1:248:1893:25c8:1946</code>). The table below defines the 4 zone fields, wire specifications, and official IPv6 shorthand compression rules of an AAAA record.
+        An AAAA record (pronounced "Quad-A", IANA Type 28, representing the official DNS AAAA record full form) <strong class="text-ink">takes its four-letter name from the fact that a 128-bit IPv6 address is exactly four times the bit length of a 32-bit IPv4 <code>A</code> (Address) record</strong>. Engineers examining the four-letter AAAA designation discover that standard IPv4 infrastructure provides 4.3 billion addresses written in dotted-decimal notation (<code>93.184.216.34</code>), whereas IPv6 provides 340 undecillion addresses written as eight 16-bit <abbr class="pd-term" data-tip="Hexadecimal: base-16 numeral system using digits 0-9 and letters a-f to represent IPv6 groups">hexadecimal</abbr> groups separated by colons (<code>2606:2800:220:1:248:1893:25c8:1946</code>). The table below defines the 4 zone fields, wire specifications, and official IPv6 shorthand compression rules of an AAAA record.
       </p>
 
       <p class="text-sm font-medium text-ink-dim">
@@ -238,7 +238,7 @@ dns.example.com.     3600   IN     AAAA   2606:4700:4700::1111</code></pre>
       </ol>
 
       <p>
-        Happy Eyeballs ensures optimal routing for over 45% of global mobile and fiber internet connections that default to IPv6 when an AAAA record exists. This design avoids mobile carrier-grade NAT congestion while automatically protecting visitors from connection delays if local IPv6 routing fails.
+        Happy Eyeballs ensures optimal routing for over 45% of global mobile and fiber internet connections (according to Google IPv6 Adoption Statistics, 2026) that default to IPv6 when an AAAA record exists. This design avoids mobile carrier-grade NAT congestion while automatically protecting visitors from connection delays if local IPv6 routing fails.
       </p>
 
       <h2 id="warning-how-a-bad-or-stale-aaaa-record-breaks-your-website-ssl-and-email">Warning: How a Bad or Stale AAAA Record Breaks Your Website, SSL, and Email</h2>
@@ -294,7 +294,7 @@ curl -6 -Iv https://example.com</code></pre>
       </ol>
 
       <p>
-        Resolving these verification commands confirms end-to-end IPv6 readiness from authoritative nameservers down to the application layer. Maintaining strict parity between A records, AAAA records, reverse DNS PTR mappings, and SPF authentication mechanisms ensures robust domain accessibility across the global IPv6 internet. Review complete protocol specifications across all resource records in our directory of <a href="/dns-records/">DNS Record Types</a>.
+        Resolving these verification commands confirms end-to-end IPv6 readiness from authoritative nameservers down to the application layer. Maintaining strict parity between A records, AAAA records, reverse DNS PTR mappings, and SPF authentication mechanisms ensures reliable dual-stack domain accessibility across the global IPv6 internet. Review complete protocol specifications across all resource records in our directory of <a href="/dns-records/">DNS Record Types</a>.
       </p>
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
@@ -309,7 +309,7 @@ curl -6 -Iv https://example.com</code></pre>
         </details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my domain only has an A record and no AAAA record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In practice, your website still works normally for 99.9% of internet users. Almost all consumer ISPs and mobile carriers run dual-stack networks or NAT64 gateways, so when a visitor's browser sees no AAAA record, it immediately connects to your IPv4 A record with zero error.</p>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In practice, your website still works normally for visitors on standard IPv4 and dual-stack networks. Almost all consumer ISPs and mobile carriers run dual-stack networks or NAT64 gateways, so when a visitor's browser sees no AAAA record, it immediately connects to your IPv4 A record with zero error.</p>
         </details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my website load for some people and fail for others after I changed my A record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>

@@ -90,10 +90,10 @@ const faq = {
         <li><strong>Announce</strong> those <abbr class="pd-term" data-tip="IP Prefix: a contiguous block of IP addresses designated by a network address and subnet mask notation">IP prefixes</abbr> and the originating ASN to neighboring routers over <abbr class="pd-term" data-tip="Border Gateway Protocol (BGP): the standard exterior gateway protocol exchanging routing and reachability information between Autonomous Systems">Border Gateway Protocol (BGP)</abbr>, the exterior routing backbone of the internet.</li>
         <li><strong>Append</strong> each transit network's ASN to the BGP <code>AS_PATH</code> attribute as route advertisements travel between networks, preventing routing loops.</li>
         <li><strong>Select</strong> the shortest, healthiest <code>AS_PATH</code> (fewest ASN hops) at each router when forwarding packets toward a destination IP address.</li>
-        <li><strong>Deliver</strong> the packet into the destination Autonomous System, where an Interior Gateway Protocol like <abbr class="pd-term" data-tip="Open Shortest Path First (OSPF): an interior gateway protocol used to route packets within a single internal autonomous routing domain">OSPF</abbr> (Open Shortest Path First) routes across internal switches to the final server.</li>
+        <li><strong>Deliver</strong> the packet into the destination Autonomous System through an Autonomous System Border Router (ASBR or BGP edge gateway), where an Interior Gateway Protocol (IGP) such as OSPF (Open Shortest Path First), IS-IS, or EIGRP routes the packet across internal routers to the final server.</li>
       </ol>
       <p>
-        BGP uses public ASNs to route traffic between Autonomous Systems globally, whereas OSPF operates inside private networks by organizing routers into local topology areas. Administrators calculate subnet boundaries through the <a href="/cidr-calculator/">CIDR / Subnet Calculator</a>.
+        BGP uses public ASNs to route traffic between Autonomous Systems globally, whereas OSPF operates inside private networks by organizing routers into local topology areas. Similarly, in Cisco EIGRP (RFC 7868), the Autonomous System number configured on a router serves purely as an internal process identifier for forming local neighbor adjacencies rather than a public IANA BGP ASN. Keep the core identifiers distinct: an ASN identifies the BGP network organization (such as AS13335), an NS record identifies a domain's authoritative DNS nameserver, and an IP address identifies an individual host interface. Administrators calculate subnet boundaries through the <a href="/cidr-calculator/">CIDR / Subnet Calculator</a>.
       </p>
 
       <h2 id="how-many-bits-long-is-an-asn-16-bit-vs-32-bit-and-public-vs-private-ranges">How Many Bits Long Is an ASN? (16-Bit vs 32-Bit and Public vs Private Ranges)</h2>
@@ -109,16 +109,16 @@ const faq = {
               <tr><td class="font-medium text-ink font-mono text-accent">AS1 to AS64495</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs</td><td class="text-sm text-ink-dim">Assigned by RIRs for public BGP routing.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS64496 to AS64511</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm text-ink-dim">Documentation ASNs</td><td class="text-sm text-ink-dim">Reserved by IANA for documentation and examples.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS64512 to AS65534</td><td class="text-sm text-ink-dim">16-bit (2-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (1,023 total)</td><td class="text-sm text-ink-dim">Reserved for internal BGP networks; never announced publicly.</td></tr>
-              <tr><td class="font-medium text-ink font-mono text-accent">AS65536 to AS4199999999</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs (AS65536-65551 reserved for docs)</td><td class="text-sm text-ink-dim">Expanded 4-byte pool introduced after 16-bit exhaustion.</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS131072 to AS4199999999</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-emerald-400">Public ASNs (AS65536-65551 docs; AS65552-131071 IANA reserved)</td><td class="text-sm text-ink-dim">Expanded 4-byte pool introduced after 16-bit exhaustion.</td></tr>
               <tr><td class="font-medium text-ink font-mono text-accent">AS4200000000 to AS4294967294</td><td class="text-sm text-ink-dim">32-bit (4-byte)</td><td class="text-sm font-semibold text-accent">Private ASNs (~94.9M total)</td><td class="text-sm text-ink-dim">Expanded 32-bit pool for data center and cloud peering.</td></tr>
-              <tr><td class="font-medium text-ink font-mono text-accent">AS0 and AS65535</td><td class="text-sm text-ink-dim">16-bit / 32-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">Reserved by IANA (AS23456 serves as AS_TRANS for legacy interop).</td></tr>
+              <tr><td class="font-medium text-ink font-mono text-accent">AS0, AS65535, and AS4294967295</td><td class="text-sm text-ink-dim">16-bit / 32-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">Reserved by IANA (AS23456 serves as AS_TRANS for legacy interop).</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
       <p>
-        BGP address structures mirror IP assignments. Just as <a href="/public-vs-private-ip/">Public vs Private IP Addresses</a> and <a href="/reserved-ip-ranges/">Reserved and Private IP Ranges</a> isolate public routable IPs from internal subnets, ASN ranges maintain identical separation. Public ASNs require registry allocation for internet advertisement, whereas private ASNs operate inside corporate networks, Kubernetes clusters, and cloud interconnects without registration.
+        BGP address structures mirror IP assignments. Just as <a href="/public-vs-private-ip/">Public vs Private IP Addresses</a> and <a href="/reserved-ip-ranges/">Reserved and Private IP Ranges</a> isolate public routable IPs from internal subnets, ASN ranges maintain identical separation. Public ASNs require registry allocation for internet advertisement, whereas private ASNs operate inside corporate networks, Kubernetes clusters, and cloud interconnects without registration. RFC 5396 also retired legacy ASDOT (1.0) notation in favor of plain decimal ASPLAIN representation (AS65536) across all 32-bit ranges.
       </p>
 
       <h2 id="what-are-the-3-types-of-autonomous-systems-stub-multihomed-and-transit">What Are the 3 Types of Autonomous Systems? (Stub, Multihomed, and Transit)</h2>
@@ -134,7 +134,7 @@ const faq = {
         <li><strong>Transit Autonomous System (Tier-1 Backbones, Regional Carriers, and ISPs):</strong> Connects to multiple external networks and carries third-party traffic. Tier-1 backbones like Lumen (<code>AS3356</code>) and Telia Arelion (<code>AS1299</code>) form the transit core linking customer networks globally.</li>
       </ol>
       <p>
-        Enterprise design favors edge autonomy over transit duties. Over 80 percent of registered Autonomous Systems operate as multihomed edge networks that originate and terminate traffic for their own web applications without carrying third-party transit.
+        Enterprise design favors edge autonomy over transit duties. The vast majority of registered Autonomous Systems operate as stub or multihomed edge networks that originate and terminate traffic for their own web applications without carrying third-party transit.
       </p>
 
       <h2 id="what-are-the-4-advantages-of-having-your-own-asn-when-you-need-one">What Are the 4 Advantages of Having Your Own ASN? (When You Need One)</h2>
@@ -151,7 +151,7 @@ const faq = {
         <li><strong>Lower Latency and Transit Costs via Direct IXP Peering:</strong> Operating a registered ASN qualifies networks to connect to Internet Exchange Points like Equinix IX, DE-CIX, and LINX, enabling settlement-free peering with eyeball networks and cloud platforms.</li>
       </ol>
       <p>
-        Application architecture dictates ASN requirements. Organizations deploying on serverless platforms or standard hosting rely on their upstream provider's network. Operating a dedicated ASN becomes essential when an organization controls at least a <code>/24</code> IPv4 or <code>/48</code> IPv6 allocation and establishes BGP peering across two or more carriers.
+        Application architecture dictates ASN requirements. Organizations deploying on serverless platforms or standard hosting rely on their upstream provider's network. Operating a dedicated ASN becomes essential when a network is multi-homed (peering with two or more independent BGP carriers) and enforces an independent routing policy across its <code>/24</code> IPv4 or <code>/48</code> IPv6 prefixes.
       </p>
 
       <h2 id="examples-of-well-known-public-asns-and-the-5-regional-internet-registries-rirs">Examples of Well-Known Public ASNs and the 5 Regional Internet Registries (RIRs)</h2>
@@ -178,7 +178,7 @@ const faq = {
       </section>
 
       <p>
-        Geographic governance of internet numbers operates through 5 non-profit <abbr class="pd-term" data-tip="Regional Internet Registry (RIR): one of five regional non-profit organizations managing IP allocations and ASN assignments">Regional Internet Registries (RIRs)</abbr>: ARIN (North America), RIPE NCC (Europe and Middle East), APNIC (Asia-Pacific), LACNIC (Latin America), and AFRINIC (Africa). Acquiring an ASN requires applying directly to your regional registry and demonstrating active <abbr class="pd-term" data-tip="Multi-homing: connecting a network to two or more independent upstream internet service providers for redundancy">multi-homing</abbr> requirements.
+        Geographic governance of internet numbers operates through 5 non-profit <abbr class="pd-term" data-tip="Regional Internet Registry (RIR): one of five regional non-profit organizations managing IP allocations and ASN assignments">Regional Internet Registries (RIRs)</abbr>: ARIN (North America), RIPE NCC (Europe and Middle East), APNIC (Asia-Pacific), LACNIC (Latin America), and AFRINIC (Africa). Obtaining a public ASN from your regional RIR (or through a sponsoring LIR in RIPE NCC) requires satisfying 3 registration criteria: providing proof of a legal business entity or registered sole proprietorship, demonstrating a multi-homed routing policy with at least two independent BGP peers, and paying the registry's assignment and maintenance fee.
       </p>
 
       <h2 id="why-do-asns-matter-for-email-deliverability-cybersecurity-and-bot-detection">Why Do ASNs Matter for Email Deliverability, Cybersecurity, and Bot Detection?</h2>
@@ -191,7 +191,7 @@ const faq = {
       <ol>
         <li><strong>ASN-Level Email Spam Reputation and Blocklisting:</strong> Mailbox providers evaluate sending Autonomous System reputation alongside individual IPs. Transmitting messages from hosting networks known for spam causes filters to reject or defer messages even when SPF and DKIM pass.</li>
         <li><strong>Firewall and WAF Bot Filtering by ASN:</strong> Cloud security platforms configure edge rules challenging traffic from data center and VPS networks while permitting residential traffic. Search engines like Googlebot originate from verified ASNs (<code>AS15169</code>), allowing webmasters to whitelist legitimate crawlers while blocking scraping farms.</li>
-        <li><strong>BGP Hijacking Mitigation and RPKI Route Validation:</strong> Malicious actors occasionally advertise unauthorized IP prefixes from rogue ASNs to intercept web traffic. An ASN identifies a routing-policy domain rather than proving legal ownership of an IP prefix on its own; WHOIS/RDAP registration, RPKI Route Origin Authorizations (ROAs), and upstream BGP route filters work together to validate route ownership and discard unauthorized BGP route announcements.</li>
+        <li><strong>BGP Hijacking Mitigation and RPKI Route Validation:</strong> Malicious actors occasionally advertise unauthorized IP prefixes from rogue ASNs to intercept web traffic. An ASN identifies a routing-policy domain rather than proving legal ownership of an IP prefix on its own; WHOIS/RDAP registration, RPKI Route Origin Authorizations (ROAs), and upstream BGP route filters work together to validate route ownership and discard unauthorized BGP route announcements. Network operators also enforce session-level Autonomous System authentication using the TCP Authentication Option (TCP-AO, RFC 5925) or TCP MD5 signatures between BGP peering routers alongside BGPsec (RFC 8205) cryptographic path signing.</li>
       </ol>
       <p>
         Monitoring origin signals provides essential protection against automated abuse and delivery failures. Mail administrators audit infrastructure reputation using <a href="/ip-reputation-checker/">IP Reputation Checker</a> and evaluate blacklist triggers through <a href="/blacklist-checker/">MX and IP Blacklist Checker</a>.

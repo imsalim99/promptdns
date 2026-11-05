@@ -35,7 +35,7 @@ const faq = {
       "name": "Why is my DNS provider rejecting my SRV record with a syntax error?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "In real-world setups, 90% of SRV panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record."
+        "text": "In real-world setups, most SRV control panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record."
       }
     }
   ]
@@ -93,7 +93,7 @@ const breadcrumb = [
     <div class="rich-text mt-8">
       <h2 id="what-is-the-structure-of-an-srv-record-the-7-fields-explained">What Is the Structure of an SRV Record? (The 7 Fields Explained)</h2>
       <p>
-        Administrators asking what is an srv record discover that an SRV record (Service Locator, IANA Type 33, standardized in RFC 2782) is <strong class="text-ink">the only traditional DNS resource record that includes a network <abbr class="pd-term" data-tip="Port: 16-bit transport layer numerical address between 1 and 65535 directing traffic to a specific software service">port</abbr> number (1 to 65535) alongside a target hostname, allowing applications to connect to non-standard ports without requiring users to type <code>:port</code> manually</strong>. Every SRV record uses an underscore-prefixed owner name (<code>_service._proto.domain.com</code>) followed by 4 data values: priority, weight, port, and target. The table below defines all 7 fields of a standard SRV record.
+        An SRV record (Service Locator, IANA Type 33, standardized in RFC 2782) is <strong class="text-ink">the only traditional DNS resource record that includes a network <abbr class="pd-term" data-tip="Port: 16-bit transport layer numerical address between 1 and 65535 directing traffic to a specific software service">port</abbr> number (1 to 65535) alongside a target hostname, allowing applications to connect to non-standard ports without requiring users to type <code>:port</code> manually</strong>. Every SRV record uses an underscore-prefixed owner name (<code>_service._proto.domain.com</code>) followed by 4 data values: priority, weight, port, and target. The table below defines all 7 fields of a standard SRV record.
       </p>
 
       <p class="text-sm font-medium text-ink-dim">
@@ -270,7 +270,7 @@ _sip._tls.example.com.        3600  IN     SRV   20        100     443   sip-bac
 
       <h2 id="what-are-the-3-strict-rules-and-limitations-of-srv-records">What Are the 3 Strict Rules and Limitations of SRV Records?</h2>
       <p>
-        System administrators investigating why srv target cannot be a cname or ip discover that DNS standards and client software enforce <strong class="text-ink">3 strict operational rules on SRV records covering target hostname resolution, raw IP address prohibition, and standard web browser limitations</strong>:
+        DNS standards and client software enforce <strong class="text-ink">3 strict operational rules on SRV records covering target hostname resolution, raw IP address prohibition, and standard web browser limitations</strong>:
       </p>
 
       <ol class="list-decimal space-y-4 pl-6">
@@ -334,7 +334,7 @@ nslookup -type=srv _sip._tls.example.com 1.1.1.1</code></pre>
         </details>
         <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is my DNS provider rejecting my SRV record with a syntax error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world setups, 90% of SRV panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record.</p>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In real-world setups, most SRV control panel errors happen for one of two reasons: either missing the leading underscore on _service and _proto (writing sip instead of _sip), or typing an IP address in the Target box instead of a hostname that resolves to an A record.</p>
         </details>
       </div>
     </div>
