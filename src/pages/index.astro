@@ -3,17 +3,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import DomainScanner from '../components/DomainScanner.astro';
 import { TOOL_CATEGORIES, TOTAL_TOOLS } from '../data/tools';
 
+const faqs = [
+  [
+    'Are all 56 DNS and email tools really free with no signup?',
+    'Yes, every lookup, checker, generator, and validator on PromptDNS runs in your browser at no cost, with no account wall, no daily query cap, and no blurred results. Paid plans apply only when teams enable continuous background monitoring, scheduled alerts, or hosted SPF and DMARC management.',
+  ],
+  [
+    'How does PromptDNS run DNS lookups without logging my queries?',
+    'Your browser queries public DNS-over-HTTPS (DoH) JSON endpoints (Cloudflare 1.1.1.1, Google 8.8.8.8, and AliDNS 223.5.5.5) directly when you run a diagnostic check. PromptDNS servers never receive or log the domains you inspect because every lookup request travels straight from your device to the public resolver.',
+  ],
+  [
+    'What does the 7-check Domain Security Audit score measure?',
+    'The homepage scanner evaluates seven weighted controls out of 100 points: DMARC policy and reporting (25 pts), SPF syntax and lookup count (20 pts), Website DNS A/AAAA resolution (15 pts), DKIM selector presence (15 pts), MX mail server redundancy (10 pts), DNSSEC chain validation (10 pts), and Nameserver redundancy (5 pts).',
+  ],
+  [
+    'How is PromptDNS different from MXToolbox and EasyDMARC?',
+    'MXToolbox focuses on legacy server diagnostics with dated interfaces, while EasyDMARC focuses exclusively on email authentication. PromptDNS unifies fast client-side DNS lookups, full SPF/DKIM/DMARC deliverability tooling, provider-specific setup playbooks, and modern AI crawler readiness (robots.txt, llms.txt, and agents.txt) in one platform.',
+  ],
+  [
+    'Can I use PromptDNS tools for client domains if I run an agency or MSP?',
+    'Yes, agencies, MSPs, and freelance consultants run unlimited manual audits on client domains for free. Our upcoming Business plan adds multi-domain workspaces, automated DNS change alerts, and white-label PDF health reports for client delivery.',
+  ],
+];
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    { '@type': 'Question', name: 'Are the tools really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, every checker, lookup, and generator on PromptDNS is free forever, with no account and no limits. Lookups run in your browser against public DNS-over-HTTPS resolvers.' } },
-    { '@type': 'Question', name: 'What do paid plans add?', acceptedAnswer: { '@type': 'Answer', text: 'Paid plans automate what you shouldn\u2019t have to remember: continuous DMARC and DNS monitoring, record-change alerts, SPF flattening with hosted records, AI readiness reports, and white-label PDFs for agencies.' } },
-    { '@type': 'Question', name: 'Do you store the domains I look up?', acceptedAnswer: { '@type': 'Answer', text: 'No. Lookups run client-side in your browser, domains are not sent to our servers, logged, or stored. See our privacy policy.' } },
-    { '@type': 'Question', name: 'Who is PromptDNS for?', acceptedAnswer: { '@type': 'Answer', text: 'Webmasters, developers, sysadmins, and agencies who run domains and email, anyone who needs to check, understand, or fix DNS and email authentication.' } },
-    { '@type': 'Question', name: 'How is this different from MXToolbox or EasyDMARC?', acceptedAnswer: { '@type': 'Answer', text: 'They cover one slice each, MXToolbox aging tools, EasyDMARC email-auth only. PromptDNS spans the whole domain layer: DNS records, propagation, email authentication, blocklists, and AI readiness, with every tool paired with a deeper guide.' } },
-    { '@type': 'Question', name: 'Can I use the tools commercially?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use them for client work, internal ops, or education, free of charge. Agencies can also white-label automated reports on the Business plan.' } },
-  ],
+  mainEntity: faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: a,
+    },
+  })),
 };
 
 const stats = [
@@ -59,26 +82,17 @@ const products = [
 
 const whyUs = [
   ['Whole domain layer', 'DNS + email auth + blocklists + AI readiness in one place, not three different sites.'],
-  ['Privacy by design', 'Lookups run in your browser over public DoH resolvers. Nothing is logged.'],
+  ['100% client-side lookups', 'Every DNS lookup queries Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) DNS-over-HTTPS endpoints directly from your browser. Direct client-side resolution keeps manual lookups fast, private, and free of server-side rate limits.'],
   ['Tools with teachers', 'Every tool links a real guide: syntax references, provider steps, fix-first troubleshooting.'],
   ['Free means free', 'No trial timers, no locked columns, no signup walls on any tool, ever.'],
   ['Live data, not stock', 'Results come from real queries at click time, including your own domain in every guide.'],
-  ['Built for the AI era', 'The first toolbox that treats AI crawlers, llms.txt, and answer engines as first-class DNS citizens.'],
+  ['AI-readiness built in', 'Audit GPTBot, ClaudeBot, and PerplexityBot rules in robots.txt, generate llms.txt files, and verify that AI answer engines index and cite your domain.'],
 ];
 
 const personas = [
   ['Webmasters & site owners', 'Point domains safely, survive migrations, and know why a site stopped resolving, without reading RFCs.'],
   ['Developers & sysadmins', 'Precise record-level answers, TTL-aware propagation checks, and zone diagnostics in one toolbox.'],
   ['Agencies & email teams', 'Multi-domain monitoring, white-label reports, and the deliverability stack that keeps client mail out of spam.'],
-];
-
-const faqs = [
-  ['Are the tools really free?', 'Yes, every checker, lookup, and generator is free forever, with no account and no limits. Lookups run in your browser against public DNS-over-HTTPS resolvers; nothing is logged.'],
-  ['What do paid plans add?', 'Automation you shouldn\u2019t have to remember: continuous monitoring, alerts, hosted SPF records, AI readiness reports, and white-label PDFs. One-off checks will never be paywalled.'],
-  ['Do you store the domains I look up?', 'No. Lookups happen client-side, domains never reach our servers. See the privacy policy for the full picture.'],
-  ['Who is PromptDNS for?', 'Webmasters, developers, sysadmins, and agencies who run domains and email, anyone who needs to check, understand, or fix DNS and email authentication.'],
-  ['How is this different from MXToolbox or EasyDMARC?', 'They each cover a slice. MXToolbox is aging infrastructure tools; EasyDMARC is email-auth only. PromptDNS spans the whole domain layer, DNS records, propagation, email authentication, blocklists, and AI readiness, with every tool paired with a deeper guide.'],
-  ['Can I use the tools commercially?', 'Yes. Use them for client work, internal ops, or education, free of charge. Agencies can also white-label automated reports on the Business plan.'],
 ];
 
 const toolDir = TOOL_CATEGORIES.map(({ cat, note, tools }) => ({ cat, note, tools: tools.map((t) => [t.name, t.href, t.desc]) }));
@@ -180,8 +194,7 @@ const ticker = [
         <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">The toolbox</p>
         <h2 class="font-display mt-2 text-3xl font-bold tracking-tight">Every tool, free forever</h2>
         <p class="mt-2 text-sm text-ink-dim">
-          100% free, no account, no limits, lookups run in your browser.
-          Subscriptions only add <a href="/pricing/" class="text-accent hover:text-accent-soft">monitoring and alerts</a>.
+          Every tool runs directly in your browser using live DNS-over-HTTPS (DoH) queries, RDAP lookups, or local client-side parsing. Click any tool to run a check.
         </p>
       </div>
       <a href="/tools/" class="rounded-full border border-pass/30 bg-pass/10 px-3 py-1 font-mono text-xs text-pass hover:border-pass/60">{TOTAL_TOOLS} tools - browse all →</a>
@@ -314,11 +327,14 @@ const ticker = [
     <div class="mx-auto grid max-w-7xl gap-6 px-4 py-20 md:grid-cols-2 lg:grid-cols-3 lg:px-8">
       {[
         { href: '/dns/', kicker: '01, Fundamentals', title: 'Learn DNS from zero', desc: 'How the Domain Name System works, every record type, and how to fix propagation problems.' },
-        { href: '/email-authentication/', kicker: '02, Deliverability', title: 'Stop going to spam', desc: 'Set up SPF, DKIM, and DMARC the right way, step-by-step for every provider and email service.' },
-        { href: '/ai-web-infrastructure/', kicker: '03, AI Search', title: 'Get ready for AI search', desc: 'Check whether AI crawlers reach your site, generate an llms.txt, and score AI readiness.' },
-        { href: '/email-deliverability/', kicker: '04, Deliverability', title: 'Master email deliverability', desc: 'Sender reputation, warm-up schedules, bounce handling, and the blocklists that decide inbox placement.' },
-        { href: '/ip-and-networking/', kicker: '05, Networking', title: 'Understand your network', desc: 'NAT, ASNs, ports, CDNs, and the infrastructure concepts behind every DNS decision.' },
-        { href: '/ssl-tls/', kicker: '06, Security', title: 'Secure your connections', desc: 'TLS, certificates, HSTS, and the encryption that protects your visitors.' },
+        { href: '/dns-records/', kicker: '02, Records', title: 'DNS Record Types', desc: 'A, AAAA, CNAME, ALIAS, MX, TXT, NS, SOA, PTR, SRV, CAA, DS & DNSKEY' },
+        { href: '/email-authentication/', kicker: '03, Authentication', title: 'Email Authentication', desc: 'SPF, DKIM, DMARC, ARC, BIMI, MTA-STS & TLS-RPT' },
+        { href: '/dns-security/', kicker: '04, Security', title: 'DNS Security', desc: 'Threats, DNSSEC, DoH/DoT, hijacking defenses & 15-step zone hardening' },
+        { href: '/dns-providers/', kicker: '05, Providers', title: 'DNS Providers', desc: 'Setup and troubleshooting playbooks for Cloudflare, Route 53, GoDaddy & major hosts.' },
+        { href: '/ai-web-infrastructure/', kicker: '06, AI Search', title: 'Get ready for AI search', desc: 'Check whether AI crawlers reach your site, generate an llms.txt, and score AI readiness.' },
+        { href: '/email-deliverability/', kicker: '07, Deliverability', title: 'Master email deliverability', desc: 'Inbox placement, blocklists, warm-up & bulk-sender mandates' },
+        { href: '/ip-and-networking/', kicker: '08, Networking', title: 'Understand your network', desc: 'NAT, ASNs, ports, CDNs, and the infrastructure concepts behind every DNS decision.' },
+        { href: '/ssl-tls/', kicker: '09, Security', title: 'Secure your connections', desc: 'TLS, certificates, HSTS, and the encryption that protects your visitors.' },
       ].map((c) => (
         <a href={c.href} class="group rounded-xl border border-line bg-panel/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet/40 hover:shadow-[0_0_40px_-12px_rgba(139,92,246,0.25)]">
           <p class="font-mono text-xs uppercase tracking-[0.2em] text-violet-soft">{c.kicker}</p>
@@ -361,7 +377,7 @@ const ticker = [
       </p>
       <div class="mt-8 flex flex-wrap justify-center gap-4">
         <a href="/" class="btn-cta btn-shimmer px-7 py-3 text-base">Analyze your domain</a>
-        <a href="/dns-propagation-checker/" class="rounded-lg border border-line bg-panel/60 px-7 py-3 font-semibold text-ink transition-all hover:border-accent/40 hover:-translate-y-0.5">Browse the tools</a>
+        <a href="/early-access/" class="rounded-lg border border-line bg-panel/60 px-7 py-3 font-semibold text-ink transition-all hover:border-accent/40 hover:-translate-y-0.5">Request Monitoring Access</a>
       </div>
     </div>
   </section>
