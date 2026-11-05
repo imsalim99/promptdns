@@ -114,8 +114,8 @@ const ipDnsRecordsCards: HubCard[] = [
   },
   {
     href: '/dns/',
-    badge: 'Master Root Hub',
-    title: 'DNS: The Complete Guide Hub',
+    badge: 'Core DNS Reference',
+    title: 'DNS: The Complete Guide to the Domain Name System',
     desc: 'Return to the main Domain Name System hub covering resolution architecture, propagation, migrations, and troubleshooting.',
   },
 ];
@@ -189,16 +189,16 @@ const faqs = [
     a: 'IP addresses (93.184.216.34 or 2606:2800:220:1::) are the numerical network addresses that internet routers use to deliver packets from your device to a web server. DNS (the Domain Name System) is the lookup layer that translates a human-readable domain name (example.com) into that numerical IP address before your browser opens the TCP and HTTPS connection.',
   },
   {
-    q: 'Why does my computer show 192.168.1.x in ipconfig, while "What Is My IP" shows a completely different address?',
-    a: "The 192.168.1.x address shown in ipconfig is your Private LAN IP (from the RFC 1918 private block), assigned to your computer by your home or office Wi-Fi router for local communication. The address shown by What Is My IP Address is your router's Public WAN IP, assigned by your ISP. Your router uses NAT (Network Address Translation) to let all devices on your Wi-Fi share that single public WAN IP on the internet.",
+    q: 'Is the 192.168.1.x address shown in ipconfig my public internet IP address?',
+    a: 'No, the 192.168.1.x address shown in ipconfig is your Private LAN IP (from the RFC 1918 private block), assigned to your computer by your home or office Wi-Fi router via DHCP for local communication. Your router uses Network Address Translation (NAT) to replace that private address with a single ISP-assigned Public IP when packets leave your network for the internet. Use our browser-based What Is My IP Address tool above to inspect your external public IP.',
   },
   {
     q: 'What does the "/24" or "/32" at the end of an IP address mean in firewall and SPF rules?',
-    a: 'In practice, that slash number is CIDR (Classless Inter-Domain Routing) notation, which tells the server how many leading bits of the 32-bit IPv4 address are fixed as the network prefix. A /32 means one exact single IP address (32 - 32 = 0 host bits, giving 2^0 = 1 IP), whereas a /24 (netmask 255.255.255.0) covers a block of 256 contiguous IP addresses (giving 2^8 = 256 IPs, such as 198.51.100.0 through 198.51.100.255). Use our CIDR Calculator whenever adding ip4: ranges to an SPF record or firewall allowlist.',
+    a: 'In practice, that slash number is CIDR (Classless Inter-Domain Routing) notation, which tells the server how many leading bits of the 32-bit IPv4 address are fixed as the network prefix. A /32 means one exact single IP address (32 - 32 = 0 host bits, giving 2^0 = 1 IP), whereas a /24 (netmask 255.255.255.0) covers a block of 256 contiguous IP addresses (giving 2^8 = 256 IPs, such as 198.51.100.0 through 198.51.100.255). Use our CIDR Calculator above to inspect any prefix instantly.',
   },
   {
     q: 'How can I find out which cloud provider or ISP hosts a specific IP address or website?',
-    a: 'In real-world infrastructure investigations, follow a 2-step lookup: first, run the domain in our A Record Lookup to get its IPv4 address; second, paste that IP address into our IP Lookup tool. Inspect the ASN (Autonomous System Number) and Organization fields returned, for example, AS13335 means the IP sits behind Cloudflare, AS16509 means AWS, AS15169 means Google Cloud, and AS14061 means DigitalOcean.',
+    a: 'First, run an A Record Lookup on the domain name to retrieve its IPv4 address. Second, paste that IP address into our IP Lookup tool to query Regional Internet Registry (RDAP) and BGP routing data, which reveals the Autonomous System Number (ASN, such as AS13335 for Cloudflare, AS16509 for AWS, or AS15169 for Google Cloud), the organization name, and the reverse DNS (PTR) hostname.',
   },
 ];
 
@@ -452,7 +452,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every guide, protocol comparison, and diagnostic utility in this <strong class="text-ink">IP and Networking hub</strong> helps you manage <strong class="text-ink">IPv4 and IPv6 addressing</strong>, calculate <strong class="text-ink">CIDR subnets</strong>, understand <strong class="text-ink">BGP ASN routing and NAT</strong>, and audit <strong class="text-ink">reverse DNS (<code>PTR</code>) and network ports</strong>.
+          Every guide, protocol comparison, and diagnostic utility in this <strong class="text-ink">IP and Networking reference guide</strong> helps you manage <strong class="text-ink">IPv4 and IPv6 addressing</strong>, calculate <strong class="text-ink">CIDR subnets</strong>, understand <strong class="text-ink">BGP ASN routing and NAT</strong>, and audit <strong class="text-ink">reverse DNS (<code>PTR</code>) and network ports</strong>.
         </p>
       </div>
 

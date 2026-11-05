@@ -177,7 +177,7 @@ const faqs = [
   },
   {
     q: "What happens if a domain's DNSSEC keys or DS records become out of sync?",
-    a: 'When the parent TLD DS hash fails to match the child zone DNSKEY, validating recursive resolvers reject all DNS responses with a SERVFAIL error code. This completely takes down website resolution and email delivery for visitors on validating networks (including Google 8.8.8.8 and Cloudflare 1.1.1.1) until the parent DS record is updated or removed.',
+    a: 'Validating recursive resolvers reject all DNS responses with a SERVFAIL error code when the parent TLD DS hash fails to match the child zone DNSKEY. This completely takes down website resolution and email delivery for visitors on validating networks (including Google 8.8.8.8 and Cloudflare 1.1.1.1) until the parent DS record is updated or removed.',
   },
 ];
 
@@ -252,7 +252,7 @@ const faqSchema = {
           DNS Threat and Defense Matrix: 7 Attack Vectors and Technical Controls
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Original 1980s DNS (<code>RFC 1035</code>) was engineered for fast, distributed hostname lookups over unencrypted UDP port 53 without cryptographic origin verification. Because almost every web visit, API call, and email delivery begins with a DNS query, attackers target both recursive resolvers and authoritative zones across 7 distinct attack patterns. The table below maps the 7 primary DNS threats by target layer, attack mechanism, and primary technical defense.
+          Original 1980s DNS (<code>RFC 1035</code>) was engineered for fast, distributed hostname lookups over unencrypted UDP port 53 without cryptographic origin verification. Attackers target both recursive resolvers and authoritative zones across 7 distinct attack patterns because almost every web visit, API call, and email delivery begins with a DNS query. The table below maps the 7 primary DNS threats by target layer, attack mechanism, and primary technical defense.
         </p>
 
         <div class="mt-6 overflow-x-auto">
@@ -407,7 +407,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every threat guide, cryptographic standard, and audit tool in this <strong class="text-ink">DNS Security hub</strong> works together to help you defend against <strong class="text-ink">cache poisoning and hijacking</strong>, deploy <strong class="text-ink">DNSSEC and CAA validation</strong>, encrypt transport with <strong class="text-ink">DoH and DoT</strong>, and audit <strong class="text-ink">zone exposure live</strong>.
+          Every threat guide, cryptographic standard, and audit tool in this <strong class="text-ink">DNS Security reference guide</strong> works together to help you defend against <strong class="text-ink">cache poisoning and hijacking</strong>, deploy <strong class="text-ink">DNSSEC and CAA validation</strong>, encrypt transport with <strong class="text-ink">DoH and DoT</strong>, and audit <strong class="text-ink">zone exposure live</strong>.
         </p>
       </div>
 

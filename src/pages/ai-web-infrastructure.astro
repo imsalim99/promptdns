@@ -217,7 +217,7 @@ const faqs = [
   },
   {
     q: 'How do I verify if a bot claiming to be GPTBot or Googlebot in my server logs is real or a fake scraper?',
-    a: "Because any scraper easily spoofs the User-Agent HTTP header, always verify the bot's IP address using two methods: either match the IP against the operator's official published CIDR JSON list (such as openai.com/gptbot.json), or run a Forward-Confirmed Reverse DNS (FCrDNS) check in our Reverse IP Lookup tool to confirm the IP's PTR record resolves to the operator's domain and resolves back to the same IP.",
+    a: "Always verify a crawler's source IP address using two network checks because any scraper easily spoofs the User-Agent HTTP header: either run a Forward-Confirmed Reverse DNS (FCrDNS) check in our Reverse IP Lookup tool (verifying that the IP resolves via PTR to an official hostname like *.openai.com, *.googlebot.com, or *.applebot.apple.com and that the hostname's A record resolves back to the same IP), or match the client IP against the operator's published CIDR JSON IP ranges.",
   },
   {
     q: 'Should I block all AI bots in robots.txt, allow all of them, or use a split policy?',
@@ -456,7 +456,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every guide, bot profile, and diagnostic tool in this <strong class="text-ink">AI Web Infrastructure hub</strong> helps you govern <strong class="text-ink">AI crawler access (<code>robots.txt</code> and WAF)</strong>, publish <strong class="text-ink">machine-readable context (<code>llms.txt</code>, <code>agents.txt</code>, and <code>Schema.org</code>)</strong>, and earn <strong class="text-ink">citations in generative AI search (<code>GEO</code>)</strong>.
+          Every guide, bot profile, and diagnostic tool in this <strong class="text-ink">AI Web Infrastructure reference guide</strong> helps you govern <strong class="text-ink">AI crawler access (<code>robots.txt</code> and WAF)</strong>, publish <strong class="text-ink">machine-readable context (<code>llms.txt</code>, <code>agents.txt</code>, and <code>Schema.org</code>)</strong>, and earn <strong class="text-ink">citations in generative AI search (<code>GEO</code>)</strong>.
         </p>
       </div>
 

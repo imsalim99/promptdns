@@ -314,7 +314,7 @@ const espCards: HubCard[] = [
   { href: '/spf-dkim-dmarc-activecampaign/', badge: 'ESP Playbook', title: 'ActiveCampaign', desc: 'Custom domain verification, CNAME DKIM delegation, and Return-Path SPF.' },
   { href: '/spf-dkim-dmarc-mailerlite/', badge: 'ESP Playbook', title: 'MailerLite', desc: 'Domain authentication, ml._domainkey DKIM record, and SPF include setup.' },
   { href: '/spf-dkim-dmarc-mailer-send/', badge: 'ESP Playbook', title: 'MailerSend', desc: 'Sending domain configuration, custom Return-Path, and 2048-bit DKIM keys.' },
-  { href: '/spf-dkim-dmarc-drip/', badge: 'ESP Playbook', title: 'ConvertKit / Drip', desc: 'Automated email sending authentication, custom DKIM records, and Return-Path SPF.' },
+  { href: '/spf-dkim-dmarc-drip/', badge: 'ESP Playbook', title: 'Drip', desc: 'Automated email sending authentication, custom DKIM records, and Return-Path SPF.' },
   { href: '/spf-dkim-dmarc-customer-io/', badge: 'ESP Playbook', title: 'Customer.io', desc: 'Custom tracking and sending domains, dual CNAME DKIM, and SPF setup.' },
   { href: '/spf-dkim-dmarc-intercom/', badge: 'ESP Playbook', title: 'Intercom', desc: 'Outbound email verification, custom Return-Path, and CNAME DKIM records.' },
   { href: '/spf-dkim-dmarc-zendesk/', badge: 'ESP Playbook', title: 'Zendesk', desc: 'Support address SPF include:mail.zendesk.com and zendesk1/zendesk2 DKIM setup.' },
@@ -426,6 +426,24 @@ const toolCards: HubCard[] = [
     desc: 'Test Outlook Autodiscover and Thunderbird Autoconfig DNS records and XML endpoints.',
   },
   {
+    href: '/blacklist-checker/',
+    badge: 'DNSBL Tool',
+    title: 'MX and IP Blacklist Checker',
+    desc: 'Query major DNSBL blocklists (Spamhaus, Barracuda, SORBS) via DoH to verify whether your mail server IP or domain is listed.',
+  },
+  {
+    href: '/ip-reputation-checker/',
+    badge: 'Reputation Tool',
+    title: 'IP Reputation Checker',
+    desc: 'Audit sending IP reputation across multi-DNSBL blocklists, ASN ownership, and reverse DNS (PTR) alignment.',
+  },
+  {
+    href: '/smtp-tester/',
+    badge: 'Diagnostic Tool',
+    title: 'SMTP Connectivity and STARTTLS Tester',
+    desc: 'Inspect MX server reachability, port 25/465/587 configuration, and STARTTLS encryption readiness for any domain.',
+  },
+  {
     href: '/dmarc-monitoring/',
     badge: 'Continuous Monitoring',
     title: 'Automated DMARC & DNS Monitoring',
@@ -439,12 +457,12 @@ const faqs = [
     a: 'Each protocol solves a different vulnerability that the other two cannot fix alone: SPF authorizes outbound server IP addresses on the hidden Return-Path (but breaks when an email is forwarded); DKIM attaches a cryptographic signature that survives forwarding (but does not prevent spoofing of the visible From: address); and DMARC ties both together by requiring the From: address to align with SPF or DKIM and telling receivers to block unauthenticated mail.',
   },
   {
-    q: 'In what order should I set up email authentication on a new domain?',
-    a: 'Always deploy email authentication from the bottom of the stack upward: first, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.',
+    q: 'Should I deploy DMARC with p=reject immediately on an existing domain?',
+    a: 'No, never jump straight to p=reject on an existing production domain; deploy DMARC in three staged phases starting with v=DMARC1; p=none; rua=mailto:... (Monitoring Mode). First, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.',
   },
   {
     q: 'Does passing SPF, DKIM, and DMARC guarantee my emails will land in the primary inbox?',
-    a: 'No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder (explored in our Email Deliverability hub).',
+    a: 'No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder based on domain reputation, bounce rates, and recipient engagement.',
   },
   {
     q: 'How do I authenticate 5 different email tools (Google Workspace, SendGrid, Mailchimp, HubSpot, Zendesk) on one domain?',
@@ -513,7 +531,7 @@ const faqSchema = {
         <li><a href="#dkim-guides">2. DKIM Guides &amp; Selectors</a></li>
         <li><a href="#dmarc-bimi-tls">3. DMARC, BIMI, MTA-STS &amp; Compliance</a></li>
         <li><a href="#esp-guides">4. Per-Service ESP Setup Playbooks (44 Platforms)</a></li>
-        <li><a href="#auth-tools">5. Email Authentication Tools &amp; Checkers (14 Tools)</a></li>
+        <li><a href="#auth-tools">5. Email Authentication Tools &amp; Checkers (17 Tools)</a></li>
         <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
@@ -525,7 +543,7 @@ const faqSchema = {
           How the 7 Email Authentication Protocols Work Together (Master Reference Table)
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Simple Mail Transfer Protocol (<code>SMTP</code>, <code>RFC 5321</code>) was designed without built-in sender identity verification, allowing any server on the internet to claim any <code>From:</code> address. Over the past two decades, the IETF and mailbox providers standardized 7 complementary DNS-based protocols, where each layer closes a specific security gap left open by the layer beneath it. The table below compares all 7 email authentication and transport protocols by DNS record location, what each verifies, the gap it closes, and its governing specification.
+          Simple Mail Transfer Protocol (<code>SMTP</code>, <code>RFC 5321</code>) operates without built-in sender identity verification, allowing any unauthenticated server on the internet to claim any <code>From:</code> address. The IETF and mailbox providers standardized 7 complementary DNS-backed protocols over the past two decades, where each layer closes a specific security gap left open by the layer beneath it. The table below compares all 7 email authentication and transport protocols by DNS record location, what each verifies, the gap it closes, and its governing specification.
         </p>
 
         <div class="mt-6 overflow-x-auto">
@@ -559,11 +577,11 @@ const faqSchema = {
                 <td class="px-4 py-3"><code>_dmarc</code> <code>TXT</code></td>
                 <td class="px-4 py-3">Whether <code>SPF</code> or <code>DKIM</code> passes <strong class="text-ink">and aligns</strong> (<code>aspf</code>/<code>adkim</code>) with the human-visible <code>From:</code> domain.</td>
                 <td class="px-4 py-3">Closes the <code>Header From</code> spoofing gap, enforces disposition (<code>none</code>, <code>quarantine</code>, <code>reject</code>), and sends daily <code>RUA</code> XML reports.</td>
-                <td class="px-4 py-3"><code>RFC 7489</code> / <code>IETF DMARCbis</code></td>
+                <td class="px-4 py-3"><code>RFC 7489</code> / <code>RFC 9989</code> (DMARCbis)</td>
               </tr>
               <tr>
                 <td class="px-4 py-3 font-medium text-ink">4. ARC</td>
-                <td class="px-4 py-3">Signed in message headers (<code>ARC-Seal</code>)</td>
+                <td class="px-4 py-3"><code>&lt;selector&gt;._domainkey</code> <code>TXT</code> (verifies <code>ARC-Seal</code> headers)</td>
                 <td class="px-4 py-3">Preserves the original pre-forwarding <code>Authentication-Results</code> across intermediate mailing lists and forwarders.</td>
                 <td class="px-4 py-3">Rescues legitimate forwarded mail when <code>SPF</code> breaks and mailing lists modify the body (breaking <code>DKIM</code>).</td>
                 <td class="px-4 py-3"><code>RFC 8617</code></td>
@@ -717,7 +735,7 @@ const faqSchema = {
       <!-- Section 6: Diagnostic & Lookup Tools -->
       <section id="auth-tools" class="scroll-mt-24">
         <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          5. Free Browser-Based Email Authentication Checkers, Flatteners, and Generators (14 Tools)
+          5. Free Browser-Based Email Authentication Checkers, Flatteners, and Generators (17 Tools)
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
           Audit your live email authentication records, flatten SPF lookup trees, generate RFC-compliant TXT strings, and parse zipped DMARC XML reports in your browser with zero server logging. Select a diagnostic tool or monitoring overview below:
@@ -743,7 +761,7 @@ const faqSchema = {
         </div>
 
         <p class="mt-8 text-base leading-relaxed text-ink-dim">
-          Every protocol guide, ESP playbook, and diagnostic tool in this <strong class="text-ink">Email Authentication hub</strong> works together to help you deploy <strong class="text-ink">SPF (v=spf1)</strong>, sign messages with <strong class="text-ink">2048-bit DKIM keys</strong>, enforce <strong class="text-ink">DMARC p=reject alignment</strong>, and secure inbound transport with <strong class="text-ink">MTA-STS and BIMI</strong>.
+          Every protocol guide, ESP playbook, and diagnostic tool in this <strong class="text-ink">Email Authentication reference guide</strong> works together to help you deploy <strong class="text-ink">SPF (v=spf1)</strong>, sign messages with <strong class="text-ink">2048-bit DKIM keys</strong>, enforce <strong class="text-ink">DMARC p=reject alignment</strong>, and secure inbound transport with <strong class="text-ink">MTA-STS and BIMI</strong>.
         </p>
       </section>
 
@@ -765,11 +783,11 @@ const faqSchema = {
 
           <details class="group rounded-xl border border-line bg-panel/40 p-4 transition-colors open:bg-panel/70">
             <summary class="flex cursor-pointer items-center justify-between font-medium text-ink">
-              <span>In what order should I set up email authentication on a new domain?</span>
+              <span>Should I deploy DMARC with p=reject immediately on an existing domain?</span>
               <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
             </summary>
             <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-              <p>Always deploy email authentication from the bottom of the stack upward: first, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.</p>
+              <p>No, never jump straight to p=reject on an existing production domain; deploy DMARC in three staged phases starting with v=DMARC1; p=none; rua=mailto:... (Monitoring Mode). First, publish SPF and DKIM for your inbox provider and ESPs and wait 48 hours for DNS propagation; second, publish DMARC at p=none with a rua= reporting address to audit your traffic; third, advance DMARC to p=quarantine and p=reject; and finally, add MTA-STS, TLS-RPT, and BIMI.</p>
             </div>
           </details>
 
@@ -779,7 +797,7 @@ const faqSchema = {
               <span class="ml-2 text-ink-faint transition-transform group-open:rotate-180">▾</span>
             </summary>
             <div class="mt-3 text-sm leading-relaxed text-ink-dim">
-              <p>No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder (explored in our <a href="/email-deliverability/" class="text-accent hover:underline">Email Deliverability</a> hub).</p>
+              <p>No, in practice email authentication proves identity, not content quality. Passing SPF, DKIM, and DMARC is a mandatory ticket to enter the inbox at Gmail, Yahoo, and Microsoft, but if your domain sends unsolicited cold spam, triggers spam complaint rates above 0.10%, or lands on a DNSBL blocklist, mailbox providers will still route your authenticated emails to the spam folder based on domain reputation, bounce rates, and recipient engagement.</p>
             </div>
           </details>
 

@@ -149,7 +149,7 @@ const registrarsPanelsCards: HubCard[] = [
     href: '/cpanel-dns-troubleshooting/',
     badge: 'cPanel · Fixes',
     title: 'cPanel DNS Troubleshooting',
-    desc: 'Fix the primary cPanel bug: editing records inside cPanel Zone Editor when your domain actually uses Cloudflare or registrar NS!',
+    desc: 'Fix the primary cPanel misconfiguration: editing records inside cPanel Zone Editor while your domain uses external Cloudflare or registrar nameservers.',
   },
   {
     href: '/manage-dns-in-plesk/',
@@ -264,19 +264,19 @@ const providerToolsCards: HubCard[] = [
 const faqs = [
   {
     q: "How do I find out where my domain's DNS is currently hosted?",
-    a: 'Run your domain through our Nameserver Lookup tool and inspect the NS (Nameserver) records returned. Your DNS is always managed at the company that owns those nameservers, for example, if your NS records say *.ns.cloudflare.com, your DNS is hosted at Cloudflare (even if you registered the domain name at GoDaddy or Namecheap).',
+    a: 'Run your domain through our Nameserver Lookup tool and inspect the authoritative NS records returned by the registry. Your DNS is always managed at the company that owns those nameservers, for example, if your NS records say *.ns.cloudflare.com, your DNS is hosted at Cloudflare (even if you registered the domain name at GoDaddy or Namecheap).',
   },
   {
     q: 'Why are the DNS records I added in GoDaddy, Namecheap, or cPanel not working?',
-    a: "The most common reason DNS edits have zero effect is editing records in the wrong control panel. If you previously changed your domain's nameservers (NS records) to point to Cloudflare, Wix, or a web host, your domain registrar's built-in DNS table is inactive. Always edit DNS records inside the dashboard of your active authoritative nameserver provider.",
+    a: "The most common reason DNS edits have zero effect is editing records in the wrong control panel. Your domain registrar's built-in DNS table becomes inactive if you previously pointed your domain's nameservers (NS records) to Cloudflare, Wix, or an external web host. Always edit DNS records inside the dashboard of your active authoritative nameserver provider.",
   },
   {
-    q: 'Should I connect my domain to Wix, Squarespace, or Netlify by changing Nameservers or by Pointing (A + CNAME records)?',
-    a: 'In practice, if your domain already has active company email (Google Workspace, Microsoft 365, or custom MX/SPF/DKIM records) or uses DNSSEC, we strongly recommend Pointing via A and CNAME records while keeping your authoritative DNS on a full-featured provider like Cloudflare or AWS Route 53. Switching your entire domain\'s nameservers to a website builder moves your whole zone and often strips DNSSEC support.',
+    q: "Should I switch my domain's nameservers to Wix, Squarespace, or Netlify if I already use company email?",
+    a: 'No, in practice we recommend connecting via Pointing (A and CNAME records) while keeping your authoritative DNS on a full-featured provider like Cloudflare or AWS Route 53 if your domain already has active company email (Google Workspace, Microsoft 365, or custom MX/SPF/DKIM records) or uses DNSSEC. Delegating your entire domain\'s nameservers to a website builder hands over control of your entire zone and often strips DNSSEC support.',
   },
   {
     q: 'Why did my subdomain become sub.example.com.example.com after I saved it?',
-    a: 'In real-world setups across Cloudflare, GoDaddy, Namecheap, and Squarespace, the DNS control panel automatically appends your root domain name to whatever you type in the Host/Name box. When creating a record for sub.example.com, type only sub in the Host field (or @ for the root domain) so the panel does not double your domain suffix.',
+    a: 'In real-world setups across Cloudflare, GoDaddy, Namecheap, and Squarespace, the DNS control panel automatically appends your root domain name to whatever you type in the Host/Name box. Type only sub in the Host field (or @ for the root domain) when creating a record for sub.example.com so the panel does not double your domain suffix.',
   },
 ];
 
@@ -566,7 +566,7 @@ const faqSchema = {
           4. Live DNS Provider Verification and Migration Tools (6 Tools)
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Not sure which company currently hosts your authoritative DNS, or verifying that a recent record edit saved properly? Run these 6 free browser-based lookup tools and migration checklists to audit any provider:
+          Six browser-based diagnostic tools and checklists identify which company hosts your authoritative DNS, verify parent-child delegation consistency, and measure live query latency. Select a verification tool or migration checklist below to audit any DNS provider:
         </p>
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -592,7 +592,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every platform playbook, comparison matrix, and live verification tool in this <strong class="text-ink">DNS Providers hub</strong> helps you configure <strong class="text-ink">authoritative zone records</strong>, execute <strong class="text-ink">zero-downtime nameserver switches</strong>, and resolve <strong class="text-ink">provider-specific DNS quirks</strong>.
+          Every platform playbook, comparison matrix, and live verification tool in this <strong class="text-ink">DNS Providers reference directory</strong> helps you configure <strong class="text-ink">authoritative zone records</strong>, execute <strong class="text-ink">zero-downtime nameserver switches</strong>, and resolve <strong class="text-ink">provider-specific DNS quirks</strong>.
         </p>
       </div>
 

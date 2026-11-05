@@ -114,8 +114,8 @@ const bouncesBlocklistsCards: HubCard[] = [
 const authFoundationsCards: HubCard[] = [
   {
     href: '/email-authentication/',
-    badge: 'Master Sub-Hub',
-    title: 'Email Authentication Hub (All 44 ESPs)',
+    badge: 'Auth Stack',
+    title: 'Email Authentication Guide (All 44 ESPs)',
     desc: 'Complete library of SPF, DKIM, DMARC, BIMI, MTA-STS, and TLS-RPT guides plus setup playbooks for 44 email platforms.',
   },
   {
@@ -203,8 +203,8 @@ const deliverabilityToolsCards: HubCard[] = [
 
 const faqs = [
   {
-    q: 'What is the difference between email delivery rate and email deliverability (inbox placement)?',
-    a: "Email delivery rate (Accepted Rate) measures the percentage of sent emails that the receiving mail server accepted (250 OK) without returning a hard or soft bounce. Email deliverability (Inbox Placement Rate) measures how many of those accepted emails actually landed in the recipient's primary inbox rather than being silently routed to the Spam or Junk folder. Senders achieve a 99% delivery rate yet still suffer poor deliverability when emails route straight to spam.",
+    q: 'Does a high email delivery rate in my ESP dashboard guarantee inbox placement (email deliverability)?',
+    a: 'No, a high email delivery rate in an ESP dashboard never guarantees primary inbox placement. Email delivery rate only measures the share of messages accepted by the receiving mail server with a 250 OK SMTP code rather than bouncing with a 4xx or 5xx error, whereas email deliverability (inbox placement) measures whether those accepted messages reach the primary inbox instead of the spam or junk folder. Senders frequently see a high accepted delivery rate in their ESP dashboard yet still suffer poor deliverability when receiving filters silently route those messages straight to spam.',
   },
   {
     q: 'Why are my emails still going to spam even though SPF, DKIM, and DMARC all pass?',
@@ -216,7 +216,7 @@ const faqs = [
   },
   {
     q: 'What is the fastest way to diagnose why a specific email bounced or went to spam?',
-    a: 'In real-world troubleshooting, follow a 2-step check: if the email bounced back, look at the 3-digit and enhanced status code in the bounce message (such as 550 5.7.26 for authentication failure or 550 5.7.1 for a blocklist) and run your domain through the Blacklist Checker. If the email landed in the recipient\'s spam folder, open the email, click "Show Original" (in Gmail), and paste the raw text into our Email Header Analyzer to inspect the exact spf=, dkim=, and dmarc= verdicts.',
+    a: 'In real-world troubleshooting, start by isolating whether the failure is infrastructure-based or reputation-based. First, run your domain and sending IP through the Blacklist Checker to rule out Spamhaus, Barracuda, or SORBS listings. Second, send a test email from your production platform to a personal Gmail account, click "Show original", and paste the raw text into our Email Header Analyzer to verify that spf=pass, dkim=pass, and dmarc=pass all appear in the Authentication-Results header. Check Google Postmaster Tools for domain reputation drops or content filtering when all three protocols pass and your sending IP is clean.',
   },
 ];
 
@@ -464,7 +464,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every guide, bounce-code reference, delisting playbook, and diagnostic tool in this <strong class="text-ink">Email Deliverability hub</strong> helps you protect <strong class="text-ink">sender reputation</strong>, resolve <strong class="text-ink">SMTP 550 and 421 bounces</strong>, stay off <strong class="text-ink">Spamhaus and Barracuda blocklists</strong>, and maximize <strong class="text-ink">primary inbox placement</strong>.
+          Every guide, bounce-code reference, delisting playbook, and diagnostic tool in this <strong class="text-ink">Email Deliverability reference guide</strong> helps you protect <strong class="text-ink">sender reputation</strong>, resolve <strong class="text-ink">SMTP 550 and 421 bounces</strong>, stay off <strong class="text-ink">Spamhaus and Barracuda blocklists</strong>, and maximize <strong class="text-ink">primary inbox placement</strong>.
         </p>
       </div>
 

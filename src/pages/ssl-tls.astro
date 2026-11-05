@@ -168,16 +168,16 @@ const faqs = [
     a: 'SSL (Secure Sockets Layer) is the original 1995 encryption protocol that is now retired. TLS (Transport Layer Security) is the modern cryptographic upgrade (TLS 1.2 and TLS 1.3) that replaced SSL, even though people still casually call the certificates "SSL certificates". HTTPS is simply the standard HTTP web protocol running inside an encrypted TLS connection on port 443.',
   },
   {
-    q: 'How do DNS records affect my SSL/TLS certificate?',
-    a: "DNS directly controls three parts of SSL/TLS: first, your A and AAAA records determine which server IP the browser connects to on port 443; second, your CAA record restricts which Certificate Authorities are allowed to issue certificates for your domain; and third, automated _acme-challenge TXT or CNAME records prove domain ownership so Let's Encrypt and CDNs auto-renew certificates every 60 to 90 days.",
-  },
-  {
-    q: 'Why does my website show an SSL error right after I pointed my domain to a new web host?',
-    a: 'In practice, post-migration SSL errors almost always come from one of two causes: either you updated your IPv4 A record to the new host but forgot to delete an old IPv6 AAAA record (so IPv6 visitors still hit your old server which no longer has a cert for your domain), or your new web host/CDN waits for DNS propagation to finish before completing its automated ACME (HTTP-01) certificate validation.',
+    q: 'Do DNS records affect SSL/TLS certificate issuance and renewal?',
+    a: "Yes, DNS directly controls three parts of SSL/TLS: first, your A and AAAA records determine which server IP the browser connects to on port 443 (pointing to the wrong IP triggers a hostname mismatch error); second, your CAA record restricts which Certificate Authorities are authorized to issue certificates for your domain; and third, automated _acme-challenge TXT or CNAME records prove domain ownership so Let's Encrypt and CDNs auto-renew certificates every 60 to 90 days.",
   },
   {
     q: 'Why does Cloudflare show "ERR_TOO_MANY_REDIRECTS" after I enabled SSL?',
-    a: "In real-world Cloudflare setups, an infinite redirect loop happens when Cloudflare's SSL/TLS mode is set to Flexible while your origin web server (NGINX, Apache, or WordPress) is configured to redirect all http:// requests to https://. Under Flexible mode, Cloudflare connects to your origin over port 80 (http://), your origin redirects Cloudflare back to https://, and the loop repeats forever. Switch Cloudflare's SSL/TLS mode to Full (Strict) (with a valid Let's Encrypt or Cloudflare Origin CA certificate on your server) to fix it immediately.",
+    a: "In real-world Cloudflare setups, an infinite redirect loop happens when Cloudflare's SSL/TLS mode is set to Flexible while your origin web server (NGINX, Apache, or WordPress) is configured to redirect all http:// requests to https://. Under Flexible mode, Cloudflare connects to your origin over port 80 (http://), your origin redirects Cloudflare back to https://, and the loop repeats forever. Set your SSL/TLS encryption mode to Full (Strict) with a valid origin certificate when using Cloudflare's orange-cloud proxy, rather than Flexible, which leaves traffic between Cloudflare and your origin server unencrypted over HTTP.",
+  },
+  {
+    q: 'What should I verify before enabling HSTS preloading on my domain?',
+    a: 'HTTP Strict Transport Security (HSTS) instructs web browsers to load your domain exclusively over HTTPS and refuse to connect over insecure HTTP. Submitting your domain to the browser HSTS preload list is effectively irreversible and forces HTTPS across all current and future hostnames. Verify that every internal and external subdomain has a valid, auto-renewing TLS certificate before adding includeSubDomains or submitting your domain to hstspreload.org.',
   },
 ];
 
@@ -408,7 +408,7 @@ const faqSchema = {
       <!-- Closing Callout Box -->
       <div class="mt-12 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/10 to-violet/10 p-6">
         <p class="text-sm leading-relaxed text-ink-dim">
-          Every protocol guide, troubleshooting playbook, and diagnostic tool in this <strong class="text-ink">SSL/TLS and Web Security hub</strong> helps you deploy <strong class="text-ink">TLS 1.2 and TLS 1.3 encryption</strong>, automate <strong class="text-ink">Let's Encrypt (<code>ACME</code>) renewals</strong>, lock issuance with <strong class="text-ink">DNS <code>CAA</code> records</strong>, and enforce <strong class="text-ink">HSTS and <code>MTA-STS</code> transport security</strong>.
+          Every protocol guide, troubleshooting playbook, and diagnostic tool in this <strong class="text-ink">SSL/TLS and Web Security reference guide</strong> helps you deploy <strong class="text-ink">TLS 1.2 and TLS 1.3 encryption</strong>, automate <strong class="text-ink">Let's Encrypt (<code>ACME</code>) renewals</strong>, lock issuance with <strong class="text-ink">DNS <code>CAA</code> records</strong>, and enforce <strong class="text-ink">HSTS and <code>MTA-STS</code> transport security</strong>.
         </p>
       </div>
 

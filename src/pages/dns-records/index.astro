@@ -92,8 +92,8 @@ const emailAuthorityCards: HubCard[] = [
   },
   {
     href: '/email-authentication/',
-    badge: 'Sub-Hub',
-    title: 'Email Authentication Hub',
+    badge: 'Auth Stack',
+    title: 'Email Authentication (SPF, DKIM, DMARC)',
     desc: 'Complete guides for SPF, DKIM, DMARC, BIMI, MTA-STS, TLS-RPT, and 44 email service provider setups.',
   },
 ];
@@ -212,8 +212,8 @@ const faqs = [
     a: 'Every valid DNS zone file requires two mandatory administrative record types at the root (@): exactly one SOA (Start of Authority) record and at least two NS (Nameserver) records. All other record types (A, AAAA, CNAME, MX, TXT, CAA) are added based on whether the domain hosts a website or sends email.',
   },
   {
-    q: 'Which DNS records cannot coexist on the same hostname?',
-    a: 'A CNAME record cannot coexist with any other record type on the exact same hostname (@ or subdomain), except DNSSEC RRSIG and NSEC records. In addition, a hostname can only publish one SOA record, one SPF (v=spf1) TXT record, and one DMARC (v=DMARC1) TXT record.',
+    q: 'Can a CNAME record coexist with other DNS records on the same hostname?',
+    a: 'No, a CNAME record never coexists with any other record type on the exact same hostname under RFC 1034 and RFC 2181. Publishing a CNAME at the root apex violates the DNS specification and breaks email delivery because the root domain (@) always contains mandatory SOA and NS records alongside MX and TXT records. Use an ALIAS, ANAME, or Cloudflare CNAME Flattening record at the root domain instead.',
   },
   {
     q: 'What is the difference between an A record, a CNAME record, and an MX record?',
@@ -221,7 +221,7 @@ const faqs = [
   },
   {
     q: "Why don't my subdomain records (_dmarc, DKIM, or SRV) show up when I query my root domain?",
-    a: 'In real-world troubleshooting, DNS lookups only return records attached to the exact hostname label you query, there is no "list all subdomains" query in public DNS. To see a DMARC, DKIM, or SRV record, you must query its specific prefix hostname (such as _dmarc.example.com, selector1._domainkey.example.com, or _sip._tls.example.com).',
+    a: 'In real-world troubleshooting, DNS lookups only return records attached to the exact hostname label you query; there is no "list all subdomains" query in public DNS. To see a DMARC, DKIM, or SRV record, you must query its specific prefix hostname (such as _dmarc.example.com, selector1._domainkey.example.com, or _sip._tls.example.com).',
   },
 ];
 
@@ -277,7 +277,7 @@ const faqSchema = {
 
     <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        DNS resource records (RRs) are <strong class="text-ink">typed text instructions stored inside an authoritative DNS zone file that tell recursive resolvers how to route web traffic, deliver email, and verify domain cryptographic keys</strong>. Each record type carries a numeric IANA code. The 13 core types govern every internet connection.
+        DNS resource records (RRs) are <strong class="text-ink">typed text instructions stored inside an authoritative DNS zone file that tell recursive resolvers how to route web traffic, deliver email, and verify domain cryptographic keys</strong>. Each record type carries a numeric IANA code. The 13 core types govern routing, email, security, and lookups.
       </p>
     </div>
 
@@ -450,7 +450,7 @@ const faqSchema = {
           2. Email Routing, Text Verification, and Zone Authority Records (MX, TXT, NS, SOA)
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Six record guides and the Email Authentication Hub explain the administrative records required at the top of every DNS zone (SOA and NS) alongside the records that route inbound mail (MX) and publish machine-readable email authentication and ownership policies (TXT). Select a guide below to configure or troubleshoot these records:
+          Seven guides explain the administrative records that control domain authority, inbound mail routing, and sender verification. Select a guide below for syntax rules, priority numbers, and zone timer values:
         </p>
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -531,7 +531,7 @@ const faqSchema = {
         </div>
 
         <p class="mt-8 text-base leading-relaxed text-ink-dim">
-          Every resource record guide and live lookup tool in this <strong class="text-ink">DNS Record Types reference hub</strong> helps you configure <strong class="text-ink">IPv4 and IPv6 routing (A, AAAA, CNAME, ALIAS)</strong>, authenticate <strong class="text-ink">domain email (MX, TXT)</strong>, manage <strong class="text-ink">zone authority (NS, SOA, PTR, SRV)</strong>, and enforce <strong class="text-ink">cryptographic security (CAA, DS, DNSKEY)</strong>.
+          Every resource record guide and live lookup tool in this <strong class="text-ink">DNS Record Types reference directory</strong> helps you configure <strong class="text-ink">IPv4 and IPv6 routing (A, AAAA, CNAME, ALIAS)</strong>, authenticate <strong class="text-ink">domain email (MX, TXT)</strong>, manage <strong class="text-ink">zone authority (NS, SOA, PTR, SRV)</strong>, and enforce <strong class="text-ink">cryptographic security (CAA, DS, DNSKEY)</strong>.
         </p>
       </section>
 
