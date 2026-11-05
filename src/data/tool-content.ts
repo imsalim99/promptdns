@@ -365,12 +365,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   "reverse-ip-lookup": {
     title: "Forward-confirmed reverse DNS",
     process: [
-      "The lookup resolves your IP to a hostname via its PTR record (in the in-addr.arpa reverse zone), then immediately resolves that hostname forward to an address. When the forward answer matches the original IP, the pair is 'forward-confirmed': the strongest signal that the reverse DNS is real and deliberate rather than leftover defaults.",
+      "A reverse IP lookup queries an IPv4 or IPv6 address back to its canonical hostname by reading a PTR record in .in-addr.arpa or .ip6.arpa, then immediately verifies Forward-Confirmed Reverse DNS (FCrDNS) via a forward A or AAAA lookup.",
     ],
     interpret: [
-      "PTR exists and forward-confirms: correct configuration, required for mail-sending IPs and valued by reputation systems.",
-      "PTR exists but doesn't confirm: often a shared host's generic name; acceptable for web servers, harmful for mail senders.",
-      "No PTR: acceptable for consumer connections, a deliverability problem for anything that sends mail.",
+      "Valid FCrDNS Pass: the PTR hostname resolves back to the queried IP; required for outbound mail servers and reputation systems.",
+      "Generic Provider PTR: ISP or cloud pool hostname; acceptable for web servers, causes spam-folder filtering on mail servers.",
+      "Broken FCrDNS Mismatch: the PTR hostname resolves to a different IP or NXDOMAIN; update forward A/AAAA or provider PTR.",
+      "Missing PTR (NXDOMAIN): no PTR published; acceptable for residential connections, causes SMTP rejection for mail-sending IPs.",
     ],
     cli: "dig -x 8.8.8.8 +short && dig $(dig -x 8.8.8.8 +short) +short",
     errors: [
@@ -379,9 +380,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     who: "Mail server operators, deliverability engineers, and admins documenting their infrastructure.",
     faqs: [
-      ["Who controls PTR records?","The owner of the IP address block: your hosting provider or ISP, never your domain registrar."],
-      ["Can one IP have several PTR records?","Technically possible, practically harmful: resolvers return them in unpredictable order, breaking forward confirmation."],
-      ["Does PTR affect website SEO?","No: reverse DNS matters for mail and network diagnostics, not web rankings."],
+      ["Who controls the PTR record returned by a reverse IP lookup?","The organization that owns the IP address block (your cloud hosting provider, data center, or ISP) controls the reverse DNS zone (.in-addr.arpa for IPv4 and .ip6.arpa for IPv6), never your domain registrar. Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, and AFRINIC) delegate reverse zones along CIDR prefix boundaries directly to the network operator announced by that Autonomous System Number (ASN)."],
+      ["Can a single IP address have multiple PTR records in reverse DNS?","Yes, the DNS protocol technically permits multiple PTR records on the same reverse zone name, but publishing more than one PTR record on an IP address is strongly discouraged under RFC 1912 Section 2.1. Recursive resolvers return multiple PTR records in round-robin order, enlarge UDP response packets, and cause erratic Forward-Confirmed Reverse DNS (FCrDNS) failures when mail servers inspect only the first returned hostname."],
+      ["Does a DNS reverse IP lookup list every website hosted on a shared server IP?","No, a standard DNS reverse IP lookup queries the canonical PTR record assigned to that IP address rather than enumerating every virtual-host domain pointing an A record to that server. Standard DNS obsoleted inverse queries (IQUERY, Opcode 1) in RFC 3425 because no single nameserver indexes the entire global namespace. Discovering multiple websites sharing a web server IP requires querying a passive-DNS crawler database, whereas our tool verifies the live authoritative PTR record and FCrDNS alignment."],
+      ["Does a missing or generic reverse IP lookup result hurt website SEO?","No, in practice a missing or generic PTR record has zero impact on Google web search rankings, crawl budget, or HTTPS browser connections when your domain uses a CDN, shared host, or reverse proxy like Cloudflare. Reverse IP lookup and FCrDNS alignment are strictly required for outbound SMTP mail server IPs, enterprise firewall logging, and network diagnostics."],
     ],
   },
   "nameserver-lookup": {

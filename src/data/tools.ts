@@ -71,7 +71,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     tools: [
       { name: 'What Is My IP', href: '/my-ip/', desc: 'Your public IP with reverse DNS, ASN, ISP, and approximate location, resolved as the page loads.' },
       { name: 'IP Lookup', href: '/ip-lookup/', desc: 'Any IPv4 or IPv6 address: geolocation, network owner, ASN, and reverse DNS via our own DoH engine.' },
-      { name: 'Reverse IP / PTR', href: '/reverse-ip-lookup/', desc: 'Resolve any IP to its hostname, then forward-confirm the match, in one step.' },
+      { name: 'Reverse IP / PTR', href: '/reverse-ip-lookup/', desc: 'Resolve IPv4 or IPv6 addresses to PTR hostnames and verify Forward-Confirmed Reverse DNS (FCrDNS)' },
       { name: 'WHOIS / RDAP Lookup', href: '/whois-lookup/', desc: 'Registrar, creation and expiry dates, statuses, and nameservers via modern RDAP.' },
       { name: 'Domain Age Checker', href: '/domain-age-checker/', desc: 'Registry creation data with age computed in years, for vetting domains and competitors.' },
       { name: 'Nameserver Lookup', href: '/nameserver-lookup/', desc: 'Every NS record for a domain, each nameserver resolved to its IPv4 and IPv6 addresses.' },
