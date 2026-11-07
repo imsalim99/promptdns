@@ -2,61 +2,68 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { isHeld } from './src/data/publish-queue.js';
-import { execSync } from 'node:child_process';
+import { buildDatesFromGit, isShallowRepo } from './src/data/git-dates.lib.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const MANIFEST = fileURLToPath(new URL('./src/data/git-dates.json', import.meta.url));
 
 /**
- * Build a map of file path -> last git commit ISO date.
- * One git invocation covers the whole repo; the result is cached for the build.
- * Falls back to an empty map (serialize omits lastmod) if git is unavailable.
+ * Per-route content dates { route: { created, modified } }.
+ *
+ * Full clone: rebuild from git history and refresh the committed manifest so
+ * it stays current for the next shallow build.
+ * Shallow clone (Cloudflare Workers Builds): read the committed manifest
+ * as-is, so dates can never collapse to the HEAD commit timestamp.
+ * Falls back to an empty map (serialize omits lastmod) if both fail.
  */
-function buildGitDateMap() {
-  try {
-    const output = execSync('git log --format="%cI" --name-only', {
-      encoding: 'utf-8',
-      cwd: process.cwd(),
-      maxBuffer: 20 * 1024 * 1024,
-      timeout: 30000,
-    });
-    const dates = {};
-    let currentDate = null;
-    for (const line of output.split('\n')) {
-      const trimmed = line.trim();
-      if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
-        currentDate = trimmed;
-      } else if (trimmed && currentDate) {
-        // first sighting (newest commit) wins
-        if (!dates[trimmed]) dates[trimmed] = currentDate;
+function loadGitDates() {
+  if (!isShallowRepo()) {
+    try {
+      const dates = buildDatesFromGit();
+      if (Object.keys(dates).length > 0) {
+        try {
+          writeFileSync(MANIFEST, JSON.stringify(dates, null, 2) + '\n');
+        } catch {
+          /* manifest refresh is best-effort; the in-memory map is already good */
+        }
+        return dates;
       }
+    } catch {
+      /* fall through to the manifest */
     }
-    return dates;
+  }
+  try {
+    return JSON.parse(readFileSync(MANIFEST, 'utf8'));
   } catch {
     return {};
   }
 }
 
-const gitDates = buildGitDateMap();
+const gitDates = loadGitDates();
 
-/**
- * Map a sitemap URL path (/what-is-dns/) to its source file in src/pages/.
- * Handles both flat pages and subdirectory pages.
- */
-function urlToSourceFile(urlPath) {
-  const clean = urlPath.replace(/^\//, '').replace(/\/$/, '');
-  if (!clean) return 'src/pages/index.astro';
-  return 'src/pages/' + clean + '.astro';
+/** '/what-is-dns/' -> '/what-is-dns/', '/' -> '/' (manifest keys are routes). */
+function routeOf(urlPath) {
+  const clean = String(urlPath).replace(/^\//, '').replace(/\/$/, '');
+  return clean === '' ? '/' : '/' + clean + '/';
 }
 
 export default defineConfig({
   site: 'https://promptdns.com',
   integrations: [
     sitemap({
-      filter: (page) => !isHeld(new URL(page).pathname),
+      // /app/ and /login/ are signed-in product surfaces (noindex, R0.18):
+      // never listed in the sitemap regardless of the publish queue.
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        if (path === '/app/' || path === '/login/') return false;
+        return !isHeld(path);
+      },
       serialize(item) {
-        const sourceFile = urlToSourceFile(new URL(item.url).pathname);
-        const gitDate = gitDates[sourceFile];
-        if (gitDate) {
+        const dates = gitDates[routeOf(new URL(item.url).pathname)];
+        if (dates && dates.modified) {
           // W3C datetime format for sitemaps: YYYY-MM-DDTHH:MM:SS+00:00
-          item.lastmod = gitDate;
+          item.lastmod = dates.modified;
         }
         return item;
       },

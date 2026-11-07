@@ -4,6 +4,7 @@ import Footer from '../components/Footer.astro';
 import { TOOL_CATEGORIES } from '../data/tools';
 import '../styles/global.css';
 import { isHeld } from '../data/publish-queue';
+import gitDates from '../data/git-dates.json';
 
 interface Props {
   /** Visible breadcrumb trail as [name, href?] pairs; emits BreadcrumbList JSON-LD. */
@@ -29,6 +30,17 @@ let path = Astro.url.pathname || '/';
 if (!path.endsWith('/')) path += '/';
 if (path === '/index.html') path = '/';
 const canonicalUrl = SITE + path;
+
+// Per-route content dates from the committed git-date manifest (see
+// src/data/git-dates.lib.mjs). dateModified is the page's last content commit;
+// datePublished is the commit that added it. The visible "Last verified" line,
+// Article JSON-LD, and the sitemap lastmod all read the same values.
+const contentDates = gitDates[path] || null;
+const createdDay = contentDates ? contentDates.created.slice(0, 10) : '';
+const modifiedDay = contentDates ? contentDates.modified.slice(0, 10) : '';
+// These two exact dates were batch-stamped across generated pages; they are
+// build artifacts, not editorial choices, so the manifest replaces them.
+const BATCH_DATES = new Set(['2026-10-27', '2026-10-28']);
 
 const siteSchema = {
   '@context': 'https://schema.org',
@@ -104,11 +116,26 @@ const articleSchema = !toolEntry && !noindex && !hasArticle && path !== '/' && !
       inLanguage: 'en',
       author: { '@type': 'Organization', name: 'PromptDNS', url: SITE + '/' },
       publisher: { '@type': 'Organization', name: 'PromptDNS', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/favicon.svg' } },
-      datePublished: '2026-10-28',
-      dateModified: '2026-10-28',
+      datePublished: createdDay || '2026-10-28',
+      dateModified: modifiedDay || '2026-10-28',
       mainEntityOfPage: canonicalUrl,
     }
   : null;
+
+// Pages that pass their own Article schema keep it, but missing or
+// batch-stamped dates are replaced with the route's true git dates.
+function withTrueDates(s) {
+  const isArticle = ['Article', 'TechArticle', 'BlogPosting'].includes(s['@type']);
+  if (!isArticle) return s;
+  const out = { ...s };
+  if (!out.dateModified || BATCH_DATES.has(out.dateModified)) {
+    out.dateModified = modifiedDay || out.dateModified || '2026-10-28';
+  }
+  if (!out.datePublished || BATCH_DATES.has(out.datePublished)) {
+    out.datePublished = createdDay || out.datePublished || out.dateModified || '2026-10-28';
+  }
+  return out;
+}
 
 const held = isHeld(path);
 
@@ -128,7 +155,7 @@ const trailSchema = breadcrumb && !hasCrumbSchema
     }
   : null;
 
-const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...(trailSchema ? [trailSchema] : []), ...(articleSchema ? [articleSchema] : []), ...schema];
+const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []), ...(crumbSchema ? [crumbSchema] : []), ...(trailSchema ? [trailSchema] : []), ...(articleSchema ? [articleSchema] : []), ...schema].map(withTrueDates);
 ---
 <!doctype html>
 <html lang="en">
@@ -162,7 +189,19 @@ const allSchema = [siteSchema, orgSchema, ...(webAppSchema ? [webAppSchema] : []
     {chrome && <Header />}
     <main class="flex-1">
       <slot />
+      {(toolEntry || articleSchema || hasArticle) && modifiedDay && (
+        <p class="pd-last-verified">Last verified: {modifiedDay}</p>
+      )}
     </main>
     {chrome && <Footer />}
   </body>
 </html>
+<style>
+  .pd-last-verified {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 2.5rem;
+    font-size: 0.75rem;
+    opacity: 0.55;
+  }
+</style>
