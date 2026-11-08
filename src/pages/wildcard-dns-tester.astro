@@ -229,6 +229,7 @@ nslookup wildcard-check-98412.example.com</code></pre>
 
     const r1 = 'wcp-' + rand(), r2 = 'wcp-' + rand(), r3 = 'wcp-' + rand(), r4 = 'wcp-' + rand();
     const midLabel = `${r4}.*.${domain}`;
+    const multiLabel = `${r3}.${rand()}.${domain}`;
     const R = RESOLVERS[0];
     try {
       const [r1a, r2a, r1aaaa, r1cn, apexA, apexNs, wwwA, wwwAaaa, multi, mid] = await Promise.all([
@@ -240,7 +241,7 @@ nslookup wildcard-check-98412.example.com</code></pre>
         lookup(domain, 'NS', R),
         lookup(`www.${domain}`, 'A', R),
         lookup(`www.${domain}`, 'AAAA', R),
-        lookup(`${r3}.${rand()}.${domain}`, 'A', R),
+        lookup(multiLabel, 'A', R),
         lookup(midLabel, 'A', R),
       ]);
 
@@ -288,11 +289,11 @@ nslookup wildcard-check-98412.example.com</code></pre>
           'Inconsistent with the second probe: partial wildcard or cache mismatch', VERDICT_CLS.bad);
       } else {
         addRow('Single-label non-existent subdomain', `${r1}.${domain} A`, respOf(wA1, r1a),
-          'No: NXDOMAIN, no wildcard published (recommended default)', VERDICT_CLS.good);
+          'No wildcard: no answer was synthesized for the random name (recommended default)', VERDICT_CLS.good);
       }
 
       // Row 2: multi-label probe (RFC 4592 2.2.1 with live ENT detection)
-      const multiQuery = `${r3}.${rand()}.${domain} A`;
+      const multiQuery = `${multiLabel} A`;
       if (wA && multiA) {
         addRow('Multi-label non-existent subdomain', multiQuery, respOf(multiA, multi),
           'Matches: yes, one leftmost asterisk covers multiple labels (section 2.2.1)', VERDICT_CLS.warn);
@@ -301,7 +302,7 @@ nslookup wildcard-check-98412.example.com</code></pre>
           'Blocked live: an intermediate node exists (empty non-terminal, section 2.2.2)', VERDICT_CLS.bad);
       } else {
         addRow('Multi-label non-existent subdomain', multiQuery, respOf(multiA, multi),
-          'No wildcard at the apex to match: NXDOMAIN is the expected result', VERDICT_CLS.good);
+          'No wildcard at the apex to match: no answer for the random name is the expected result', VERDICT_CLS.good);
       }
 
       // Row 3: apex exclusion
