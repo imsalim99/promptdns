@@ -216,7 +216,7 @@ async function getIpBootstrap(family: 'v4' | 'v6'): Promise<IpBootstrapEntry[]> 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
   try {
-    const res = await fetch('https://data.iana.org/rdap/' + family + '.json', { signal: controller.signal });
+    const res = await fetch('https://data.iana.org/rdap/ip' + family + '.json', { signal: controller.signal });
     if (!res.ok) throw new Error('bootstrap HTTP ' + res.status);
     const j = (await res.json()) as { services: [string[], string[]][] };
     const entries: IpBootstrapEntry[] = j.services.map(([prefixes, urls]) => ({ prefixes, urls }));
