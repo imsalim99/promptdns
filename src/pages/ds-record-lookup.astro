@@ -338,11 +338,12 @@ nslookup -type=ds example.com</code></pre>
     document.getElementById('dsr-sample-note')?.classList.add('hidden');
 
     try {
-      type Q = { res: { Status: number; AD?: boolean; answers: DohAnswer[] }; usedCd: boolean };
+      type Q = { res: { Status: number; AD?: boolean; answers: DohAnswer[] }; usedCd: boolean; normalStatus: number };
       const run = async (type: RecordType) => {
         const results: Q[] = [];
         for (const r of RESOLVERS) {
           let first = await rawQuery(r, domain, type, false);
+          const normalStatus = first.Status;
           if (first.Status === 2) {
             // One retry without cd first: a single SERVFAIL is often transient
             // (resolver hiccup or rate limit), not proof of a broken chain.
@@ -352,15 +353,19 @@ nslookup -type=ds example.com</code></pre>
           if (first.Status === 2) {
             // Persistent SERVFAIL: broken chain diagnostic fallback with cd=1
             const second = await rawQuery(r, domain, type, true);
-            results.push({ res: second, usedCd: true });
+            results.push({ res: second, usedCd: true, normalStatus });
           } else {
-            results.push({ res: first, usedCd: false });
+            results.push({ res: first, usedCd: false, normalStatus });
           }
         }
         return results;
       };
       const [dsQ, keyQ] = await Promise.all([run('DS' as RecordType), run('DNSKEY' as RecordType)]);
       const anyCd = dsQ.some((q) => q.usedCd) || keyQ.some((q) => q.usedCd);
+      // A DNSSEC validation SERVFAIL requires BOTH primary validating
+      // resolvers (Cloudflare and Google) to fail the normal query: a lone
+      // AliDNS SERVFAIL must never flip the state (auditor fix, bug 1).
+      const validationBogus = dsQ[0].normalStatus === 2 && dsQ[1].normalStatus === 2;
       const allServfail = dsQ.every((q) => q.res.Status === 2) && keyQ.every((q) => q.res.Status === 2);
       if (allServfail && !anyCd) {
         setStatus('fail', `All resolvers returned SERVFAIL for ${domain} on both DS and DNSKEY: the zone may not exist or DNS is unreachable. This is inconclusive, not a pass or fail.`);
@@ -426,7 +431,7 @@ nslookup -type=ds example.com</code></pre>
       const kskList = keyRecords.filter((k) => k.flags === 257);
       const matchedTags = new Set(dsRecords.filter((ds) => verified[ds.keyTag + '|' + ds.alg] === true).map((ds) => ds.keyTag));
       const dsPublished = dsRecords.length > 0;
-      const kskState = !dsPublished && keyRecords.length === 0 ? ['Unsigned', 'text-ink-faint']
+      const kskState = unsignedZone ? ['No DNSKEY Published (Unsigned)', 'text-ink-faint']
         : !dsPublished && keyRecords.length > 0 ? ['Half-signed (no parent DS)', 'text-warn']
         : matchedTags.size > 0 ? ['Verified match', 'text-pass']
         : ['Mismatched or orphan DS', 'text-fail'];
@@ -436,7 +441,16 @@ nslookup -type=ds example.com</code></pre>
           ? `${dsRecords.length} parent DS record(s) checked against ${kskList.length} child KSK${kskList.length === 1 ? '' : 's'}: ${matchedTags.size > 0 ? matchedTags.size + ' verified by digest.' : 'none verified by digest.'}`
           : 'No keys or DS found on either side.';
       const adVotes = keyQ.filter((q) => !q.usedCd && q.res.AD === true).length;
-      const adState = anyCd ? ['Bogus (SERVFAIL without cd=1)', 'text-fail'] : adVotes >= 2 ? [`AD=1 Authenticated (${adVotes}/3 validating)` , 'text-pass'] : adVotes === 0 ? ['AD=0 Insecure', 'text-ink-faint'] : [`AD=1 on ${adVotes}/3 validating resolvers`, 'text-warn'];
+      const unsignedZone = !dsPublished && keyRecords.length === 0;
+      const adState = unsignedZone
+        ? ['AD=0 (Insecure / Unsigned Delegation)', 'text-ink-faint']
+        : validationBogus
+          ? ['Bogus (SERVFAIL on validating resolvers)', 'text-fail']
+          : adVotes >= 2
+            ? [`AD=1 Authenticated (${adVotes}/3 validating)`, 'text-pass']
+            : adVotes === 1
+              ? [`AD=1 on ${adVotes}/3 validating resolvers`, 'text-warn']
+              : ['AD=0 Insecure', 'text-ink-faint'];
 
       cardsEl.textContent = '';
       const card = (title: string, value: string, cls: string, note: string) => {
@@ -448,7 +462,7 @@ nslookup -type=ds example.com</code></pre>
       };
       cardsEl.append(card(
         '1. Parent DS record (Type 43)',
-        dsPublished ? `Published: ${dsRecords.length} record${dsRecords.length === 1 ? '' : 's'}` : 'Not published',
+        dsPublished ? `Published: ${dsRecords.length} record${dsRecords.length === 1 ? '' : 's'}` : 'Not Published (0)',
         dsPublished ? 'text-pass' : 'text-ink-faint',
         dsPublished ? dsRecords.map((d) => `tag ${d.keyTag}, ${ALG_NAMES[d.alg] ?? 'alg ' + d.alg}, ${DIGEST_NAMES[d.digestType] ?? 'type ' + d.digestType}`).join(' | ') : 'The delegation is unsigned at the parent.',
       ));
@@ -461,11 +475,11 @@ nslookup -type=ds example.com</code></pre>
       const kskProfile = kskList[0] ?? keyRecords[0];
       cardsEl.append(card(
         '3. Cryptographic profile (RFC 8624)',
-        kskProfile ? `${ALG_NAMES[kskProfile.alg] ?? 'alg ' + kskProfile.alg} + ${dsRecords[0] ? (DIGEST_NAMES[dsRecords[0].digestType] ?? 'digest ' + dsRecords[0].digestType) : 'no DS'}` : 'No keys',
-        kskProfile ? (ALG_STATUS[kskProfile.alg]?.startsWith('MUST') || ALG_STATUS[kskProfile.alg]?.startsWith('RECOMMENDED') ? 'text-pass' : 'text-warn') : 'text-ink-faint',
-        kskProfile ? `Algorithm: ${ALG_STATUS[kskProfile.alg] ?? 'unknown'}. Digest: ${dsRecords[0] ? (DIGEST_STATUS[dsRecords[0].digestType] ?? 'unknown type') : 'n/a'}.` : 'Nothing to profile yet.',
+        unsignedZone ? 'N/A (Unsigned Zone)' : kskProfile ? `${ALG_NAMES[kskProfile.alg] ?? 'alg ' + kskProfile.alg} + ${dsRecords[0] ? (DIGEST_NAMES[dsRecords[0].digestType] ?? 'digest ' + dsRecords[0].digestType) : 'no DS'}` : 'No keys',
+        unsignedZone ? 'text-ink-faint' : kskProfile ? (ALG_STATUS[kskProfile.alg]?.startsWith('MUST') || ALG_STATUS[kskProfile.alg]?.startsWith('RECOMMENDED') ? 'text-pass' : 'text-warn') : 'text-ink-faint',
+        unsignedZone ? 'No cryptographic material published on either side.' : kskProfile ? `Algorithm: ${ALG_STATUS[kskProfile.alg] ?? 'unknown'}. Digest: ${dsRecords[0] ? (DIGEST_STATUS[dsRecords[0].digestType] ?? 'unknown type') : 'n/a'}.` : 'Nothing to profile yet.',
       ));
-      cardsEl.append(card('4. Resolver validation consensus', String(adState[0]), String(adState[1]), anyCd ? 'cd=1 fallback used: validation was bypassed to retrieve the records.' : 'Validating resolvers report the AD flag on the DNSKEY answer.'));
+      cardsEl.append(card('4. Resolver validation consensus', String(adState[0]), String(adState[1]), validationBogus ? 'Both validating resolvers failed the normal query; cd=1 was used to retrieve the records for diagnosis.' : anyCd ? 'One resolver needed a checking-disabled retry; the validating resolvers answered normally.' : 'Validating resolvers report the AD flag on the DNSKEY answer.'));
       cardsEl.classList.remove('hidden');
 
       // Table 1: parent DS records
@@ -518,28 +532,31 @@ nslookup -type=ds example.com</code></pre>
       }
       keyPanel.classList.remove('hidden');
 
-      const goodChain = dsPublished && matchedTags.size > 0 && !anyCd;
+      // Four-state verdict per the auditor's state table (bug 2 fix):
+      // State 1 valid chain, State 2 unsigned, State 3 broken/orphan,
+      // State 4 half-signed. A lone non-validating resolver needing cd=1
+      // never flips the state; only a real mismatch (or both validating
+      // resolvers failing the normal query) does.
+      const goodChain = dsPublished && matchedTags.size > 0;
       const mismatched = dsPublished && matchedTags.size === 0;
+      const halfSigned = !dsPublished && keyRecords.length > 0;
       let verdict: Severity;
       let line: string;
-      if (anyCd && mismatched) {
+      if (mismatched) {
         verdict = 'fail';
-        line = `Broken DNSSEC chain on ${domain}: records retrieved with checking disabled. The parent DS does not match any child key (orphaned or mismatched DS), which is causing SERVFAIL on validating resolvers.`;
-      } else if (anyCd && dsPublished) {
-        verdict = 'warn';
-        line = `Records on ${domain} retrieved with checking disabled and the digests verify: a resolver returned SERVFAIL during the check (transient trouble, not a broken chain). Re-run to confirm validation recovers.`;
-      } else if (anyCd && !dsPublished) {
-        verdict = 'warn';
-        line = `A resolver returned SERVFAIL for ${domain}, but no DS or DNSKEY records exist at all: the failure was transient resolver trouble on an unsigned domain, not a broken chain. Re-run to confirm.`;
+        line = `Broken DNSSEC chain on ${domain}: parent DS record does not match any active child KSK, causing validating resolvers to return SERVFAIL.`;
       } else if (goodChain) {
         verdict = 'pass';
-        line = `DNSSEC chain verified for ${domain}: parent DS matches the child KSK byte for byte.`;
-      } else {
+        line = `Valid DNSSEC chain on ${domain}: parent DS record verified byte-for-byte against active child KSK${adVotes > 0 ? ' (AD=1 authenticated)' : ''}.`;
+      } else if (halfSigned) {
         verdict = 'warn';
-        line = `DNSSEC chain incomplete for ${domain}: ${dsPublished ? 'DS published but not verified against the child keys' : keyRecords.length > 0 ? 'half-signed zone (child DNSKEY published, no parent DS at the registrar)' : 'no parent DS published and no child DNSKEY: the domain is unsigned'}.`;
+        line = `Half-signed zone on ${domain}: child DNSKEY records are published, but no parent DS record exists at the TLD registry to anchor the chain of trust.`;
+      } else {
+        verdict = 'info';
+        line = `Unsigned domain: no parent DS or child DNSKEY records published for ${domain}. DNSSEC is not enabled; standard DNS resolution works normally without cryptographic signing.`;
       }
-      setStatus(verdict === 'pass' ? 'pass' : verdict === 'fail' ? 'fail' : 'warn', line);
-      emit(domain, verdict, line, [{ code: anyCd && mismatched ? 'DS_ORPHAN' : goodChain ? 'DS_VERIFIED' : 'DS_INCOMPLETE', detail: `${dsRecords.length} DS, ${keyRecords.length} DNSKEY, ${matchedTags.size} verified.` }]);
+      setStatus(verdict === 'pass' ? 'pass' : verdict === 'fail' ? 'fail' : verdict === 'info' ? 'info' : 'warn', line);
+      emit(domain, verdict, line, [{ code: mismatched ? 'DS_ORPHAN' : goodChain ? 'DS_VERIFIED' : halfSigned ? 'DS_HALF_SIGNED' : 'DS_UNSIGNED', detail: `${dsRecords.length} DS, ${keyRecords.length} DNSKEY, ${matchedTags.size} verified.` }]);
     } catch {
       setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
     }
