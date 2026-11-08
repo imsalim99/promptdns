@@ -431,6 +431,7 @@ nslookup -type=ds example.com</code></pre>
       const kskList = keyRecords.filter((k) => k.flags === 257);
       const matchedTags = new Set(dsRecords.filter((ds) => verified[ds.keyTag + '|' + ds.alg] === true).map((ds) => ds.keyTag));
       const dsPublished = dsRecords.length > 0;
+      const unsignedZone = !dsPublished && keyRecords.length === 0;
       const kskState = unsignedZone ? ['No DNSKEY Published (Unsigned)', 'text-ink-faint']
         : !dsPublished && keyRecords.length > 0 ? ['Half-signed (no parent DS)', 'text-warn']
         : matchedTags.size > 0 ? ['Verified match', 'text-pass']
@@ -441,7 +442,6 @@ nslookup -type=ds example.com</code></pre>
           ? `${dsRecords.length} parent DS record(s) checked against ${kskList.length} child KSK${kskList.length === 1 ? '' : 's'}: ${matchedTags.size > 0 ? matchedTags.size + ' verified by digest.' : 'none verified by digest.'}`
           : 'No keys or DS found on either side.';
       const adVotes = keyQ.filter((q) => !q.usedCd && q.res.AD === true).length;
-      const unsignedZone = !dsPublished && keyRecords.length === 0;
       const adState = unsignedZone
         ? ['AD=0 (Insecure / Unsigned Delegation)', 'text-ink-faint']
         : validationBogus
