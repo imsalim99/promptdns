@@ -1,11 +1,23 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Why does Outlook keep asking for a password?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Repeated Outlook password prompts or certificate warnings on a domain using Microsoft 365 are most often caused by a stale autodiscover A record pointing to your web hosting server. Outlook tries the autodiscover hostname on port 443 before falling back to the SRV record, so a leftover cPanel or shared-hosting A record makes Outlook hit the web server, receive a certificate for the wrong name, and ask for credentials again. A Cloudflare orange-cloud proxy on the autodiscover hostname causes the same failure by rewriting the answer to edge IPs, and a tenant that still expects basic authentication instead of Modern Auth (OAuth2) prompts no matter what DNS says.' } },
+    { '@type': 'Question', 'name': 'What should the autodiscover record point to for Microsoft 365?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'For Microsoft 365 and Exchange Online, publish a CNAME record on the host autodiscover pointing to autodiscover.outlook.com with a TTL of 3,600 seconds, left DNS-only (grey cloud) if the zone runs on Cloudflare. The fallback for zones where the hostname cannot hold a CNAME is the SRV record on _autodiscover._tcp with priority 0, weight 0, port 443, target autodiscover.outlook.com.' } },
+    { '@type': 'Question', 'name': 'Is autodiscover a CNAME or an SRV record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Microsoft Autodiscover supports both a CNAME record (autodiscover.example.com) and a DNS SRV record (_autodiscover._tcp.example.com), evaluated in a fixed priority order. Outlook checks the autodiscover hostname via CNAME or A first and only queries the SRV record when that hostname lookup fails. The two methods are interchangeable in outcome but not in precedence, which is why a stale A record on the hostname can hijack the lookup before the SRV fallback is ever reached.' } },
+    { '@type': 'Question', 'name': "Does Cloudflare's orange-cloud proxy break Microsoft 365 Autodiscover?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, proxying the autodiscover hostname through Cloudflare breaks Microsoft 365 Autodiscover. The orange cloud rewrites the CNAME answer into Cloudflare edge A and AAAA addresses, so Outlook connects to Cloudflare instead of Exchange Online, the TLS certificate no longer matches autodiscover expectations, and the XML or JSON handshake never reaches Microsoft. Set the record to DNS-only (grey cloud) and the CNAME passes through unchanged.' } },
+    { '@type': 'Question', 'name': 'What is the difference between Microsoft Autodiscover and Thunderbird Autoconfig?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Microsoft Autodiscover is the Exchange protocol served on autodiscover.<domain> and discovered through _autodiscover._tcp.<domain>, returning account settings as XML or JSON to Outlook clients. Thunderbird Autoconfig is the Mozilla open specification: clients fetch autoconfig.<domain>/mail/config-v1.1.xml or fall back to the Mozilla ISPDB database. The IETF standard RFC 6186 (with RFC 6764 lineage for SRV design) covers the third path: _imaps._tcp and _submission._tcp SRV records locate IMAP and submission servers for any compliant client.' } },
+  ],
+};
 ---
-<BaseLayout title="Autodiscover / Autoconfig Checker" description="Free autodiscover checker: verify the DNS records mail clients use to auto-configure (autodiscover CNAME, autoconfig, MX).">
+<BaseLayout title="Autodiscover / Autoconfig Checker" description="Free autodiscover checker: verify Outlook Autodiscover CNAME and SRV records, Thunderbird autoconfig, RFC 6186 IMAP and submission SRV, and the MX provider match over DNS-over-HTTPS." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
@@ -13,57 +25,292 @@ import ToolPanel from '../components/ToolPanel.astro';
       <span class="text-ink-dim">Autodiscover / Autoconfig Checker</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Autodiscover Checker: Verify Outlook Autoconfiguration</h1>
-    <p class="mt-4 text-lg text-ink-dim">Check the DNS records mail clients probe for automatic setup: autodiscover CNAME, autoconfig subdomain, and the SRV fallback.</p>
-    <div class="mt-8">
-<ToolPanel>
-  <form id="ad-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="ad-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Autodiscover</button>
-  </form>
-  <div id="ad-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <p id="ad-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
-      </p>
-<div id="ad-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-    <table class="pdns-table"><thead><tr><th>Record</th><th>Result</th></tr></thead><tbody id="ad-tbody"><tr><td class="font-mono text-xs text-accent-soft">autodiscover.example.com</td><td class="text-sm text-ink-dim">CNAME found, pointing to autodiscover.outlook.com</td></tr><tr><td class="font-mono text-xs text-accent-soft">_autodiscover._tcp.example.com (SRV)</td><td class="text-sm text-ink-dim">No SRV record (CNAME method is in use)</td></tr></tbody></table>
-  </div>
-</ToolPanel>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Check your domain's Outlook Autodiscover CNAME and A records, _autodiscover._tcp SRV record, Mozilla Thunderbird autoconfig host, and RFC 6186 mail client SRV records over DNS-over-HTTPS to verify automatic email client setup.</p>
 
-    <ToolArticle slug="autodiscover-checker" />
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="ad-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="ad-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Autodiscover</button>
+        </form>
+        <div id="ad-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="ad-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Sample diagnostic for <code>example.com</code>. Enter your own domain above: the tool probes every discovery mechanism and compares the Autodiscover target against your MX provider.
+        </p>
+        <div id="ad-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Discovery mechanism</th><th>Record queried</th><th>Your live result</th><th>Verdict</th></tr></thead>
+            <tbody id="ad-tbody"><tr><td class="text-sm text-ink-dim">Outlook / Exchange primary</td><td class="font-mono text-xs">autodiscover.example.com CNAME</td><td class="text-sm text-ink-dim">CNAME to autodiscover.outlook.com</td><td class="text-sm text-pass">Configured</td></tr><tr><td class="text-sm text-ink-dim">Microsoft SRV fallback</td><td class="font-mono text-xs">_autodiscover._tcp SRV</td><td class="text-sm text-ink-dim">No SRV record (CNAME method in use)</td><td class="text-sm text-ink-faint">Optional</td></tr></tbody>
+          </table>
+        </div>
+      </ToolPanel>
     </div>
-</div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 verification states</h2>
+      <p>
+        When a user enters only an email address and password, Outlook, Apple Mail, and Thunderbird evaluate these DNS records in sequence: the autodiscover hostname first, the Microsoft SRV fallback second, the Mozilla autoconfig host and RFC 6186 service records for non-Outlook clients, with the MX provider as the context that says whether Autodiscover is expected at all. The table below defines the five states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Verification State</th><th>Observed DNS Configuration</th><th>Mail Client Behavior</th><th>Required Action</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Valid Microsoft 365 / Exchange CNAME</td><td class="text-sm text-ink-dim">autodiscover CNAME to autodiscover.outlook.com, DNS-only at the CDN</td><td class="text-sm text-ink-dim">Outlook fetches its profile from Exchange Online on first run</td><td class="text-sm text-ink-dim">None: keep the record DNS-only so TLS and the XML handshake are not intercepted.</td></tr>
+            <tr><td class="font-medium text-ink">Valid SRV fallback</td><td class="text-sm text-ink-dim">_autodiscover._tcp with port 443 and the mail target</td><td class="text-sm text-ink-dim">Outlook uses the SRV when the hostname lookup fails</td><td class="text-sm text-ink-dim">Keep priority, weight, port, and target exact; the trailing dot on the target is correct.</td></tr>
+            <tr><td class="font-medium text-ink">Valid Thunderbird autoconfig or RFC 6186 SRV</td><td class="text-sm text-ink-dim">autoconfig host, or _imaps._tcp and _submission._tcp SRV</td><td class="text-sm text-ink-dim">Thunderbird, K-9 Mail, and Evolution configure IMAP and SMTP automatically</td><td class="text-sm text-ink-dim">Publish both paths so non-Microsoft clients set themselves up too.</td></tr>
+            <tr><td class="font-medium text-ink">Target mismatch or stale hosting A record</td><td class="text-sm text-ink-dim">autodiscover resolves to a web server IP instead of the mail host</td><td class="text-sm text-ink-dim">Certificate warnings and repeated password prompts in Outlook</td><td class="text-sm text-ink-dim">Remove the stale record or repoint it to the mail host; see the fix steps below.</td></tr>
+            <tr><td class="font-medium text-ink">Missing Autodiscover records</td><td class="text-sm text-ink-dim">Nothing published on the autodiscover hostname</td><td class="text-sm text-ink-dim">Expected for Google Workspace OAuth; broken for Exchange and Microsoft 365</td><td class="text-sm text-ink-dim">Publish the records for your provider from the reference table below.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to fix Autodiscover errors and repeated Outlook password prompts</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish the exact Microsoft 365 CNAME.</strong> Add a CNAME on the host autodiscover pointing to autodiscover.outlook.com, and set it DNS-only (grey cloud) in Cloudflare so the TLS and XML or JSON handshake reaches Exchange Online unmodified.</li>
+        <li><strong>Remove conflicting stale records.</strong> Delete any leftover A or AAAA record on autodiscover, and check for a wildcard *.example.com record: both hijack Outlook's lookup before the _autodiscover._tcp SRV fallback is ever consulted.</li>
+        <li><strong>Use the SRV when a CNAME is impossible.</strong> If the hostname must host other services, publish _autodiscover._tcp as SRV with priority 0, weight 0, port 443, target <code>autodiscover.outlook.com.</code> (or your mail host) instead of a CNAME.</li>
+        <li><strong>Clear caches and retest after migrations.</strong> Outlook caches Autodiscover XML locally; delete the cached profile responses and retest after a mail move. The full recovery sequence lives in <a href="/email-not-working-after-dns-change/">email not working after a DNS change</a>, and the complete Microsoft 365 record set (including the autodiscover CNAME) is in the <a href="/spf-dkim-dmarc-microsoft-365/">Microsoft 365 sending setup</a> guide.</li>
+      </ol>
+
+      <h2>Verify Autodiscover and autoconfig records from the command line</h2>
+      <pre><code># Outlook primary hostname (CNAME or A)
+dig autodiscover.example.com CNAME +short
+dig autodiscover.example.com A +short
+
+# Microsoft SRV fallback
+dig _autodiscover._tcp.example.com SRV +short
+
+# Mozilla Thunderbird autoconfig host
+dig autoconfig.example.com CNAME +short
+
+# IETF RFC 6186 mail service discovery
+dig _imaps._tcp.example.com SRV +short
+dig _submission._tcp.example.com SRV +short
+
+# Windows equivalent
+nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
+
+      <h2>Reference table: Autodiscover, SRV, and autoconfig DNS settings by email provider</h2>
+      <p>The table below defines what each major platform publishes and expects, so the tool's results can be read against your own provider.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Email Platform / Method</th><th>DNS Hostname</th><th>Record Type</th><th>Expected Target / Value</th><th>Port and Protocol</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Microsoft 365 / Exchange Online (primary)</td><td class="font-mono text-xs">autodiscover</td><td class="text-sm text-ink-dim">CNAME</td><td class="text-sm text-ink-dim">autodiscover.outlook.com</td><td class="text-sm text-ink-dim">TCP 443 HTTPS</td></tr>
+            <tr><td class="font-medium text-ink">Microsoft 365 / Exchange (SRV fallback)</td><td class="font-mono text-xs">_autodiscover._tcp</td><td class="text-sm text-ink-dim">SRV</td><td class="text-sm text-ink-dim">0 0 443 autodiscover.outlook.com.</td><td class="text-sm text-ink-dim">TCP 443 HTTPS</td></tr>
+            <tr><td class="font-medium text-ink">Google Workspace (Gmail)</td><td class="font-mono text-xs">None required (uses OAuth and the ISPDB)</td><td class="text-sm text-ink-dim">Optional RFC 6186 SRV</td><td class="text-sm text-ink-dim">0 1 993 imap.gmail.com. / 0 1 465 smtp.gmail.com.</td><td class="text-sm text-ink-dim">TCP 993 / 465</td></tr>
+            <tr><td class="font-medium text-ink">Zoho Mail</td><td class="font-mono text-xs">_autodiscover._tcp</td><td class="text-sm text-ink-dim">SRV</td><td class="text-sm text-ink-dim">0 0 443 autodiscover.zoho.com. (or regional .eu / .in)</td><td class="text-sm text-ink-dim">TCP 443 HTTPS</td></tr>
+            <tr><td class="font-medium text-ink">Fastmail</td><td class="font-mono text-xs">_autodiscover._tcp and _imaps._tcp</td><td class="text-sm text-ink-dim">SRV</td><td class="text-sm text-ink-dim">0 1 443 autodiscover.fastmail.com. / 0 1 993 imap.fastmail.com.</td><td class="text-sm text-ink-dim">TCP 443 / 993</td></tr>
+            <tr><td class="font-medium text-ink">cPanel / Plesk self-hosted mail</td><td class="font-mono text-xs">autodiscover and autoconfig</td><td class="text-sm text-ink-dim">A or CNAME</td><td class="text-sm text-ink-dim">mail.example.com (with a valid SAN TLS certificate)</td><td class="text-sm text-ink-dim">TCP 443 HTTPS</td></tr>
+            <tr><td class="font-medium text-ink">IETF RFC 6186 standard mail discovery</td><td class="font-mono text-xs">_imaps._tcp / _submission._tcp / _pop3s._tcp</td><td class="text-sm text-ink-dim">SRV</td><td class="text-sm text-ink-dim">0 1 993 &lt;imap-host&gt; / 0 1 587 &lt;smtp-host&gt;</td><td class="text-sm text-ink-dim">TCP 993 / 587 / 995</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Autodiscover is located through SRV or CNAME records: the mechanics of each live in the <a href="/srv-record/">SRV record</a> and <a href="/cname-record/">CNAME record</a> guides, and how the located ports relate to sending and retrieval is explained in <a href="/imap-vs-smtp/">IMAP vs SMTP</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>This browser tool inspects the public DNS records (CNAME, A, AAAA, SRV, MX) that route mail clients to your Autodiscover endpoint, but it does not submit user credentials to test an authenticated Exchange Autodiscover.xml or Autodiscover.json payload.</li>
+        <li>Local Windows registry overrides (ExcludeHttpsRootDomain, ExcludeScpLookup) and Active Directory Service Connection Points (SCP) on domain-joined PCs run before any public DNS query, so a domain-joined desktop can behave differently from this result.</li>
+        <li>A valid autodiscover A or CNAME record still fails in Outlook if the destination web server on port 443 serves an expired or hostname-mismatched TLS certificate.</li>
+        <li>Google Workspace accounts authenticate in modern Outlook and Apple Mail via OAuth2 browser sign-in rather than Exchange Autodiscover XML, so missing autodiscover records there are expected, not an error.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The number one cause of broken Microsoft 365 Outlook setups on cPanel and shared-hosting domains: cPanel creates an autodiscover.example.com A record pointing at the web server IP the moment the zone is created. Outlook hits that web server on 443, gets a certificate warning for the wrong hostname, and prompts for a password forever. Delete that A record (or repoint it) and the prompts stop.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The dominant failure pattern is split-service domains: the website runs on cPanel, Wix, or behind Cloudflare while mail routes to Microsoft 365 or Google Workspace, and leftover autodiscover A records or proxied CNAMEs quietly break client setup for everyone who did not configure their profile by hand.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does Outlook keep asking for a password?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Repeated Outlook password prompts or certificate warnings on a domain using Microsoft 365 are most often caused by a stale autodiscover A record pointing to your web hosting server. Outlook tries the autodiscover hostname on port 443 before falling back to the SRV record, so a leftover cPanel or shared-hosting A record makes Outlook hit the web server, receive a certificate for the wrong name, and ask for credentials again. A Cloudflare orange-cloud proxy on the autodiscover hostname causes the same failure by rewriting the answer to edge IPs, and a tenant that still expects basic authentication instead of Modern Auth (OAuth2) prompts no matter what DNS says.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What should the autodiscover record point to for Microsoft 365?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">For Microsoft 365 and Exchange Online, publish a CNAME record on the host autodiscover pointing to autodiscover.outlook.com with a TTL of 3,600 seconds, left DNS-only (grey cloud) if the zone runs on Cloudflare. The fallback for zones where the hostname cannot hold a CNAME is the SRV record on _autodiscover._tcp with priority 0, weight 0, port 443, target autodiscover.outlook.com.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is autodiscover a CNAME or an SRV record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Microsoft Autodiscover supports both a CNAME record (autodiscover.example.com) and a DNS SRV record (_autodiscover._tcp.example.com), evaluated in a fixed priority order. Outlook checks the autodiscover hostname via CNAME or A first and only queries the SRV record when that hostname lookup fails. The two methods are interchangeable in outcome but not in precedence, which is why a stale A record on the hostname can hijack the lookup before the SRV fallback is ever reached.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare's orange-cloud proxy break Microsoft 365 Autodiscover?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, proxying the autodiscover hostname through Cloudflare breaks Microsoft 365 Autodiscover. The orange cloud rewrites the CNAME answer into Cloudflare edge A and AAAA addresses, so Outlook connects to Cloudflare instead of Exchange Online, the TLS certificate no longer matches autodiscover expectations, and the XML or JSON handshake never reaches Microsoft. Set the record to DNS-only (grey cloud) and the CNAME passes through unchanged.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between Microsoft Autodiscover and Thunderbird Autoconfig?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Microsoft Autodiscover is the Exchange protocol served on autodiscover.&lt;domain&gt; and discovered through _autodiscover._tcp.&lt;domain&gt;, returning account settings as XML or JSON to Outlook clients. Thunderbird Autoconfig is the Mozilla open specification: clients fetch autoconfig.&lt;domain&gt;/mail/config-v1.1.xml or fall back to the Mozilla ISPDB database. The IETF standard RFC 6186 covers the third path: _imaps._tcp and _submission._tcp SRV records locate IMAP and submission servers for any compliant client.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Inspect any SRV record in full with the <a href="/srv-record-lookup/">SRV record lookup</a>.</li>
+        <li>Follow a CNAME chain to its final answer with the <a href="/cname-record-lookup/">CNAME record lookup</a>.</li>
+        <li>Confirm which mail host your domain advertises with the <a href="/mx-record-lookup/">MX record lookup</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 6186, Use of SRV Records for Locating Email Submission/Access Services: <a href="https://www.rfc-editor.org/rfc/rfc6186" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6186</a></li>
+        <li>IETF RFC 2782, A DNS RR for Specifying the Location of Services (DNS SRV): <a href="https://www.rfc-editor.org/rfc/rfc2782" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2782</a></li>
+        <li>Microsoft Exchange Autodiscover service documentation: <a href="https://learn.microsoft.com/en-us/exchange/architecture/client-access/autodiscover" rel="noopener" target="_blank">learn.microsoft.com</a></li>
+        <li>Mozilla Thunderbird autoconfiguration specification: <a href="https://github.com/thunderbird/autoconfig" rel="noopener" target="_blank">github.com/thunderbird/autoconfig</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
+
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3).
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
   const form = document.getElementById('ad-form') as HTMLFormElement;
   const input = document.getElementById('ad-domain') as HTMLInputElement;
   const statusEl = document.getElementById('ad-status')!;
-  const resultsEl = document.getElementById('ad-results')!;
   const tbody = document.getElementById('ad-tbody')!;
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  const VERDICT_CLS: Record<string, string> = {
+    good: 'text-pass',
+    warn: 'text-warn',
+    faint: 'text-ink-faint',
+  };
+
+  function dnsText(lookups: { cname: string | null; a: string | null; aaaa: string | null; nxdomain: boolean }): string {
+    if (lookups.cname) return 'CNAME to ' + lookups.cname;
+    if (lookups.a) return 'A record: ' + lookups.a;
+    if (lookups.aaaa) return 'AAAA record: ' + lookups.aaaa;
+    if (lookups.nxdomain) return 'Missing (NXDOMAIN)';
+    return 'None found';
+  }
+
+  function providerOf(mx: string | null): { name: string; kind: 'm365' | 'google' | 'other' } | null {
+    if (!mx) return null;
+    const t = mx.toLowerCase();
+    if (t.includes('outlook.com') || t.includes('protection.outlook')) return { name: 'Microsoft 365', kind: 'm365' };
+    if (t.includes('google.com') || t.includes('googlemail.com')) return { name: 'Google Workspace', kind: 'google' };
+    return { name: t.split('.').slice(-2).join('.'), kind: 'other' };
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
-    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
-    statusEl.textContent = `Checking autodiscover for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
-    const checks: [string, string][] = [];
-    const [ad, ac, srv, mx] = await Promise.all([
+    if (!domain || !domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
+    statusEl.textContent = `Probing every discovery mechanism for ${domain}...`;
+    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+
+    const first = (r: { answers: { type: number; data: string }[] }, type: number) => r.answers.find((a) => a.type === type)?.data.replace(/\.$/, '') ?? null;
+    const [adCn, adA, adAaaa, srv, acCn, acA, acAaaa, imaps, submission, mx] = await Promise.all([
       lookup(`autodiscover.${domain}`, 'CNAME', RESOLVERS[0]),
-      lookup(`autoconfig.${domain}`, 'CNAME', RESOLVERS[0]),
+      lookup(`autodiscover.${domain}`, 'A', RESOLVERS[0]),
+      lookup(`autodiscover.${domain}`, 'AAAA', RESOLVERS[0]),
       lookup(`_autodiscover._tcp.${domain}`, 'SRV', RESOLVERS[0]),
+      lookup(`autoconfig.${domain}`, 'CNAME', RESOLVERS[0]),
+      lookup(`autoconfig.${domain}`, 'A', RESOLVERS[0]),
+      lookup(`autoconfig.${domain}`, 'AAAA', RESOLVERS[0]),
+      lookup(`_imaps._tcp.${domain}`, 'SRV', RESOLVERS[0]),
+      lookup(`_submission._tcp.${domain}`, 'SRV', RESOLVERS[0]),
       lookup(domain, 'MX', RESOLVERS[0]),
     ]);
-    checks.push(['autodiscover CNAME', ad.answers.find(a => a.type === 5)?.data ?? (ad.status === 3 ? 'NXDOMAIN' : 'none')]);
-    checks.push(['autoconfig CNAME', ac.answers.find(a => a.type === 5)?.data ?? (ac.status === 3 ? 'NXDOMAIN' : 'none')]);
-    checks.push(['_autodiscover._tcp SRV', srv.answers.find(a => a.type === 33)?.data ?? 'none']);
-    checks.push(['MX (fallback hint)', mx.answers.find(a => a.type === 15)?.data ?? 'none']);
+
+    const ad = { cname: first(adCn, 5), a: first(adA, 1), aaaa: first(adAaaa, 28), nxdomain: adCn.status === 3 };
+    const ac = { cname: first(acCn, 5), a: first(acA, 1), aaaa: first(acAaaa, 28), nxdomain: acCn.status === 3 };
+    const srvData = first(srv, 33);
+    const imapsData = first(imaps, 33);
+    const subData = first(submission, 33);
+    const mxData = mx.answers.find((a) => a.type === 15)?.data ?? null;
+    const provider = providerOf(mxData);
+
     document.getElementById('ad-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    for (const [k, v] of checks) {
-      const found = v !== 'NXDOMAIN' && v !== 'none';
-      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${k}</td><td class="font-mono text-xs ${found ? 'text-ink' : 'text-ink-faint'}">${v}</td></tr>`);
+    tbody.textContent = '';
+    const addRow = (mechanism: string, record: string, result: string, verdict: string, cls: string) => {
+      const tr = document.createElement('tr');
+      tr.append(el('td', 'text-sm text-ink', mechanism));
+      tr.append(el('td', 'font-mono text-xs text-ink-dim', record));
+      tr.append(el('td', 'font-mono text-xs text-ink-dim', result));
+      tr.append(el('td', `text-sm font-medium ${cls}`, verdict));
+      tbody.append(tr);
+    };
+
+    // Row 1: autodiscover hostname (CNAME / A / AAAA)
+    let adVerdict = 'Missing';
+    let adCls = VERDICT_CLS.faint;
+    let adNote = '';
+    if (ad.cname) {
+      const isM365 = ad.cname.toLowerCase().includes('outlook.com');
+      adVerdict = isM365 ? 'Configured (Microsoft 365)' : 'Configured: verify target';
+      adCls = isM365 ? VERDICT_CLS.good : VERDICT_CLS.warn;
+    } else if (ad.a || ad.aaaa) {
+      adVerdict = 'Present: verify target';
+      adCls = VERDICT_CLS.warn;
+      if (provider && provider.kind === 'm365') {
+        adNote = 'Microsoft 365 mail with a plain A record here is the classic stale-hosting hijack';
+      }
     }
-    statusEl.textContent = 'Autodiscover check complete. Missing records mean clients fall back to manual setup or SRV.';
+    addRow('Outlook / Exchange primary', `autodiscover.${domain} CNAME / A / AAAA`, dnsText(ad), adVerdict, adCls);
+
+    // Row 2: Microsoft SRV fallback
+    if (srvData) {
+      const parts = srvData.trim().split(/\s+/);
+      const parsed = parts.length >= 4
+        ? `priority ${parts[0]}, weight ${parts[1]}, port ${parts[2]}, target ${parts[3]}`
+        : srvData;
+      const isM365 = srvData.toLowerCase().includes('outlook.com');
+      addRow('Microsoft SRV fallback', `_autodiscover._tcp.${domain} SRV`, `${srvData} (${parsed})`, isM365 ? 'Configured (Microsoft 365)' : 'Configured: verify target', isM365 ? VERDICT_CLS.good : VERDICT_CLS.warn);
+    } else {
+      addRow('Microsoft SRV fallback', `_autodiscover._tcp.${domain} SRV`, 'None found', ad.cname ? 'Optional (CNAME method in use)' : 'Missing: publish if the hostname cannot hold a CNAME', VERDICT_CLS.faint);
+    }
+
+    // Row 3: Thunderbird autoconfig
+    const acConfigured = ac.cname || ac.a || ac.aaaa;
+    addRow('Thunderbird / K-9 / Evolution', `autoconfig.${domain} CNAME / A / AAAA`, dnsText(ac), acConfigured ? 'Configured' : 'Missing (clients fall back to the ISPDB)', acConfigured ? VERDICT_CLS.good : VERDICT_CLS.faint);
+
+    // Row 4: RFC 6186 services
+    const rfcParts: string[] = [];
+    if (imapsData) rfcParts.push('_imaps._tcp: ' + imapsData);
+    if (subData) rfcParts.push('_submission._tcp: ' + subData);
+    addRow('RFC 6186 mail services', `_imaps._tcp / _submission._tcp SRV`, rfcParts.length ? rfcParts.join('; ') : 'None found', rfcParts.length ? 'Configured' : 'Missing (optional)', rfcParts.length ? VERDICT_CLS.good : VERDICT_CLS.faint);
+
+    // Row 5: MX provider context check
+    if (provider) {
+      let ctxVerdict = `Informational: MX reports ${provider.name}`;
+      let cls = VERDICT_CLS.faint;
+      if (provider.kind === 'm365') {
+        const adOk = ad.cname && ad.cname.toLowerCase().includes('outlook.com');
+        const srvOk = !!srvData && srvData.toLowerCase().includes('outlook.com');
+        if (adOk || srvOk) {
+          ctxVerdict = 'Match: Microsoft 365 mail and the Autodiscover target agree';
+          cls = VERDICT_CLS.good;
+        } else {
+          ctxVerdict = 'Mismatch: MX points to Microsoft 365 but autodiscover points elsewhere (stale A record or proxy?)';
+          cls = VERDICT_CLS.warn;
+        }
+      } else if (provider.kind === 'google') {
+        ctxVerdict = 'Informational: Google Workspace uses OAuth, so missing autodiscover records are expected';
+      }
+      addRow('MX provider context check', `${domain} MX`, `MX: ${mxData}`, ctxVerdict, cls);
+    } else {
+      addRow('MX provider context check', `${domain} MX`, 'No MX records found', 'Informational: no inbound mail advertised', VERDICT_CLS.faint);
+    }
+
+    statusEl.textContent = `Autodiscover check complete for ${domain}: read each verdict against the reference table below.`;
     statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
-    resultsEl.classList.remove('hidden');
+    statusEl.classList.remove('hidden');
   });
 </script>
