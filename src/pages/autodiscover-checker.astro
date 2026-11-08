@@ -29,18 +29,18 @@ const faqSchema = {
 
     <div class="mt-8">
       <ToolPanel>
-        <form id="ad-form" class="flex flex-col gap-3 sm:flex-row">
-          <input id="ad-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <form id="adc-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="adc-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
           <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Autodiscover</button>
         </form>
-        <div id="ad-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-        <p id="ad-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        <div id="adc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="adc-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
           Sample diagnostic for <code>example.com</code>. Enter your own domain above: the tool probes every discovery mechanism and compares the Autodiscover target against your MX provider.
         </p>
-        <div id="ad-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+        <div id="adc-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
           <table class="pdns-table">
             <thead><tr><th>Discovery mechanism</th><th>Record queried</th><th>Your live result</th><th>Verdict</th></tr></thead>
-            <tbody id="ad-tbody"><tr><td class="text-sm text-ink-dim">Outlook / Exchange primary</td><td class="font-mono text-xs">autodiscover.example.com CNAME</td><td class="text-sm text-ink-dim">CNAME to autodiscover.outlook.com</td><td class="text-sm text-pass">Configured</td></tr><tr><td class="text-sm text-ink-dim">Microsoft SRV fallback</td><td class="font-mono text-xs">_autodiscover._tcp SRV</td><td class="text-sm text-ink-dim">No SRV record (CNAME method in use)</td><td class="text-sm text-ink-faint">Optional</td></tr></tbody>
+            <tbody id="adc-tbody"><tr><td class="text-sm text-ink-dim">Outlook / Exchange primary</td><td class="font-mono text-xs">autodiscover.example.com CNAME</td><td class="text-sm text-ink-dim">CNAME to autodiscover.outlook.com</td><td class="text-sm text-pass">Configured</td></tr><tr><td class="text-sm text-ink-dim">Microsoft SRV fallback</td><td class="font-mono text-xs">_autodiscover._tcp SRV</td><td class="text-sm text-ink-dim">No SRV record (CNAME method in use)</td><td class="text-sm text-ink-faint">Optional</td></tr></tbody>
           </table>
         </div>
       </ToolPanel>
@@ -174,10 +174,10 @@ nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
   // MutationObserver (coder rulebook, Group 3).
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
 
-  const form = document.getElementById('ad-form') as HTMLFormElement;
-  const input = document.getElementById('ad-domain') as HTMLInputElement;
-  const statusEl = document.getElementById('ad-status')!;
-  const tbody = document.getElementById('ad-tbody')!;
+  const form = document.getElementById('adc-form') as HTMLFormElement;
+  const input = document.getElementById('adc-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('adc-status')!;
+  const tbody = document.getElementById('adc-tbody')!;
 
   function el(tag: string, className: string, text?: string): HTMLElement {
     const node = document.createElement(tag);
@@ -245,7 +245,7 @@ nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
     const mxTarget = mxParts.length >= 2 ? mxParts[1].replace(/\.$/, '') : (mxRaw ? mxRaw.replace(/\.$/, '') : null);
     const provider = providerOf(mxTarget);
 
-    document.getElementById('ad-sample-note')?.classList.add('hidden');
+    document.getElementById('adc-sample-note')?.classList.add('hidden');
     tbody.textContent = '';
     const addRow = (mechanism: string, record: string, result: string, verdict: string, cls: string) => {
       const tr = document.createElement('tr');
