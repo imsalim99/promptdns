@@ -339,7 +339,8 @@ nslookup -type=257 example.com</code></pre>
         const valueParts = rec.value.split(';').map((s) => s.trim()).filter(Boolean);
         const caPart = valueParts[0] || '';
         const params = valueParts.slice(1);
-        const caText = caPart === ';' ? 'Deny all issuance' : `${caName(caPart)}${caPart ? ` from ${caPart}` : ''}`;
+        const isReporting = rec.tag === 'iodef' || rec.tag === 'contactemail' || rec.tag === 'contactphone';
+        const caText = caPart === ';' ? 'Deny all issuance' : isReporting ? rec.value : `${caName(caPart)}${caPart ? ` from ${caPart}` : ''}`;
         const paramText = params.length ? ` + RFC 8657: ${params.join(', ')}` : '';
         addRow([
           rec.scope,
