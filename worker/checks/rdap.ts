@@ -154,10 +154,10 @@ export async function isUnsupportedTld(domain: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/* IP network RDAP (RFC 9083 ip object), routed via rdap.org.          */
-/* The IANA ipv4/ipv6 bootstrap files need CIDR range matching; the    */
-/* official rdap.org redirector does that for us server-side, where    */
-/* redirects are followed without CORS constraints.                    */
+/* IP network RDAP (RFC 9083 ip object).                               */
+/* rdap.org 403-blocks Cloudflare Worker egress, so the authoritative  */
+/* RIR server is resolved from the IANA RFC 9224 ipv4/ipv6 bootstrap   */
+/* files with CIDR range matching; rdap.org remains a dev fallback.    */
 /* ------------------------------------------------------------------ */
 
 export interface IpRdapResult {
@@ -200,64 +200,153 @@ function vcardField(vcard: unknown, key: string): string | null {
   return null;
 }
 
-/** Query RDAP for one IP network; rdap.org redirects to the authoritative RIR. */
-export async function queryIpRdap(ip: string): Promise<IpRdapResult> {
-  const url = 'https://rdap.org/ip/' + ip;
+/* --- IANA IP address bootstrap (RFC 9224 ipv4.json / ipv6.json) ------ */
+/* rdap.org 403-blocks Cloudflare Worker egress, so we resolve the       */
+/* authoritative RIR server ourselves via CIDR range matching and keep   */
+/* rdap.org only as a local-dev fallback.                                */
+
+interface IpBootstrapEntry { prefixes: string[]; urls: string[] }
+const IP_BOOTSTRAP_TTL_MS = 24 * 3600 * 1000;
+let ipBootstrapCache: { at: number; v4: IpBootstrapEntry[]; v6: IpBootstrapEntry[] } | null = null;
+
+async function getIpBootstrap(): Promise<{ v4: IpBootstrapEntry[]; v6: IpBootstrapEntry[] }> {
+  if (ipBootstrapCache && Date.now() - ipBootstrapCache.at < IP_BOOTSTRAP_TTL_MS) return ipBootstrapCache;
+  const parse = (j: { services: [string[], string[]][] }): IpBootstrapEntry[] =>
+    j.services.map(([prefixes, urls]) => ({ prefixes, urls }));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'follow',
-      headers: { accept: 'application/rdap+json, application/json' },
-    });
-    const servedBy = res.url && res.url !== url ? res.url : url;
-    if (res.status === 404) {
-      return { query: ip, status: 'not_found', note: 'No RIR network object covers this address in RDAP.', sourceUrl: servedBy, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
-    }
-    if (!res.ok) {
-      return { query: ip, status: 'error', note: 'RDAP lookup failed: HTTP ' + res.status + ' from ' + servedBy.slice(0, 80), sourceUrl: null, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
-    }
-    const j: any = await res.json();
-    const events: IpRdapResult['events'] = { registration: null, lastChanged: null };
-    for (const e of (j.events ?? []) as RdapEvent[]) {
-      const action = String(e.eventAction ?? '').toLowerCase();
-      if (action === 'registration' && !events.registration) events.registration = e.eventDate ?? null;
-      else if ((action === 'last changed' || action === 'last update of rdap database') && !events.lastChanged) events.lastChanged = e.eventDate ?? null;
-    }
-    let org: string | null = null;
-    let abuseEmail: string | null = null;
-    for (const ent of (j.entities ?? []) as any[]) {
-      const roles: string[] = ent.roles ?? [];
-      const fn = vcardField(ent.vcardArray, 'fn');
-      if (roles.includes('registrant') && fn && !org) org = fn;
-      if (roles.includes('abuse')) {
-        const email = vcardField(ent.vcardArray, 'email');
-        if (email && !abuseEmail) abuseEmail = email;
-      }
-    }
-    // Some RIRs put the network name only on the top-level object.
-    if (!org) org = vcardField(j.vcardArray, 'fn');
-    return {
-      query: ip,
-      status: 'ok',
-      note: '',
-      sourceUrl: servedBy,
-      handle: j.handle ? String(j.handle) : null,
-      netName: j.name ? String(j.name) : null,
-      netType: j.type ? String(j.type) : null,
-      country: j.country ? String(j.country) : null,
-      startAddress: j.startAddress ? String(j.startAddress) : null,
-      endAddress: j.endAddress ? String(j.endAddress) : null,
-      events,
-      org,
-      abuseEmail,
-      statuses: (j.status ?? []).map(String),
-    };
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { query: ip, status: 'error', note: 'RDAP lookup failed: ' + msg.slice(0, 120), sourceUrl: null, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
+    const [v4res, v6res] = await Promise.all([
+      fetch('https://data.iana.org/rdap/ipv4.json', { signal: controller.signal }),
+      fetch('https://data.iana.org/rdap/ipv6.json', { signal: controller.signal }),
+    ]);
+    if (!v4res.ok || !v6res.ok) throw new Error('bootstrap HTTP ' + v4res.status + '/' + v6res.status);
+    const parsed = { at: Date.now(), v4: parse(await v4res.json()), v6: parse(await v6res.json()) };
+    ipBootstrapCache = parsed;
+    return parsed;
   } finally {
     clearTimeout(timer);
   }
+}
+
+function v4ToInt(ip: string): number {
+  const [a, b, c, d] = ip.split('.').map(Number);
+  return ((a << 24) | (b << 16) | (c << 8) | d) >>> 0;
+}
+
+/** IPv6 to BigInt; returns null for anything not 8 clean hex groups. */
+function v6ToBigInt(ip: string): bigint | null {
+  const s = ip.toLowerCase().split('%')[0];
+  let groups: string[];
+  if (s.includes('::')) {
+    const [l, r] = s.split('::');
+    const head = l ? l.split(':') : [];
+    const tail = r ? r.split(':') : [];
+    const missing = 8 - head.length - tail.length;
+    if (missing < 1) return null;
+    groups = [...head, ...Array<string>(missing).fill('0'), ...tail];
+  } else {
+    groups = s.split(':');
+    if (groups.length !== 8) return null;
+  }
+  let out = 0n;
+  for (const g of groups) {
+    if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+    out = (out << 16n) | BigInt(parseInt(g, 16));
+  }
+  return out;
+}
+
+/** True when the CIDR prefix contains the query address. */
+function cidrMatch(prefix: string, ip: string): boolean {
+  const slash = prefix.indexOf('/');
+  if (slash === -1) return false;
+  const base = prefix.slice(0, slash);
+  const len = Number(prefix.slice(slash + 1));
+  if (!Number.isFinite(len)) return false;
+  if (base.includes(':')) {
+    const b = v6ToBigInt(base);
+    const q = v6ToBigInt(ip);
+    if (b === null || q === null || len < 0 || len > 128) return false;
+    const shift = BigInt(128 - len);
+    return (b >> shift) === (q >> shift);
+  }
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(base) || len < 0 || len > 32) return false;
+  const b = v4ToInt(base);
+  const q = v4ToInt(ip);
+  const mask = len === 0 ? 0 : (0xFFFFFFFF << (32 - len)) >>> 0;
+  return (b & mask) === (q & mask);
+}
+
+/** Query RDAP for one IP network: IANA bootstrap resolution, rdap.org fallback. */
+export async function queryIpRdap(ip: string): Promise<IpRdapResult> {
+  const attempts: string[] = [];
+  try {
+    const boot = await getIpBootstrap();
+    const table = ip.includes(':') ? boot.v6 : boot.v4;
+    const entry = table.find((e) => e.prefixes.some((p) => cidrMatch(p, ip)));
+    if (entry?.urls[0]) attempts.push(entry.urls[0].replace(/\/$/, '') + '/ip/' + ip);
+  } catch {
+    // bootstrap unreachable: fall straight through to rdap.org
+  }
+  attempts.push('https://rdap.org/ip/' + ip);
+
+  let lastErr = 'unknown error';
+  for (const url of attempts) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        signal: controller.signal,
+        redirect: 'follow',
+        headers: { accept: 'application/rdap+json, application/json' },
+      });
+      const servedBy = res.url && res.url !== url ? res.url : url;
+      if (res.status === 404) {
+        return { query: ip, status: 'not_found', note: 'No RIR network object covers this address in RDAP.', sourceUrl: servedBy, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
+      }
+      if (!res.ok) { lastErr = 'HTTP ' + res.status + ' from ' + servedBy.slice(0, 80); continue; }
+      const j: any = await res.json();
+      const events: IpRdapResult['events'] = { registration: null, lastChanged: null };
+      for (const e of (j.events ?? []) as RdapEvent[]) {
+        const action = String(e.eventAction ?? '').toLowerCase();
+        if (action === 'registration' && !events.registration) events.registration = e.eventDate ?? null;
+        else if ((action === 'last changed' || action === 'last update of rdap database') && !events.lastChanged) events.lastChanged = e.eventDate ?? null;
+      }
+      let org: string | null = null;
+      let abuseEmail: string | null = null;
+      for (const ent of (j.entities ?? []) as any[]) {
+        const roles: string[] = ent.roles ?? [];
+        const fn = vcardField(ent.vcardArray, 'fn');
+        if (roles.includes('registrant') && fn && !org) org = fn;
+        if (roles.includes('abuse')) {
+          const email = vcardField(ent.vcardArray, 'email');
+          if (email && !abuseEmail) abuseEmail = email;
+        }
+      }
+      // Some RIRs put the network name only on the top-level object.
+      if (!org) org = vcardField(j.vcardArray, 'fn');
+      return {
+        query: ip,
+        status: 'ok',
+        note: '',
+        sourceUrl: servedBy,
+        handle: j.handle ? String(j.handle) : null,
+        netName: j.name ? String(j.name) : null,
+        netType: j.type ? String(j.type) : null,
+        country: j.country ? String(j.country) : null,
+        startAddress: j.startAddress ? String(j.startAddress) : null,
+        endAddress: j.endAddress ? String(j.endAddress) : null,
+        events,
+        org,
+        abuseEmail,
+        statuses: (j.status ?? []).map(String),
+      };
+    } catch (e: unknown) {
+      lastErr = e instanceof Error ? e.message : String(e);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return { query: ip, status: 'error', note: 'RDAP lookup failed: ' + lastErr.slice(0, 120), sourceUrl: null, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
 }
