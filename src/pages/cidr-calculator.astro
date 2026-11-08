@@ -1,96 +1,535 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "What is the difference between /24 and /16?", "acceptedAnswer": { '@type': 'Answer', "text": "/24 gives you 256 addresses (a typical small network). /16 gives you 65,536 addresses (a larger network or ISP allocation). The number after the slash is the count of leading 1-bits in the subnet mask." } },
-    {'@type': 'Question', 'name': "How many usable hosts are in a /29?", "acceptedAnswer": { '@type': 'Answer', "text": "A /29 has 8 total addresses but only 6 usable hosts: 2 are reserved for the network identifier and the broadcast address. Our calculator shows usable hosts automatically." } },
-    {'@type': 'Question', 'name': "Can I convert IPv4 CIDR to IPv6?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, an IPv4 /32 maps to an IPv6 /128 in the ::ffff: prefix range. Our IPv4-to-IPv6 converter handles this mapping." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'How many usable hosts are in a /24?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A standard IPv4 /24 subnet contains 256 total IP addresses and 254 usable host addresses. The .0 address names the network, .255 is the directed broadcast, and .1 through .254 are usable hosts. The cloud exception: AWS, GCP, and Azure reserve 3 to 5 additional addresses per subnet for the VPC router, DNS, and future use, so a /24 in AWS yields 251 usable IPs instead of 254.' } },
+    { '@type': 'Question', 'name': 'What is the difference between CIDR notation and a subnet mask?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'CIDR notation and a subnet mask express the exact same network boundary in two different formats: CIDR writes the count of leading network bits after a slash (such as /24), whereas a subnet mask writes those 32 bits as four decimal octets (such as 255.255.255.0). Both say the first 24 bits are the network and the last 8 bits are hosts, which is why /24 and 255.255.255.0 are interchangeable in every tool and router configuration.' } },
+    { '@type': 'Question', 'name': 'How do I convert an IP range to CIDR?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Converting a start-to-end IP range into CIDR notation requires finding the largest power-of-two block size where the starting IP aligns on an exact multiple of that block size. An aligned range like 192.168.1.0 to 192.168.1.255 converts into a single 192.168.1.0/24 block, while an unaligned range such as 192.0.2.10 to 192.0.2.25 splits into multiple smaller CIDR blocks that together cover exactly those addresses and nothing more.' } },
+    { '@type': 'Question', 'name': 'Why does a /31 subnet have 2 usable hosts instead of 0?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Because RFC 3021 defines /31 prefixes as point-to-point links. With only two addresses, the classic network and broadcast reservations would leave nothing usable, so both addresses are assigned to the two routers on the link and directed broadcast is simply not used. This doubles address efficiency on WAN links and is supported by modern routing hardware.' } },
+    { '@type': 'Question', 'name': 'Why are IPv6 subnets almost always /64?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Because RFC 4291 fixes the second half of an IPv6 address as the interface identifier, and Stateless Address Autoconfiguration (SLAAC, RFC 4862) requires exactly 64 bits for it. Every LAN gets one /64 with 18,446,744,073,709,551,616 addresses, and site allocations follow RFC 6177: a /48 to a site, a /56 to a residence, so every internal network can be a /64 without ever needing to subnet tighter.' } },
+  ],
+};
+
+// Build-time computation of the full /0 to /32 IPv4 reference table.
+const dotted = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const fmt = (n: number) => n.toLocaleString('en-US');
+const V4_USE: Record<number, string> = {
+  0: 'Default route: the entire IPv4 internet',
+  1: 'Backbone aggregation: half the IPv4 space',
+  2: 'Backbone aggregation blocks (ISPs)',
+  3: 'Backbone aggregation blocks (ISPs)',
+  4: 'Backbone aggregation blocks (ISPs)',
+  5: 'Backbone aggregation blocks (ISPs)',
+  6: 'Backbone aggregation blocks (ISPs)',
+  7: 'Backbone aggregation blocks (ISPs)',
+  8: 'Legacy Class A: very large ISPs',
+  9: 'Very large ISP and carrier allocations',
+  10: 'Very large ISP and carrier allocations',
+  11: 'Very large ISP and carrier allocations',
+  12: 'Large cloud provider blocks (Cloudflare 104.16.0.0/12)',
+  13: 'Large hosting and cloud blocks',
+  14: 'Large hosting and cloud blocks',
+  15: 'Large hosting and cloud blocks',
+  16: 'Legacy Class B: enterprises and cloud regions',
+  17: 'Large enterprise campuses',
+  18: 'Large enterprise campuses',
+  19: 'Large enterprise campuses, ISP downstream',
+  20: 'Hosting providers (GitHub 140.82.112.0/20)',
+  21: 'Hosting providers and ISP downstream',
+  22: 'Regional ISP allocations (RIPE style)',
+  23: 'Multi-site enterprises, ISP downstream',
+  24: 'Standard LAN subnet: common BGP and cloud minimum',
+  25: 'Split LANs: two 128-host halves of a /24',
+  26: 'Small departments and DMZ segments',
+  27: 'VOIP, iSCSI, or DMZ segments',
+  28: 'Small office and branch networks',
+  29: 'Small server groups and NAT pools',
+  30: 'Legacy point-to-point WAN links',
+  31: 'Point-to-point router links (RFC 3021)',
+  32: 'Single host route: firewalls, BGP, SPF ip4:',
+};
+const prefixRows = Array.from({ length: 33 }, (_, p) => {
+  const mask = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+  const total = 2 ** (32 - p);
+  const usable = p <= 30 ? total - 2 : p === 31 ? 2 : 1;
+  return { p, mask: dotted(mask), wild: dotted((~mask >>> 0)), total: fmt(total), usable: fmt(usable), use: V4_USE[p] };
+});
 ---
-<BaseLayout title="CIDR / Subnet Calculator" description="Free subnet calculator: CIDR notation to IP range, mask, wildcard, broadcast, and host count - with a full reference table."  schema={[faqSchema]}
->
+<BaseLayout title="CIDR Calculator: IPv4 & IPv6 Subnet Mask & IP Range to CIDR" description="Free CIDR calculator: network address, subnet mask, wildcard mask, broadcast, usable hosts, and scope for any IPv4 /0 to /32 or IPv6 block, plus IP range to CIDR conversion and subnet split." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">CIDR / Subnet Calculator</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">CIDR Calculator: IPv4 and IPv6 Subnet Math</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free CIDR calculator: convert IP ranges, calculate subnets, usable hosts and broadcast addresses.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">CIDR &amp; Subnet Calculator: IPv4, IPv6, and IP Range to CIDR</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Calculate the network address, subnet mask, wildcard mask, broadcast address, and usable host range for any IPv4 (/0 to /32) or IPv6 (/0 to /128) CIDR block, or convert any start-to-end IP address range into minimal CIDR prefixes in your browser.</p>
+
     <div class="mt-8">
-<ToolPanel>
-  <form id="cidr-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="cidr-in" type="text" value="192.168.1.10/24" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Calculate</button>
-  </form>
-  <div id="cidr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <p id="cidr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
-      </p>
-<div id="cidr-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-    <table class="pdns-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody id="cidr-tbody"><tr><td class="font-medium text-ink">Network</td><td><code>192.168.1.0/24</code></td></tr><tr><td class="font-medium text-ink">Usable hosts</td><td class="text-sm text-ink-dim">254</td></tr><tr><td class="font-medium text-ink">First, last usable</td><td class="text-sm text-ink-dim"><code>192.168.1.1</code>, <code>192.168.1.254</code></td></tr></tbody></table>
-  </div>
-</ToolPanel>
+      <ToolPanel>
+        <form id="cidr-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="cidr-in" type="text" value="192.168.1.10/24" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Calculate</button>
+        </form>
+        <div id="cidr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="cidr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Accepts IPv4 or IPv6 CIDR (192.168.1.10/24, 2001:4860:4860::/48), a start-to-end range (192.0.2.10-192.0.2.25), or a domain name (resolved to its /24 over DoH).
+        </p>
+        <div id="cidr-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody id="cidr-tbody"><tr><td class="font-medium text-ink">Network</td><td><code>192.168.1.0/24</code></td></tr><tr><td class="font-medium text-ink">Usable hosts</td><td class="text-sm text-ink-dim">254</td></tr><tr><td class="font-medium text-ink">First, last usable</td><td class="text-sm text-ink-dim"><code>192.168.1.1</code>, <code>192.168.1.254</code></td></tr></tbody></table>
+        </div>
+        <div id="cidr-split" class="mt-6 hidden rounded-xl border border-violet/30 bg-violet/5 p-4"></div>
+        <ResultCard tool="cidr-calculator" />
+      </ToolPanel>
     </div>
     <p class="mx-auto mt-6 max-w-3xl px-4 text-base leading-relaxed text-ink-dim">Every public IP address is announced by an autonomous system, and our guide <a href="/asn-explained/" class="text-accent hover:text-accent-soft">Autonomous System Number (ASN)</a> explains how announcing networks are identified.</p>
-    <article class="rich-text mt-12 max-w-none"><h2>Common masks</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><thead><tr><th>CIDR</th><th>Mask</th><th>Usable hosts</th></tr></thead><tbody>
-        <tr><td class="font-mono text-xs text-accent">/24</td><td class="font-mono text-xs">255.255.255.0</td><td class="text-sm">254</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/25</td><td class="font-mono text-xs">255.255.255.128</td><td class="text-sm">126</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/26</td><td class="font-mono text-xs">255.255.255.192</td><td class="text-sm">62</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/27</td><td class="font-mono text-xs">255.255.255.224</td><td class="text-sm">30</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/28</td><td class="font-mono text-xs">255.255.255.240</td><td class="text-sm">14</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/30</td><td class="font-mono text-xs">255.255.255.252</td><td class="text-sm">2</td></tr>
-        <tr><td class="font-mono text-xs text-accent">/16</td><td class="font-mono text-xs">255.255.0.0</td><td class="text-sm">65,534</td></tr>
-      </tbody></table></div>
-      
+
+    <article class="rich-text mt-12 max-w-none">
+      <h2>What this result means: CIDR fields, subnet masks, and special prefix cases</h2>
+      <p>
+        Classless Inter-Domain Routing (CIDR, RFC 4632) replaced the old class A, B, and C boundaries with a single idea: a prefix length written after the slash splits the 32 IPv4 bits (or 128 IPv6 bits) into network bits on the left and host bits on the right. Everything this calculator reports follows from that split. The table below defines each output field and the two special prefix cases where the classic formulas change.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Output Field / Prefix Case</th><th>Formula or Bit Rule</th><th>Example (192.168.1.0/24)</th><th>Operational Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Subnet mask</td><td class="text-sm text-ink-dim">Leading 1-bits followed by 0-bits</td><td class="text-sm text-ink-dim">255.255.255.0</td><td class="text-sm text-ink-dim">Defines which bits identify the network.</td></tr>
+            <tr><td class="font-medium text-ink">Wildcard mask</td><td class="text-sm text-ink-dim">Bitwise inverse: 255.255.255.255 minus mask</td><td class="text-sm text-ink-dim">0.0.0.255</td><td class="text-sm text-ink-dim">Used in Cisco IOS ACLs and OSPF network statements.</td></tr>
+            <tr><td class="font-medium text-ink">Network and broadcast addresses</td><td class="text-sm text-ink-dim">All host bits = 0 / all host bits = 1</td><td class="text-sm text-ink-dim">.0 and .255</td><td class="text-sm text-ink-dim">Reserved on /0 through /30 IPv4 subnets.</td></tr>
+            <tr><td class="font-medium text-ink">Usable host count (/0 to /30)</td><td class="text-sm text-ink-dim">2^(32 - prefix) - 2</td><td class="text-sm text-ink-dim">254 usable hosts</td><td class="text-sm text-ink-dim">Excludes the network and broadcast addresses.</td></tr>
+            <tr><td class="font-medium text-ink">/31 point-to-point link (RFC 3021)</td><td class="text-sm text-ink-dim">2^(32 - 31) = 2 usable hosts</td><td class="text-sm text-ink-dim">10.0.0.0 and 10.0.0.1</td><td class="text-sm text-ink-dim">Router-to-router links: no broadcast reservation.</td></tr>
+            <tr><td class="font-medium text-ink">/32 single host (IPv4) and /128 (IPv6)</td><td class="text-sm text-ink-dim">2^0 = 1 exact address</td><td class="text-sm text-ink-dim">203.0.113.5/32</td><td class="text-sm text-ink-dim">Targets one server IP in firewalls, BGP host routes, and SPF ip4: rules.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to calculate subnets, convert IP ranges to CIDR, and size SPF blocks</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Size the prefix from the host count.</strong> Pick the smallest power of two where 2^h - 2 meets or beats the hosts you need: 60 hosts fit a /26 (62 usable), 300 hosts need a /23 (510 usable). The reference table below lists every step.</li>
+        <li><strong>Convert a start-to-end range into aligned blocks.</strong> Enter the range in the calculator: it emits the minimal list of CIDR prefixes whose block sizes divide evenly from the start IP, covering the range exactly with nothing extra.</li>
+        <li><strong>Split or summarize.</strong> One parent block divides into equal children: a /24 splits into two /25s or four /26s, and an IPv6 /48 site prefix splits into 65,536 /64 LANs. The reverse (adding a bit) gives the parent supernet, shown in the split box above.</li>
+        <li><strong>Publish the blocks where they matter.</strong> SPF records take CIDR directly (<code>ip4:198.51.100.0/24</code>, <code>ip6:2001:db8::/32</code>): the <a href="/spf-record-syntax/">SPF record syntax</a> guide covers the mechanism, and reverse DNS delegation follows the same block boundaries in .in-addr.arpa.</li>
+      </ol>
+
+      <h2>Verify CIDR subnets and BGP prefix announcements from the command line</h2>
+      <pre><code># Python 3 built-in ipaddress: inspect a CIDR block
+python3 -c "import ipaddress; n=ipaddress.ip_network('192.168.1.0/24', strict=False); print(n.netmask, n.hostmask, n.num_addresses)"
+
+# Python 3: convert a start-to-end range to minimal CIDR blocks
+python3 -c "import ipaddress; [print(x) for x in ipaddress.summarize_address_range(ipaddress.ip_address('192.0.2.10'), ipaddress.ip_address('192.0.2.25'))]"
+
+# Linux ipcalc or sipcalc
+ipcalc 192.168.1.0/24
+
+# Live BGP origin ASN for an IP (Team Cymru over DNS)
+dig +short 34.216.184.93.origin.asn.cymru.com TXT</code></pre>
+
+      <h2>Reference table: complete IPv4 CIDR prefix chart (/0 to /32) and key IPv6 prefixes</h2>
+      <p>The table below defines every IPv4 prefix from /0 to /32 with its mask, wildcard, address counts, and typical use. The IPv6 summary follows it.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>CIDR Prefix</th><th>Subnet Mask</th><th>Wildcard Mask</th><th>Total IPv4 Addresses</th><th>Usable Hosts</th><th>Common Infrastructure Use</th></tr></thead>
+          <tbody>
+            {prefixRows.map((r) => (
+              <tr>
+                <td class="font-mono text-xs text-accent">/{r.p}</td>
+                <td class="font-mono text-xs">{r.mask}</td>
+                <td class="font-mono text-xs">{r.wild}</td>
+                <td class="text-sm">{r.total}</td>
+                <td class="text-sm">{r.usable}</td>
+                <td class="text-sm text-ink-dim">{r.use}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        IPv6 replaces this ladder with one standard subnet size: a /32 is an RIR ISP block, a /48 is a site allocation per RFC 6177, a /56 is a residential or SMB site, a /64 is the standard LAN subnet per RFC 4291, and a /128 is a single host. The address families differ in more ways than length: compare them in the <a href="/ipv4-vs-ipv6/">IPv4 vs IPv6</a> guide, and translate individual addresses with the <a href="/ipv4-to-ipv6-converter/">IPv4 to IPv6 converter</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Mathematical CIDR calculation shows protocol-level usable hosts (2^h - 2), whereas cloud VPC providers reserve additional addresses per subnet: AWS, GCP, and Azure reserve 4 to 5 IPs per subnet for the VPC router, DNS, and future use, so a /24 in AWS yields 251 usable IPs instead of 254.</li>
+        <li>Calculating a CIDR block does not check whether that prefix is currently announced in global BGP routing tables or assigned in RDAP: announcement is a routing fact, not an arithmetic one.</li>
+        <li>Standard /24 boundaries govern direct .in-addr.arpa reverse DNS zone delegation, while smaller prefixes (/25 to /30) require RFC 2317 classless CNAME delegation.</li>
+        <li>In SPF records, publishing an overly wide CIDR prefix (such as /16 instead of /24) authorizes every neighbouring server in that datacenter netblock to send mail as your domain.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Two traps that outlive every onboarding doc: the cloud reserved-IP trap (AWS, Azure, and GCP quietly reserve .1 through .3 plus more in every subnet, so the calculator's 254 and the console's 251 are both correct) and the BGP floor (most global operators filter prefixes longer than /24, so a /25 announcement vanishes from the internet even though your router says it is up).</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This calculator shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The recurring pattern in early inputs is misconfigured SPF ip4: masks: administrators paste a single server IP with a /16 or /24 suffix, or leave an unaligned host IP inside a block without checking the boundary, which silently widens who may send as the domain. The other recurring confusion is <a href="/reserved-ip-ranges/">RFC 1918 private space</a> against RFC 6598 CGNAT space: 100.64.0.0/10 addresses look public but are carrier-grade NAT, and treating them as routable breaks mail and VPN rules.
+      </p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between /24 and /16?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">/24 gives you 256 addresses (a typical small network). /16 gives you 65,536 addresses (a larger network or ISP allocation). The number after the slash is the count of leading 1-bits in the subnet mask.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many usable hosts are in a /29?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A /29 has 8 total addresses but only 6 usable hosts: 2 are reserved for the network identifier and the broadcast address. Our calculator shows usable hosts automatically.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I convert IPv4 CIDR to IPv6?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, an IPv4 /32 maps to an IPv6 /128 in the ::ffff: prefix range. Our IPv4-to-IPv6 converter handles this mapping.</p></details></div>
-<h2 class="mt-8">Related</h2><ul><li><a href="/ipv4-to-ipv6-converter/">CIDR notation explained</a> · <a href="/cidr-calculator/">Subnetting guide</a></li></ul>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How many usable hosts are in a /24?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A standard IPv4 /24 subnet contains 256 total IP addresses and 254 usable host addresses. The .0 address names the network, .255 is the directed broadcast, and .1 through .254 are usable hosts. The cloud exception: AWS, GCP, and Azure reserve 3 to 5 additional addresses per subnet for the VPC router, DNS, and future use, so a /24 in AWS yields 251 usable IPs instead of 254.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between CIDR notation and a subnet mask?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">CIDR notation and a subnet mask express the exact same network boundary in two different formats: CIDR writes the count of leading network bits after a slash (such as /24), whereas a subnet mask writes those 32 bits as four decimal octets (such as 255.255.255.0). Both say the first 24 bits are the network and the last 8 bits are hosts, which is why /24 and 255.255.255.0 are interchangeable in every tool and router configuration.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I convert an IP range to CIDR?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Converting a start-to-end IP range into CIDR notation requires finding the largest power-of-two block size where the starting IP aligns on an exact multiple of that block size. An aligned range like 192.168.1.0 to 192.168.1.255 converts into a single 192.168.1.0/24 block, while an unaligned range such as 192.0.2.10 to 192.0.2.25 splits into multiple smaller CIDR blocks that together cover exactly those addresses and nothing more.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does a /31 subnet have 2 usable hosts instead of 0?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because RFC 3021 defines /31 prefixes as point-to-point links. With only two addresses, the classic network and broadcast reservations would leave nothing usable, so both addresses are assigned to the two routers on the link and directed broadcast is simply not used. This doubles address efficiency on WAN links and is supported by modern routing hardware.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why are IPv6 subnets almost always /64?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because RFC 4291 fixes the second half of an IPv6 address as the interface identifier, and Stateless Address Autoconfiguration (SLAAC, RFC 4862) requires exactly 64 bits for it. Every LAN gets one /64 with 18,446,744,073,709,551,616 addresses, and site allocations follow RFC 6177: a /48 to a site, a /56 to a residence, so every internal network can be a /64 without ever needing to subnet tighter.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Check which network actually owns an address with the <a href="/ip-lookup/">IP lookup</a> before trusting the block you calculated.</li>
+        <li>The networks announcing those blocks live one layer up: start with <a href="/ip-and-networking/">IP and networking</a> to trace the routing side.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 4632, Classless Inter-domain Routing (CIDR): <a href="https://www.rfc-editor.org/rfc/rfc4632" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4632</a></li>
+        <li>IETF RFC 3021, Using 31-Bit Prefixes on IPv4 Point-to-Point Links: <a href="https://www.rfc-editor.org/rfc/rfc3021" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc3021</a></li>
+        <li>IETF RFC 1918, Address Allocation for Private Internets: <a href="https://www.rfc-editor.org/rfc/rfc1918" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1918</a></li>
+        <li>IETF RFC 4291, IP Version 6 Addressing Architecture: <a href="https://www.rfc-editor.org/rfc/rfc4291" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4291</a></li>
+        <li>IETF RFC 6177, IPv6 Address Assignment to End Sites: <a href="https://www.rfc-editor.org/rfc/rfc6177" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6177</a></li>
+      </ul>
     </article>
   </div>
 </BaseLayout>
+
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (cidr-).
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
   const form = document.getElementById('cidr-form') as HTMLFormElement;
   const input = document.getElementById('cidr-in') as HTMLInputElement;
   const statusEl = document.getElementById('cidr-status')!;
-  const resultsEl = document.getElementById('cidr-results')!;
   const tbody = document.getElementById('cidr-tbody')!;
+  const splitEl = document.getElementById('cidr-split')!;
+  const TOOL = 'cidr-calculator';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  const fmt = (n: number | bigint) => n.toLocaleString('en-US');
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  // ---------- IPv4 helpers ----------
   const toInt = (ip: string) => ip.split('.').reduce((s, o) => (s << 8) + Number(o), 0) >>> 0;
-  const toIp = (n: number) => [24, 16, 8, 0].map(sh => (n >>> sh) & 255).join('.');
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const m = input.value.trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/);
-    if (!m) { statusEl.textContent = 'Enter IP/prefix, e.g. 192.168.1.10/24.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
-    const prefix = Number(m[2]);
-    if (prefix > 32) { statusEl.textContent = 'Prefix must be 0-32.'; return; }
-    const ipInt = toInt(m[1]);
+  const toIp = (n: number) => [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join('.');
+  const toBin = (n: number) => (n >>> 0).toString(2).padStart(32, '0').replace(/(.{8})(?=.)/g, '$1.');
+  const V4_RE = /^(\d{1,3}(?:\.\d{1,3}){3})(?:\/(\d{1,2}))?$/;
+
+  function v4Scope(ip: number): string {
+    const inBlock = (base: string, p: number) => (ip & (p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0)) === (toInt(base) & (p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0));
+    if (inBlock('10.0.0.0', 8) || inBlock('172.16.0.0', 12) || inBlock('192.168.0.0', 16)) return 'RFC 1918 private';
+    if (inBlock('100.64.0.0', 10)) return 'RFC 6598 CGNAT (carrier-grade NAT, not routable)';
+    if (inBlock('127.0.0.0', 8)) return 'Loopback';
+    if (inBlock('169.254.0.0', 16)) return 'Link-local (APIPA)';
+    if (inBlock('192.0.2.0', 24) || inBlock('198.51.100.0', 24) || inBlock('203.0.113.0', 24)) return 'RFC 5737 documentation';
+    if (inBlock('224.0.0.0', 4)) return 'Multicast';
+    if (inBlock('240.0.0.0', 4)) return 'Reserved (former Class E)';
+    return 'Public routable';
+  }
+
+  function rangeToCidrs(startInt: number, endInt: number): { prefix: number; p: number }[] {
+    const out: { prefix: number; p: number }[] = [];
+    let s = startInt;
+    while (s <= endInt && out.length < 4096) {
+      let p = 32;
+      if (s !== 0) {
+        const low = s & -s;
+        p = 32 - Math.log2(low);
+      }
+      while (p > 0 && s + 2 ** (32 - p) - 1 > endInt) p++;
+      out.push({ prefix: s, p });
+      s = s + 2 ** (32 - p);
+      if (s > 0xFFFFFFFF) break;
+    }
+    return out;
+  }
+
+  // ---------- IPv6 helpers (BigInt) ----------
+  const V6_MAX = (1n << 128n) - 1n;
+  const fmtBig = (n: bigint) => n.toLocaleString('en-US');
+
+  function parseV6(input: string): { base: bigint; p: number } | null {
+    const m = input.match(/^(.+?)(?:\/(\d{1,3}))?$/);
+    if (!m) return null;
+    let addr = m[1].trim();
+    const p = m[2] !== undefined ? Number(m[2]) : 128;
+    if (!Number.isInteger(p) || p < 0 || p > 128) return null;
+    if (!addr.includes(':')) return null;
+    let head: string[] = [], tail: string[] = [];
+    if (addr.includes('::')) {
+      const parts = addr.split('::');
+      if (parts.length !== 2) return null;
+      head = parts[0] ? parts[0].split(':') : [];
+      tail = parts[1] ? parts[1].split(':') : [];
+    } else {
+      head = addr.split(':');
+    }
+    // Embedded IPv4 tail (x:x:x:x:x:x:d.d.d.d) is not supported: reject cleanly.
+    const groupsRaw = [...head, ...tail];
+    if (groupsRaw.some((g) => g.includes('.'))) return null;
+    const missing = 8 - head.length - tail.length;
+    if (missing < 0 || (!addr.includes('::') && missing !== 0)) return null;
+    const groups: number[] = [];
+    for (const g of head) { if (!/^[0-9a-fA-F]{1,4}$/.test(g)) return null; groups.push(parseInt(g, 16)); }
+    for (let i = 0; i < missing; i++) groups.push(0);
+    for (const g of tail) { if (!/^[0-9a-fA-F]{1,4}$/.test(g)) return null; groups.push(parseInt(g, 16)); }
+    if (groups.length !== 8) return null;
+    let base = 0n;
+    for (const g of groups) base = (base << 16n) | BigInt(g);
+    return { base, p };
+  }
+
+  function expandV6(n: bigint): string {
+    const groups: string[] = [];
+    for (let i = 7; i >= 0; i--) groups.push(((n >> BigInt(i * 16)) & 0xffffn).toString(16).padStart(4, '0'));
+    return groups.join(':');
+  }
+
+  function compressV6(n: bigint): string {
+    const groups: string[] = [];
+    for (let i = 7; i >= 0; i--) groups.push(((n >> BigInt(i * 16)) & 0xffffn).toString(16));
+    let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+    for (let i = 0; i < 8; i++) {
+      if (groups[i] === '0') { if (curStart === -1) { curStart = i; curLen = 1; } else curLen++; if (curLen > bestLen) { bestStart = curStart; bestLen = curLen; } }
+      else { curStart = -1; curLen = 0; }
+    }
+    if (bestLen < 2) return groups.join(':');
+    const h = groups.slice(0, bestStart).join(':');
+    const t = groups.slice(bestStart + bestLen).join(':');
+    return h + '::' + t;
+  }
+
+  function v6Scope(base: bigint, p: number): string {
+    const inBlock = (hex: string, bp: number) => (base >> (128n - BigInt(bp))) === (BigInt('0x' + hex) >> (128n - BigInt(bp)));
+    if (p >= 128 && base === 1n) return 'Loopback';
+    if (p >= 128 && base === 0n) return 'Unspecified';
+    if (inBlock('20010db8', 32)) return 'RFC 3849 documentation';
+    if (inBlock('fe80', 10)) return 'Link-local';
+    if (inBlock('fc00', 7)) return 'Unique local address (ULA, RFC 4193)';
+    if (inBlock('ff00', 8)) return 'Multicast';
+    if (inBlock('2000', 3)) return 'Global unicast';
+    return 'Reserved per IANA';
+  }
+
+  // ---------- rendering ----------
+  function addRows(tbody: HTMLElement, rows: [string, string][]) {
+    for (const [k, v] of rows) {
+      const tr = document.createElement('tr');
+      tr.append(el('td', 'font-medium text-ink', k));
+      const td = document.createElement('td');
+      const code = el('code', 'font-mono text-xs text-accent', v);
+      td.append(code);
+      tr.append(td);
+      tbody.append(tr);
+    }
+  }
+
+  function calcV4(ipInt: number, prefix: number, label: string) {
     const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
     const network = (ipInt & mask) >>> 0;
     const broadcast = (network | (~mask >>> 0)) >>> 0;
-    const hosts = prefix >= 31 ? 2 ** (32 - prefix) : 2 ** (32 - prefix) - 2;
+    const total = 2 ** (32 - prefix);
+    const usable = prefix <= 30 ? total - 2 : prefix === 31 ? 2 : 1;
+    const first = prefix <= 30 ? network + 1 : network;
+    const last = prefix <= 30 ? broadcast - 1 : prefix === 31 ? network + 1 : network;
     const rows: [string, string][] = [
-      ['Network', `${toIp(network)}/${prefix}`],
-      ['Netmask', toIp(mask)],
-      ['Wildcard', toIp(~mask >>> 0)],
-      ['Broadcast', toIp(broadcast)],
-      ['Host range', prefix >= 31 ? toIp(network) : `${toIp(network + 1)} - ${toIp(broadcast - 1)}`],
-      ['Usable hosts', hosts.toLocaleString()],
-      ['Total addresses', (2 ** (32 - prefix)).toLocaleString()],
+      ['Canonical network', `${toIp(network)}/${prefix}${(ipInt & mask) >>> 0 !== ipInt ? ` (host bits set on input, canonicalized from ${toIp(ipInt)})` : ''}`],
+      ['Prefix length', `/${prefix}: ${prefix} network bits, ${32 - prefix} host bits`],
+      ['Subnet mask', `${toIp(mask)} (binary ${toBin(mask)})`],
+      ['Wildcard mask', toIp(~mask >>> 0)],
+      ['Network address', toIp(network)],
+      ['Broadcast address', prefix <= 30 ? toIp(broadcast) : prefix === 31 ? 'None (RFC 3021 point-to-point)' : 'None (single host)'],
+      ['First usable host', toIp(first)],
+      ['Last usable host', toIp(last)],
+      ['Total addresses', fmt(total)],
+      ['Usable hosts', fmt(usable)],
+      ['Address scope', v4Scope(network)],
     ];
+    tbody.textContent = '';
+    addRows(tbody, rows);
+
+    // Split and summarize box (IPv4, p > 0 and p < 31)
+    if (prefix > 0 && prefix < 31) {
+      splitEl.textContent = '';
+      const supMask = (0xFFFFFFFF << (31 - prefix)) >>> 0;
+      const step = 2 ** (30 - prefix);
+      const box = el('p', 'text-sm leading-relaxed text-ink-dim');
+      const strong = el('strong', 'text-ink', 'Split and summarize: ');
+      box.append(strong);
+      box.append(document.createTextNode(`parent supernet ${toIp((network & supMask) >>> 0)}/${prefix - 1} `));
+      box.append(document.createTextNode(`covers this block; it splits into 2 subnets of /${prefix + 1} (${toIp(network)}/${prefix + 1}, ${toIp((network | (1 << (31 - prefix)) >>> 0) >>> 0)}/${prefix + 1}) and 4 subnets of /${prefix + 2} starting at ${toIp(network)}/${prefix + 2}, ${toIp((network + step) >>> 0)}/${prefix + 2}, ${toIp((network + 2 * step) >>> 0)}/${prefix + 2}, ${toIp((network + 3 * step) >>> 0)}/${prefix + 2}.`));
+      splitEl.append(box);
+      splitEl.classList.remove('hidden');
+    } else {
+      splitEl.classList.add('hidden');
+    }
+    setStatus('pass', `Calculated ${label}. Scope: ${v4Scope(network)}.`);
+    emit(label, v4Scope(network) === 'Public routable' ? 'pass' : 'info', `${label} calculated: ${v4Scope(network)}.`,
+      [{ code: 'CIDR_CALCULATED', detail: `${toIp(network)}/${prefix}` }]);
+  }
+
+  function calcV6(base: bigint, prefix: number, label: string) {
+    const mask = prefix === 0 ? 0n : (((1n << BigInt(prefix)) - 1n) << BigInt(128 - prefix)) & V6_MAX;
+    const network = base & mask;
+    const last = network | (~mask & V6_MAX);
+    const total = 1n << BigInt(128 - prefix);
+    const subnets64 = prefix <= 64 ? 1n << BigInt(64 - prefix) : null;
+    const rows: [string, string][] = [
+      ['Compressed network prefix', `${compressV6(network)}/${prefix}`],
+      ['Full expanded prefix', `${expandV6(network)}/${prefix}`],
+      ['Prefix length', `/${prefix}: ${prefix} network bits, ${128 - prefix} interface bits`],
+      ['First address in prefix', compressV6(network)],
+      ['Last address in prefix', compressV6(last)],
+      ['Total addresses', fmtBig(total)],
+      ['/64 LAN subnets', subnets64 !== null ? fmtBig(subnets64) : `n/a (a /${prefix} is smaller than one /64 LAN)`],
+      ['Broadcast', 'None: IPv6 uses multicast instead (RFC 4291)'],
+      ['Address scope', v6Scope(network, prefix)],
+    ];
+    tbody.textContent = '';
+    addRows(tbody, rows);
+    splitEl.classList.add('hidden');
+    setStatus('pass', `Calculated ${label}. Scope: ${v6Scope(network, prefix)}.`);
+    emit(label, 'pass', `${label} calculated: ${v6Scope(network, prefix)}.`,
+      [{ code: 'CIDR_CALCULATED', detail: `${compressV6(network)}/${prefix}` }]);
+  }
+
+  function renderRange(startInt: number, endInt: number, label: string) {
+    const blocks = rangeToCidrs(startInt, endInt);
+    tbody.textContent = '';
+    if (blocks.length === 1) {
+      const { prefix, p } = blocks[0];
+      const mask = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+      const total = 2 ** (32 - p);
+      const usable = p <= 30 ? total - 2 : p === 31 ? 2 : 1;
+      addRows(tbody, [
+        ['Aligned range', `single block ${toIp(prefix)}/${p}`],
+        ['Subnet mask', toIp(mask)],
+        ['Total addresses', fmt(total)],
+        ['Usable hosts', fmt(usable)],
+      ]);
+    } else {
+      addRows(tbody, [['Blocks required', `${blocks.length} minimal CIDR prefixes cover ${toIp(startInt)} to ${toIp(endInt)} exactly`]]);
+      for (const b of blocks) {
+        const mask = b.p === 0 ? 0 : (0xFFFFFFFF << (32 - b.p)) >>> 0;
+        const total = 2 ** (32 - b.p);
+        const usable = b.p <= 30 ? total - 2 : b.p === 31 ? 2 : 1;
+        addRows(tbody, [[`Block /${b.p}`, `${toIp(b.prefix)}/${b.p}: mask ${toIp(mask)}, ${fmt(total)} total, ${fmt(usable)} usable`]]);
+      }
+    }
+    splitEl.classList.add('hidden');
+    setStatus('pass', `Converted ${label}: ${blocks.length} block${blocks.length === 1 ? '' : 's'}.`);
+    emit(label, 'pass', `${label} converted to ${blocks.length} CIDR block${blocks.length === 1 ? '' : 's'}.`,
+      [{ code: 'RANGE_CONVERTED', detail: blocks.map((b) => `${toIp(b.prefix)}/${b.p}`).slice(0, 8).join(', ') }]);
+  }
+
+  const KNOWN_DOMAINS: Record<string, string> = {
+    'cloudflare.com': '104.16.0.0/12',
+    'google.com': '8.8.8.0/24',
+    'github.com': '140.82.112.0/20',
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const raw = input.value.trim();
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+    splitEl.classList.add('hidden');
     document.getElementById('cidr-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs text-accent">${v}</td></tr>`);
-    statusEl.textContent = `Calculated ${m[1]}/${prefix}.`;
-    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
-    statusEl.classList.remove('hidden');
-    resultsEl.classList.remove('hidden');
+
+    // Domain path: known map first, then DoH A lookup to a /24
+    const maybeDomain = raw.toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const v4Match = raw.match(V4_RE);
+    if (!v4Match && !raw.includes(':') && maybeDomain.includes('.') && !/^\d/.test(maybeDomain)) {
+      const domain = normalizeDomain(maybeDomain) || maybeDomain;
+      setStatus('loading', `Resolving ${domain} to an address...`);
+      let block = KNOWN_DOMAINS[domain] || null;
+      let via = 'a well-known provider block';
+      if (!block) {
+        const r = await lookup(domain, 'A', RESOLVERS[0]);
+        const ip = r.answers.find((a) => a.type === 1)?.data;
+        if (!ip) { setStatus('fail', `Could not resolve ${domain} to an IPv4 address. This is an inconclusive result, not a pass or fail.`); return; }
+        block = `${ip}/24`;
+        via = `its A record ${ip}, giving the containing /24`;
+      }
+      const vm = block.match(V4_RE)!;
+      calcV4(toInt(vm[1]), Number(vm[2]), `${domain} (${block}, from ${via})`);
+      return;
+    }
+
+    // Range path: start-end or start to end
+    const rangeParts = raw.split(/\s*(?:-|to)\s*/i).filter(Boolean);
+    if (rangeParts.length === 2 && V4_RE.test(rangeParts[0].trim()) && rangeParts[1].trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})$/)) {
+      const a = toInt(rangeParts[0].trim());
+      const b = toInt(rangeParts[1].trim());
+      if (a > b) { setStatus('fail', 'The start of the range is larger than the end.'); return; }
+      renderRange(a, b, `${rangeParts[0].trim()} to ${rangeParts[1].trim()}`);
+      return;
+    }
+
+    // IPv4 CIDR path
+    if (v4Match) {
+      const octets = v4Match[1].split('.').map(Number);
+      if (octets.some((o) => o > 255)) { setStatus('fail', 'An IPv4 octet exceeds 255.'); return; }
+      const prefix = v4Match[2] !== undefined ? Number(v4Match[2]) : 32;
+      if (prefix > 32) { setStatus('fail', 'The IPv4 prefix must be 0 to 32.'); return; }
+      calcV4(toInt(v4Match[1]), prefix, `${v4Match[1]}/${prefix}`);
+      return;
+    }
+
+    // IPv6 CIDR path
+    if (raw.includes(':')) {
+      const parsed = parseV6(raw);
+      if (!parsed) { setStatus('fail', 'Could not parse the IPv6 address or prefix (embedded IPv4 notation is not supported here).'); return; }
+      calcV6(parsed.base, parsed.p, `${compressV6(parsed.base)}/${parsed.p}`);
+      return;
+    }
+
+    setStatus('fail', 'Enter an IPv4 or IPv6 CIDR block, an IP range, or a domain name.');
   });
 </script>
