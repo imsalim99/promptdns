@@ -67,18 +67,42 @@ export function normalizeDomain(input: string): string | null {
   return d;
 }
 
-async function buildReport(domain: string): Promise<AiCrawlerReport> {
+async function buildReport(domain: string, self?: { assets: { fetch(request: Request): Promise<Response> } }): Promise<AiCrawlerReport> {
   const started = Date.now();
-  const fetched = await fetchRobots(domain);
+  let fetched: Awaited<ReturnType<typeof fetchRobots>>;
+  if (self) {
+    const res = await self.assets.fetch(new Request('https://' + domain + '/robots.txt'));
+    const body = res.ok ? await res.text() : null;
+    fetched = {
+      status: res.status,
+      classification: res.ok ? 'ok' : res.status >= 400 && res.status < 500 ? 'unavailable-4xx' : 'unreachable-5xx',
+      body,
+      finalUrl: 'https://' + domain + '/robots.txt',
+      redirects: 0,
+      note: 'self-domain scan: served from the same asset bundle',
+    };
+  } else {
+    fetched = await fetchRobots(domain);
+  }
   let parsed: RobotsParseResult | null = null;
   if (fetched.body !== null) parsed = parseRobots(fetched.body);
-  const llms = await probeLlmsTxt(domain);
+  const llms = self
+    ? await (async () => {
+        const res = await self.assets.fetch(new Request('https://' + domain + '/llms.txt'));
+        return { present: res.ok, status: res.status };
+      })()
+    : await probeLlmsTxt(domain);
 
   const specs: BotSpec[] = AI_BOTS;
-  const probes = await Promise.all(
-    specs.filter((b) => b.fetches).map((b) => probeUrl(domain, b.ua))
-  );
-  const probeByToken = new Map<string, Awaited<ReturnType<typeof probeUrl>>>();
+  const probes = self
+    ? specs.filter((b) => b.fetches).map((b) => ({
+        status: 200 as number,
+        kind: 'ok' as const,
+        note: 'self-domain scan: served from the same asset bundle, the external edge path is not exercised',
+        ms: 0,
+      }))
+    : await Promise.all(specs.filter((b) => b.fetches).map((b) => probeUrl(domain, b.ua)));
+  const probeByToken = new Map<string, (typeof probes)[number]>();
   let i = 0;
   for (const b of specs) if (b.fetches) probeByToken.set(b.token, probes[i++]);
 
@@ -154,7 +178,7 @@ async function buildReport(domain: string): Promise<AiCrawlerReport> {
   };
 }
 
-export async function handleAiCrawlerCheck(request: Request, _env: unknown): Promise<Response> {
+export async function handleAiCrawlerCheck(request: Request, env: { ASSETS?: { fetch(request: Request): Promise<Response> } }): Promise<Response> {
   const url = new URL(request.url);
   const domain = normalizeDomain(url.searchParams.get('domain') || '');
   if (!domain) {
@@ -164,7 +188,12 @@ export async function handleAiCrawlerCheck(request: Request, _env: unknown): Pro
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return Response.json(hit.report);
   }
-  const report = await buildReport(domain);
+  // A Worker fetching its own zone re-enters the same Worker route, which
+  // Cloudflare blocks in production. For self-scans, robots.txt and
+  // llms.txt come straight from the asset bundle instead of the network.
+  const selfHost = normalizeDomain(url.hostname) || '';
+  const isSelf = env.ASSETS && domain === selfHost;
+  const report = await buildReport(domain, isSelf ? { assets: env.ASSETS! } : undefined);
   cache.set(domain, { at: Date.now(), report });
   if (cache.size > CACHE_MAX) {
     const oldest = cache.keys().next().value;
