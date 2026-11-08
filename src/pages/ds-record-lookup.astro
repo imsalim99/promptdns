@@ -342,9 +342,15 @@ nslookup -type=ds example.com</code></pre>
       const run = async (type: RecordType) => {
         const results: Q[] = [];
         for (const r of RESOLVERS) {
-          const first = await rawQuery(r, domain, type, false);
+          let first = await rawQuery(r, domain, type, false);
           if (first.Status === 2) {
-            // Broken chain diagnostic fallback: re-query with checking disabled
+            // One retry without cd first: a single SERVFAIL is often transient
+            // (resolver hiccup or rate limit), not proof of a broken chain.
+            await new Promise((resolve) => setTimeout(resolve, 600));
+            first = await rawQuery(r, domain, type, false);
+          }
+          if (first.Status === 2) {
+            // Persistent SERVFAIL: broken chain diagnostic fallback with cd=1
             const second = await rawQuery(r, domain, type, true);
             results.push({ res: second, usedCd: true });
           } else {
@@ -513,14 +519,27 @@ nslookup -type=ds example.com</code></pre>
       keyPanel.classList.remove('hidden');
 
       const goodChain = dsPublished && matchedTags.size > 0 && !anyCd;
-      const verdict: Severity = anyCd ? 'fail' : goodChain ? 'pass' : 'warn';
-      const line = anyCd
-        ? `Broken DNSSEC chain on ${domain}: records retrieved with checking disabled. An orphaned or mismatched DS is causing SERVFAIL.`
-        : goodChain
-          ? `DNSSEC chain verified for ${domain}: parent DS matches the child KSK byte for byte.`
-          : `DNSSEC chain incomplete for ${domain}: ${dsPublished ? 'DS published but not verified against the child keys' : 'no parent DS published'}.`;
+      const mismatched = dsPublished && matchedTags.size === 0;
+      let verdict: Severity;
+      let line: string;
+      if (anyCd && mismatched) {
+        verdict = 'fail';
+        line = `Broken DNSSEC chain on ${domain}: records retrieved with checking disabled. The parent DS does not match any child key (orphaned or mismatched DS), which is causing SERVFAIL on validating resolvers.`;
+      } else if (anyCd && dsPublished) {
+        verdict = 'warn';
+        line = `Records on ${domain} retrieved with checking disabled and the digests verify: a resolver returned SERVFAIL during the check (transient trouble, not a broken chain). Re-run to confirm validation recovers.`;
+      } else if (anyCd && !dsPublished) {
+        verdict = 'warn';
+        line = `A resolver returned SERVFAIL for ${domain}, but no DS or DNSKEY records exist at all: the failure was transient resolver trouble on an unsigned domain, not a broken chain. Re-run to confirm.`;
+      } else if (goodChain) {
+        verdict = 'pass';
+        line = `DNSSEC chain verified for ${domain}: parent DS matches the child KSK byte for byte.`;
+      } else {
+        verdict = 'warn';
+        line = `DNSSEC chain incomplete for ${domain}: ${dsPublished ? 'DS published but not verified against the child keys' : keyRecords.length > 0 ? 'half-signed zone (child DNSKEY published, no parent DS at the registrar)' : 'no parent DS published and no child DNSKEY: the domain is unsigned'}.`;
+      }
       setStatus(verdict === 'pass' ? 'pass' : verdict === 'fail' ? 'fail' : 'warn', line);
-      emit(domain, verdict, line, [{ code: anyCd ? 'DS_ORPHAN' : goodChain ? 'DS_VERIFIED' : 'DS_INCOMPLETE', detail: `${dsRecords.length} DS, ${keyRecords.length} DNSKEY, ${matchedTags.size} verified.` }]);
+      emit(domain, verdict, line, [{ code: anyCd && mismatched ? 'DS_ORPHAN' : goodChain ? 'DS_VERIFIED' : 'DS_INCOMPLETE', detail: `${dsRecords.length} DS, ${keyRecords.length} DNSKEY, ${matchedTags.size} verified.` }]);
     } catch {
       setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
     }
