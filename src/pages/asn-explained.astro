@@ -220,6 +220,20 @@ dig +short 34.216.184.93.origin.asn.cymru.com TXT
       <p>
         Understanding how an Autonomous System Number (ASN) operates clarifies the routing foundation connecting independent networks. From BGP path selection and bit allocations to Regional Internet Registries (RIRs) and multi-homed ISP failover, ASNs organize billions of endpoints into a fault-tolerant topology. Explore broader networking guides inside the <a href="/ip-and-networking/">IP and Networking</a> knowledge base.
       </p>
+
+      <div id="asn-lookup-embed" class="my-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+        <p class="text-sm font-semibold text-ink">Live ASN lookup</p>
+        <p class="mt-1 text-xs text-ink-faint">Run the full lookup in the <a href="/asn-lookup/" class="text-accent hover:text-accent-soft">ASN lookup tool</a>: enter an ASN, IP, prefix, or domain to inspect the holder, RIR, BGP prefixes, and RPKI status.</p>
+        <form id="asn-widget-form" class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input id="asn-widget-q" type="text" value="1.1.1.1" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <button type="submit" class="rounded-md border border-accent/40 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/10">Look Up</button>
+        </form>
+        <div id="asn-widget-result" class="mt-2 text-sm text-ink-dim"></div>
+      </div>
+
+      <p class="mt-4">
+        For a deeper dive, read <a href="/bgp-explained/" class="text-accent hover:text-accent-hover">What Is BGP (Border Gateway Protocol)?</a> and <a href="/rpki-roa-explained/" class="text-accent hover:text-accent-hover">RPKI and ROAs: Securing BGP Route Origins</a>.
+      </p>
     </div>
 
     <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
@@ -243,3 +257,27 @@ dig +short 34.216.184.93.origin.asn.cymru.com TXT
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const awForm = document.getElementById('asn-widget-form') as HTMLFormElement;
+  const awResult = document.getElementById('asn-widget-result')!;
+  awForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = (document.getElementById('asn-widget-q') as HTMLInputElement).value.trim();
+    if (!q) return;
+    awResult.textContent = 'Looking up...';
+    try {
+      const res = await fetch('/api/check/asn?q=' + encodeURIComponent(q));
+      const d = await res.json();
+      if (d.ok && d.asn) {
+        awResult.textContent = 'AS' + d.asn + ' (' + (d.asnFormat || '') + '): ' + (d.holder || 'Unknown') + (d.bgpPrefix ? ' | BGP prefix: ' + d.bgpPrefix : '') + (d.rpkiStatus ? ' | RPKI: ' + d.rpkiStatus : '');
+      } else if (d.note) {
+        awResult.textContent = d.note;
+      } else {
+        awResult.textContent = d.error || 'Lookup returned no data.';
+      }
+    } catch {
+      awResult.textContent = 'Lookup failed (network error). Try again from the full ASN lookup tool.';
+    }
+  });
+</script>

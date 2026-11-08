@@ -1,0 +1,298 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'How do I find the ASN of an IP address?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Enter the IP address in this tool, or query Team Cymru from the command line with dig +short 1.1.1.1.origin.asn.cymru.com TXT. The response returns the originating ASN, BGP prefix, country, registry, and allocation date. Commercial tools and libraries (such as Python ipwhois) perform the same lookup against WHOIS or RDAP registries.' } },
+    { '@type': 'Question', 'name': 'Who owns this ASN and how are ASNs assigned?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'ASNs are assigned by the five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC) to organizations that operate routing infrastructure such as ISPs, cloud providers, and enterprise networks. The holder name shown in this tool comes from the IANA registry data synced to Team Cymru and RIPEstat. To officially obtain an ASN, an organization must demonstrate multi-homing (connections to two or more upstream networks) or unique routing policy requirements.' } },
+    { '@type': 'Question', 'name': 'Which IP prefixes does an ASN announce?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The announced prefixes are listed in this tool from RIPEstat, which aggregates BGP routing data from global Route Collectors. An AS typically announces its own allocated CIDR blocks plus any customer prefixes it proxies. The prefix list changes in real time as networks announce or withdraw routes, so the output reflects the current BGP routing table snapshot.' } },
+    { '@type': 'Question', 'name': "Why does looking up my website's IP show Cloudflare (AS13335) or AWS (AS16509) instead of my company name?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'Your website sits behind a reverse proxy or CDN. When Cloudflare proxies your traffic, the public IP resolves to AS13335 (Cloudflare) because the visitor connects to Cloudflare edge servers, not to your origin web host. The same applies to AWS CloudFront (AS16509), Akamai (AS20940), and Fastly (AS54113). Your origin ASN appears only if you remove the proxy or query the origin IP directly.' } },
+    { '@type': 'Question', 'name': 'Can a single IP prefix be announced by more than one ASN (Multi-Origin AS)?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, a single IP prefix can be announced by more than one ASN, which is called Multi-Origin AS (MOAS). This happens legitimately during transitions, load balancing across providers, or anycast deployments. However, MOAS also increases the risk of BGP route leaks and hijacks, because a malicious AS can announce the same prefix and attract traffic. RPKI ROAs help by cryptographically binding a prefix to only the authorized origin ASNs.' } },
+  ],
+};
+---
+<BaseLayout title="ASN Lookup: Find Autonomous System Number, BGP Prefixes & RPKI by IP or AS" description="Free ASN lookup: query any AS number, IP address, CIDR prefix, or domain name to inspect the network holder, RIR, announced BGP prefixes, and RPKI ROA validation status." schema={[faqSchema]}>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/tools/" class="hover:text-accent">Tools</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">ASN Lookup</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ASN Lookup: Inspect Autonomous System Holder, BGP Prefixes, and RPKI Status</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Look up any Autonomous System Number (AS13335), IPv4 or IPv6 address (1.1.1.1), CIDR prefix, or domain name to inspect the network holder, Regional Internet Registry (RIR), announced BGP prefixes, and RPKI Route Origin Authorization (ROA) validity.</p>
+
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="al-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="al-q" type="text" autocomplete="off" spellcheck="false" placeholder="AS13335, 1.1.1.1, or cloudflare.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Look Up ASN</button>
+        </form>
+        <div class="mt-2 flex flex-wrap gap-2 text-xs text-ink-faint">
+          <span>Try:</span>
+          <button type="button" class="al-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="AS13335">AS13335 (Cloudflare)</button>
+          <button type="button" class="al-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="AS15169">AS15169 (Google)</button>
+          <button type="button" class="al-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="8.8.8.8">8.8.8.8</button>
+          <button type="button" class="al-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="AS64512">AS64512 (Private)</button>
+        </div>
+        <div id="al-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="al-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="al-chain" class="mt-4 hidden rounded-xl border border-violet/30 bg-violet/5 p-4"></div>
+        <div id="al-prefixes" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+          <p class="px-4 pt-3 text-xs font-semibold text-ink">Announced BGP prefixes</p>
+          <table class="pdns-table"><thead><tr><th>CIDR Prefix</th><th>Address Family</th><th>Prefix Length</th><th>RPKI Status</th></tr></thead><tbody id="al-pfxbody"></tbody></table>
+        </div>
+        <ResultCard tool="asn-lookup" />
+      </ToolPanel>
+    </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 ASN lookup and BGP origin states</h2>
+      <p>An ASN is a globally unique number registered with IANA and operated by a network that routes IP prefixes using BGP. The table below defines the five states this tool reports.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>ASN Lookup State</th><th>Observed Condition</th><th>BGP Routing Impact</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Public routed ASN with RPKI valid origin</td><td class="text-sm text-ink-dim">ASN announces prefixes with a valid ROA on file</td><td class="text-sm text-ink-dim">Validating resolvers and routers accept the route as cryptographically verified</td><td class="text-sm text-ink-dim">Best practice: the route is protected against origin hijacks.</td></tr>
+            <tr><td class="font-medium text-ink">Public ASN with RPKI not-found</td><td class="text-sm text-ink-dim">ASN announces prefixes but no ROA exists</td><td class="text-sm text-ink-dim">Routes are accepted but unprotected against origin spoofing</td><td class="text-sm text-ink-dim">Consider creating ROAs in your RIR portal to secure the prefix.</td></tr>
+            <tr><td class="font-medium text-ink">RPKI invalid origin</td><td class="text-sm text-ink-dim">Announced prefix violates an existing ROA (wrong ASN or prefix too long)</td><td class="text-sm text-ink-dim">Validating routers drop the route, potentially blackholing traffic</td><td class="text-sm text-ink-dim">Urgent: fix the ROA or the announcement to restore connectivity.</td></tr>
+            <tr><td class="font-medium text-ink">Private-use ASN (RFC 6996)</td><td class="text-sm text-ink-dim">AS64512-65534 (16-bit) or AS4200000000-4294967294 (32-bit)</td><td class="text-sm text-ink-dim">Not routable on the public internet; used for internal routing labs</td><td class="text-sm text-ink-dim">Valid for private BGP topologies but invisible globally.</td></tr>
+            <tr><td class="font-medium text-ink">Reserved or documentation ASN</td><td class="text-sm text-ink-dim">AS0, AS23456 (AS_TRANS), or RFC 5398 documentation ranges</td><td class="text-sm text-ink-dim">Reserved by IANA and never announced in production BGP</td><td class="text-sm text-ink-dim">Valid only in documentation examples and test labs.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to find the ASN of an IP address and verify route ownership</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Map the domain to its IP address.</strong> Resolve the A record over DNS, either with this tool (enter the domain name) or with a forward DNS lookup.</li>
+        <li><strong>Map the IP to its BGP prefix.</strong> Query Team Cymru's DNS service or RIPEstat to find the most-specific BGP prefix containing the IP and its originating ASN.</li>
+        <li><strong>Verify route ownership.</strong> Cross-check the originating ASN against the RIR allocation database and confirm that a valid RPKI ROA binds the prefix to the expected origin ASN.</li>
+        <li><strong>Audit for hijacks and leaks.</strong> Compare the observed origin ASN against your expected ASN and check RPKI status: any invalid or unexpected origin indicates a potential BGP hijack or misconfiguration.</li>
+      </ol>
+
+      <h2>Look up ASN and BGP prefixes from the command line</h2>
+      <pre><code># 1. IP to ASN via Team Cymru DNS
+dig +short 1.1.1.1.origin.asn.cymru.com TXT
+
+# 2. ASN to holder name
+dig +short AS13335.asn.cymru.com TXT
+
+# 3. Batch lookup with whois
+whois -h whois.cymru.com " -v 1.1.1.1"
+
+# 4. RDAP registration data for an ASN
+curl -s https://rdap.arin.net/registry/autnum/13335 | jq .
+
+# 5. Announced prefixes via RIPEstat
+curl -s "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS13335" | jq .data.prefixes</code></pre>
+
+      <h2>Reference table: IANA ASN number space and major global ASNs</h2>
+      <p>The table below defines the IANA allocation ranges, followed by well-known global infrastructure ASNs.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>ASN Range</th><th>Bits</th><th>Status per IANA</th><th>Governing RFC</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">0</td><td class="text-sm text-ink-dim">16-bit</td><td class="text-sm text-ink-dim">Reserved (RFC 7607)</td><td class="text-sm text-ink-dim">RFC 7607</td></tr>
+            <tr><td class="font-mono text-xs text-ink">1 to 64495</td><td class="text-sm text-ink-dim">16-bit</td><td class="text-sm text-ink-dim">Public: assigned by RIRs</td><td class="text-sm text-ink-dim">RFC 6996</td></tr>
+            <tr><td class="font-mono text-xs text-ink">64496 to 64511</td><td class="text-sm text-ink-dim">16-bit</td><td class="text-sm text-ink-dim">Documentation (RFC 5398)</td><td class="text-sm text-ink-dim">RFC 5398</td></tr>
+            <tr><td class="font-mono text-xs text-ink">64512 to 65534</td><td class="text-sm text-ink-dim">16-bit</td><td class="text-sm text-ink-dim">Private use (RFC 6996)</td><td class="text-sm text-ink-dim">RFC 6996</td></tr>
+            <tr><td class="font-mono text-xs text-ink">65535</td><td class="text-sm text-ink-dim">16-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">RFC 7300</td></tr>
+            <tr><td class="font-mono text-xs text-ink">65536 to 65551</td><td class="text-sm text-ink-dim">32-bit</td><td class="text-sm text-ink-dim">Documentation (RFC 5398)</td><td class="text-sm text-ink-dim">RFC 5398</td></tr>
+            <tr><td class="font-mono text-xs text-ink">131072 to 4199999999</td><td class="text-sm text-ink-dim">32-bit</td><td class="text-sm text-ink-dim">Public: assigned by RIRs</td><td class="text-sm text-ink-dim">RFC 6793</td></tr>
+            <tr><td class="font-mono text-xs text-ink">4200000000 to 4294967294</td><td class="text-sm text-ink-dim">32-bit</td><td class="text-sm text-ink-dim">Private use (RFC 6996)</td><td class="text-sm text-ink-dim">RFC 6996</td></tr>
+            <tr><td class="font-mono text-xs text-ink">4294967295</td><td class="text-sm text-ink-dim">32-bit</td><td class="text-sm text-ink-dim">Reserved</td><td class="text-sm text-ink-dim">RFC 7300</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>ASN</th><th>Organization</th><th>Infrastructure Type</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">AS13335</td><td class="text-sm text-ink-dim">Cloudflare, Inc.</td><td class="text-sm text-ink-dim">CDN and DNS (1.1.1.1)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS15169</td><td class="text-sm text-ink-dim">Google LLC</td><td class="text-sm text-ink-dim">Search, Cloud DNS (8.8.8.8), YouTube</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS16509</td><td class="text-sm text-ink-dim">Amazon.com, Inc. (AWS)</td><td class="text-sm text-ink-dim">CloudFront CDN, EC2, Route 53</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS8075</td><td class="text-sm text-ink-dim">Microsoft Corporation</td><td class="text-sm text-ink-dim">Azure, Bing, Microsoft 365</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS54113</td><td class="text-sm text-ink-dim">Fastly, Inc.</td><td class="text-sm text-ink-dim">Edge CDN</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS20940</td><td class="text-sm text-ink-dim">Akamai Technologies</td><td class="text-sm text-ink-dim">Edge CDN</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS14061</td><td class="text-sm text-ink-dim">DigitalOcean, LLC</td><td class="text-sm text-ink-dim">Cloud VPS hosting</td></tr>
+            <tr><td class="font-mono text-xs text-ink">AS24940</td><td class="text-sm text-ink-dim">Hetzner Online GmbH</td><td class="text-sm text-ink-dim">Dedicated hosting and cloud VPS</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>BGP propagation delays: newly announced prefixes take minutes to hours to propagate through the global routing table, so a prefix that was just announced may not appear in RIPEstat data yet.</li>
+        <li>CDN and reverse-proxy origin masking: querying a Cloudflare-proxied domain shows AS13335 (Cloudflare) instead of the origin web host's ASN because the visitor connects to Cloudflare edge servers, not to the origin.</li>
+        <li>Multi-origin ASNs (MOAS): a prefix legitimately announced by two or more ASNs (for load balancing or anycast) returns multiple origin ASNs in the Team Cymru answer, which this tool reports as a single primary result.</li>
+        <li>RPKI NotFound is not the same as Invalid: NotFound means no ROA exists (the route is accepted but unprotected), whereas Invalid means a ROA exists but the announcement contradicts it (the route is dropped). Both are reported distinctly.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">When you migrate your website behind Cloudflare, the ASN your visitors see changes from your hosting provider to AS13335. This is expected and correct: the visitor connects to Cloudflare, not to your origin. But if you also use AWS CloudFront in front of Cloudflare, the ASN may show AS16509, making the diagnosis harder. Always cross-reference with the reverse DNS hostname to confirm which layer you are actually seeing.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        Across production domain audits, cloud and CDN providers dominate the ASN landscape: a small set of hyperscale ASNs (Cloudflare, Google, Amazon, Akamai, Fastly) carries a disproportionate share of web traffic, while RPKI ROA signing rates remain uneven across regional registries and older allocations.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find the ASN of an IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the IP address in this tool, or query Team Cymru from the command line with dig +short 1.1.1.1.origin.asn.cymru.com TXT. The response returns the originating ASN, BGP prefix, country, registry, and allocation date. Commercial tools and libraries (such as Python ipwhois) perform the same lookup against WHOIS or RDAP registries.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who owns this ASN and how are ASNs assigned?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">ASNs are assigned by the five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC) to organizations that operate routing infrastructure such as ISPs, cloud providers, and enterprise networks. The holder name shown in this tool comes from the IANA registry data synced to Team Cymru and RIPEstat. To officially obtain an ASN, an organization must demonstrate multi-homing (connections to two or more upstream networks) or unique routing policy requirements.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which IP prefixes does an ASN announce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The announced prefixes are listed in this tool from RIPEstat, which aggregates BGP routing data from global Route Collectors. An AS typically announces its own allocated CIDR blocks plus any customer prefixes it proxies. The prefix list changes in real time as networks announce or withdraw routes, so the output reflects the current BGP routing table snapshot.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does looking up my website's IP show Cloudflare (AS13335) or AWS (AS16509) instead of my company name?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your website sits behind a reverse proxy or CDN. When Cloudflare proxies your traffic, the public IP resolves to AS13335 (Cloudflare) because the visitor connects to Cloudflare edge servers, not to your origin web host. The same applies to AWS CloudFront (AS16509), Akamai (AS20940), and Fastly (AS54113). Your origin ASN appears only if you remove the proxy or query the origin IP directly.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a single IP prefix be announced by more than one ASN (Multi-Origin AS)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, a single IP prefix can be announced by more than one ASN, which is called Multi-Origin AS (MOAS). This happens legitimately during transitions, load balancing across providers, or anycast deployments. However, MOAS also increases the risk of BGP route leaks and hijacks, because a malicious AS can announce the same prefix and attract traffic. RPKI ROAs help by cryptographically binding a prefix to only the authorized origin ASNs.</p></details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Inspect any IP with the <a href="/ip-lookup/">IP lookup</a>.</li>
+        <li>Check blocklist status with the <a href="/blacklist-checker/">blocklist checker</a>.</li>
+        <li>Calculate prefix sizes with the <a href="/cidr-calculator/">CIDR calculator</a>.</li>
+        <li>Inspect the reverse DNS hostname for any IP with the <a href="/reverse-ip-lookup/">reverse IP lookup</a>.</li>
+        <li>Understand the BGP protocol that routes between ASNs in the <a href="/bgp-explained/">BGP explained</a> guide.</li>
+        <li>Secure your routes with <a href="/rpki-roa-explained/">RPKI and ROAs</a>.</li>
+        <li>Read about the <a href="/asn-explained/">Autonomous System Number</a> entity.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 1930, Guidelines for Creation, Selection, and Registration of an AS: <a href="https://www.rfc-editor.org/rfc/rfc1930" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1930</a></li>
+        <li>IETF RFC 6793, BGP Support for Four-Octet AS Number Space: <a href="https://www.rfc-editor.org/rfc/rfc6793" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6793</a></li>
+        <li>IETF RFC 6996, Autonomous System (AS) Reservation for Private Use: <a href="https://www.rfc-editor.org/rfc/rfc6996" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6996</a></li>
+        <li>IETF RFC 5398, Autonomous System Numbers Documentation: <a href="https://www.rfc-editor.org/rfc/rfc5398" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc5398</a></li>
+        <li>IETF RFC 6811, BGP Prefix Origin Validation: <a href="https://www.rfc-editor.org/rfc/rfc6811" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6811</a></li>
+        <li>IETF RFC 9083, JSON Responses for the Registration Data Access Protocol (RDAP): <a href="https://www.rfc-editor.org/rfc/rfc9083" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9083</a></li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  interface AsnResult {
+    ok: boolean; query: string; resolvedIp: string | null;
+    status: string; note: string; asn: number | null; asnFormat: string | null;
+    holder: string | null; country: string | null; rir: string | null;
+    bgpPrefix: string | null; announcedPrefixes: { prefix: string; type: string }[];
+    rpkiStatus: string | null; sources: string[]; checkedAt: string; error?: string;
+  }
+
+  const form = document.getElementById('al-form') as HTMLFormElement;
+  const input = document.getElementById('al-q') as HTMLInputElement;
+  const statusEl = document.getElementById('al-status')!;
+  const cardsEl = document.getElementById('al-cards')!;
+  const chainEl = document.getElementById('al-chain')!;
+  const pfxPanel = document.getElementById('al-prefixes')!;
+  const pfxBody = document.getElementById('al-pfxbody')!;
+  const TOOL = 'asn-lookup';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const cls: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: 'pass' | 'warn' | 'fail' | 'info', line: string, findings: { code: string; detail: string }[]) {
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail: { tool: TOOL, domain, verdict, verdictLine: line, findings, ctaLabel: 'Know when records change', related: [{ label: 'IP lookup', href: '/ip-lookup/' }] } }));
+  }
+
+  function chip(title: string, value: string, cls: string, note: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+    box.append(el('div', `font-display text-base font-bold mt-0.5 ${cls}`, value));
+    box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+    return box;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) { setStatus('fail', 'Enter an ASN, IP, prefix, or domain.'); return; }
+    setStatus('loading', `Querying ASN data for ${q}...`);
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    chainEl.classList.add('hidden'); chainEl.textContent = '';
+    pfxPanel.classList.add('hidden');
+    document.getElementById('rt-sample-note')?.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/check/asn?q=' + encodeURIComponent(q));
+      const d = (await res.json()) as any & AsnResult;
+      if (!res.ok || !d.ok) { setStatus('fail', d.error || 'The ASN lookup could not run.'); return; }
+
+      const isPrivate = d.status === 'private_asn' || d.status === 'reserved_asn' || d.status === 'documentation_asn';
+      const isErr = d.status === 'error';
+
+      cardsEl.textContent = '';
+      cardsEl.append(chip('1. ASN and format', d.asn ? `AS${d.asn} (${d.asnFormat})` : 'Not resolved', d.asn ? 'text-pass' : 'text-warn', isPrivate ? 'Private or reserved per IANA registry' : 'Public autonomous system'));
+      cardsEl.append(chip('2. Organization holder and country', (d.holder || 'Unknown') + (d.country ? ' (' + d.country + ')' : ''), 'text-ink', 'From Team Cymru and RIPEstat'));
+      cardsEl.append(chip('3. RIR and allocation', d.rir || 'Not determined', 'text-ink', 'Regional Internet Registry that assigned this ASN.'));
+      cardsEl.append(chip('4. Announced prefixes and RPKI', `${d.announcedPrefixes.length} prefix(es)`, d.rpkiStatus === 'valid' ? 'text-pass' : d.rpkiStatus === 'invalid' ? 'text-fail' : 'text-ink', d.rpkiStatus ? 'RPKI status: ' + d.rpkiStatus : 'RPKI status not available for this query type.'));
+      cardsEl.classList.remove('hidden');
+
+      if (d.resolvedIp) {
+        const chain = el('div', '');
+        chain.append(el('p', 'text-sm font-semibold text-ink', 'IP-to-ASN-to-PTR chain'));
+        chain.append(el('p', 'mt-1 text-sm text-ink-dim', `Resolved IP: ${d.resolvedIp}${d.bgpPrefix ? '  |  BGP prefix: ' + d.bgpPrefix : ''}  |  ASN: ${d.asn ? 'AS' + d.asn : 'unknown'}  |  PTR hostname: see the reverse IP lookup below.`));
+        chain.append(el('p', 'mt-1 text-xs text-ink-faint', 'Inspect this IP further:'));
+        const links = [
+          ['IP lookup', '/ip-lookup/'], ['Reverse IP lookup', '/reverse-ip-lookup/'], ['Blacklist checker', '/blacklist-checker/'],
+        ] as [string, string][];
+        for (const [label, href] of links) {
+          const a = el('a', 'text-accent hover:text-accent-soft underline', label);
+          a.href = href;
+          chain.append(a);
+          chain.append(document.createTextNode('  '));
+        }
+        chainEl.append(chain);
+        chainEl.classList.remove('hidden');
+      }
+
+      pfxBody.textContent = '';
+      if (d.announcedPrefixes.length) {
+        for (const p of d.announcedPrefixes) {
+          const tr = document.createElement('tr');
+          tr.append(el('td', 'font-mono text-xs text-ink', p.prefix));
+          tr.append(el('td', 'text-sm text-ink-dim', p.type));
+          tr.append(el('td', 'font-mono text-xs text-ink-dim', '/' + (p.prefix.split('/')[1] || '?')));
+          tr.append(el('td', 'text-sm text-ink-faint', d.rpkiStatus ?? 'not queried'));
+          pfxBody.append(tr);
+        }
+        pfxPanel.classList.remove('hidden');
+      }
+
+      const state = isErr ? 'fail' : isPrivate ? 'info' : 'pass';
+      setStatus(state, d.note || `ASN ${d.asn ? 'AS' + d.asn : ''} for ${d.query}: ${d.holder || 'holder not resolved'}${d.rpkiStatus ? ', RPKI ' + d.rpkiStatus : ''}.`);
+      emit(d.query, isErr ? 'warn' : 'pass', d.note || `ASN ${d.asn ? 'AS' + d.asn : ''} resolved for ${d.query}.`, [{ code: 'ASN_RESOLVED', detail: `ASN=${d.asn}, holder=${d.holder}, prefixes=${d.announcedPrefixes.length}` }]);
+    } catch {
+      setStatus('warn', 'Could not reach the ASN data sources. This is an inconclusive result, not a pass or fail.');
+    }
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.al-preset'))) {
+    btn.addEventListener('click', () => {
+      const q = (btn as HTMLElement).dataset.q || '';
+      input.value = q;
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>

@@ -1,0 +1,139 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'What is the difference between RPKI and DNSSEC?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'RPKI secures BGP routing by cryptographically binding IP prefixes to originating ASNs using signed Route Origin Authorizations stored in RIR repositories. DNSSEC secures DNS records by signing zone data with public-key cryptography stored in the DNS hierarchy. They protect different layers: RPKI protects routing, DNSSEC protects domain resolution. A domain can and should have both.' } },
+    { '@type': 'Question', 'name': 'What happens if I set MaxLength too high on my ROA?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Setting MaxLength higher than the prefix you actually announce allows an attacker to announce a more-specific sub-prefix under your ASN. For example, a ROA for 10.0.0.0/16 with MaxLength 24 permits any /24 inside that /16 to be announced as coming from your ASN, enabling sub-prefix hijacks. RFC 9319 recommends setting MaxLength equal to the exact prefix length you announce in BGP.' } },
+    { '@type': 'Question', 'name': 'Do I need RPKI if my ISP already filters prefixes?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, IRR-based prefix filters rely on manually maintained databases that are frequently stale or incomplete. RPKI ROAs provide cryptographic proof that is automatically verifiable by every participating router without relying on manual database accuracy. Both mechanisms together provide defense in depth.' } },
+    { '@type': 'Question', 'name': 'What is a VRP (Validated ROA Payload)?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A VRP is the output of a Relying Party (RP) cache after it has fetched and cryptographically validated all ROAs from the RIR repositories. Each VRP contains a tuple of (prefix, max prefix length, origin ASN) and is pushed to BGP routers via the RPKI-to-Router (RTR) protocol on port 323 or 8282. The router compares incoming BGP announcements against its VRP set to determine validity.' } },
+  ],
+};
+---
+<BaseLayout title="What Is RPKI and a ROA (Route Origin Authorization)? BGP Security Guide" description="RPKI and ROA explained: how Route Origin Authorizations cryptographically secure BGP, the MaxLength trap, ROV validation states, and how to check RPKI status for any prefix." schema={[faqSchema]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+      <span aria-hidden="true">/</span>
+      <a href="/ip-and-networking/" class="hover:text-accent">IP & Networking</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">RPKI and ROA Explained</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">RPKI and ROAs Explained: How Route Origin Authorizations Secure BGP</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        <strong class="text-ink">RPKI (Resource Public Key Infrastructure) cryptographically binds IP prefixes to their authorized originating Autonomous Systems using signed Route Origin Authorizations.</strong> Validating routers compare BGP announcements against RPKI data and reject hijacked routes. <strong class="text-ink">Without RPKI, any AS can announce any prefix, accidentally or maliciously.</strong>
+      </p>
+    </div>
+
+    <nav class="pd-toc mt-6" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#rpki-roa-definition">What Is RPKI and What Is Inside a ROA?</a></li>
+        <li><a href="#rov-validation">How Route Origin Validation Works</a></li>
+        <li><a href="#maxlength-trap">The MaxLength Trap and RPKI vs BGPsec vs DNSSEC</a></li>
+        <li><a href="#how-to-check">How to Check RPKI ROA Status</a></li>
+        <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
+        <li><a href="#sources">Sources</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="rpki-roa-definition">What Is RPKI and What Is Inside a Route Origin Authorization (ROA)?</h2>
+      <p>
+        RPKI (Resource Public Key Infrastructure) is <strong class="text-ink">a public key infrastructure built on top of the Regional Internet Registry (RIR) allocation system that allows IP prefix holders to cryptographically certify which AS is authorized to originate their prefixes in BGP</strong>. A Route Origin Authorization (ROA) is the signed object that carries this binding, formatted as a CMS-signed data structure per RFC 6482.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>ROA Field</th><th>Format</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Authorized Origin ASN</td><td class="text-sm text-ink-dim">32-bit ASN number</td><td class="text-sm text-ink-dim">The only AS authorized to announce this prefix in BGP.</td></tr>
+            <tr><td class="font-medium text-ink">IPv4/IPv6 CIDR Prefix</td><td class="text-sm text-ink-dim">CIDR notation (e.g. 192.0.2.0/24)</td><td class="text-sm text-ink-dim">The exact IP prefix covered by this ROA.</td></tr>
+            <tr><td class="font-medium text-ink">Maximum Prefix Length (MaxLength)</td><td class="text-sm text-ink-dim">Integer (equal to or greater than the prefix length)</td><td class="text-sm text-ink-dim">The longest sub-prefix that may be announced; RFC 9319 recommends setting it equal to the prefix length.</td></tr>
+            <tr><td class="font-medium text-ink">RIR Trust Anchor Locator (TAL)</td><td class="text-sm text-ink-dim">URI to the RIR's public key</td><td class="text-sm text-ink-dim">Root of the RPKI trust chain, operated by each RIR (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC).</td></tr>
+            <tr><td class="font-medium text-ink">Cryptographic Format</td><td class="text-sm text-ink-dim">CMS Signed Object (RFC 6482)</td><td class="text-sm text-ink-dim">The ROA is a cryptographically signed X.509-derived object, not a DNS record.</td></tr>
+            <tr><td class="font-medium text-ink">Relying Party Validator</td><td class="text-sm text-ink-dim">Routinator, OctoRPKI, Fort, or cloud-managed RPKI</td><td class="text-sm text-ink-dim">Software that fetches, validates, and caches ROAs into VRP sets.</td></tr>
+            <tr><td class="font-medium text-ink">Router Feed Protocol (RTR)</td><td class="text-sm text-ink-dim">RFC 8210, port 323 or 8282</td><td class="text-sm text-ink-dim">Protocol that pushes validated ROA payloads (VRPs) from the RP cache to BGP routers.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="rov-validation">How Route Origin Validation (ROV) Works: Valid, Invalid, and NotFound States</h2>
+      <p>ROV proceeds through 4 steps from signing to enforcement:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Sign ROA in the RIR portal:</strong> The prefix holder creates a ROA in their RIR dashboard (ARIN Online, RIPE NCC LIR Portal, etc.), specifying the authorized origin ASN and prefix with or without a MaxLength.</li>
+        <li><strong>Fetch and validate via a Relying Party cache:</strong> The RP software (Routinator, OctoRPKI, or Fort) downloads all ROAs and certificates from the five RIR repositories, verifies the cryptographic signatures, and builds a Validated ROA Payload (VRP) set.</li>
+        <li><strong>Push validated ROA payloads via RTR:</strong> The RP cache serves the VRP set to BGP routers using the RPKI-to-Router protocol (RFC 8210) on port 323 or 8282, keeping the set synchronized in near-real time.</li>
+        <li><strong>Apply BGP route origin validation filtering:</strong> The BGP router compares each incoming announcement against its local VRP set and classifies it as Valid, Invalid, or NotFound, then applies the configured policy (accept, reject, or accept-with-tag).</li>
+      </ol>
+      <p>The table below defines the three ROV states per RFC 6811:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>ROV State (RFC 6811)</th><th>Meaning</th><th>Router Behavior</th><th>What It Means for the Prefix Holder</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink font-semibold text-emerald-400">Valid</td><td class="text-sm text-ink-dim">A VRP exists matching both the prefix and the origin ASN, and the prefix length does not exceed MaxLength</td><td class="text-sm text-ink-dim">Route is accepted and annotated with the validation state</td><td class="text-sm text-ink-dim">The prefix is protected against origin hijacks and accidental mis-origination.</td></tr>
+            <tr><td class="font-medium text-ink font-semibold text-rose-400">Invalid</td><td class="text-sm text-ink-dim">A VRP exists for a covering prefix, but the origin ASN or prefix length violates it</td><td class="text-sm text-ink-dim">Route is dropped on validating routers (potentially blackholing the prefix globally)</td><td class="text-sm text-ink-dim">Urgent: the ROA must be updated to match the current announcement.</td></tr>
+            <tr><td class="font-medium text-ink font-semibold text-amber-400">NotFound (Unknown)</td><td class="text-sm text-ink-dim">No covering ROA exists for this prefix</td><td class="text-sm text-ink-dim">Route is accepted (no ROA restriction applies)</td><td class="text-sm text-ink-dim">The prefix is unprotected; creating a ROA would secure it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="maxlength-trap">The ROA MaxLength Trap (RFC 9319) and RPKI vs BGPsec vs DNSSEC</h2>
+      <p>
+        RFC 9319 recommends setting the MaxLength field in a ROA equal to the exact prefix length you actually announce in BGP. Setting a wide MaxLength (such as /24 on a /16 ROA) lets an attacker forge your ASN in the AS_PATH and announce any more-specific /24 sub-prefix, which validating routers would accept because the ROA technically covers it. Always set MaxLength to the exact announced prefix length unless you genuinely announce sub-prefixes.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Mechanism</th><th>Governing RFC</th><th>What It Protects</th><th>How It Works</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">RPKI ROA</td><td class="text-sm text-ink-dim">RFC 6480, RFC 6811</td><td class="text-sm text-ink-dim">BGP route origin (which AS may announce a prefix)</td><td class="text-sm text-ink-dim">Cryptographically signed ROAs validated by Relying Party caches and enforced on BGP routers.</td></tr>
+            <tr><td class="font-medium text-ink">BGPsec</td><td class="text-sm text-ink-dim">RFC 8205</td><td class="text-sm text-ink-dim">Entire BGP AS_PATH (every hop, not just the origin)</td><td class="text-sm text-ink-dim">Each AS cryptographically signs the update as it traverses the path; deployment remains limited.</td></tr>
+            <tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">RFC 4033 to RFC 4035</td><td class="text-sm text-ink-dim">DNS record integrity (which nameserver is authorized to answer for a domain)</td><td class="text-sm text-ink-dim">DNS zone signing validated by recursive resolvers; protects domain resolution, not routing.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="how-to-check">How to Check RPKI ROA Status for Any IP Prefix or ASN</h2>
+      <pre><code># 1. Check RPKI validation status via RIPEstat
+curl -s "https://stat.ripe.net/data/rpki-validation/data.json?resource=AS13335&prefix=1.1.1.0/24" | jq .data
+
+# 2. Check BGP route origin via Team Cymru
+dig +short 1.1.1.1.origin.asn.cymru.com TXT
+
+# 3. Query the bgpmon.net looking glass
+whois -h whois.bgpmon.net 1.1.1.0/24
+
+# 4. List all VRPs from a local Routinator cache
+curl -s http://localhost:9556/api/v1/status</code></pre>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between RPKI and DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">RPKI secures BGP routing by cryptographically binding IP prefixes to originating ASNs using signed Route Origin Authorizations stored in RIR repositories. DNSSEC secures DNS records by signing zone data with public-key cryptography stored in the DNS hierarchy. They protect different layers: RPKI protects routing, DNSSEC protects domain resolution. A domain can and should have both.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I set MaxLength too high on my ROA?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Setting MaxLength higher than the prefix you actually announce allows an attacker to announce a more-specific sub-prefix under your ASN. For example, a ROA for 10.0.0.0/16 with MaxLength 24 permits any /24 inside that /16 to be announced as coming from your ASN, enabling sub-prefix hijacks. RFC 9319 recommends setting MaxLength equal to the exact prefix length you announce in BGP.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need RPKI if my ISP already filters prefixes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, IRR-based prefix filters rely on manually maintained databases that are frequently stale or incomplete. RPKI ROAs provide cryptographic proof that is automatically verifiable by every participating router without relying on manual database accuracy. Both mechanisms together provide defense in depth.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a VRP (Validated ROA Payload)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A VRP is the output of a Relying Party (RP) cache after it has fetched and cryptographically validated all ROAs from the RIR repositories. Each VRP contains a tuple of (prefix, max prefix length, origin ASN) and is pushed to BGP routers via the RPKI-to-Router (RTR) protocol on port 323 or 8282. The router compares incoming BGP announcements against its VRP set to determine validity.</p></details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Run a live ASN lookup with <a href="/asn-lookup/">ASN lookup</a> to check RPKI status on your prefixes.</li>
+        <li>Understand the BGP protocol that RPKI protects in the <a href="/bgp-explained/">BGP explained</a> guide.</li>
+        <li>Learn about the <a href="/asn-explained/">Autonomous System Number</a> entity.</li>
+        <li>Calculate prefix sizes with the <a href="/cidr-calculator/">CIDR calculator</a>.</li>
+        <li>Secure your domain layer with <a href="/what-is-dnssec/">DNSSEC</a>.</li>
+        <li>Understand DNS hijacking risks in the <a href="/dns-hijacking/">DNS hijacking</a> guide.</li>
+      </ul>
+
+      <h2 id="sources">Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 6480, An Infrastructure to Support Secure Internet Routing: <a href="https://www.rfc-editor.org/rfc/rfc6480" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6480</a></li>
+        <li>IETF RFC 6482, A Profile for Route Origin Authorizations (ROAs): <a href="https://www.rfc-editor.org/rfc/rfc6482" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6482</a></li>
+        <li>IETF RFC 6811, BGP Prefix Origin Validation: <a href="https://www.rfc-editor.org/rfc/rfc6811" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6811</a></li>
+        <li>IETF RFC 8210, The Resource Public Key Infrastructure (RPKI)-to-Router Protocol Version 1: <a href="https://www.rfc-editor.org/rfc/rfc8210" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8210</a></li>
+        <li>IETF RFC 9319, Improving RPKI ROA Validation: <a href="https://www.rfc-editor.org/rfc/rfc9319" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9319</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
