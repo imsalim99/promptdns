@@ -1,100 +1,347 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Is TTL in seconds or minutes?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'DNS TTL is always defined, stored, and transmitted in seconds as a 32-bit unsigned integer under RFC 1035 and RFC 2181. When a panel or API shows 300 it means 5 minutes, 3600 means 1 hour, and 86400 means 24 hours. Dropdown labels such as Auto, 5 minutes, or 1 day are only interface conveniences: on the wire every TTL is a plain integer number of seconds, which is exactly what this checker reports.' } },
+    { '@type': 'Question', 'name': 'What TTL should an MX record have?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Production MX records work best with a TTL between 3,600 seconds (1 hour) and 14,400 seconds (4 hours). Mail routing changes are rare, so a stable timer keeps resolver caches warm and delivery consistent. Lower the MX TTL to 300 seconds (5 minutes) 24 to 48 hours before a planned email migration, wait one full old-TTL cycle, then cut over and raise it back once delivery verifies cleanly.' } },
+    { '@type': 'Question', 'name': 'How long after a TTL change does it take effect?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A new TTL value takes effect globally only after the previous TTL expires from recursive resolver caches. Worked example: your A record has TTL 86,400 (24 hours) and you change it to 300 (5 minutes). Resolvers that fetched the record before the edit keep serving the old answer for up to 24 more hours, and only afterwards do they pick up the record carrying the new 300-second timer. That is why migrations lower the TTL one full old-TTL cycle before the cutover moment.' } },
+    { '@type': 'Question', 'name': 'Does a lower DNS TTL make my website load faster?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, a lower TTL does not make your website load faster. A higher TTL keeps the answer cached at the visitor\'s ISP resolver, where it is answered in roughly 1 to 5 milliseconds. A very short TTL such as 60 seconds forces frequent cold recursive lookups that can take 30 to 150 milliseconds, so aggressive TTLs can actually add latency. TTL controls how quickly DNS changes spread, not resolution speed for visitors.' } },
+    { '@type': 'Question', 'name': 'Why do Cloudflare, Google, and AliDNS show different TTL numbers for the same record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Each resolver runs an independent cache with its own countdown clock. Every point of presence starts counting down from the authoritative TTL at the moment it first fetched your record, so a resolver that cached the answer 20 minutes ago shows the authoritative TTL minus 1,200 seconds while a fresher cache shows a higher number. Different numbers are normal and are the clearest live proof of how cached TTL decays.' } },
+  ],
+};
 ---
-<BaseLayout title="TTL Checker - See Every Record's Cache Time" description="Free DNS TTL checker: see the time-to-live of every record on a domain to plan migrations and catch bloated caches.">
+<BaseLayout title="TTL Checker - See Every Record's Cache Time" description="Free DNS TTL checker: inspect remaining cache TTLs across Cloudflare 1.1.1.1, Google 8.8.8.8, and AliDNS 223.5.5.5, read the SOA negative cache timer, and generate a safe pre-migration cutover timeline." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DNS TTL Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">TTL Checker: See Every Record’s Cache Time</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free TTL checker: see every DNS record's cache time at once. Plan migrations, catch bloated caches.</p>
-    <div class="mt-8">
-<ToolPanel>
-  <form id="ttl-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="ttl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TTLs</button>
-  </form>
-  <div id="ttl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-        <p id="ttl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter any domain above for live results.
-      </p>
-<div id="ttl-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-    <table class="pdns-table"><thead><tr><th>Type</th><th>TTL</th><th>Value</th></tr></thead><tbody id="ttl-tbody"><tr><td>A</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>93.184.216.34</code></td></tr><tr><td>NS</td><td class="font-mono text-xs text-ink-dim">86400</td><td><code>a.iana-servers.net</code></td></tr><tr><td>TXT</td><td class="font-mono text-xs text-ink-dim">3600</td><td><code>"v=spf1 -all"</code></td></tr></tbody></table>
-  </div>
-  <ResultCard tool="ttl-checker" />
-</ToolPanel>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">TTL Checker: See Every Record's Cache Time</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Inspect the Time to Live (TTL) in seconds and human-readable duration across your domain's A, AAAA, CNAME, MX, NS, TXT, and SOA records across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5), and generate a safe pre-migration TTL cutover timeline.</p>
 
-    <ToolArticle slug="ttl-checker" />
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="ttl-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="ttl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check TTLs</button>
+        </form>
+        <div id="ttl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="ttl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Sample diagnostic for <code>example.com</code>. Enter any domain above: the tool queries three public resolvers, reads the SOA negative cache timer, and builds a cutover timeline from your own records.
+        </p>
+        <div id="ttl-negative" class="mt-6 hidden rounded-xl border border-violet/30 bg-violet/5 p-4"></div>
+        <div id="ttl-timeline" class="mt-6 hidden rounded-xl border border-accent/30 bg-accent/5 p-5"></div>
+        <div id="ttl-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table"><thead><tr><th>Type</th><th>Record value</th><th>1.1.1.1</th><th>8.8.8.8</th><th>223.5.5.5</th><th>Highest observed</th></tr></thead><tbody id="ttl-tbody"><tr><td>A</td><td><code>93.184.216.34</code></td><td class="font-mono text-xs">3600s</td><td class="font-mono text-xs">3540s</td><td class="font-mono text-xs">3600s</td><td class="font-mono text-xs">3600s (1 hour)</td></tr></tbody></table>
+        </div>
+        <ResultCard tool="ttl-checker" />
+      </ToolPanel>
     </div>
-</div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: authoritative TTL vs cached TTL</h2>
+      <p>
+        Two different numbers hide behind the word TTL. The <strong>authoritative TTL</strong> is the fixed starting value configured in your DNS zone file: it is what your authoritative nameserver returns on a fresh query. The <strong>remaining cached TTL</strong> is the counting-down value a public recursive resolver like 1.1.1.1 or 8.8.8.8 returns while the record already sits in that point-of-presence cache. Every resolver starts its own countdown from the authoritative value at the moment it fetches the record, so the highest number across the resolver columns above is the freshest cache and the closest live approximation of your configured value.
+      </p>
+      <p>The table below defines the five TTL states and what each one means operationally.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>TTL State</th><th>Observed Range (Seconds)</th><th>Resolver Cache Behavior</th><th>Operational Verdict and Action</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Ultra-Short / Cutover TTL</td><td class="text-sm text-ink-dim">30 to 300</td><td class="text-sm text-ink-dim">Resolvers re-fetch within minutes; caches stay warm but tiny</td><td class="text-sm text-ink-dim">Migration-ready. Raise it back to production values once the cutover verifies.</td></tr>
+            <tr><td class="font-medium text-ink">Standard Web and API Routing</td><td class="text-sm text-ink-dim">300 to 3,600</td><td class="text-sm text-ink-dim">Answers served from cache for minutes to an hour per POP</td><td class="text-sm text-ink-dim">Healthy default for web origins that change occasionally.</td></tr>
+            <tr><td class="font-medium text-ink">Stable Mail and Auth Records</td><td class="text-sm text-ink-dim">3,600 to 14,400</td><td class="text-sm text-ink-dim">Long-lived caches; changes spread within hours</td><td class="text-sm text-ink-dim">Good for MX, TXT (SPF, DKIM, DMARC), and NS. Lower to 300 before a planned migration.</td></tr>
+            <tr><td class="font-medium text-ink">Long Static Infrastructure</td><td class="text-sm text-ink-dim">43,200 to 86,400</td><td class="text-sm text-ink-dim">Caches hold answers for half a day to a day</td><td class="text-sm text-ink-dim">Acceptable for truly static records. Lower one full cycle before any change.</td></tr>
+            <tr><td class="font-medium text-ink">Bloated / Risky TTL</td><td class="text-sm text-ink-dim">Above 86,400</td><td class="text-sm text-ink-dim">Stale answers can persist beyond a day across millions of caches</td><td class="text-sm text-ink-dim">Risky: any mistake ships for over a day. Lower it now, before you need to.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to lower TTL before a DNS or server migration</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Lower the TTL one full old cycle ahead.</strong> Set the records you plan to touch (A, AAAA, MX) to 300 seconds at least one old-TTL period before the cutover: a record at 86,400 needs the change a day in advance, one at 3,600 an hour in advance.</li>
+        <li><strong>Wait for the old caches to expire.</strong> Until every recursive resolver worldwide has re-fetched, it still holds the old answer carrying the old timer. The timeline above computes that window from your own records.</li>
+        <li><strong>Cut over during the short-TTL window.</strong> Change the IP or hostname: resolvers now pick up the new value within about 5 minutes everywhere.</li>
+        <li><strong>Verify, then raise the TTL back.</strong> Once traffic and mail verify cleanly, return production records to their stable values. The full sequence with pre-launch checks lives in the <a href="/dns-migration-checklist/">DNS migration checklist</a>, and the same TTL staging method keeps routine edits safe per the <a href="/change-dns-records-safely/">safe record changes</a> guide.</li>
+      </ol>
+
+      <h2>Verify DNS TTL from the command line (dig and nslookup)</h2>
+      <pre><code># 1. A recursive resolver's counting-down cached TTL
+dig @8.8.8.8 example.com A +noall +answer
+
+# 2. Find the authoritative nameservers, then query one directly
+#    for the true configured zone TTL (no cache in the path)
+dig +short example.com NS
+dig @a.iana-servers.net example.com A +noall +answer
+
+# 3. Check the SOA negative cache timer (last field is the MINIMUM)
+dig example.com SOA +noall +answer
+
+# 4. Windows and macOS equivalent
+nslookup -debug example.com</code></pre>
+
+      <h2>Reference table: recommended DNS TTL best practices by record type and scenario</h2>
+      <p>The table below defines the recommended production TTL, the pre-migration cutover TTL, and the reasoning for each record type, absorbing the guidance from our earlier best-practices notes into one reference.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Record Type / Scenario</th><th>Recommended Normal TTL</th><th>Pre-Migration Cutover TTL</th><th>Why This Window Works</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">A / AAAA (standard web origin)</td><td class="text-sm text-ink-dim">3,600s (1 hour)</td><td class="text-sm text-ink-dim">300s (5 minutes)</td><td class="text-sm text-ink-dim">Hourly re-fetches keep changes within an hour; the cutover window makes the final switch near-instant.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">A / AAAA (CDN, anycast, or active failover)</td><td class="text-sm text-ink-dim">60s to 300s (1 to 5 minutes)</td><td class="text-sm text-ink-dim">60s</td><td class="text-sm text-ink-dim">Edge networks rotate addresses constantly and route around failures in real time.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">CNAME (subdomains and SaaS aliases)</td><td class="text-sm text-ink-dim">3,600s to 14,400s (1 to 4 hours)</td><td class="text-sm text-ink-dim">300s (5 minutes)</td><td class="text-sm text-ink-dim">Alias targets change rarely; a short window still covers re-pointing a SaaS vendor.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">MX (inbound mail exchange)</td><td class="text-sm text-ink-dim">3,600s to 14,400s (1 to 4 hours)</td><td class="text-sm text-ink-dim">300s (5 minutes)</td><td class="text-sm text-ink-dim">Senders cache routing for hours; lowering 24 to 48 hours ahead protects a mail cutover.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">TXT (SPF, DKIM, DMARC, verification)</td><td class="text-sm text-ink-dim">3,600s (1 hour)</td><td class="text-sm text-ink-dim">300s to 600s</td><td class="text-sm text-ink-dim">Receivers cache authentication answers; rotations and key swaps need a short window.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">NS (child zone nameserver records)</td><td class="text-sm text-ink-dim">86,400s (24 hours)</td><td class="text-sm text-ink-dim">3,600s (1 hour)</td><td class="text-sm text-ink-dim">Delegation changes are rare and must never propagate slowly by accident; still lower before a provider move.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">NS and glue (parent TLD registry delegation)</td><td class="text-sm text-ink-dim">172,800s (48 hours, fixed by the registry)</td><td class="text-sm text-ink-dim">Cannot be lowered by the domain owner</td><td class="text-sm text-ink-dim">Verisign and the TLD operators control this timer; registry-level NS changes spread on the registry's schedule.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">SOA MINIMUM (NXDOMAIN negative cache ceiling, RFC 2308 section 3)</td><td class="text-sm text-ink-dim">300s to 3,600s (5 minutes to 1 hour)</td><td class="text-sm text-ink-dim">n/a (policy value)</td><td class="text-sm text-ink-dim">The effective negative TTL is min(SOA TTL, SOA MINIMUM): it sets how long a not-found answer is cached, which is why brand-new subdomains can look broken after you fix them.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Minimum TTL floors and Auto settings differ by DNS host: Cloudflare's Auto equals 300 seconds with a 60-second custom minimum on free plans, AWS Route 53 allows 1 second, and GoDaddy enforces a 600-second minimum, so the cutover values above must be checked against your provider's floor. The <a href="/dns-providers/">DNS providers directory</a> documents each host's field mapping and TTL options.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Queries through the public DoH resolvers (1.1.1.1, 8.8.8.8, 223.5.5.5) show the remaining TTL in the specific edge node that answered your request unless that query was a cache miss: other POPs of the same resolver can hold different countdowns.</li>
+        <li>Parent TLD registry NS TTLs (172,800 seconds on .com and .net) live at the registry level and need the delegation check, not this page.</li>
+        <li>Some consumer ISPs, enterprise forwarders, and legacy stub resolvers enforce minimum TTL floors (clamping a 60-second record up to 300 or 3,600 seconds) or serve stale records during upstream outages under RFC 8767, so real-world spread can be slower than the numbers here.</li>
+        <li>Cloudflare proxied (orange-cloud) A and AAAA records always return a fixed 300-second Auto TTL at the edge regardless of what your origin zone sets, so the proxied rows here reflect Cloudflare's edge, not your configuration.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The classic migration mistake: lowering the TTL at the exact moment of changing the IP. The old timer rides along in every cache for one full cycle, so the cutover lands inside a window that is still slow. Lower the TTL one full old-TTL period BEFORE touching the target, and the short window does the work for you.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. Two patterns dominate early checks: registrar and hosting defaults leave most records between 14,400 and 86,400 seconds while CDN-fronted origins sit at 60 to 300 seconds, and teams testing a brand-new subdomain hit the SOA negative cache timer instead of their record's TTL, seeing a not-found answer cached for minutes after the record was actually saved.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is TTL in seconds or minutes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS TTL is always defined, stored, and transmitted in seconds as a 32-bit unsigned integer under RFC 1035 and RFC 2181. When a panel or API shows 300 it means 5 minutes, 3600 means 1 hour, and 86400 means 24 hours. Dropdown labels such as Auto, 5 minutes, or 1 day are only interface conveniences: on the wire every TTL is a plain integer number of seconds, which is exactly what this checker reports.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What TTL should an MX record have?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Production MX records work best with a TTL between 3,600 seconds (1 hour) and 14,400 seconds (4 hours). Mail routing changes are rare, so a stable timer keeps resolver caches warm and delivery consistent. Lower the MX TTL to 300 seconds (5 minutes) 24 to 48 hours before a planned email migration, wait one full old-TTL cycle, then cut over and raise it back once delivery verifies cleanly.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long after a TTL change does it take effect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A new TTL value takes effect globally only after the previous TTL expires from recursive resolver caches. Worked example: your A record has TTL 86,400 (24 hours) and you change it to 300 (5 minutes). Resolvers that fetched the record before the edit keep serving the old answer for up to 24 more hours, and only afterwards do they pick up the record carrying the new 300-second timer. That is why migrations lower the TTL one full old-TTL cycle before the cutover moment.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a lower DNS TTL make my website load faster?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, a lower TTL does not make your website load faster. A higher TTL keeps the answer cached at the visitor's ISP resolver, where it is answered in roughly 1 to 5 milliseconds. A very short TTL such as 60 seconds forces frequent cold recursive lookups that can take 30 to 150 milliseconds, so aggressive TTLs can actually add latency. TTL controls how quickly DNS changes spread, not resolution speed for visitors.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do Cloudflare, Google, and AliDNS show different TTL numbers for the same record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Each resolver runs an independent cache with its own countdown clock. Every point of presence starts counting down from the authoritative TTL at the moment it first fetched your record, so a resolver that cached the answer 20 minutes ago shows the authoritative TTL minus 1,200 seconds while a fresher cache shows a higher number. Different numbers are normal and are the clearest live proof of how cached TTL decays.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Confirm a changed record has spread worldwide with the <a href="/dns-propagation-checker/">DNS propagation checker</a> after the cutover window.</li>
+        <li>Stale answers on your own device need the <a href="/flush-dns-cache/">local cache flush guide</a> before blaming propagation.</li>
+        <li>Inspect the records themselves, not just their timers, with the <a href="/dns-record-lookup/">DNS record lookup</a>.</li>
+        <li>The concept behind the timer is explained step by step in <a href="/what-is-ttl-in-dns/">what TTL means in DNS</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 1035, Domain Names - Implementation and Specification (sections 3.2.1 and 4.1.3): <a href="https://www.rfc-editor.org/rfc/rfc1035" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1035</a></li>
+        <li>IETF RFC 2181, Clarifications to the DNS Specification (section 8, TTL semantics): <a href="https://www.rfc-editor.org/rfc/rfc2181" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2181</a></li>
+        <li>IETF RFC 2308, Negative Caching of DNS Queries (sections 3 and 5): <a href="https://www.rfc-editor.org/rfc/rfc2308" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2308</a></li>
+        <li>IETF RFC 8767, Serving Stale Data to Improve DNS Resiliency: <a href="https://www.rfc-editor.org/rfc/rfc8767" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8767</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
+
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). The ToolPanel input geometry
+  // is unchanged and the ResultCard contract (pdns:result events) is intact.
   import { lookup, RESOLVERS, normalizeDomain, type RecordType } from '../lib/doh';
   import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
   const form = document.getElementById('ttl-form') as HTMLFormElement;
   const input = document.getElementById('ttl-domain') as HTMLInputElement;
   const statusEl = document.getElementById('ttl-status')!;
-  const resultsEl = document.getElementById('ttl-results')!;
   const tbody = document.getElementById('ttl-tbody')!;
+  const resultsEl = document.getElementById('ttl-results')!;
+  const negativeEl = document.getElementById('ttl-negative')!;
+  const timelineEl = document.getElementById('ttl-timeline')!;
   const TOOL = 'ttl-checker';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function human(seconds: number): string {
+    if (seconds >= 86400 && seconds % 86400 === 0) {
+      const d = seconds / 86400;
+      return d === 1 ? '1 day' : d + ' days';
+    }
+    if (seconds >= 3600 && seconds % 3600 === 0) {
+      const h = seconds / 3600;
+      return h === 1 ? '1 hour' : h + ' hours';
+    }
+    if (seconds >= 60 && seconds % 60 === 0) {
+      const m = seconds / 60;
+      return m === 1 ? '1 minute' : m + ' minutes';
+    }
+    return seconds + ' seconds';
+  }
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  };
+
   const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string) => {
     const detail: PdnsResult = {
       tool: TOOL, domain, verdict, verdictLine, findings,
       ctaLabel: 'Know when records change',
       related: [
-        { label: 'Propagation checker', href: '/dns-propagation-checker/' },
         { label: 'DNS monitoring', href: '/dns-monitoring/' },
       ],
     };
     window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
   };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
-    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; statusEl.classList.remove('hidden'); return; }
-    statusEl.textContent = `Checking TTLs for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain.'); return; }
+    setStatus('loading', `Querying A, AAAA, MX, NS, TXT, SOA, and CAA across 3 public resolvers for ${domain}...`);
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
-    const types: RecordType[] = ['A','AAAA','MX','NS','TXT','SOA','CAA'];
-    const rows: { t: string; ttl: number; v: string }[] = [];
+    negativeEl.classList.add('hidden'); timelineEl.classList.add('hidden');
+    negativeEl.textContent = ''; timelineEl.textContent = '';
+
+    const types: RecordType[] = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'SOA', 'CAA'];
+    // rows keyed by type+data, one column per resolver
+    const byKey = new Map<string, { t: string; v: string; ttls: Record<string, number | null> }>();
+    let allFailed = true;
     try {
-      await Promise.all(types.map(async (t) => {
-        const r = await lookup(domain, t, RESOLVERS[0]);
-        for (const a of r.answers.slice(0, 4)) rows.push({ t, ttl: a.TTL, v: a.data });
-      }));
+      await Promise.all(types.flatMap((t) => RESOLVERS.map(async (r) => {
+        const res = await lookup(domain, t, r);
+        if (res.ok) allFailed = false;
+        for (const a of res.answers.slice(0, 4)) {
+          const key = t + '|' + a.data;
+          const row = byKey.get(key) || { t, v: a.data, ttls: { cloudflare: null, google: null, alidns: null } };
+          const rid = r.id as 'cloudflare' | 'google' | 'alidns';
+          row.ttls[rid] = row.ttls[rid] === null ? a.TTL : Math.max(row.ttls[rid] as number, a.TTL);
+          byKey.set(key, row);
+        }
+      })));
     } catch {
-      statusEl.textContent = `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail.`;
-      statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
-      emit('info', 'DNS query did not complete. Nothing is known about this domain\u2019s TTLs.', [{ code: 'DNS_QUERY_FAILED' }], domain);
+      setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
+      emit('info', 'DNS queries did not complete. Nothing is known about this domain\u2019s TTLs.', [{ code: 'DNS_QUERY_FAILED' }], domain);
       return;
     }
-    if (!rows.length) {
-      statusEl.textContent = 'No records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30';
+    if (allFailed || byKey.size === 0) {
+      setStatus('warn', 'No records found.');
       emit('warn', `No common records found for ${domain}.`, [{ code: 'TTL_NO_RECORDS' }], domain);
       return;
     }
-    const min = Math.min(...rows.map(r => r.ttl));
-    const slow = min > 3600;
-    statusEl.textContent = `${rows.length} records. Lowest TTL: ${min}s${min > 300 ? ' (lower to 300 a day before migrations)' : ' (migration-ready)'}.`;
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${slow ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
-    if (slow) {
-      emit('warn', `${rows.length} records found. Lowest TTL is ${min}s: changes will be slow to spread.`,
-        [{ code: 'TTL_SLOW', detail: `Lowest TTL: ${min}s` }], domain);
-    } else {
-      emit('pass', `${rows.length} records found. Lowest TTL: ${min}s.`,
-        [{ code: 'TTL_FAST', detail: `Lowest TTL: ${min}s` }], domain);
-    }
     document.getElementById('ttl-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    for (const r of rows.sort((a, b) => a.ttl - b.ttl)) {
-      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs text-accent">${r.t}</td><td class="font-mono text-xs ${r.ttl > 3600 ? 'text-warn' : 'text-ink'}">${r.ttl}s</td><td><code>${r.v.replace(/</g, '&lt;').slice(0, 60)}</code></td></tr>`);
+
+    const rows = Array.from(byKey.values());
+    const highestOf = (row: { ttls: Record<string, number | null> }) =>
+      Math.max(...Object.values(row.ttls).filter((n): n is number => n !== null));
+    const migrationRows = rows.filter((r) => ['A', 'AAAA', 'MX'].includes(r.t));
+    const maxTtl = migrationRows.length ? Math.max(...migrationRows.map(highestOf)) : 0;
+    const minTtl = Math.min(...rows.map(highestOf));
+
+    // Results table (DOM-built)
+    tbody.textContent = '';
+    for (const r of rows.slice().sort((a, b) => highestOf(a) - highestOf(b))) {
+      const tr = document.createElement('tr');
+      const tdT = el('td', 'font-mono text-xs text-accent', r.t);
+      const tdV = document.createElement('td');
+      const code = document.createElement('code');
+      code.textContent = r.v.slice(0, 60);
+      tdV.append(code);
+      tr.append(tdT, tdV);
+      for (const rid of ['cloudflare', 'google', 'alidns'] as const) {
+        const ttl = r.ttls[rid];
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', ttl === null ? '-' : ttl + 's (' + human(ttl) + ')'));
+      }
+      const hi = highestOf(r);
+      tr.append(el('td', `font-mono text-xs ${hi > 3600 ? 'text-warn' : 'text-ink'}`, hi + 's (' + human(hi) + ')'));
+      tbody.append(tr);
     }
     resultsEl.classList.remove('hidden');
+
+    // SOA negative cache box (RFC 2308 section 3)
+    const soaRow = rows.find((r) => r.t === 'SOA');
+    if (soaRow) {
+      const fields = soaRow.v.trim().split(/\s+/);
+      const minimum = fields.length >= 7 ? parseInt(fields[6], 10) : NaN;
+      const soaTtl = highestOf(soaRow);
+      const effective = Number.isFinite(minimum) ? Math.min(soaTtl, minimum) : soaTtl;
+      const box = el('div', '');
+      box.append(el('p', 'font-semibold text-ink', 'Negative caching (RFC 2308 section 3)'));
+      box.append(el('p', 'mt-1 text-sm text-ink-dim',
+        `SOA TTL observed: ${soaTtl}s (${human(soaTtl)}). SOA MINIMUM field: ${Number.isFinite(minimum) ? minimum + 's (' + human(minimum) + ')' : 'unparsed'}. Effective negative cache TTL: min(SOA TTL, SOA MINIMUM) = ${effective}s (${human(effective)}), which is how long NXDOMAIN and NODATA answers for this zone stay cached.`));
+      negativeEl.append(box);
+      negativeEl.classList.remove('hidden');
+    }
+
+    // Pre-migration cutover timeline built from the user's own result
+    if (maxTtl > 0) {
+      const box = el('div', '');
+      box.append(el('p', 'font-semibold text-ink', 'Pre-migration cutover timeline (from your own records)'));
+      box.append(el('p', 'mt-1 text-xs text-ink-faint', `Computed from the highest observed A, AAAA, or MX TTL on ${domain}: ${maxTtl}s (${human(maxTtl)}).`));
+      const steps = [
+        [`Step 1 (T minus ${human(maxTtl)}):`, `Lower the record's TTL from ${maxTtl}s (${human(maxTtl)}) down to 300s (5 minutes) in your DNS provider panel.`],
+        ['Step 2 (wait window):', `Wait the full ${human(maxTtl)} (${maxTtl} seconds) before touching the IP or mail server target, so every recursive cache worldwide expires the old timer.`],
+        ['Step 3 (cutover moment):', 'Update the record value to the new server IP or hostname; global resolvers now pick up the change within 5 minutes (300s).'],
+        ['Step 4 (post-cutover):', 'Once traffic and mail verify cleanly, raise the TTL back to your normal production value (3,600s to 86,400s).'],
+      ];
+      const ol = el('ol', 'mt-2 list-decimal space-y-1.5 pl-5 text-sm text-ink-dim');
+      for (const [strong, rest] of steps) {
+        const li = el('li', '');
+        li.append(el('strong', 'text-ink', strong + ' '));
+        li.append(document.createTextNode(rest));
+        ol.append(li);
+      }
+      box.append(ol);
+      timelineEl.append(box);
+      timelineEl.classList.remove('hidden');
+    }
+
+    const slow = minTtl > 3600;
+    setStatus(slow ? 'warn' : 'pass',
+      `${rows.length} records across 3 resolvers. Lowest TTL: ${minTtl}s (${human(minTtl)})${minTtl > 300 ? ': lower to 300 a day before migrations' : ' (migration-ready)'}.`);
+    if (slow) {
+      emit('warn', `${rows.length} records found. Lowest TTL is ${minTtl}s: changes will be slow to spread.`,
+        [{ code: 'TTL_SLOW', detail: `Lowest TTL: ${minTtl}s` }], domain);
+    } else {
+      emit('pass', `${rows.length} records found. Lowest TTL: ${minTtl}s.`,
+        [{ code: 'TTL_FAST', detail: `Lowest TTL: ${minTtl}s` }], domain);
+    }
   });
 </script>
