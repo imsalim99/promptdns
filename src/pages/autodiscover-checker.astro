@@ -200,11 +200,14 @@ nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
     return 'None found';
   }
 
-  function providerOf(mx: string | null): { name: string; kind: 'm365' | 'google' | 'other' } | null {
-    if (!mx) return null;
-    const t = mx.toLowerCase();
+  function providerOf(mxTarget: string | null): { name: string; kind: 'm365' | 'google' | 'forwarding' | 'other' } | null {
+    if (!mxTarget) return null;
+    const t = mxTarget.toLowerCase();
     if (t.includes('outlook.com') || t.includes('protection.outlook')) return { name: 'Microsoft 365', kind: 'm365' };
     if (t.includes('google.com') || t.includes('googlemail.com')) return { name: 'Google Workspace', kind: 'google' };
+    if (t.includes('mx.cloudflare.net')) return { name: 'Cloudflare Email Routing (forwarding only)', kind: 'forwarding' };
+    if (t.includes('zoho')) return { name: 'Zoho Mail', kind: 'other' };
+    if (t.includes('fastmail')) return { name: 'Fastmail', kind: 'other' };
     return { name: t.split('.').slice(-2).join('.'), kind: 'other' };
   }
 
@@ -234,8 +237,13 @@ nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
     const srvData = first(srv, 33);
     const imapsData = first(imaps, 33);
     const subData = first(submission, 33);
-    const mxData = mx.answers.find((a) => a.type === 15)?.data ?? null;
-    const provider = providerOf(mxData);
+    // MX answers arrive as "<preference> <target.>": strip both so the
+    // provider detection and the displayed target are clean.
+    const mxRaw = mx.answers.find((a) => a.type === 15)?.data ?? null;
+    const mxParts = mxRaw ? mxRaw.trim().split(/\s+/) : [];
+    const mxPref = mxParts.length >= 2 ? mxParts[0] : null;
+    const mxTarget = mxParts.length >= 2 ? mxParts[1].replace(/\.$/, '') : (mxRaw ? mxRaw.replace(/\.$/, '') : null);
+    const provider = providerOf(mxTarget);
 
     document.getElementById('ad-sample-note')?.classList.add('hidden');
     tbody.textContent = '';
@@ -303,8 +311,10 @@ nslookup -type=srv _autodiscover._tcp.example.com</code></pre>
         }
       } else if (provider.kind === 'google') {
         ctxVerdict = 'Informational: Google Workspace uses OAuth, so missing autodiscover records are expected';
+      } else if (provider.kind === 'forwarding') {
+        ctxVerdict = 'Informational: forwarding-only mail setup, so missing autodiscover records are expected';
       }
-      addRow('MX provider context check', `${domain} MX`, `MX: ${mxData}`, ctxVerdict, cls);
+      addRow('MX provider context check', `${domain} MX`, mxPref ? `MX: preference ${mxPref}, target ${mxTarget}` : `MX: ${mxRaw}`, ctxVerdict, cls);
     } else {
       addRow('MX provider context check', `${domain} MX`, 'No MX records found', 'Informational: no inbound mail advertised', VERDICT_CLS.faint);
     }
