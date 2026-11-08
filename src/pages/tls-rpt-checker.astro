@@ -39,6 +39,16 @@ const faqSchema = {
 </ToolPanel>
     </div>
     <article class="rich-text mt-12 max-w-none">
+      
+      <h2>Verify from the command line</h2>
+      <p>Confirm where TLS failure reports are routed, straight from dig:</p>
+      <pre><code># The TLS-RPT record at _smtp._tls
+dig TXT _smtp._tls.example.com +short
+
+# Verify the rua= mailbox domain resolves
+dig MX example.com +short</code></pre>
+      <p>For the complete reporting-and-policy workflow, see the <a href="/check-spf-dkim-dmarc-dig/">SPF, DKIM, and DMARC dig guide</a>.</p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is TLS-RPT and do I need it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">TLS-RPT (RFC 8460) lets receiving servers report TLS connection failures to you via email. It is required for MTA-STS deployment and helps you diagnose delivery issues.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do TLS-RPT reports come from?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Major mailbox providers (Gmail, Microsoft) send daily JSON reports listing TLS connection outcomes for your domain. They arrive at the address in your _smtp._tls DNS record.</p></details></div>
 <h2>Related</h2><ul><li><a href="/mta-sts/">MTA-STS explained</a> · <a href="/mta-sts-checker/">MTA-STS checker</a></li></ul></article>

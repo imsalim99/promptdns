@@ -99,6 +99,16 @@ const faqSchema = {
       <h2>The safe path to enforcement</h2>
       <p>Start with <code>p=none</code> and a working <code>rua</code> address for 2-4 weeks: read the aggregate reports, fix every legitimate sender that fails SPF/DKIM, then step to <code>p=quarantine</code> (optionally with <code>pct</code> ramping 25 → 50 → 100), and finally <code>p=reject</code>.</p>
       
+      
+      <h2>Verify from the command line</h2>
+      <p>Confirm the generated policy is live at the exact required name:</p>
+      <pre><code># Verify the record at _dmarc
+dig TXT _dmarc.example.com +short
+
+# Cross-check from a second resolver
+dig @8.8.8.8 TXT _dmarc.example.com +short</code></pre>
+      <p>The <a href="/check-spf-dkim-dmarc-dig/">SPF, DKIM, and DMARC dig guide</a> explains the whole verification sequence, including the org-domain fallback rule.</p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between rua and ruf?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">rua receives aggregate reports (daily XML summaries of all DMARC evaluation results). ruf receives forensic reports (individual failure samples with full message content). Most providers only support rua.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I start with p=none or p=quarantine?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Start with p=none to collect reports without affecting mail delivery. Read the aggregate reports to identify all legitimate senders, fix any that fail, then step to p=quarantine and finally p=reject.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need DMARC on subdomains too?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not necessarily. Without an sp= tag, subdomains inherit the root domain's policy. Use sp= explicitly if you want different policies for subdomains.</p></details></div>
 <h2>Related tools</h2>
