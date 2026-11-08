@@ -1,8 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import RecordLookupTool from '../components/RecordLookupTool.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'What happens if my domain has no CAA record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Nothing restrictive: with no CAA record (a NOERROR response carrying zero answers), every public Certificate Authority that passes its other validation checks may issue certificates for your domain. CAA is an opt-in restriction, so the absence of records is an open issuance policy. Publishing 0 issue records for the CAs you actually use shrinks the misissuance surface to that list.' } },
+    { '@type': 'Question', 'name': 'Does a root domain CAA record automatically apply to all subdomains?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, a CAA record at the zone apex applies to every subdomain underneath it through RFC 8659 tree-climbing: when a Certificate Authority checks sub.app.example.com and finds no CAA records there, it walks up to example.com and enforces the apex policy. Publishing even a single CAA record on a subdomain completely overrides and replaces the parent apex policy for that exact subdomain, so a subdomain with its own record no longer inherits anything from above.' } },
+    { '@type': 'Question', 'name': "If I publish an issue tag for Let's Encrypt, do I also need an issuewild tag?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, unless you want different wildcard rules. Under RFC 8659 sections 4.2 and 4.3, an issue tag authorizes both single-name and wildcard certificates unless at least one issuewild record exists at the same hostname, in which case the issuewild set completely takes over wildcard authorization and the issue set stops applying to wildcards. Publish 0 issuewild ";" alongside your issue records when you want to forbid wildcard certificates entirely.' } },
+    { '@type': 'Question', 'name': "Why did Let's Encrypt or AWS ACM fail with a CAA SERVFAIL error when I have no CAA record?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'Because the CA/Browser Forum Baseline Requirements force the Certificate Authority to abort whenever the CAA lookup does not return a valid DNS answer. A broken DNSSEC signature chain, an unresponsive nameserver, or a resolver returning SERVFAIL means the CA cannot confirm that no CAA restriction exists, and the only safe move is to refuse issuance. Fix the DNS health problem (validate with a DNSSEC checker) and the same request succeeds with zero CAA records published.' } },
+    { '@type': 'Question', 'name': 'How do I block all Certificate Authorities from issuing certificates for a parked domain?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Publish 0 issue ";" at the zone apex. The semicolon value matches no Certificate Authority, so every issuance request is rejected while the record exists. Add 0 issuewild ";" as well to close the wildcard path explicitly, and consider an iodef record so any attempted issuance reports to a mailbox you monitor.' } },
+  ],
+};
 ---
-<BaseLayout title="CAA Record Lookup" description="CAA record lookup: see which certificate authorities may issue TLS certificates for a domain.">
+<BaseLayout title="CAA Record Lookup & Checker: Inspect SSL/TLS CA Authorization (RFC 8659)" description="Free CAA record lookup: query Type 257 records across Cloudflare, Google, and AliDNS, trace RFC 8659 parent inheritance, and verify which Certificate Authorities may issue SSL/TLS and wildcard certificates." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -11,21 +25,356 @@ import RecordLookupTool from '../components/RecordLookupTool.astro';
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">CAA Record Lookup</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">CAA Record Lookup: Check Certificate Authority Authorization</h1>
-    <p class="mt-4 text-lg text-ink-dim">CAA records restrict certificate issuance. Verify only your intended CAs are authorized.</p>
-    <div class="mt-8"><RecordLookupTool type="CAA" label="CAA Record Lookup" hint="Lookups run in your browser via public DNS-over-HTTPS. Nothing is logged." /></div>
-    <article class="rich-text mt-12 max-w-none">
-      <h2>How to read the results</h2>
-      <p>CAA answers use tags: issue permits a certificate authority, issuewild governs wildcards, iodef receives violation reports. Values are the CA's documented issuance domain.</p>
-      <p>No CAA records means any public CA may issue for the domain. Adding them restricts issuance to your list and shrinks the misissuance surface.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">CAA Record Lookup &amp; Checker: Verify Certificate Authority Authorization</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Query your domain's DNS CAA (Certification Authority Authorization, Type 257) records across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5), trace RFC 8659 parent-domain inheritance, and verify which Certificate Authorities are authorized to issue SSL/TLS and wildcard certificates.</p>
+
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="caal-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="caal-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com or sub.example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check CAA Policy</button>
+        </form>
+        <div id="caal-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="caal-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Enter any hostname: the tool queries Type 257 across three resolvers and climbs the RFC 8659 tree so you see the policy Certificate Authorities actually enforce.
+        </p>
+        <div id="caal-policy" class="mt-6 hidden rounded-xl border border-violet/30 bg-violet/5 p-4"></div>
+        <div id="caal-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Scope</th><th>Flags</th><th>Tag</th><th>Authorized CA / value</th><th>TTL and resolvers</th></tr></thead>
+            <tbody id="caal-tbody"><tr><td class="text-sm text-ink-dim">Direct on example.com</td><td class="font-mono text-xs">0</td><td class="font-mono text-xs">issue</td><td class="text-sm text-ink-dim">Let's Encrypt (ISRG) from letsencrypt.org</td><td class="font-mono text-xs">3600s, 3/3 resolvers</td></tr></tbody>
+          </table>
+        </div>
+        <ResultCard tool="caa-record-lookup" />
+      </ToolPanel>
+    </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 CAA verification states</h2>
+      <p>
+        Before issuing any public SSL/TLS certificate, a Certificate Authority must check the DNS CAA (Type 257) records of the name under RFC 8659 and the <a href="/what-is-ssl-tls/">CA/Browser Forum rules that govern TLS certificates</a>. The check walks up the DNS tree and follows CNAME aliases, and the outcome decides whether issuance proceeds. The table below defines the five states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Verification State</th><th>Observed CAA Response</th><th>CA Issuance Behavior (RFC 8659)</th><th>Security and Renewal Impact</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Explicit issue / issuewild policy published</td><td class="text-sm text-ink-dim">One or more issue (or issuewild) records with CA values</td><td class="text-sm text-ink-dim">Only the listed CAs may issue; everyone else must refuse</td><td class="text-sm text-ink-dim">Strongest control. Every CA your infrastructure uses must appear, or renewals fail.</td></tr>
+            <tr><td class="font-medium text-ink">No CAA record published</td><td class="text-sm text-ink-dim">NOERROR with zero answers</td><td class="text-sm text-ink-dim">Open issuance: any public CA may issue</td><td class="text-sm text-ink-dim">Default posture. Publishing records shrinks the misissuance surface.</td></tr>
+            <tr><td class="font-medium text-ink">Inherited policy from parent apex</td><td class="text-sm text-ink-dim">No records on the subdomain; records exist higher in the tree</td><td class="text-sm text-ink-dim">The RFC 8659 tree walk applies the parent policy to the subdomain</td><td class="text-sm text-ink-dim">One apex record covers the whole zone until a subdomain publishes its own.</td></tr>
+            <tr><td class="font-medium text-ink">Explicit deny-all policy</td><td class="text-sm text-ink-dim">0 issue ";" or 0 issuewild ";"</td><td class="text-sm text-ink-dim">No CA may issue (single-name, wildcard, or both)</td><td class="text-sm text-ink-dim">Right answer for parked domains; breaks renewals if left on an active zone.</td></tr>
+            <tr><td class="font-medium text-ink">SERVFAIL or timeout on the CAA query</td><td class="text-sm text-ink-dim">Resolver failure instead of a DNS answer</td><td class="text-sm text-ink-dim">Issuance blocked: the CA must abort without a valid answer</td><td class="text-sm text-ink-dim">Renewals fail even with no CAA records published. Fix DNS health, not the CAA set.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to add or fix a CAA record without breaking auto-renewal</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Audit every active Certificate Authority first.</strong> Origin servers, CDNs (Cloudflare, AWS CloudFront, Fastly), and PaaS hosts each hold their own issuer: omitting one from the CAA set breaks its renewals silently.</li>
+        <li><strong>Publish one 0 issue record per CA.</strong> Each authorized CA gets its own <code>0 issue "&lt;ca-domain&gt;"</code> record; never comma-separate multiple CAs inside a single record's value.</li>
+        <li><strong>Close the wildcard and reporting gaps.</strong> Add <code>0 issuewild "&lt;ca-domain&gt;"</code> for wildcard issuers (or <code>0 issuewild ";"</code> to forbid wildcards) and <code>0 iodef "mailto:security@example.com"</code> so misissuance attempts get reported.</li>
+        <li><strong>Verify DNS health so ACME renewals never see a failure.</strong> Broken DNSSEC or unresponsive nameservers turn a CAA check into SERVFAIL, which blocks issuance outright: validate the zone with the <a href="/dnssec-checker/">DNSSEC checker</a>. Renewal mechanics for the most common issuer are in the <a href="/free-ssl-lets-encrypt/">Let's Encrypt guide</a>, and the failure codes CAs return are decoded in <a href="/ssl-certificate-errors/">SSL certificate errors</a>.</li>
+      </ol>
+
+      <h2>Verify CAA records from the command line (dig and nslookup)</h2>
+      <pre><code># 1. Direct CAA records on the domain
+dig example.com CAA +noall +answer
+
+# 2. Subdomain, then the RFC 8659 parent tree walk
+dig sub.example.com CAA +noall +answer
+dig example.com CAA +short
+
+# 3. Raw IANA Type 257 query for older tools
+dig example.com TYPE257 +short
+
+# 4. Windows and macOS equivalent
+nslookup -type=257 example.com</code></pre>
+
+      <h2>Reference table: CAA tags, flags, and official Certificate Authority identifiers</h2>
+      <p>The table below defines every CAA record component and the standard CA issuance domains, including the RFC 8657 ACME parameters this tool parses.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Component / Identifier</th><th>Kind</th><th>Meaning</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">Flags: 0</td><td class="text-sm text-ink-dim">Flags byte</td><td class="text-sm text-ink-dim">Non-critical: unknown property tags may be ignored by the CA</td><td class="font-mono text-xs">0 issue "letsencrypt.org"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Flags: 128</td><td class="text-sm text-ink-dim">Flags byte</td><td class="text-sm text-ink-dim">Issuer-critical bit set: the tag must be understood or issuance is refused</td><td class="font-mono text-xs">128 issue "letsencrypt.org"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">issue</td><td class="text-sm text-ink-dim">Property tag</td><td class="text-sm text-ink-dim">Authorizes single-name certificates (and wildcards unless issuewild exists)</td><td class="font-mono text-xs">0 issue "pki.goog"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">issuewild</td><td class="text-sm text-ink-dim">Property tag</td><td class="text-sm text-ink-dim">Governs wildcard *.domain certificates only; overrides issue for wildcards</td><td class="font-mono text-xs">0 issuewild ";"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">iodef</td><td class="text-sm text-ink-dim">Property tag</td><td class="text-sm text-ink-dim">Receives violation reports when issuance is requested against policy</td><td class="font-mono text-xs">0 iodef "mailto:sec@example.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">validationmethods / accounturi</td><td class="text-sm text-ink-dim">RFC 8657 parameters</td><td class="text-sm text-ink-dim">Bind issuance to an ACME method or account URL inside the value</td><td class="font-mono text-xs">issue "letsencrypt.org; validationmethods=dns-01"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">letsencrypt.org</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">Let's Encrypt (ISRG)</td><td class="font-mono text-xs">0 issue "letsencrypt.org"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">pki.goog</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">Google Trust Services</td><td class="font-mono text-xs">0 issue "pki.goog"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">digicert.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">DigiCert</td><td class="font-mono text-xs">0 issue "digicert.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">sectigo.com / comodoca.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">Sectigo (formerly Comodo)</td><td class="font-mono text-xs">0 issue "sectigo.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">amazon.com / amazontrust.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">AWS Certificate Manager (ACM)</td><td class="font-mono text-xs">0 issue "amazon.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">ssl.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">SSL.com</td><td class="font-mono text-xs">0 issue "ssl.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">globalsign.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">GlobalSign</td><td class="font-mono text-xs">0 issue "globalsign.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">entrust.net</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">Entrust</td><td class="font-mono text-xs">0 issue "entrust.net"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">buypass.com</td><td class="text-sm text-ink-dim">CA identifier</td><td class="text-sm text-ink-dim">Buypass</td><td class="font-mono text-xs">0 issue "buypass.com"</td></tr>
+            <tr><td class="font-mono text-xs text-ink">";"</td><td class="text-sm text-ink-dim">Deny-all value</td><td class="text-sm text-ink-dim">Matches no CA: blocks issuance for that tag's scope</td><td class="font-mono text-xs">0 issue ";"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The record itself is defined in the <a href="/caa-record/">CAA record</a> guide, and the organizations that audit and issue certificates are explained in the <a href="/certificate-authorities-explained/">certificate authority</a> guide.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>CAA records only restrict new certificate issuance or renewal at the Certificate Authority: they do not revoke or block certificates that are already installed on a server.</li>
+        <li>If a domain uses Cloudflare's orange-cloud Universal SSL, Cloudflare automatically synthesizes and appends CAA records for its backup edge CAs (letsencrypt.org, pki.goog, ssl.com, digicert.com) so its edge certificates can keep renewing.</li>
+        <li>CAA does not bind a specific certificate hash in the browser handshake: DNS-based certificate pinning is a different mechanism (DANE and TLSA records under RFC 6698).</li>
+        <li>iodef violation reports (mailto: or https:) are supported by fewer than half of public CAs and never block issuance on their own without a matching issue or issuewild restriction.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The number one CAA outage pattern: add 0 issue "letsencrypt.org" for the web server and 0 issuewild ";" to block wildcards, then discover weeks later that AWS ACM or a CDN edge certificate stopped renewing because amazon.com or pki.goog was missing from the set. The failure surfaces at renewal time, not at publish time, which is why the audit step above comes first.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The dominant early pattern is Cloudflare Universal SSL auto-synthesis: proxied zones return multiple issue and issuewild entries across digicert.com, letsencrypt.org, pki.goog, and ssl.com that the zone owner never typed, which surprises teams comparing dig output against their panel. The other recurring discovery is the difference between 0 issue ";" (a deliberate wall that rejects every CA) and simply having no CAA record at all (an open door): they look similar in some panels and behave oppositely.
+      </p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="grid gap-2"><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">How often should I check this record?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">After any change to it, after provider switches, and whenever symptoms point this direction. Records do not drift on their own.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Do these lookups work for subdomains?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Yes: enter any hostname. Subdomains carry their own records for many types.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Why do results differ from my DNS panel?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Panels show the authoritative zone; this shows what resolvers actually serve, which can be a cached earlier answer within TTL.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Is this lookup cached on my side?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">The query runs fresh in your browser; any caching is the resolver's own, exactly as the wider internet experiences it.</p></details></div>
-      
-      <h2>Related</h2>
-      <ul>
-        <li><a href="/caa-record/">CAA records explained (guide)</a></li>
-        <li><a href="/dns-record-lookup/">All-in-one record lookup</a> and <a href="/dns-propagation-checker/">propagation checker</a></li>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my domain has no CAA record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Nothing restrictive: with no CAA record (a NOERROR response carrying zero answers), every public Certificate Authority that passes its other validation checks may issue certificates for your domain. CAA is an opt-in restriction, so the absence of records is an open issuance policy. Publishing 0 issue records for the CAs you actually use shrinks the misissuance surface to that list.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a root domain CAA record automatically apply to all subdomains?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, a CAA record at the zone apex applies to every subdomain underneath it through RFC 8659 tree-climbing: when a Certificate Authority checks sub.app.example.com and finds no CAA records there, it walks up to example.com and enforces the apex policy. Publishing even a single CAA record on a subdomain completely overrides and replaces the parent apex policy for that exact subdomain, so a subdomain with its own record no longer inherits anything from above.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">If I publish an issue tag for Let's Encrypt, do I also need an issuewild tag?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, unless you want different wildcard rules. Under RFC 8659 sections 4.2 and 4.3, an issue tag authorizes both single-name and wildcard certificates unless at least one issuewild record exists at the same hostname, in which case the issuewild set completely takes over wildcard authorization and the issue set stops applying to wildcards. Publish 0 issuewild ";" alongside your issue records when you want to forbid wildcard certificates entirely.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why did Let's Encrypt or AWS ACM fail with a CAA SERVFAIL error when I have no CAA record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because the CA/Browser Forum Baseline Requirements force the Certificate Authority to abort whenever the CAA lookup does not return a valid DNS answer. A broken DNSSEC signature chain, an unresponsive nameserver, or a resolver returning SERVFAIL means the CA cannot confirm that no CAA restriction exists, and the only safe move is to refuse issuance. Fix the DNS health problem (validate with a DNSSEC checker) and the same request succeeds with zero CAA records published.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I block all Certificate Authorities from issuing certificates for a parked domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Publish 0 issue ";" at the zone apex. The semicolon value matches no Certificate Authority, so every issuance request is rejected while the record exists. Add 0 issuewild ";" as well to close the wildcard path explicitly, and consider an iodef record so any attempted issuance reports to a mailbox you monitor.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Inspect the rest of the zone's records alongside CAA with the <a href="/dns-record-lookup/">DNS record lookup</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 8659, DNS Certification Authority Authorization (CAA Resource Record): <a href="https://www.rfc-editor.org/rfc/rfc8659" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8659</a></li>
+        <li>IETF RFC 8657, CAA Record Extensions for Account URI and ACME Method Binding: <a href="https://www.rfc-editor.org/rfc/rfc8657" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8657</a></li>
+        <li>CA/Browser Forum TLS Baseline Requirements (section 3.2.2.8, CAA Record Checking): <a href="https://cabforum.org/baseline-requirements-documents/" rel="noopener" target="_blank">cabforum.org/baseline-requirements-documents</a></li>
       </ul>
     </article>
   </div>
 </BaseLayout>
+
+<script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (caal-).
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
+  const form = document.getElementById('caal-form') as HTMLFormElement;
+  const input = document.getElementById('caal-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('caal-status')!;
+  const policyEl = document.getElementById('caal-policy')!;
+  const tbody = document.getElementById('caal-tbody')!;
+  const TOOL = 'caa-record-lookup';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  const CA_NAMES: [string, string][] = [
+    ['letsencrypt.org', "Let's Encrypt (ISRG)"],
+    ['pki.goog', 'Google Trust Services'],
+    ['digicert.com', 'DigiCert'],
+    ['sectigo.com', 'Sectigo'],
+    ['comodoca.com', 'Sectigo (Comodo)'],
+    ['amazontrust.com', 'AWS Certificate Manager (ACM)'],
+    ['amazon.com', 'AWS Certificate Manager (ACM)'],
+    ['ssl.com', 'SSL.com'],
+    ['globalsign.com', 'GlobalSign'],
+    ['entrust.net', 'Entrust'],
+    ['buypass.com', 'Buypass'],
+  ];
+  const caName = (domain: string) => {
+    const d = domain.toLowerCase();
+    for (const [k, v] of CA_NAMES) if (d === k || d.endsWith('.' + k)) return v;
+    return domain;
+  };
+
+  interface CaaRecord { raw: string; flags: number; tag: string; value: string; ttl: number; resolvers: string[]; scope: string }
+
+  function parseCaa(data: string, ttl: number, resolver: string, scope: string, existing: Map<string, CaaRecord>) {
+    const key = data.trim();
+    const hit = existing.get(key);
+    if (hit) { if (!hit.resolvers.includes(resolver)) hit.resolvers.push(resolver); return; }
+    const m = key.match(/^(\d{1,3})\s+([a-zA-Z]+)\s+"?([^"]*)"?$/);
+    if (!m) { existing.set(key, { raw: key, flags: -1, tag: 'unparsed', value: key, ttl, resolvers: [resolver], scope }); return; }
+    existing.set(key, { raw: key, flags: Number(m[1]), tag: m[2].toLowerCase(), value: m[3], ttl, resolvers: [resolver], scope });
+  }
+
+  const TAG_DESC: Record<string, string> = {
+    issue: 'authorizes single-name certificates (and wildcards unless issuewild exists)',
+    issuewild: 'governs wildcard *.domain certificates only; overrides issue for wildcards',
+    iodef: 'receives violation reports (mailto: or https:)',
+    contactemail: 'non-standard contact mailbox',
+    contactphone: 'non-standard contact phone',
+    unparsed: 'unrecognized data format',
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain or subdomain.'); return; }
+    setStatus('loading', `Querying Type 257 across 3 resolvers for ${domain}, then climbing the RFC 8659 tree if needed...`);
+    policyEl.classList.add('hidden'); policyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+    document.getElementById('caal-sample-note')?.classList.add('hidden');
+
+    try {
+      // Step 1: CAA + CNAME across all 3 resolvers on the queried name
+      const directMap = new Map<string, CaaRecord>();
+      const seenBy: string[] = [];
+      let servfailCount = 0;
+      let cnameTarget: string | null = null;
+      await Promise.all(RESOLVERS.map(async (r) => {
+        const caa = await lookup(domain, 'CAA', r);
+        const cn = await lookup(domain, 'CNAME', r);
+        if (caa.status === 2) servfailCount++;
+        if (caa.status === 0 && !seenBy.includes(r.name)) seenBy.push(r.name);
+        for (const a of caa.answers) if (a.type === 257) parseCaa(a.data, a.TTL, r.name, `Direct on ${domain}`, directMap);
+        if (!cnameTarget) {
+          const c = cn.answers.find((a) => a.type === 5);
+          if (c) cnameTarget = c.data.replace(/\.$/, '');
+        }
+      }));
+      const direct: CaaRecord[] = [...directMap.values()];
+
+      // Step 2: RFC 8659 tree climbing (and CNAME target check) when nothing direct
+      const climbTrace: string[] = [];
+      let inheritedFrom: string | null = null;
+      let viaCname: string | null = null;
+      if (direct.length === 0) {
+        if (cnameTarget) {
+          const targetMap = new Map<string, CaaRecord>();
+          await Promise.all(RESOLVERS.map(async (r) => {
+            const t = await lookup(cnameTarget as string, 'CAA', r);
+            for (const a of t.answers) if (a.type === 257) parseCaa(a.data, a.TTL, r.name, `Inherited via CNAME target ${cnameTarget}`, targetMap);
+          }));
+          if (targetMap.size > 0) { viaCname = cnameTarget; for (const rec of targetMap.values()) direct.push(rec); }
+          climbTrace.push(`CNAME alias to ${cnameTarget}: ${targetMap.size > 0 ? 'CAA found at the target' : 'no CAA at the target'}`);
+        }
+        if (direct.length === 0) {
+          const labels = domain.split('.');
+          let current = labels.slice(1).join('.');
+          let hops = 0;
+          while (current.includes('.') && hops < 8) {
+            const levelMap = new Map<string, CaaRecord>();
+            await Promise.all(RESOLVERS.map(async (r) => {
+              const t = await lookup(current, 'CAA', r);
+              for (const a of t.answers) if (a.type === 257) parseCaa(a.data, a.TTL, r.name, `Inherited from parent ${current}`, levelMap);
+            }));
+            climbTrace.push(`CAA at ${current}: ${levelMap.size > 0 ? levelMap.size + ' record(s) found' : 'none, climbing'}`);
+            if (levelMap.size > 0) { inheritedFrom = current; for (const rec of levelMap.values()) direct.push(rec); break; }
+            current = current.split('.').slice(1).join('.');
+            hops++;
+          }
+        }
+      }
+
+      // Step 3: breakdown table
+      tbody.textContent = '';
+      const addRow = (cells: string[]) => {
+        const tr = document.createElement('tr');
+        cells.forEach((c, i) => tr.append(el('td', i === 0 ? 'text-sm text-ink' : i === 4 ? 'font-mono text-xs text-ink-dim' : 'text-sm text-ink-dim', c)));
+        tbody.append(tr);
+      };
+      if (servfailCount === RESOLVERS.length) {
+        addRow(['SERVFAIL', '-', '-', 'All 3 resolvers failed: CAs must abort issuance until DNS answers', '-']);
+        setStatus('fail', `Every resolver returned SERVFAIL for ${domain}: CAA verification is inconclusive and issuance will be blocked. This is a DNS health problem, not a policy.`);
+        emit(domain, 'fail', `CAA SERVFAIL on ${domain}: issuance blocked.`, [{ code: 'CAA_SERVFAIL', detail: 'All resolvers failed the Type 257 query.' }]);
+        return;
+      }
+      if (direct.length === 0) {
+        addRow([`No CAA records found on ${domain} or any parent`, '-', '-', 'Open issuance: every public CA may issue (NOERROR, 0 answers)', seenBy.length ? `answered by ${seenBy.length}/3 resolvers` : '-']);
+        setStatus('pass', `No CAA policy on ${domain}: open issuance. Publish 0 issue records to restrict it.`);
+        emit(domain, 'info', `No CAA records on ${domain}: open issuance.`, [{ code: 'CAA_NONE', detail: 'NOERROR with zero answers.' }]);
+        return;
+      }
+
+      for (const rec of direct) {
+        const flagText = rec.flags === 128 ? '128 (issuer-critical)' : String(rec.flags);
+        const valueParts = rec.value.split(';').map((s) => s.trim()).filter(Boolean);
+        const caPart = valueParts[0] || '';
+        const params = valueParts.slice(1);
+        const caText = caPart === ';' ? 'Deny all issuance' : `${caName(caPart)}${caPart ? ` from ${caPart}` : ''}`;
+        const paramText = params.length ? ` + RFC 8657: ${params.join(', ')}` : '';
+        addRow([
+          rec.scope,
+          flagText,
+          `${rec.tag} (${TAG_DESC[rec.tag] || 'unknown tag'})`,
+          `${caText}${paramText}`,
+          `${rec.ttl}s, ${rec.resolvers.length}/3 resolvers`,
+        ]);
+      }
+      if (climbTrace.length) addRow(['RFC 8659 tree walk', '-', '-', climbTrace.join(' -> '), '-']);
+
+      // Step 4: policy summary box
+      const issueSet = direct.filter((r) => r.tag === 'issue');
+      const wildSet = direct.filter((r) => r.tag === 'issuewild');
+      const iodef = direct.find((r) => r.tag === 'iodef');
+      const namesOf = (set: CaaRecord[]) => set.map((r) => { const ca = r.value.split(';')[0].trim(); return ca === ';' ? null : caName(ca); }).filter(Boolean).join(', ') || 'none (deny-all)';
+      const box = el('div', '');
+      box.append(el('p', 'font-semibold text-ink', 'Effective issuance policy'));
+      const single = issueSet.length === 0 && wildSet.length === 0 ? 'Open: any public CA may issue (no CAA records found in the tree)' : `Single-name certificates: ${namesOf(issueSet)}`;
+      const wildcard = wildSet.length > 0
+        ? `Wildcard certificates: ${namesOf(wildSet)} (issuewild overrides issue per RFC 8659 section 4.3)`
+        : issueSet.length > 0 ? 'Wildcard certificates: same as single-name (no issuewild published)' : 'Wildcard certificates: open (no records found)';
+      const reporting = iodef ? `Violation reporting: ${iodef.value}` : 'Violation reporting: not configured (no iodef record)';
+      box.append(el('p', 'mt-1 text-sm text-ink-dim', (inheritedFrom ? `Inherited from ${inheritedFrom}: ` : viaCname ? `Via CNAME target ${viaCname}: ` : `Direct on ${domain}: `) + single));
+      box.append(el('p', 'mt-1 text-sm text-ink-dim', wildcard));
+      box.append(el('p', 'mt-1 text-sm text-ink-dim', reporting));
+      policyEl.append(box);
+      policyEl.classList.remove('hidden');
+
+      const deny = direct.some((r) => r.tag !== 'iodef' && r.value.split(';')[0].trim() === ';');
+      setStatus(deny ? 'info' : 'pass', `CAA policy resolved for ${domain}: ${direct.length} record${direct.length === 1 ? '' : 's'}${inheritedFrom ? `, inherited from ${inheritedFrom}` : ''}.`);
+      emit(domain, deny ? 'warn' : 'pass', `CAA policy on ${domain}: ${direct.length} record(s)${inheritedFrom ? ` (inherited from ${inheritedFrom})` : ''}.`,
+        [{ code: 'CAA_POLICY', detail: direct.map((r) => r.raw).slice(0, 6).join(' | ') }]);
+    } catch {
+      setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
+    }
+  });
+</script>
