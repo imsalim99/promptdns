@@ -1,23 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Diagram from '../components/Diagram.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
 
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Does robots.txt prevent Google from indexing my page?", "acceptedAnswer": { '@type': 'Answer', "text": "Not directly. Disallow in robots.txt prevents crawling, but Google may still index the URL if other pages link to it. Use noindex meta tags to prevent indexing." } },
-    {'@type': 'Question', 'name': "Can I use robots.txt to block AI crawlers?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. Use User-agent: GPTBot with Disallow: / to block OpenAI's training crawler. Our checker shows you which AI crawlers are currently allowed or blocked by your robots.txt." } },
-    {'@type': 'Question', 'name': "What happens if my robots.txt has a syntax error?", "acceptedAnswer": { '@type': 'Answer', "text": "Most crawlers ignore malformed lines and process the valid ones. Our checker highlights syntax issues so you can fix them before they affect crawling." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Why is a URL blocked when I only disallowed a folder?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Because robots.txt rules are prefix matches. Disallow: /admin (no trailing slash) blocks /admin-login.html and /administrators/ along with everything else starting with those characters, while Disallow: /folder/ blocks every file and subfolder inside /folder/ unless a longer Allow: rule overrides it for a specific URL. Add the trailing slash when you mean a directory, and use a longer Allow: pattern to carve out exceptions.' } },
+    { '@type': 'Question', 'name': 'Does robots.txt stop a page from being indexed in Google?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, blocking a URL in robots.txt only stops Googlebot from crawling the page; it does not prevent Google from indexing the URL if other pages link to it. An index entry without content (a blocked, linked URL) is exactly what robots.txt produces. To keep a URL out of results entirely, allow crawling and serve a meta robots noindex tag or an X-Robots-Tag: noindex HTTP header so Googlebot can read the directive.' } },
+    { '@type': 'Question', 'name': 'Which rule wins when allow and disallow both match a URL?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Under RFC 9309 Section 2.2.2, the rule with the longest matching pattern in octets (characters) always wins, regardless of whether it is Allow or Disallow. If an Allow and a Disallow pattern match the exact same octet length, Allow wins the tie. For example, with Allow: /p (2 octets) and Disallow: /page (5 octets), the Disallow wins for /page because 5 octets beat 2.' } },
+    { '@type': 'Question', 'name': 'What happens if my robots.txt file returns a 404 or 500 HTTP error?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'RFC 9309 Section 2.3.1 defines both outcomes, and Google documents the same behavior: any 4xx response (404 Not Found, 403, 410) means the file is unavailable, and crawling is allowed as if no robots.txt existed. A 5xx response (500, 502, 503) is treated as a temporary server error: Googlebot halts all crawling of the site and retries, continuing to honor the last good robots.txt for up to 12 hours before assuming unrestricted crawling.' } },
+    { '@type': 'Question', 'name': 'If I add a User-agent: Googlebot group, does Googlebot still follow my User-agent: * rules?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, once a crawler matches a specific named User-agent group, it obeys only that group and ignores User-agent: * completely (RFC 9309 Section 2.2.1). Any global Disallow: rules that must also apply to Googlebot have to be repeated inside the Googlebot group, which is why adding a small Googlebot block for one folder accidentally wipes out all the global rules that were only listed under the wildcard group.' } },
+  ],
+};
 ---
-<BaseLayout
-  title="robots.txt Checker, Validate Your robots.txt"
-  description="Free robots.txt checker and validator: fetch any site's robots.txt, find syntax errors and unknown directives, and preview how crawlers read it."
-  schema={[faqSchema]}
->
+<BaseLayout title="robots.txt Checker, Validator & URL Tester (RFC 9309)" description="Free robots.txt checker: validate syntax against RFC 9309, inspect user-agent groups, Sitemap directives and CDN-prepended rules, and test any URL path against Googlebot, Bingbot, GPTBot, ClaudeBot or a custom user agent to see the exact winning rule." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -26,136 +25,437 @@ const faqSchema = {
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">robots.txt Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Robots.txt Checker: Validate Rules and Crawler Access</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free robots.txt checker: parse directives, find errors, verify AI crawler access rules.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">robots.txt Checker, Validator &amp; URL Tester</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Validate your domain's robots.txt syntax against RFC 9309, inspect user-agent groups, Sitemap directives, and CDN-prepended rules, and test any URL path against Googlebot, Bingbot, GPTBot, ClaudeBot, or any custom user agent to see the exact winning rule.</p>
 
-    <ToolPanel>
-      <form id="rt-form" class="flex flex-col gap-3 sm:flex-row">
-        <label class="sr-only" for="rt-domain">Domain</label>
-        <input id="rt-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
-          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
-        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check robots.txt</button>
-      </form>
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="rt-form" class="flex flex-col gap-3 sm:flex-row">
+          <label class="sr-only" for="rt-domain">Domain or full URL</label>
+          <input id="rt-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com or https://example.com/private/report.pdf"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check robots.txt</button>
+        </form>
+        <div class="mt-2 text-xs text-ink-faint">
+          <button type="button" id="rt-paste-toggle" class="text-accent hover:text-accent-soft">or paste robots.txt content instead</button>
+        </div>
+        <div id="rt-paste" class="mt-3 hidden">
+          <textarea id="rt-paste-text" rows="8" spellcheck="false" placeholder="User-agent: *&#10;Disallow: /private/&#10;&#10;Sitemap: https://example.com/sitemap.xml"
+            class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-xs text-ink focus:border-accent focus:outline-none"></textarea>
+          <button type="button" id="rt-parse-paste" class="btn-cta btn-shimmer mt-2 px-6 py-2 text-sm">Parse pasted content</button>
+        </div>
 
-      <div id="rt-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="rt-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="rt-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="rt-errors" class="mt-4 hidden grid gap-2"></div>
 
-      <div id="rt-issues" class="mt-4 hidden grid gap-2"></div>
+        <div id="rt-tester" class="mt-6 hidden rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <p class="text-sm font-semibold text-ink">URL and user-agent tester</p>
+          <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input id="rt-path" type="text" value="/" spellcheck="false" placeholder="/admin/settings"
+              class="flex-1 rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+            <select id="rt-ua" class="rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none">
+              <option value="*">User-agent: * (wildcard)</option>
+              <option value="Googlebot">Googlebot</option>
+              <option value="Bingbot">Bingbot</option>
+              <option value="Applebot">Applebot</option>
+              <option value="GPTBot">GPTBot</option>
+              <option value="OAI-SearchBot">OAI-SearchBot</option>
+              <option value="ChatGPT-User">ChatGPT-User</option>
+              <option value="ClaudeBot">ClaudeBot</option>
+              <option value="Claude-SearchBot">Claude-SearchBot</option>
+              <option value="PerplexityBot">PerplexityBot</option>
+              <option value="Google-Extended">Google-Extended</option>
+              <option value="CCBot">CCBot</option>
+              <option value="__custom">Custom token...</option>
+            </select>
+          </div>
+          <input id="rt-ua-custom" type="text" spellcheck="false" placeholder="Custom user-agent token, e.g. Amazonbot"
+            class="mt-2 hidden w-full rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <div id="rt-verdict" class="mt-3"></div>
+          <div id="rt-matrix" class="mt-3 hidden flex flex-wrap gap-1.5"></div>
+        </div>
 
-      <div id="rt-ai" class="mt-4 hidden grid gap-2"></div>
-
-      <p id="rt-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample robots.txt for <code>example.com</code>. Enter any site above to read and validate the real file.
-      </p>
-      <div id="rt-raw-wrap" class="mt-2">
-        <p class="mb-2 text-sm font-semibold text-ink">robots.txt content</p>
-        <pre id="rt-raw" class="max-h-96 overflow-auto rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs leading-relaxed text-ink-dim">User-agent: *
-Disallow: /private/
-Disallow: /tmp/
-
-User-agent: GPTBot
-Disallow: /
-
-Sitemap: https://example.com/sitemap.xml</pre>
-      </div>
-    </ToolPanel>
-
-    <article class="rich-text mt-14 max-w-none">
-      <h2>What the validator checks</h2>
-      <p>Malformed lines (no colon), unknown directives crawlers silently ignore, empty <code>Disallow:</code> values (they allow everything, usually a mistake), oversized files (some crawlers stop reading), missing Sitemap lines, and how the 12 major AI bots interpret your rules.</p>
-      
-      
-
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">AI bot verdicts</h2>
-      <div class="mt-3 overflow-x-auto rounded-xl border border-line bg-panel/60">
-        <table class="pdns-table"><tbody><tr><td class="font-mono text-xs text-accent">GPTBot</td><td class="text-sm text-ink-dim">OpenAI training crawler</td></tr><tr><td class="font-mono text-xs text-accent">ClaudeBot</td><td class="text-sm text-ink-dim">Anthropic training + retrieval</td></tr><tr><td class="font-mono text-xs text-accent">PerplexityBot</td><td class="text-sm text-ink-dim">Perplexity answer engine</td></tr></tbody></table>
+        <div id="rt-groups" class="mt-6 hidden"></div>
+        <ResultCard tool="robots-txt-checker" />
+      </ToolPanel>
     </div>
 
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 robots.txt validation and HTTP status states</h2>
+      <p>
+        Crawlers fetch, parse, and evaluate /robots.txt under RFC 9309: one fetch per scheme, subdomain, and port, groups selected by user-agent token, rules matched by longest pattern, with the fetch status itself deciding what happens when the file cannot be read. The table below defines the five states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Validation State</th><th>Observed File or HTTP Condition</th><th>Crawler Behavior (RFC 9309)</th><th>SEO and AI Crawl Impact</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Valid 200 OK with clean RFC 9309 syntax</td><td class="text-sm text-ink-dim">File fetched, groups and rules parse without errors</td><td class="text-sm text-ink-dim">Crawlers honor the parsed groups for every URL</td><td class="text-sm text-ink-dim">Full control over crawling; AI and search bots follow the same parsed rules.</td></tr>
+            <tr><td class="font-medium text-ink">HTTP 404 or 4xx not found</td><td class="text-sm text-ink-dim">No robots.txt at the host</td><td class="text-sm text-ink-dim">Treated as allow-all: unrestricted crawling (section 2.3.1)</td><td class="text-sm text-ink-dim">Everything is crawlable, including paths you may want gated. Publish a file to restrict.</td></tr>
+            <tr><td class="font-medium text-ink">HTTP 500 / 503 / 5xx server error</td><td class="text-sm text-ink-dim">robots.txt URL returns a server error or times out</td><td class="text-sm text-ink-dim">Treated as a temporary disallow-all: crawlers halt and retry (section 2.3.1)</td><td class="text-sm text-ink-dim">Crawling stops site-wide while the error persists. Fix the server, not the file.</td></tr>
+            <tr><td class="font-medium text-ink">Rule conflict or longest-match override</td><td class="text-sm text-ink-dim">Allow and Disallow patterns both match the tested path</td><td class="text-sm text-ink-dim">Longest matching pattern wins; equal length favors Allow (section 2.2.2)</td><td class="text-sm text-ink-dim">The tester names the winning rule and line so conflicts are fixable in seconds.</td></tr>
+            <tr><td class="font-medium text-ink">Syntax errors or CDN-prepended contradictions</td><td class="text-sm text-ink-dim">Rules before any User-agent, malformed paths, or a # BEGIN Cloudflare Managed content block in front of your rules</td><td class="text-sm text-ink-dim">Malformed lines are ignored; prepended managed rules sit in front of yours</td><td class="text-sm text-ink-dim">One policy must win: remove contradictions or the managed prepend.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to fix common robots.txt blocking and syntax errors</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Consolidate.</strong> Put every rule for each crawler inside one User-agent group: a crawler matching a specific group like <code>User-agent: Googlebot</code> completely ignores <code>User-agent: *</code> (section 2.2.1), so global Disallow rules must be repeated inside any specific group you create.</li>
+        <li><strong>Anchor.</strong> Use <code>*</code> wildcards and <code>$</code> end anchors deliberately: prefix matching means <code>Disallow: /blog</code> also blocks <code>/blog-post-1</code>, while <code>Disallow: /blog/</code> does not. The tester shows which pattern actually catches a given path.</li>
+        <li><strong>Separate crawling from indexing.</strong> Remove <code>Disallow:</code> on pages that carry <code>&lt;meta name="robots" content="noindex"&gt;</code>: a blocked URL cannot be crawled, so Googlebot never reads its noindex directive and the URL may still appear in results.</li>
+        <li><strong>Declare.</strong> End the file with absolute <code>Sitemap:</code> URLs, and verify your CDN's bot settings match the file: the <a href="/robots-txt-guide/">robots.txt guide</a> covers the syntax, and <a href="/block-ai-crawlers-cloudflare/">Cloudflare's AI crawler controls</a> can override what the file says.</li>
+      </ol>
+
+      <h2>Verify robots.txt from the command line (curl)</h2>
+      <pre><code># 1. HTTP status, redirect hops, and byte size
+curl -sSL -D - https://example.com/robots.txt -o /dev/null
+
+# 2. Compare what a browser sees vs Googlebot or GPTBot
+curl -sA "Googlebot/2.1" https://example.com/robots.txt | head -n 30
+curl -sA "GPTBot/1.0" https://example.com/robots.txt | head -n 30
+
+# 3. Invisible UTF-8 BOM bytes or CRLF issues
+curl -s https://example.com/robots.txt | file -</code></pre>
+
+      <h2>Reference table: RFC 9309 directives, matching precedence, and HTTP status rules</h2>
+      <p>The table below defines every directive and matching rule this tool implements.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Directive / Rule (RFC 9309)</th><th>Syntax Example</th><th>Matching and Precedence Behavior</th><th>Crawler Support and Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">User-agent: (section 2.2.1)</td><td class="font-mono text-xs">User-agent: Googlebot | User-agent: *</td><td class="text-sm text-ink-dim">Case-insensitive token match; a specific group overrides *; duplicate identical tokens merge</td><td class="text-sm text-ink-dim">Universal; token product names vary by crawler.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Disallow: (section 2.2.2)</td><td class="font-mono text-xs">Disallow: /admin/</td><td class="text-sm text-ink-dim">Prefix match from root /; an empty Disallow: value allows everything</td><td class="text-sm text-ink-dim">Universal.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Allow: (section 2.2.2)</td><td class="font-mono text-xs">Allow: /admin/public.html</td><td class="text-sm text-ink-dim">Overrides a shorter or equal-length Disallow: pattern</td><td class="text-sm text-ink-dim">Google, Bing, and most major crawlers.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Longest-match precedence (section 2.2.2)</td><td class="font-mono text-xs">Allow: /p (2 octets) vs Disallow: /page (5 octets)</td><td class="text-sm text-ink-dim">The rule matching the most octets of the URL path always wins</td><td class="text-sm text-ink-dim">Universal among RFC 9309 parsers.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Equal-length tie-breaker (section 2.2.2)</td><td class="font-mono text-xs">Allow: /page (5) vs Disallow: /page (5)</td><td class="text-sm text-ink-dim">Allow wins whenever both patterns match the exact same octet length</td><td class="text-sm text-ink-dim">Google and Bing documented behavior.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Wildcard * and end anchor $ (section 2.2.3)</td><td class="font-mono text-xs">Disallow: /*.pdf$</td><td class="text-sm text-ink-dim">* matches zero or more characters; $ anchors the match to the end of the URL including query</td><td class="text-sm text-ink-dim">Google, Bing, and most major crawlers.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Sitemap: (section 2.2.4)</td><td class="font-mono text-xs">Sitemap: https://example.com/sitemap.xml</td><td class="text-sm text-ink-dim">File-level directive independent of groups; must be a full absolute URI</td><td class="text-sm text-ink-dim">Universal; multiple Sitemap lines allowed.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">500 KiB file size limit (section 2.2)</td><td class="font-mono text-xs">Maximum 512,000 bytes</td><td class="text-sm text-ink-dim">Parsers ignore any rules after the 500 KiB boundary</td><td class="text-sm text-ink-dim">Google documented; RFC 9309 recommends the same cap.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Non-standard extensions (Crawl-delay: and Content-Signal:)</td><td class="font-mono text-xs">Crawl-delay: 10 | Content-Signal: ai-train=no</td><td class="text-sm text-ink-dim">Outside RFC 9309: honored by some crawlers, ignored by others</td><td class="text-sm text-ink-dim">Googlebot ignores Crawl-delay; Bing and Yandex read it; Cloudflare AI Crawl Control reads Content-Signal.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        AI crawler access is decided by these same user-agent groups: run the deep per-bot audit in the <a href="/ai-crawler-checker/">AI crawler checker</a>, and study the mechanics in <a href="/how-to-block-ai-crawlers/">how to block AI crawlers</a> or <a href="/how-to-allow-ai-crawlers/">how to allow them</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>robots.txt controls crawling, not indexing: if external websites link to a URL blocked by Disallow:, Google may still index that URL without its page content unless you allow crawling and serve a meta robots noindex tag or an X-Robots-Tag: noindex HTTP header.</li>
+        <li>robots.txt cannot enforce access control against malicious bots or scrapers that ignore RFC 9309; actual enforcement requires WAF or edge IP rules.</li>
+        <li>Rules in https://example.com/robots.txt apply strictly to that exact scheme, subdomain, and port: https://app.example.com/ needs its own /robots.txt.</li>
+        <li>Passing a robots.txt syntax check does not guarantee that a CDN WAF (such as Cloudflare Bot Fight Mode) allows the crawler's HTTP request through on port 443: the two layers are independent.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Two traps produce most robots.txt support tickets: the prefix-match trap (Disallow: /blog silently blocks /blog-archive/ and /blogger.html because the trailing slash was omitted) and the group non-merging trap (adding a User-agent: Googlebot block to allow one folder accidentally wipes out every global Disallow: /staging/ rule that was only listed under User-agent: *). The URL tester exists to catch both before deploy.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The recurring early findings: sites blocking their own /_next/static/, /_astro/, or /wp-content/ JS and CSS bundles in robots.txt, which breaks Google's headless Chromium rendering pass and with it mobile layout evaluation, and Cloudflare managed robots.txt sections prepended in front of site rules so the same crawler reads two contradictory policies in one fetch.
+      </p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does robots.txt prevent Google from indexing my page?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not directly. Disallow in robots.txt prevents crawling, but Google may still index the URL if other pages link to it. Use noindex meta tags to prevent indexing.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I use robots.txt to block AI crawlers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. Use User-agent: GPTBot with Disallow: / to block OpenAI's training crawler. Our checker shows you which AI crawlers are currently allowed or blocked by your robots.txt.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my robots.txt has a syntax error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Most crawlers ignore malformed lines and process the valid ones. Our checker highlights syntax issues so you can fix them before they affect crawling.</p></details></div>
-      <h2>Related tools</h2>
-      <ul>
-        <li><a href="/ai-crawler-checker/">AI Crawler Checker</a>, the AI-focused deep audit</li>
-        <li><a href="/llms-txt-generator/">llms.txt Generator</a></li>
-        <li><a href="/robots-txt-guide/">robots.txt: the complete guide</a></li>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is a URL blocked when I only disallowed a folder?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Because robots.txt rules are prefix matches. Disallow: /admin (no trailing slash) blocks /admin-login.html and /administrators/ along with everything else starting with those characters, while Disallow: /folder/ blocks every file and subfolder inside /folder/ unless a longer Allow: rule overrides it for a specific URL. Add the trailing slash when you mean a directory, and use a longer Allow: pattern to carve out exceptions.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does robots.txt stop a page from being indexed in Google?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, blocking a URL in robots.txt only stops Googlebot from crawling the page; it does not prevent Google from indexing the URL if other pages link to it. An index entry without content (a blocked, linked URL) is exactly what robots.txt produces. To keep a URL out of results entirely, allow crawling and serve a meta robots noindex tag or an X-Robots-Tag: noindex HTTP header so Googlebot can read the directive.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which rule wins when allow and disallow both match a URL?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Under RFC 9309 Section 2.2.2, the rule with the longest matching pattern in octets (characters) always wins, regardless of whether it is Allow or Disallow. If an Allow and a Disallow pattern match the exact same octet length, Allow wins the tie. For example, with Allow: /p (2 octets) and Disallow: /page (5 octets), the Disallow wins for /page because 5 octets beat 2.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my robots.txt file returns a 404 or 500 HTTP error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">RFC 9309 Section 2.3.1 defines both outcomes, and Google documents the same behavior: any 4xx response (404 Not Found, 403, 410) means the file is unavailable, and crawling is allowed as if no robots.txt existed. A 5xx response (500, 502, 503) is treated as a temporary server error: Googlebot halts all crawling of the site and retries, continuing to honor the last good robots.txt for up to 12 hours before assuming unrestricted crawling.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">If I add a User-agent: Googlebot group, does Googlebot still follow my User-agent: * rules?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, once a crawler matches a specific named User-agent group, it obeys only that group and ignores User-agent: * completely (RFC 9309 Section 2.2.1). Any global Disallow: rules that must also apply to Googlebot have to be repeated inside the Googlebot group, which is why adding a small Googlebot block for one folder accidentally wipes out all the global rules that were only listed under the wildcard group.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Study the crawler tokens in the <a href="/ai-crawlers-list/">AI crawlers list</a> and declare content preferences with the <a href="/llms-txt-generator/">llms.txt generator</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 9309, Robots Exclusion Protocol: <a href="https://www.rfc-editor.org/rfc/rfc9309" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9309</a></li>
+        <li>Google Search Central, How Google interprets the robots.txt specification: <a href="https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt" rel="noopener" target="_blank">developers.google.com</a></li>
+        <li>Bing Webmaster Guidelines, robots.txt specification: <a href="https://www.bing.com/webmasters/help/robots-txt-3fee3ca2" rel="noopener" target="_blank">bing.com/webmasters</a></li>
       </ul>
     </article>
   </div>
 </BaseLayout>
 
 <script>
-  import { fetchText, hostOf } from '../lib/proxy';
-  import { parseRobots, verdictsFor, looksLikeHtml } from '../lib/robots';
-
-  const KNOWN_FIELDS = new Set(['user-agent', 'disallow', 'allow', 'crawl-delay', 'sitemap', 'host', 'clean-param', 'cache-control', 'comment']);
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (rt-).
+  interface RtRule { type: 'allow' | 'disallow' | 'content-signal'; path: string; raw: string; line: number }
+  interface RtGroup { tokens: string[]; rules: RtRule[] }
+  interface RtData {
+    ok: boolean; mode: string;
+    robots: { classification: string; status: number | null; note: string; finalUrl: string | null; bytes: number; truncated: boolean };
+    groups: RtGroup[]; sitemaps: string[]; errors: string[]; notes: string[];
+    managed: boolean; contentSignals: boolean; error?: string;
+  }
 
   const form = document.getElementById('rt-form') as HTMLFormElement;
   const input = document.getElementById('rt-domain') as HTMLInputElement;
   const statusEl = document.getElementById('rt-status')!;
-  const issuesEl = document.getElementById('rt-issues')!;
-  const aiEl = document.getElementById('rt-ai')!;
-  const rawWrap = document.getElementById('rt-raw-wrap')!;
-  const rawEl = document.getElementById('rt-raw')!;
+  const cardsEl = document.getElementById('rt-cards')!;
+  const errorsEl = document.getElementById('rt-errors')!;
+  const testerEl = document.getElementById('rt-tester')!;
+  const pathEl = document.getElementById('rt-path') as HTMLInputElement;
+  const uaEl = document.getElementById('rt-ua') as HTMLSelectElement;
+  const uaCustom = document.getElementById('rt-ua-custom') as HTMLInputElement;
+  const verdictEl = document.getElementById('rt-verdict')!;
+  const matrixEl = document.getElementById('rt-matrix')!;
+  const groupsEl = document.getElementById('rt-groups')!;
+  const pasteToggle = document.getElementById('rt-paste-toggle')!;
+  const pasteBox = document.getElementById('rt-paste')!;
+  const pasteText = document.getElementById('rt-paste-text') as HTMLTextAreaElement;
+  const parsePasteBtn = document.getElementById('rt-parse-paste')!;
+  const TOOL = 'robots-txt-checker';
 
-  const setStatus = (cls: string, text: string) => {
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
     statusEl.textContent = text;
-  };
+  }
+
+  // ---------- Client-side RFC 9309 evaluator (instant, no network) ----------
+  function patternToRegex(pattern: string): RegExp | null {
+    if (pattern.length === 0) return null;
+    let out = '';
+    for (const ch of pattern) {
+      if (ch === '*') out += '[\\s\\S]*';
+      else if (ch === '$') out += '$';
+      else out += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    try { return new RegExp('^' + out); } catch { return null; }
+  }
+
+  interface Win { verdict: 'allowed' | 'disallowed'; group: string | null; rule: RtRule | null; octets: number; reason: string }
+
+  function evaluatePath(groups: RtGroup[], token: string, path: string): Win {
+    const lower = token.toLowerCase();
+    const specific = groups.filter((g) => g.tokens.some((t) => t.toLowerCase() === lower));
+    const wildcard = groups.filter((g) => g.tokens.includes('*'));
+    const active = specific.length > 0 ? specific : wildcard;
+    if (active.length === 0) {
+      return { verdict: 'allowed', group: null, rule: null, octets: 0, reason: 'No group matches this user agent: implicit allow when no rules apply.' };
+    }
+    const group = specific.length > 0 ? specific[0].tokens[0] : '*';
+    let best: { rule: RtRule; len: number } | null = null;
+    for (const g of active) {
+      for (const r of g.rules) {
+        if (r.type !== 'allow' && r.type !== 'disallow') continue;
+        if (r.type === 'disallow' && r.path === '') continue;
+        const re = patternToRegex(r.path);
+        if (!re || !re.test(path)) continue;
+        const len = r.path.length;
+        if (!best || len > best.len || (len === best.len && r.type === 'allow' && best.rule.type === 'disallow')) {
+          best = { rule: r, len };
+        }
+      }
+    }
+    if (!best) {
+      return { verdict: 'allowed', group, rule: null, octets: 0, reason: 'Implicit allow when no rule matches: no Allow or Disallow pattern in group ' + group + ' matches this path.' };
+    }
+    const reason = best.rule.type === 'allow'
+      ? 'Longest matching pattern by octet length wins; if Allow and Disallow tie in length, Allow wins (RFC 9309 section 2.2.2). This Allow matched at ' + best.len + ' octets.'
+      : 'Longest matching pattern by octet length wins (RFC 9309 section 2.2.2). This Disallow matched at ' + best.len + ' octets.';
+    return { verdict: best.rule.type === 'allow' ? 'allowed' : 'disallowed', group, rule: best.rule, octets: best.len, reason };
+  }
+
+  const MATRIX_BOTS: [string, string][] = [
+    ['Googlebot', 'Search'], ['Bingbot', 'Search'], ['Applebot', 'Search'],
+    ['GPTBot', 'AI'], ['OAI-SearchBot', 'AI'], ['ClaudeBot', 'AI'], ['PerplexityBot', 'AI'],
+    ['Google-Extended', 'AI'], ['CCBot', 'AI'], ['Claude-SearchBot', 'AI'],
+  ];
+
+  let CURRENT: RtData | null = null;
+
+  function renderTester() {
+    if (!CURRENT) return;
+    const path = pathEl.value.trim() || '/';
+    const token = uaEl.value === '__custom' ? (uaCustom.value.trim() || '*') : uaEl.value;
+    verdictEl.textContent = '';
+    const win = evaluatePath(CURRENT.groups, token, path);
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    const head = el('div', 'flex flex-wrap items-center justify-between gap-2');
+    head.append(el('span', 'font-mono text-sm text-ink', token + ' on ' + path));
+    head.append(el('span', `rounded px-2 py-0.5 text-xs font-semibold ${win.verdict === 'allowed' ? 'bg-pass/15 text-pass' : 'bg-fail/15 text-fail'}`, win.verdict === 'allowed' ? 'ALLOWED' : 'DISALLOWED'));
+    box.append(head);
+    const groupLine = win.group === null
+      ? 'No matching group: no specific group for ' + token + ' and no User-agent: * group.'
+      : (win.group === '*' && token !== '*'
+        ? 'No specific group for ' + token + '; fell back to User-agent: *'
+        : 'Matched specific group: User-agent: ' + win.group + ' (ignores User-agent: *)');
+    box.append(el('p', 'mt-2 text-xs text-ink-dim', groupLine));
+    box.append(el('p', 'mt-1 text-xs text-ink-dim', win.rule
+      ? 'Winning rule: Line ' + win.rule.line + ': ' + win.rule.raw + ' (' + win.octets + ' octets)'
+      : 'No matching rule (0 octets) -> Default Allow'));
+    box.append(el('p', 'mt-1 text-xs text-warn', win.reason));
+    verdictEl.append(box);
+
+    matrixEl.textContent = '';
+    for (const [bot] of MATRIX_BOTS) {
+      const w = evaluatePath(CURRENT.groups, bot, path);
+      matrixEl.append(el('span', `rounded px-2 py-0.5 text-xs font-medium ${w.verdict === 'disallowed' ? 'bg-fail/15 text-fail' : 'bg-pass/15 text-pass'}`, bot + ' ' + (w.verdict === 'disallowed' ? 'blocked' : 'allowed')));
+    }
+    matrixEl.classList.remove('hidden');
+  }
+
+  const fmtBytes = (n: number) => n.toLocaleString('en-US') + ' B';
+  let CURRENT_LABEL = 'live robots.txt';
+
+  function renderData(data: RtData, sourceLabel: string) {
+    CURRENT = data;
+    CURRENT_LABEL = sourceLabel;
+    cardsEl.textContent = ''; errorsEl.textContent = ''; groupsEl.textContent = '';
+    cardsEl.classList.add('hidden'); errorsEl.classList.add('hidden'); groupsEl.classList.add('hidden');
+    testerEl.classList.add('hidden'); verdictEl.textContent = ''; matrixEl.classList.add('hidden');
+    document.getElementById('rt-sample-note')?.classList.add('hidden');
+
+    const r = data.robots;
+    const ruleCount = data.groups.reduce((s, g) => s + g.rules.filter((x) => x.type === 'allow' || x.type === 'disallow').length, 0);
+    const fetchNote = r.classification === 'ok' ? '200 OK from ' + (r.finalUrl || 'the host')
+      : r.classification === 'unavailable-4xx' ? (r.status ?? '4xx') + ' (RFC 9309: treated as allow-all)'
+      : r.classification === 'unreachable-5xx' ? (r.status ?? 'network error') + ' (RFC 9309: treated as temporary disallow-all)'
+      : (r.note || 'fetch failed');
+
+    cardsEl.append(card('1. Fetch status (RFC 9309 section 2.3.1)',
+      r.classification === 'ok' ? '200 OK' : r.classification === 'unavailable-4xx' ? String(r.status ?? '4xx') + ' (allow all)' : r.classification === 'unreachable-5xx' ? String(r.status ?? '5xx') + ' (temporary disallow-all)' : 'Unreachable',
+      r.classification === 'ok' ? 'text-pass' : r.classification === 'unavailable-4xx' ? 'text-warn' : 'text-fail', fetchNote));
+    cardsEl.append(card('2. File size vs 500 KiB limit (section 2.2)',
+      fmtBytes(r.bytes) + ' / 512,000 B', r.bytes > 500 * 1024 ? 'text-fail' : 'text-pass',
+      r.truncated ? 'Parsed only the first 500 KiB: rules after the boundary are ignored.' : 'Within the limit crawlers parse.'));
+    cardsEl.append(card('3. Syntax and directives audit',
+      data.groups.length + ' groups, ' + ruleCount + ' rules',
+      data.errors.length ? 'text-warn' : 'text-pass',
+      data.sitemaps.length + ' Sitemap line(s); ' + data.errors.length + ' syntax issue(s); ' + (data.contentSignals ? 'Content-Signal present; ' : '') + (data.managed ? 'Cloudflare managed block present' : 'no managed prepend detected') + '.'));
+    cardsEl.append(card('4. Search vs AI bot matrix', '10 tokens tested', 'text-accent', 'Verdicts for the tested path across search indexers (Googlebot, Bingbot, Applebot) and AI bots (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot) in the tester below.'));
+    cardsEl.classList.remove('hidden');
+
+    errorsEl.textContent = '';
+    const notices: [string, boolean][] = [
+      ...data.errors.map((e) => [e, true] as [string, boolean]),
+      ...data.notes.map((n) => [n, false] as [string, boolean]),
+    ];
+    if (data.managed) notices.push(['# BEGIN Cloudflare Managed content detected: the managed rules sit in front of your own file and win conflicts.', true]);
+    if (data.contentSignals) notices.push(['Content-Signal directives detected (non-standard Cloudflare extension).', false]);
+    for (const [msg, isErr] of notices) {
+      errorsEl.append(el('div', `rounded-md border ${isErr ? 'border-fail/30 bg-fail/10 text-fail' : 'border-warn/30 bg-warn/10 text-warn'} px-4 py-2 text-sm`, msg));
+    }
+    if (notices.length) errorsEl.classList.remove('hidden');
+
+    groupsEl.textContent = '';
+    const gb = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    gb.append(el('p', 'text-sm font-semibold text-ink', 'User-agent groups (line numbers)'));
+    const ul = el('ul', 'mt-2 grid gap-1');
+    for (const g of data.groups) {
+      const first = g.rules.length ? Math.min(...g.rules.map((x) => x.line)) : '-';
+      const last = g.rules.length ? Math.max(...g.rules.map((x) => x.line)) : '-';
+      const kinds = g.rules.map((x) => x.type === 'content-signal' ? 'content-signal' : x.type).filter((t, i, arr) => arr.indexOf(t) === i).join(' + ') || 'no rules';
+      ul.append(el('li', 'text-xs text-ink-dim', 'User-agent: ' + g.tokens.join(', ') + ' - ' + g.rules.length + ' rule(s), lines ' + first + '-' + last + ' (' + kinds + ')'));
+    }
+    if (data.sitemaps.length) ul.append(el('li', 'text-xs text-ink-dim', 'Sitemap: ' + data.sitemaps.length + ' line(s)'));
+    gb.append(ul);
+    groupsEl.append(gb);
+    groupsEl.classList.remove('hidden');
+
+    testerEl.classList.remove('hidden');
+    renderTester();
+
+    const state = data.errors.length ? 'warn' : r.classification === 'ok' ? 'pass' : 'info';
+    setStatus(state, sourceLabel + ': ' + data.groups.length + ' group(s), ' + ruleCount + ' rule(s), ' + data.errors.length + ' syntax issue(s)' + (data.managed ? ', Cloudflare managed prepend detected' : '') + '.');
+    emit(sourceLabel, data.errors.length ? 'warn' : 'pass', 'robots.txt checked: ' + data.groups.length + ' groups, ' + ruleCount + ' rules, ' + data.errors.length + ' issues.', [{ code: 'ROBOTS_CHECKED', detail: sourceLabel }]);
+  }
+
+  function card(title: string, value: string, cls: string, note: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+    box.append(el('div', `font-display text-base font-bold mt-0.5 ${cls}`, value));
+    box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+    return box;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  function splitInput(raw: string): { domain: string; path: string | null } {
+    const v = raw.trim().replace(/^https?:\/\//i, '');
+    const slash = v.indexOf('/');
+    if (slash === -1) return { domain: v, path: null };
+    return { domain: v.slice(0, slash), path: v.slice(slash) || '/' };
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const host = hostOf(input.value);
-    if (!host.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
-    [issuesEl, aiEl, rawWrap].forEach((el) => el.classList.add('hidden'));
-    setStatus('bg-panel-2 text-accent border border-line', `Fetching https://${host}/robots.txt…`);
-
-    const res = await fetchText(`https://${host}/robots.txt`);
-    if (!res.ok || looksLikeHtml(res.text)) {
-      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} - fetch blocked or proxies rate-limited; try again shortly.` : `No robots.txt found at ${host}, all crawlers are allowed by default.`);
-      return;
+    const raw = input.value.trim();
+    if (!raw) { setStatus('fail', 'Enter a domain or a full URL.'); return; }
+    const s = splitInput(raw);
+    const domain = s.domain;
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(domain)) {
+      setStatus('fail', 'Enter a valid domain, e.g. example.com, or a full URL.'); return;
     }
-    const txt = res.text;
-    document.getElementById('rt-sample-note')?.classList.add('hidden');
-    rawEl.textContent = txt.length > 100000 ? txt.slice(0, 100000) + '\n… (truncated for display)' : txt;
-    rawWrap.classList.remove('hidden');
-
-    const issues: [string, 'err' | 'warn'][] = [];
-    const lines = txt.split(/\r?\n/);
-    lines.forEach((raw, i) => {
-      const line = raw.replace(/#.*$/, '').trim();
-      if (!line) return;
-      const colon = line.indexOf(':');
-      if (colon < 0) {
-        issues.push([`Line ${i + 1}: no colon, “${line.slice(0, 50)}”. Crawlers ignore malformed lines.`, 'err']);
-        return;
-      }
-      const field = line.slice(0, colon).trim().toLowerCase();
-      const value = line.slice(colon + 1).trim();
-      if (!KNOWN_FIELDS.has(field)) issues.push([`Line ${i + 1}: unknown directive “${field}:”, most crawlers ignore it.`, 'warn']);
-      if ((field === 'disallow' || field === 'allow') && !value) issues.push([`Line ${i + 1}: empty ${field}: value ${field === 'disallow' ? 'allows everything (usually a mistake)' : 'does nothing'}.`, 'warn']);
-    });
-    const { groups, sitemaps } = parseRobots(txt);
-    if (!sitemaps.length) issues.push(['No Sitemap: directive, add one so crawlers find all your pages.', 'warn']);
-    if (txt.length > 500000) issues.push([`File is ${(txt.length / 1024).toFixed(0)} KB, some crawlers stop reading robots.txt after 500 KB.`, 'err']);
-    if (!groups.some((g) => g.agents.includes('*'))) issues.push(['No User-agent: * group, rules may not apply to unlisted bots.', 'warn']);
-
-    issuesEl.innerHTML = '';
-    for (const [msg, kind] of issues) {
-      issuesEl.insertAdjacentHTML('beforeend', `<div class="rounded-md border ${kind === 'err' ? 'border-fail/30 bg-fail/10 text-fail' : 'border-warn/30 bg-warn/10 text-warn'} px-4 py-2 text-sm">${kind === 'err' ? '✕' : '▲'} ${msg}</div>`);
+    setStatus('loading', 'Fetching https://' + domain + '/robots.txt and parsing against RFC 9309...');
+    try {
+      const res = await fetch('/api/check/robots?domain=' + encodeURIComponent(domain));
+      const data = (await res.json()) as RtData;
+      if (!res.ok || !data.ok) { setStatus('fail', data.error || 'The check could not run for that domain.'); return; }
+      pathEl.value = s.path || '/';
+      renderData(data, 'Live robots.txt of ' + domain);
+    } catch {
+      setStatus('warn', 'Could not reach the server for ' + domain + '. This is an inconclusive result, not a pass or fail.');
     }
-    if (issues.length) issuesEl.classList.remove('hidden');
-
-    aiEl.innerHTML = '<p class="text-sm font-semibold text-ink">AI bot verdicts</p>';
-    for (const v of verdictsFor(groups)) {
-      const badge = v.status === 'blocked' ? '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">BLOCKED</span>'
-        : v.status === 'partial' ? '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">PARTIAL</span>'
-        : '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">ALLOWED</span>';
-      aiEl.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between rounded-lg border border-line bg-panel/60 px-4 py-2"><span class="font-mono text-xs text-ink">${v.bot.name}</span>${badge}</div>`);
-    }
-    aiEl.classList.remove('hidden');
-
-    setStatus(issues.some(([, k]) => k === 'err') ? 'bg-fail/10 text-fail border border-fail/30'
-      : issues.length ? 'bg-warn/10 text-warn border border-warn/30'
-      : 'bg-pass/10 text-pass border border-pass/30',
-      `robots.txt found (${txt.split(/\r?\n/).length} lines, ${(txt.length / 1024).toFixed(1)} KB), ${issues.length ? `${issues.length} issue${issues.length > 1 ? 's' : ''}` : 'no issues found'}.`);
   });
+
+  parsePasteBtn.addEventListener('click', async () => {
+    const content = pasteText.value;
+    if (!content.trim()) { setStatus('fail', 'Paste robots.txt content first.'); return; }
+    setStatus('loading', 'Parsing pasted robots.txt against RFC 9309...');
+    try {
+      const res = await fetch('/api/check/robots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+      const data = (await res.json()) as RtData;
+      if (!res.ok || !data.ok) { setStatus('fail', data.error || 'The parse could not run.'); return; }
+      pathEl.value = '/';
+      renderData(data, 'Pasted robots.txt');
+    } catch {
+      setStatus('warn', 'Could not reach the server. This is an inconclusive result, not a pass or fail.');
+    }
+  });
+  pasteToggle.addEventListener('click', () => pasteBox.classList.toggle('hidden'));
+  uaEl.addEventListener('change', () => { uaCustom.classList.toggle('hidden', uaEl.value !== '__custom'); renderTester(); });
+  pathEl.addEventListener('input', renderTester);
+  uaCustom.addEventListener('input', renderTester);
 </script>

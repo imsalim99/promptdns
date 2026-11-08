@@ -16,6 +16,7 @@ import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload 
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
 import { handleAiCrawlerCheck } from './checks/ai-crawlers';
+import { handleRobotsCheck } from './checks/robots-api';
 
 interface Env {
   DB?: D1Database;
@@ -82,6 +83,7 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
   if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
   if (path === '/api/alerts/read') return handleAlertsRead(request, env);
   if (path === '/api/check/ai-crawlers' && method === 'GET') return handleAiCrawlerCheck(request, env);
+  if (path === '/api/check/robots' && (method === 'GET' || method === 'POST')) return handleRobotsCheck(request, env);
 
   // /robots.txt is always our own file, never the Cloudflare managed block:
   // strip a managed section if the edge ever injects one, and pin the

@@ -24,6 +24,8 @@ export interface RobotsRule {
   type: 'allow' | 'disallow' | 'content-signal';
   path: string;
   raw: string;
+  /** 1-based line number in the source file. */
+  line: number;
 }
 
 export interface RobotsGroup {
@@ -38,6 +40,9 @@ export interface RobotsParseResult {
   managed: boolean;
   /** Non-standard Content-Signal directives detected. */
   contentSignals: boolean;
+  /** Syntax problems and structural notes (rules before UA, missing /, merged duplicates). */
+  errors: string[];
+  notes: string[];
   bytes: number;
   truncated: boolean;
 }
@@ -101,10 +106,10 @@ export async function fetchRobots(domain: string): Promise<RobotsFetch> {
   }
 }
 
-/** Parse a robots.txt body into groups, sitemaps and CDN markers. */
+/** Parse a robots.txt body into groups, sitemaps, CDN markers and syntax notes. */
 export function parseRobots(raw: string): RobotsParseResult {
   const managed = raw.includes('# BEGIN Cloudflare Managed content');
-  const result: RobotsParseResult = { groups: [], sitemaps: [], managed, contentSignals: false, bytes: raw.length, truncated: false };
+  const result: RobotsParseResult = { groups: [], sitemaps: [], managed, contentSignals: false, errors: [], notes: [], bytes: raw.length, truncated: false };
 
   let pending: string[] = [];
   let current: RobotsGroup | null = null;
@@ -114,12 +119,18 @@ export function parseRobots(raw: string): RobotsParseResult {
     const tokens = pending.map((t) => t.trim()).filter((t) => t.length > 0);
     pending = [];
     if (tokens.length === 0) return current;
+    for (const t of tokens) {
+      if (t.includes('*') && t !== '*') {
+        result.errors.push(`Wildcard inside User-agent token "${t}" (line ${result.errors.length + 1}): only a standalone * is a wildcard; this token is treated literally.`);
+      }
+    }
     // Merge duplicate groups carrying the exact same token set (RFC 9309
     // section 2.2.1: crawlers may combine). The wildcard group stays
     // separate from any named group.
     const key = tokens.map((t) => t.toLowerCase()).join(',');
     for (const g of result.groups) {
       if (g.tokens.map((t) => t.toLowerCase()).join(',') === key) {
+        result.notes.push(`Duplicate groups for User-agent: ${g.tokens[0]} were merged (RFC 9309 section 2.2.1).`);
         current = g;
         return g;
       }
@@ -130,7 +141,9 @@ export function parseRobots(raw: string): RobotsParseResult {
     return g;
   };
 
-  for (const rawLine of raw.split(/\r\n|\n|\r/)) {
+  const lines = raw.split(/\r\n|\n|\r/);
+  for (let lineNo = 1; lineNo <= lines.length; lineNo++) {
+    const rawLine = lines[lineNo - 1];
     // Detect Content-Signal anywhere (non-standard Cloudflare directive).
     if (!result.contentSignals && /^\s*content-signal\s*:/i.test(rawLine)) {
       result.contentSignals = true;
@@ -140,7 +153,10 @@ export function parseRobots(raw: string): RobotsParseResult {
     const line = (hash === -1 ? rawLine : rawLine.slice(0, hash)).trim();
     if (line.length === 0) continue;
     const colon = line.indexOf(':');
-    if (colon === -1) continue;
+    if (colon === -1) {
+      result.errors.push(`Line ${lineNo}: no colon, "${line.slice(0, 50)}". Crawlers ignore malformed lines.`);
+      continue;
+    }
     const field = line.slice(0, colon).trim().toLowerCase();
     const value = line.slice(colon + 1).trim();
 
@@ -158,14 +174,20 @@ export function parseRobots(raw: string): RobotsParseResult {
     }
     if (field === 'allow' || field === 'disallow') {
       const g = flushGroup();
-      if (!g) continue; // rule lines before any User-agent belong to no group
-      g.rules.push({ type: field as 'allow' | 'disallow', path: value, raw: line });
+      if (!g) {
+        result.errors.push(`Line ${lineNo}: ${field}: rule appears before any User-agent line and applies to no group.`);
+        continue;
+      }
+      if (value && !value.startsWith('/') && !value.startsWith('*')) {
+        result.errors.push(`Line ${lineNo}: ${field}: path "${value.slice(0, 40)}" does not start with / and may never match.`);
+      }
+      g.rules.push({ type: field as 'allow' | 'disallow', path: value, raw: line, line: lineNo });
       continue;
     }
     if (field === 'content-signal') {
       const g = flushGroup();
       if (!g) continue;
-      g.rules.push({ type: 'content-signal', path: value, raw: line });
+      g.rules.push({ type: 'content-signal', path: value, raw: line, line: lineNo });
       continue;
     }
     // Unknown fields (Crawl-delay, Clean-param, ...) are ignored.
