@@ -38,6 +38,12 @@ const faqSchema = {
     <article class="rich-text mt-14 max-w-none">
       <h2>How this DNS checker works</h2>
       <p>
+        NXDOMAIN after a change often means the new record has not propagated yet, or the name was never
+        published at the resolver you are testing: the
+        <a href="/dns-probe-finished-nxdomain/">DNS_PROBE_FINISHED_NXDOMAIN</a> guide separates the
+        device-side causes from the domain-side ones.
+      </p>
+      <p>
         The checker fires parallel DNS-over-HTTPS queries and compares the answer sets side by side.
         What it is really measuring is the <strong>cache hierarchy</strong>: your visitors' ISP resolvers,
         the public resolvers, and the authoritative nameserver each hold a copy of your record for
