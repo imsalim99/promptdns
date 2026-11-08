@@ -1,74 +1,367 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Does transferring a domain to a new registrar reset its domain age?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, transferring a domain between registrars never resets its domain age or creation date. The central TLD registry (Verisign for .com, PIR for .org, and so on) maintains the master registration timestamp across registrar transfers, renewals, and nameserver changes, so the RDAP registration event keeps the original date. The visible effect of a transfer is a 60-day ICANN clientTransferProhibited lock on the receiving registrar, not a new registration record.' } },
+    { '@type': 'Question', 'name': "Can you see a domain's original registration date if it expired, dropped, and was registered again?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, not in live RDAP or WHOIS data: when a domain expires, completes the redemption and pendingDelete phases, and drops back to the public pool, the registry deletes its previous registration record. A re-registered domain carries a brand-new registration timestamp, and its RDAP age starts from zero. Pre-drop history can only be researched through Internet Archive Wayback Machine snapshots or Certificate Transparency logs.' } },
+    { '@type': 'Question', 'name': 'Does domain age directly affect Google SEO rankings?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, Google representatives have repeatedly confirmed that domain registration age is not a direct ranking signal in Google Search. Older active websites often rank better because they have accumulated backlinks and historical content, not because of the date itself: a newly registered domain and a 10-year-old parked domain start with the same authority until content and links exist. In email deliverability and cybersecurity the picture differs: domains under 30 days are heavily filtered by spam gateways and fraud engines.' } },
+    { '@type': 'Question', 'name': 'How is domain age calculated from RDAP vs legacy WHOIS?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'RDAP reports a registration event (eventAction: registration) as an ISO 8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ) inside a structured JSON events array, identical in format across every compliant registry. Legacy port-43 WHOIS (RFC 3912) returns unstructured free text whose Creation Date field is formatted differently from TLD to TLD and is frequently redacted. This tool reads the RDAP registration event and computes the age from that authoritative timestamp.' } },
+    { '@type': 'Question', 'name': 'Why do some country-code domains (.de, .es, .ch) not show a creation date?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Registry sovereignty and European data-protection rules: registries such as DENIC (.de), and several others including .es and .ch, omit creation and expiration timestamps from public unauthenticated queries, and some ccTLDs publish no RDAP server at all in the IANA bootstrap. The tool reports these honestly as an unsupported TLD or a redacted creation date rather than inventing an approximate age.' } },
+  ],
+};
+
+const TIER_BADGES: [string, string, string][] = [
+  ['Newly Registered', 'bg-fail/15 text-fail', 'Under 30 days: high caution for cold email, phishing, and payment links.'],
+  ['Young', 'bg-warn/15 text-warn', '1 to 12 months: verify DMARC, SPF, and sender reputation before bulk sending.'],
+  ['Mature', 'bg-accent/10 text-accent', '1 to 5 years: established operational history.'],
+  ['Established', 'bg-violet/10 text-violet', '5 to 10 years: multi-year registration tenure.'],
+  ['Veteran', 'bg-pass/15 text-pass', '10+ years: long-standing registry creation record.'],
+];
 ---
-<BaseLayout title="Domain Age Checker - How Old Is That Domain?" description="Free domain age checker: RDAP-based creation, update, and expiry dates, with the domain's age in years and days.">
+<BaseLayout title="Domain Age Checker: How Old Is a Domain? (RDAP Creation Date)" description="Free domain age checker: check how old a domain is from its official registry RDAP creation timestamp, inspect registration, expiration, registrar, and EPP status codes, or compare up to 10 domains at once in bulk." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">Domain Age Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Domain Age Checker: Creation Date from Registry RDAP</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free domain age checker: check registration date, age and WHOIS history for any domain.</p>
-    <div class="mt-8">
-<ToolPanel>
-  <form id="da-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="da-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Age</button>
-  </form>
-  <div id="da-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <div id="da-big" class="mt-6 hidden text-center">
-    <p id="da-age" class="font-display text-5xl font-bold text-accent"></p>
-    <p class="mt-1 text-xs text-ink-faint">years old</p>
-  </div>
-  <div id="da-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-    <table class="pdns-table"><thead><tr><th>Event</th><th>Date</th></tr></thead><tbody id="da-tbody"></tbody></table>
-  </div>
-</ToolPanel>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Domain Age Checker: How Old Is a Domain? (Single &amp; Bulk RDAP Lookup)</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Check how old a domain name is from its official registry RDAP creation timestamp (RFC 9083), inspect its exact registration date, expiration date, registrar, and EPP status codes, or compare up to 10 domains at once in bulk.</p>
 
-    <ToolArticle slug="domain-age-checker" />
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="da-form" class="flex flex-col gap-3 sm:flex-row">
+          <label class="sr-only" for="da-domain">One or up to 10 domains</label>
+          <input id="da-domain" type="text" autocomplete="off" spellcheck="false" placeholder="cloudflare.com or cloudflare.com, google.com, github.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Age</button>
+        </form>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+          <span>Try bulk:</span>
+          <button type="button" id="da-bulk-preset" class="rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50">cloudflare.com, google.com, github.com, openai.com</button>
+        </div>
+        <div id="da-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="da-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="da-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Domain</th><th>Exact Age (Y / M / D)</th><th>Age Tier</th><th>Created (UTC)</th><th>Expires (UTC)</th><th>Registrar</th><th>EPP Status</th><th>RDAP Source</th></tr></thead>
+            <tbody id="da-tbody"></tbody>
+          </table>
+        </div>
+        <div id="da-notes" class="mt-4 hidden grid gap-2"></div>
+        <ResultCard tool="domain-age-checker" />
+      </ToolPanel>
     </div>
-</div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 domain age tiers and RDAP registration states</h2>
+      <p>
+        Domain age is calculated from the authoritative registry's registration event in RDAP (RFC 9083): a structured JSON events array carrying an ISO 8601 UTC timestamp, identical in format across every compliant registry. This is a different, standardized source from legacy port-43 WHOIS free text, where date formats vary from TLD to TLD. The table below defines the five tiers and states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Age Tier / State</th><th>Observed Creation Timestamp</th><th>Security and Deliverability Meaning</th><th>Recommended Vetting Action</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Newly registered (under 30 days)</td><td class="text-sm text-ink-dim">Registration event within the last month</td><td class="text-sm text-ink-dim">Treated as high-risk by spam filters (Spamhaus DBL and freshly registered domain rules), secure email gateways, and fraud engines</td><td class="text-sm text-ink-dim">Vet sender and site carefully before trusting anything from it.</td></tr>
+            <tr><td class="font-medium text-ink">Young (1 to 12 months)</td><td class="text-sm text-ink-dim">Registration event within the first year</td><td class="text-sm text-ink-dim">Gradual email warm-up required, with strict SPF, DKIM, and DMARC before bulk sending</td><td class="text-sm text-ink-dim">Check authentication records before adding to any allowlist.</td></tr>
+            <tr><td class="font-medium text-ink">Mature and established (1 to 10+ years)</td><td class="text-sm text-ink-dim">Continuous current registration cycle at the registry</td><td class="text-sm text-ink-dim">Passes age-based blocklist filters and most vendor vetting</td><td class="text-sm text-ink-dim">Age alone is not trust: still verify DNS health and authentication.</td></tr>
+            <tr><td class="font-medium text-ink">Expired, grace, or redemptionPeriod status</td><td class="text-sm text-ink-dim">Expiration date passed, or EPP statuses include clientHold, serverHold, redemptionPeriod, or pendingDelete</td><td class="text-sm text-ink-dim">DNS resolution may be suspended, and the age clock resets if the domain drops through pendingDelete</td><td class="text-sm text-ink-dim">Renew or restore immediately; assume downtime risk until resolved.</td></tr>
+            <tr><td class="font-medium text-ink">Redacted or unsupported ccTLD registry</td><td class="text-sm text-ink-dim">No RDAP creation event in the registry answer, or no RDAP server at all</td><td class="text-sm text-ink-dim">Certain country-code registries (such as .de DENIC or .es) omit creation dates under local data-protection rules</td><td class="text-sm text-ink-dim">Treat as unknown age; the tool says so instead of guessing.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What resets domain age vs what preserves it</h2>
+      <p>The registry lifecycle rules that decide whether the age clock survives, which almost no competing age tool explains clearly:</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl border border-fail/30 bg-fail/5 p-4">
+          <p class="text-sm font-semibold text-fail">Resets the age to zero</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink-dim">Letting a domain expire completely through the auto-renew grace period, the 30-day redemptionPeriod, and the 5-day pendingDelete phase until the registry purges the record (a drop). When the dropped domain is registered again, the registry creates a brand-new registration event and the RDAP age starts from 0 days.</p>
+        </div>
+        <div class="rounded-xl border border-pass/30 bg-pass/5 p-4">
+          <p class="text-sm font-semibold text-pass">Preserves the age</p>
+          <p class="mt-1 text-sm leading-relaxed text-ink-dim">Renewing before or during any grace period; transferring between registrars via EPP auth code; changing nameservers or web hosts; changing the registrant organization; buying an active aftermarket domain before it ever drops. All of these keep the original registration event untouched.</p>
+        </div>
+      </div>
+
+      <h2>Check domain age and RDAP creation dates from the command line</h2>
+      <pre><code># 1. Query rdap.org and extract the registration and expiration events
+curl -sL https://rdap.org/domain/example.com | jq '.events[] | select(.eventAction=="registration" or .eventAction=="expiration")'
+
+# 2. Query the Verisign .com RDAP endpoint directly
+curl -s https://rdap.verisign.com/com/v1/domain/cloudflare.com | jq '.events'
+
+# 3. Legacy port-43 WHOIS grep
+whois example.com | grep -iE "Creation Date|Created|Registered|Expiry"</code></pre>
+
+      <h2>Reference table: RDAP vs WHOIS fields and 4 practical use cases for domain age</h2>
+      <p>The table below compares the two data sources, followed by the four operational use cases where domain age matters.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Attribute</th><th>RDAP (RFC 9083)</th><th>Legacy Port-43 WHOIS (RFC 3912)</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Registration date</td><td class="text-sm text-ink-dim">Structured events array, eventAction: registration, ISO 8601 UTC</td><td class="text-sm text-ink-dim">Unstructured free text, inconsistent date formats across TLDs</td></tr>
+            <tr><td class="font-medium text-ink">Status values</td><td class="text-sm text-ink-dim">Standardized EPP status array</td><td class="text-sm text-ink-dim">Free-text status lines, registry-specific wording</td></tr>
+            <tr><td class="font-medium text-ink">Transport</td><td class="text-sm text-ink-dim">HTTPS JSON responses</td><td class="text-sm text-ink-dim">Rate-limited plain-text port 43</td></tr>
+            <tr><td class="font-medium text-ink">Access control</td><td class="text-sm text-ink-dim">Redaction handled in-band with explicit remarks</td><td class="text-sm text-ink-dim">Ad-hoc disclaimers and gating</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Use Case</th><th>What the Age Answers</th><th>Where the Risk Shows Up</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Phishing and lookalike domain screening</td><td class="text-sm text-ink-dim">Freshly registered lookalikes carry near-zero registry age</td><td class="text-sm text-ink-dim">Age under 30 days plus missing DMARC is the classic phishing profile</td></tr>
+            <tr><td class="font-medium text-ink">2. Email sender vetting and cold outreach warm-up</td><td class="text-sm text-ink-dim">Sending infrastructure on young domains hits gateway filters</td><td class="text-sm text-ink-dim">Bulk sending from a domain under 30 days fails deliverability thresholds</td></tr>
+            <tr><td class="font-medium text-ink">3. Vendor, SaaS, and M&amp;A technical due diligence</td><td class="text-sm text-ink-dim">Registration tenure corroborates (or contradicts) a vendor's claimed history</td><td class="text-sm text-ink-dim">A vendor claiming 10 years of operation on a 6-month-old domain is a red flag</td></tr>
+            <tr><td class="font-medium text-ink">4. Aftermarket domain vetting and drop history</td><td class="text-sm text-ink-dim">The registration event reflects the current cycle only, not pre-drop history</td><td class="text-sm text-ink-dim">Aged-domain purchases carry the prior owner's reputation debts</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The age of a domain is one input to sender trust: a young domain with <a href="/dmarc/">no DMARC record</a> is a common spoofing pattern (Bridge B21), and the full registration picture lives in the <a href="/whois-lookup/">WHOIS lookup</a> (Bridge B35).
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>RDAP and WHOIS report the creation date of the current continuous registration cycle: a domain registered in 2005, dropped in 2018, and re-registered in 2024 shows a 2024 registration event, and pre-drop usage requires historical archives such as the Wayback Machine or passive DNS history.</li>
+        <li>Registration age is distinct from website age: a 15-year-old parked domain has 15 years of registry age but zero website history.</li>
+        <li>Some ccTLD registries (such as .de, .it, .es, and .ch) do not operate public RDAP servers or withhold creation dates by policy, which the tool reports honestly instead of approximating.</li>
+        <li>Domain age alone does not prove trustworthiness: an attacker who compromises an older dormant domain, or purchases an aged domain at auction, inherits the tenure without the integrity.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Security teams combine domain age under 30 days with missing DMARC and SPF checks to block Newly Observed Domains before any reputation data exists. And a note for migration planning: transferring a production domain between registrars preserves the registration date but triggers a 60-day ICANN clientTransferProhibited lock, so never schedule a second registrar move inside that window.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The dominant early pattern: gTLD registries (Verisign for .com and .net, PIR for .org, Identity Digital, Google Registry) serve standardized ISO 8601 UTC timestamps over RDAP following the ICANN gTLD mandate, while ccTLD behavior stays fragmented, with several European registries redacting or omitting creation dates entirely.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does transferring a domain to a new registrar reset its domain age?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, transferring a domain between registrars never resets its domain age or creation date. The central TLD registry (Verisign for .com, PIR for .org, and so on) maintains the master registration timestamp across registrar transfers, renewals, and nameserver changes, so the RDAP registration event keeps the original date. The visible effect of a transfer is a 60-day ICANN clientTransferProhibited lock on the receiving registrar, not a new registration record.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can you see a domain's original registration date if it expired, dropped, and was registered again?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, not in live RDAP or WHOIS data: when a domain expires, completes the redemption and pendingDelete phases, and drops back to the public pool, the registry deletes its previous registration record. A re-registered domain carries a brand-new registration timestamp, and its RDAP age starts from zero. Pre-drop history can only be researched through Internet Archive Wayback Machine snapshots or Certificate Transparency logs.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does domain age directly affect Google SEO rankings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, Google representatives have repeatedly confirmed that domain registration age is not a direct ranking signal in Google Search. Older active websites often rank better because they have accumulated backlinks and historical content, not because of the date itself: a newly registered domain and a 10-year-old parked domain start with the same authority until content and links exist. In email deliverability and cybersecurity the picture differs: domains under 30 days are heavily filtered by spam gateways and fraud engines.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How is domain age calculated from RDAP vs legacy WHOIS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">RDAP reports a registration event (eventAction: registration) as an ISO 8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ) inside a structured JSON events array, identical in format across every compliant registry. Legacy port-43 WHOIS (RFC 3912) returns unstructured free text whose Creation Date field is formatted differently from TLD to TLD and is frequently redacted. This tool reads the RDAP registration event and computes the age from that authoritative timestamp.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do some country-code domains (.de, .es, .ch) not show a creation date?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Registry sovereignty and European data-protection rules: registries such as DENIC (.de), and several others including .es and .ch, omit creation and expiration timestamps from public unauthenticated queries, and some ccTLDs publish no RDAP server at all in the IANA bootstrap. The tool reports these honestly as an unsupported TLD or a redacted creation date rather than inventing an approximate age.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Close the spoofing gap on a young domain: publish and monitor <a href="/dmarc-record-checker/">DMARC</a>, starting with the policy explained in the DMARC guide.</li>
+        <li>Screen the sending infrastructure against blocklists with the <a href="/blacklist-checker/">blocklist checker</a>.</li>
+        <li>Registrar tenure and DNS hosting differ: the <a href="/registrar-vs-dns-hosting/">registrar vs DNS hosting</a> guide explains which provider controls what.</li>
+        <li>Track the live DNS delegation behind a domain with the <a href="/dns-propagation-checker/">DNS propagation checker</a> and the <a href="/nameserver-lookup/">nameserver lookup</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 9083, JSON Responses for the Registration Data Access Protocol (RDAP): <a href="https://www.rfc-editor.org/rfc/rfc9083" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9083</a></li>
+        <li>IETF RFC 9224, Finding the Authoritative Registration Data Access Protocol Service: <a href="https://www.rfc-editor.org/rfc/rfc9224" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9224</a></li>
+        <li>IETF RFC 3912, WHOIS Protocol Specification: <a href="https://www.rfc-editor.org/rfc/rfc3912" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc3912</a></li>
+        <li>ICANN Registration Data Policy and Expired Registration Recovery Policy (ERRP): <a href="https://www.icann.org/resources/pages/registration-data-policy-2024-02-21-en" rel="noopener" target="_blank">icann.org</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
+
 <script>
-  import { fetchText, hostOf } from '../lib/proxy';
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (da-).
+  interface RdapResult {
+    domain: string;
+    status: 'ok' | 'unsupported_tld' | 'date_redacted' | 'not_found' | 'error';
+    note: string;
+    sourceUrl: string | null;
+    events: { registration: string | null; expiration: string | null; lastChanged: string | null };
+    registrar: { name: string | null; ianaId: string | null };
+    statuses: string[];
+    nameservers: string[];
+  }
+
   const form = document.getElementById('da-form') as HTMLFormElement;
   const input = document.getElementById('da-domain') as HTMLInputElement;
   const statusEl = document.getElementById('da-status')!;
-  const bigEl = document.getElementById('da-big')!;
-  const ageEl = document.getElementById('da-age')!;
-  const resultsEl = document.getElementById('da-results')!;
+  const cardsEl = document.getElementById('da-cards')!;
   const tbody = document.getElementById('da-tbody')!;
+  const resultsEl = document.getElementById('da-results')!;
+  const notesEl = document.getElementById('da-notes')!;
+  const TOOL = 'domain-age-checker';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'WHOIS lookup', href: '/whois-lookup/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  function tierFor(ageDays: number): { label: string; cls: string } {
+    if (ageDays < 30) return { label: 'Newly Registered (< 30 days)', cls: 'bg-fail/15 text-fail' };
+    if (ageDays < 365) return { label: 'Young (1 to 12 months)', cls: 'bg-warn/15 text-warn' };
+    if (ageDays < 5 * 365) return { label: 'Mature (1 to 5 years)', cls: 'bg-accent/10 text-accent' };
+    if (ageDays < 10 * 365) return { label: 'Established (5 to 10 years)', cls: 'bg-violet/10 text-violet' };
+    return { label: 'Veteran (10+ years)', cls: 'bg-pass/15 text-pass' };
+  }
+
+  function exactAge(createdIso: string): { ymd: string; days: number } {
+    const created = new Date(createdIso);
+    const now = new Date();
+    let y = now.getFullYear() - created.getFullYear();
+    let m = now.getMonth() - created.getMonth();
+    let d = now.getDate() - created.getDate();
+    if (d < 0) { m--; d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+    if (m < 0) { y--; m += 12; }
+    const days = Math.floor((now.getTime() - created.getTime()) / 86400000);
+    return { ymd: y + 'y ' + m + 'm ' + d + 'd', days };
+  }
+
+  const SHORT = (iso: string | null) => (iso ? iso.slice(0, 10) + ' UTC' : 'not published');
+  const daysLeft = (iso: string) => Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const domain = hostOf(input.value);
-    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
-    statusEl.textContent = `Checking registry data for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
-    [bigEl, resultsEl].forEach(el => el.classList.add('hidden'));
-    const res = await fetchText(`https://rdap.org/domain/${domain}`);
-    if (!res.ok || res.text.startsWith('<')) { statusEl.textContent = 'No registry data available for that domain.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
-    let j: any;
-    try { j = JSON.parse(res.text); } catch { statusEl.textContent = 'Could not parse RDAP response.'; return; }
-    const ev = (kind: string) => j.events?.find((x: any) => x.eventAction === kind)?.eventDate?.slice(0, 10);
-    const created = ev('registration');
-    if (created) {
-      const years = ((Date.now() - new Date(created).getTime()) / (365.25 * 24 * 3600 * 1000));
-      ageEl.textContent = years.toFixed(1);
-      bigEl.classList.remove('hidden');
+    const parts = input.value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean).slice(0, 10);
+    const domains = [...new Set(parts)];
+    if (!domains.length || domains.some((d) => !d.includes('.'))) {
+      setStatus('fail', 'Enter 1 to 10 valid domains, comma or space separated.');
+      return;
     }
-    const rows: [string, string][] = [
-      ['Created', created ?? 'n/a'],
-      ['Updated', ev('last changed') ?? 'n/a'],
-      ['Expires', ev('expiration') ?? 'n/a'],
-    ];
-    tbody.innerHTML = '';
-    for (const [k, v] of rows) tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${k}</td><td class="font-mono text-xs">${v}</td></tr>`);
-    resultsEl.classList.remove('hidden');
-    statusEl.textContent = `Registry dates for ${domain} via RDAP.`;
-    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
+    setStatus('loading', `Querying RDAP for ${domains.length} domain${domains.length === 1 ? '' : 's'}...`);
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    notesEl.classList.add('hidden'); notesEl.textContent = '';
+    resultsEl.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+    document.getElementById('da-sample-note')?.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/check/rdap?domains=' + encodeURIComponent(domains.join(',')));
+      const data = (await res.json()) as { ok: boolean; results: RdapResult[]; error?: string };
+      if (!res.ok || !data.ok) { setStatus('fail', data.error || 'The RDAP check could not run.'); return; }
+      const results = data.results;
+
+      // Single-domain 4-card summary
+      cardsEl.textContent = '';
+      if (results.length === 1) {
+        const r = results[0];
+        const reg = r.events.registration;
+        const card = (title: string, value: string, cls: string, note: string) => {
+          const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+          box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+          box.append(el('div', `font-display text-base font-bold mt-0.5 ${cls}`, value));
+          box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+          return box;
+        };
+        if (reg) {
+          const { ymd, days } = exactAge(reg);
+          const tier = tierFor(days);
+          cardsEl.append(card('1. Exact domain age', ymd + ' (' + days.toLocaleString('en-US') + ' days)', 'text-accent', 'Tier: ' + tier.label + '.'));
+          cardsEl.append(card('2. RDAP creation date', SHORT(reg), 'text-ink', 'From ' + (r.sourceUrl ? new URL(r.sourceUrl).host : 'the registry') + '.'));
+          const exp = r.events.expiration;
+          cardsEl.append(card('3. Registry expiration', SHORT(exp), exp && daysLeft(exp) < 60 ? 'text-warn' : 'text-ink', exp ? daysLeft(exp) + ' days remaining.' : 'Not published by this registry.'));
+          const locked = r.statuses.some((s) => s.toLowerCase().includes('prohibited'));
+          cardsEl.append(card('4. Registrar and EPP lock', (r.registrar.name || 'Unknown registrar') + (r.registrar.ianaId ? ' (IANA ' + r.registrar.ianaId + ')' : ''), locked ? 'text-pass' : 'text-ink', locked ? 'Transfer lock active.' : 'EPP statuses: ' + (r.statuses.slice(0, 3).join(', ') || 'none published') + '.'));
+        } else {
+          cardsEl.append(card('1. RDAP state', r.status, 'text-warn', r.note));
+          cardsEl.append(card('2. Registration date', 'Not published', 'text-ink-faint', 'This registry withholds or does not serve creation dates.'));
+          cardsEl.append(card('3. Expiration date', r.events.expiration ? SHORT(r.events.expiration) : 'Not published', 'text-ink-faint', ''));
+          cardsEl.append(card('4. Registrar', r.registrar.name || 'Not published', 'text-ink-faint', r.registrar.ianaId ? 'IANA ID ' + r.registrar.ianaId : ''));
+        }
+        cardsEl.classList.remove('hidden');
+      }
+
+      // Bulk comparison table
+      tbody.textContent = '';
+      for (const r of results) {
+        const tr = document.createElement('tr');
+        const reg = r.events.registration;
+        let age = '-', tier = '-';
+        if (reg) {
+          const { ymd, days } = exactAge(reg);
+          const t = tierFor(days);
+          age = ymd + ' (' + days.toLocaleString('en-US') + 'd)';
+          tier = t.label;
+        } else if (r.status === 'unsupported_tld') tier = 'Unsupported TLD';
+        else if (r.status === 'date_redacted') tier = 'Date redacted';
+        else if (r.status === 'not_found') tier = 'Not found';
+        const statusText = r.statuses.length ? r.statuses.slice(0, 2).join(', ') : (r.status === 'ok' ? 'none published' : r.status);
+        tr.append(el('td', 'font-mono text-xs text-ink', r.domain));
+        tr.append(el('td', 'text-sm text-ink-dim', age));
+        tr.append(el('td', 'text-sm text-ink-dim', tier));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', SHORT(reg)));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', SHORT(r.events.expiration)));
+        tr.append(el('td', 'text-sm text-ink-dim', r.registrar.name ?? 'not published'));
+        tr.append(el('td', 'text-xs text-ink-dim', statusText));
+        tr.append(el('td', 'font-mono text-xs text-ink-faint', r.sourceUrl ? new URL(r.sourceUrl).host : r.status));
+        tbody.append(tr);
+      }
+      resultsEl.classList.remove('hidden');
+
+      // Honest-state notes
+      notesEl.textContent = '';
+      for (const r of results) {
+        if (r.status !== 'ok') {
+          notesEl.append(el('div', 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-sm text-warn', r.domain + ': ' + r.note));
+        }
+      }
+      if (notesEl.children.length) notesEl.classList.remove('hidden');
+
+      const okCount = results.filter((r) => r.events.registration).length;
+      setStatus(results.every((r) => r.events.registration) ? 'pass' : 'warn',
+        okCount + '/' + results.length + ' domain' + (results.length === 1 ? '' : 's') + ' returned a registration event over RDAP' + (results.some((r) => r.status !== 'ok') ? '; others reported unsupported or redacted registries (see notes).' : '.'));
+      emit(domains.join(', '), okCount === results.length ? 'pass' : 'warn', 'RDAP age check: ' + okCount + '/' + results.length + ' domains returned registration dates.',
+        [{ code: 'RDAP_AGE', detail: results.map((r) => r.domain + '=' + (r.events.registration ? r.events.registration.slice(0, 10) : r.status)).join(', ').slice(0, 300) }]);
+    } catch {
+      setStatus('warn', 'Could not reach the RDAP resolvers. This is an inconclusive result, not a pass or fail.');
+    }
+  });
+  document.getElementById('da-bulk-preset')?.addEventListener('click', () => {
+    input.value = 'cloudflare.com, google.com, github.com, openai.com';
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
   });
 </script>
