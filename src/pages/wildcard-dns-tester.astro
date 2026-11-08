@@ -334,9 +334,15 @@ nslookup wildcard-check-98412.example.com</code></pre>
         wA && !multiA ? 'Observed live on this zone (row 2 above)' : 'Not observed in these probes',
         'No: an intermediate node with no records still blocks the wildcard for its whole branch (section 2.2.2)', VERDICT_CLS.faint);
 
-      // Row 6: mid-label asterisk
-      addRow('Mid-label asterisk', `${midLabel} A`, respOf(midA, mid),
-        'No: a mid-label asterisk is a literal character, only a leftmost * is a wildcard (section 2.1.1)', VERDICT_CLS.good);
+      // Row 6: mid-label asterisk (response-aware: strict RFC 4592 says a
+      // mid-label * is literal, but some servers synthesize anyway)
+      if (midA && wA) {
+        addRow('Mid-label asterisk', `${midLabel} A`, respOf(midA, mid),
+          'Live server answered anyway: strict RFC 4592 section 2.1.1 treats a mid-label asterisk as a literal character, but synthesis behavior varies by implementation', VERDICT_CLS.warn);
+      } else {
+        addRow('Mid-label asterisk', `${midLabel} A`, respOf(midA, mid),
+          'No: a mid-label asterisk is a literal character, only a leftmost * is a wildcard (section 2.1.1)', VERDICT_CLS.good);
+      }
 
       const anyWildcard = wA || wAAAA || wCN;
       const kinds = [wA && 'A', wAAAA && 'AAAA', wCN && 'CNAME'].filter(Boolean).join(', ');
