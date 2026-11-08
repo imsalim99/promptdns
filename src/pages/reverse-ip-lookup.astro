@@ -1,43 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
-import FaqAccordion from '../components/FaqAccordion.astro';
+import ResultCard from '../components/ResultCard.astro';
 
-const faqs: [string, string][] = [
-  [
-    'Who controls the PTR record returned by a reverse IP lookup?',
-    'The organization that owns the IP address block (your cloud hosting provider, data center, or ISP) controls the reverse DNS zone (.in-addr.arpa for IPv4 and .ip6.arpa for IPv6), never your domain registrar. Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, and AFRINIC) delegate reverse zones along CIDR prefix boundaries directly to the network operator announced by that Autonomous System Number (ASN).',
-  ],
-  [
-    'Can a single IP address have multiple PTR records in reverse DNS?',
-    'Yes, the DNS protocol technically permits multiple PTR records on the same reverse zone name, but publishing more than one PTR record on an IP address is strongly discouraged under RFC 1912 Section 2.1. Recursive resolvers return multiple PTR records in round-robin order, enlarge UDP response packets, and cause erratic Forward-Confirmed Reverse DNS (FCrDNS) failures when mail servers inspect only the first returned hostname.',
-  ],
-  [
-    'Does a DNS reverse IP lookup list every website hosted on a shared server IP?',
-    'No, a standard DNS reverse IP lookup queries the canonical PTR record assigned to that IP address rather than enumerating every virtual-host domain pointing an A record to that server. Standard DNS obsoleted inverse queries (IQUERY, Opcode 1) in RFC 3425 because no single nameserver indexes the entire global namespace. Discovering multiple websites sharing a web server IP requires querying a passive-DNS crawler database, whereas our tool verifies the live authoritative PTR record and FCrDNS alignment.',
-  ],
-  [
-    'Does a missing or generic reverse IP lookup result hurt website SEO?',
-    'No, in practice a missing or generic PTR record has zero impact on Google web search rankings, crawl budget, or HTTPS browser connections when your domain uses a CDN, shared host, or reverse proxy like Cloudflare. Reverse IP lookup and FCrDNS alignment are strictly required for outbound SMTP mail server IPs, enterprise firewall logging, and network diagnostics.',
-  ],
-];
-
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqs.map(([q, a]) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: a,
-    },
-  })),
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'What is the difference between reverse IP lookup and reverse DNS (rDNS)?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'In networking and email standards (RFC 1035, RFC 1912), reverse IP lookup and reverse DNS lookup are synonyms: both query an IP address\'s PTR record in .in-addr.arpa or .ip6.arpa to find its canonical hostname. In SEO and security recon tools, "reverse IP" sometimes refers to querying a passive-DNS database to list multiple websites hosted on the same shared IP, which is a different operation that live DNS cannot perform since IQUERY was obsoleted by RFC 3425.' } },
+    { '@type': 'Question', 'name': 'Why does my IP address have no PTR record (NXDOMAIN)?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'ISPs and cloud hosts do not publish custom PTR records by default on residential links, anycast CDN edges, or fresh VPS instances. The PTR record only appears once the IP block owner (the cloud provider, data center, or ISP identified by the controlling ASN) configures the reverse zone entry. Residential IPs almost never have PTR records; mail-serving IPs always need one.' } },
+    { '@type': 'Question', 'name': 'Who can change the PTR record for my IP address?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Only the organization that owns the IP CIDR block, identified by the controlling ASN in this tool\'s result: your cloud VPS provider, data center, or ISP. Your domain registrar has no authority over reverse DNS zones because .in-addr.arpa and .ip6.arpa are delegated by the Regional Internet Registries (ARIN, RIPE NCC, APNIC) directly to the network operator, not to domain registrants.' } },
+    { '@type': 'Question', 'name': 'Can a single IP address have multiple PTR records in reverse DNS?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, the DNS protocol technically permits multiple PTR records on the same reverse zone name. However, RFC 1912 Section 2.1 strongly discourages it: recursive resolvers return multiple PTR records in unsorted round-robin order, which enlarges UDP response packets and causes erratic Forward-Confirmed Reverse DNS failures when strict mail gateways inspect only the first returned hostname.' } },
+    { '@type': 'Question', 'name': 'Does a missing or generic reverse IP lookup result hurt website SEO?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, in practice a missing or generic PTR record has zero impact on Google web search rankings, crawl budget, or HTTPS browser connections when your domain uses a CDN, shared host, or reverse proxy. Reverse IP lookup and FCrDNS alignment are strictly required for outbound SMTP mail server IPs, enterprise firewall logging, and network diagnostics, not for web hosting.' } },
+  ],
 };
 ---
 <BaseLayout
   title="Reverse IP Lookup: Free PTR & FCrDNS Checker (IPv4 & IPv6)"
-  description="Free reverse IP lookup tool: resolve any IPv4 or IPv6 address (or domain) to its PTR hostname in in-addr.arpa or ip6.arpa and verify Forward-Confirmed Reverse DNS (FCrDNS) via browser DoH."
+  description="Free reverse IP lookup tool: resolve any IPv4 or IPv6 address (or domain) to its PTR hostname in in-addr.arpa or ip6.arpa, verify Forward-Confirmed Reverse DNS (FCrDNS), and identify the controlling ASN and network holder via browser DoH."
   schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -49,134 +30,390 @@ const faqSchema = {
       <span class="text-ink-dim">Reverse IP Lookup</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Reverse IP Lookup: Resolve PTR Records and Verify FCrDNS</h1>
-    <p class="mt-4 text-lg text-ink-dim">Resolve any IPv4 or IPv6 address (or domain name) to its canonical PTR hostname in .in-addr.arpa or .ip6.arpa and verify Forward-Confirmed Reverse DNS (FCrDNS) live via browser-side DNS-over-HTTPS (RFC 1035 and RFC 3596).</p>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Resolve any IPv4 or IPv6 address (or domain name) to its canonical PTR hostname in .in-addr.arpa or .ip6.arpa, verify Forward-Confirmed Reverse DNS (FCrDNS), and identify the controlling ASN and network holder via browser-side DNS-over-HTTPS (RFC 1035 and RFC 3596).</p>
     <div class="mt-8">
       <ToolPanel>
         <form id="ri-form" class="flex flex-col gap-3 sm:flex-row">
-          <input id="ri-ip" type="text" value="8.8.8.8" autocomplete="off" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <input id="ri-ip" type="text" autocomplete="off" spellcheck="false" placeholder="8.8.8.8 or 8.8.8.8, 1.1.1.1, cloudflare.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
           <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Reverse Lookup</button>
         </form>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+          <span>Try bulk:</span>
+          <button type="button" id="ri-bulk-preset" class="rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50">8.8.8.8, 1.1.1.1, 2001:4860:4860::8888, mail.google.com</button>
+        </div>
         <div id="ri-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
         <p id="ri-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-          Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+          Enter one or up to 10 IPs or domains: the tool queries PTR records, runs forward confirmation, resolves the controlling ASN, and classifies each result.
         </p>
-        <div id="ri-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-          <table class="pdns-table"><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody id="ri-tbody"><tr><td class="font-medium text-ink">PTR query for 8.8.8.8</td><td class="text-sm text-ink-dim"><code>dns.google</code></td></tr><tr><td class="font-medium text-ink">Forward-confirm (FCrDNS)</td><td class="text-sm text-ink-dim"><code>dns.google</code> resolves back to 8.8.8.8, valid</td></tr></tbody></table>
+        <div id="ri-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Queried IP / Domain</th><th>PTR Hostname(s)</th><th>FCrDNS Forward Match</th><th>Controlling ASN and IP Holder</th><th>TTL</th><th>Verdict</th></tr></thead>
+            <tbody id="ri-tbody"></tbody>
+          </table>
         </div>
+        <ResultCard tool="reverse-ip-lookup" />
       </ToolPanel>
-
-      <article class="rich-text mt-12 max-w-none">
-        <h2 id="what-is-a-reverse-ip-lookup-and-how-does-it-work">What Is a Reverse IP Lookup and How Does It Work?</h2>
-        <p>
-          A reverse IP lookup (reverse DNS or rDNS lookup) is <strong class="text-ink">a DNS query that resolves an IPv4 or IPv6 address back to its associated canonical hostname by reading a Pointer (<code>PTR</code>) record</strong>. Reverse IP resolution performs the exact opposite operation of a forward DNS lookup, which translates a domain name into a numerical IP address via an <code>A</code> or <code>AAAA</code> record. This browser-based tool queries <code>.in-addr.arpa</code> (RFC 1035) and <code>.ip6.arpa</code> (RFC 3596) via DNS-over-HTTPS and immediately runs a Forward-Confirmed Reverse DNS (FCrDNS) check.
-        </p>
-        <p>
-          Executing a reverse IP lookup and forward-confirmation audit follows 3 sequential DNS resolution steps:
-        </p>
-        <ol class="list-decimal space-y-2 pl-5">
-          <li class="leading-relaxed">
-            <strong class="text-ink">Construct</strong> the reverse zone query name by reversing the 4 decimal octets of an IPv4 address with <code>.in-addr.arpa</code> appended (such as <code>8.8.8.8.in-addr.arpa</code> for <code>8.8.8.8</code>), or by reversing all 32 hexadecimal nibbles of a 128-bit IPv6 address with <code>.ip6.arpa</code> appended (RFC 3596).
-          </li>
-          <li class="leading-relaxed">
-            <strong class="text-ink">Query</strong> the authoritative nameservers delegated by the Regional Internet Registry (ARIN, RIPE NCC, or APNIC) to the ISP or cloud provider that owns the IP CIDR block to retrieve the published <code>PTR</code> hostname.
-          </li>
-          <li class="leading-relaxed">
-            <strong class="text-ink">Verify</strong> Forward-Confirmed Reverse DNS (FCrDNS, RFC 1912 Section 2.1) by resolving the returned <code>PTR</code> hostname forward via an <code>A</code> or <code>AAAA</code> lookup to confirm that it maps back to the original IP address.
-          </li>
-        </ol>
-        <p class="mt-4">
-          Entering a domain name instead of a raw IP address instructs the tool to resolve the domain's primary <code>A</code> record first before running the 3-step reverse lookup. For complete zone syntax rules, see our guide on <a href="/ptr-record/" class="text-accent underline hover:text-accent-hover">PTR Record: Reverse DNS Explained</a>.
-        </p>
-
-        <h2 id="how-to-read-reverse-ip-and-fcrdns-verification-results">How to Read Reverse IP and FCrDNS Verification Results</h2>
-        <p>
-          Receiving mail transfer agents (MTAs) and network security filters classify reverse IP lookup responses into 4 diagnostic states. The table below compares the 4 reverse IP verification states by <code>PTR</code> status, <code>FCrDNS</code> forward match, SMTP deliverability impact, and required remediation:
-        </p>
-
-        <section class="not-prose my-6" aria-label="Reverse IP and FCrDNS verification matrix">
-          <div class="glass overflow-x-auto rounded-2xl p-5 shadow-lg sm:p-7">
-            <table class="pdns-table" style="width:100%">
-              <thead>
-                <tr>
-                  <th>Verification State</th>
-                  <th><code>PTR</code> Lookup Output</th>
-                  <th><code>FCrDNS</code> Forward Match (<code>A</code> / <code>AAAA</code>)</th>
-                  <th>Infrastructure &amp; Email Deliverability Impact</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="font-medium text-ink font-semibold">1. Valid <code>FCrDNS</code> Pass</td>
-                  <td class="text-sm text-ink-dim">Returns custom hostname (<code>mail.example.com</code>)</td>
-                  <td class="text-sm text-emerald-400 font-medium">Resolves back to the exact queried IP</td>
-                  <td class="text-sm text-ink-dim">Passes Gmail, Microsoft 365, and Yahoo reverse DNS checks for outbound SMTP servers.</td>
-                </tr>
-                <tr>
-                  <td class="font-medium text-ink font-semibold">2. Generic Provider <code>PTR</code></td>
-                  <td class="text-sm text-ink-dim">Returns ISP/cloud pool name (<code>ec2-203-0-113-5.compute.amazonaws.com</code>)</td>
-                  <td class="text-sm text-emerald-400 font-medium">Resolves back to the queried IP</td>
-                  <td class="text-sm text-ink-dim">Safe for web servers and CDNs; triggers spam-folder filtering or <code>550</code> rejections on outbound mail servers.</td>
-                </tr>
-                <tr>
-                  <td class="font-medium text-ink font-semibold">3. Broken <code>FCrDNS</code> Mismatch</td>
-                  <td class="text-sm text-ink-dim">Returns hostname (<code>mail.example.com</code>)</td>
-                  <td class="text-sm text-rose-400 font-medium">Resolves to a different IP or <code>NXDOMAIN</code></td>
-                  <td class="text-sm text-ink-dim">Treated as unverified or forged rDNS by receiving MTAs; update the forward <code>A</code>/<code>AAAA</code> record or the provider <code>PTR</code>.</td>
-                </tr>
-                <tr>
-                  <td class="font-medium text-ink font-semibold">4. Missing <code>PTR</code> (<code>NXDOMAIN</code>)</td>
-                  <td class="text-sm text-ink-dim">No <code>PTR</code> record published in <code>.in-addr.arpa</code> / <code>.ip6.arpa</code></td>
-                  <td class="text-sm text-amber-400 font-medium">Cannot evaluate forward confirmation</td>
-                  <td class="text-sm text-ink-dim">Normal for residential connections; causes immediate SMTP connection rejection (<code>421</code> or <code>550 5.7.1</code>) for mail-sending IPs.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <p>
-          Dedicated outbound email servers require State 1 (<strong class="text-ink">Valid <code>FCrDNS</code> Pass</strong>) where the <code>PTR</code> hostname also matches the mail server's SMTP <code>EHLO</code>/<code>HELO</code> banner to protect <a href="/email-deliverability/" class="text-accent underline hover:text-accent-hover">Email Deliverability</a>. To inspect the network operator, Regional Internet Registry allocation, and BGP routing owner behind any IP address, run our <a href="/ip-lookup/" class="text-accent underline hover:text-accent-hover">IP Lookup: Location, ASN, and PTR</a> tool or read <a href="/asn-explained/" class="text-accent underline hover:text-accent-hover">What Is an ASN (Autonomous System Number)?</a>.
-        </p>
-
-        <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
-          <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin Field Notes</p>
-          <p class="text-sm leading-relaxed text-ink-dim italic">
-            In real-world cloud migrations on AWS, Google Cloud, DigitalOcean, and Hetzner, administrators often try to add a PTR record inside their domain registrar's DNS panel (such as Cloudflare or Namecheap) and wonder why reverse IP lookups still fail. Adding a PTR record inside your normal domain zone does nothing because queries for x.x.x.x.in-addr.arpa route to the cloud provider that owns the IP netblock. Always set reverse DNS inside your cloud VPS networking console (or open a support ticket if your provider delegates sub-/24 CIDR blocks via RFC 2317 CNAME records) after verifying that your forward A record is already live.
-          </p>
-        </aside>
-
-        <FaqAccordion faqs={faqs} heading="Frequently Asked Questions" />
-      </article>
     </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2 id="what-is-a-reverse-ip-lookup-and-how-does-it-work">What Is a Reverse IP Lookup and How Does It Work?</h2>
+      <p>
+        A reverse IP lookup (reverse DNS or rDNS lookup) is <strong class="text-ink">a DNS query that resolves an IPv4 or IPv6 address back to its associated canonical hostname by reading a Pointer (<code>PTR</code>) record</strong>. Reverse IP resolution performs the exact opposite operation of a forward DNS lookup, which translates a domain name into a numerical IP address via an <code>A</code> or <code>AAAA</code> record. This browser-based tool queries <code>.in-addr.arpa</code> (RFC 1035) and <code>.ip6.arpa</code> (RFC 3596) via DNS-over-HTTPS, immediately runs a Forward-Confirmed Reverse DNS (FCrDNS) check, and resolves the controlling ASN.
+      </p>
+      <p>
+        Executing a reverse IP lookup and forward-confirmation audit follows 3 sequential DNS resolution steps:
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li class="leading-relaxed">
+          <strong class="text-ink">Construct</strong> the reverse zone query name by reversing the 4 decimal octets of an IPv4 address with <code>.in-addr.arpa</code> appended (such as <code>8.8.8.8.in-addr.arpa</code> for <code>8.8.8.8</code>), or by reversing all 32 hexadecimal nibbles of a 128-bit IPv6 address with <code>.ip6.arpa</code> appended (RFC 3596).
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Query</strong> the authoritative nameservers delegated by the Regional Internet Registry (ARIN, RIPE NCC, or APNIC) to the ISP or cloud provider that owns the IP CIDR block to retrieve the published <code>PTR</code> hostname.
+        </li>
+        <li class="leading-relaxed">
+          <strong class="text-ink">Verify</strong> Forward-Confirmed Reverse DNS (FCrDNS, RFC 1912 Section 2.1) by resolving the returned <code>PTR</code> hostname forward via an <code>A</code> or <code>AAAA</code> lookup to confirm that it maps back to the original IP address.
+        </li>
+      </ol>
+      <p class="mt-4">
+        Entering a domain name instead of a raw IP address instructs the tool to resolve the domain's primary <code>A</code> record first before running the 3-step reverse lookup. For complete zone syntax rules, see our guide on <a href="/ptr-record/" class="text-accent underline hover:text-accent-hover">PTR Record: Reverse DNS Explained</a>.
+      </p>
+
+      <h2 id="how-to-read-reverse-ip-and-fcrdns-verification-results">How to Read Reverse IP and FCrDNS Verification Results</h2>
+      <p>
+        Receiving mail transfer agents (MTAs) and network security filters classify reverse IP lookup responses into 4 diagnostic states. The table below compares the 4 reverse IP verification states by <code>PTR</code> status, <code>FCrDNS</code> forward match, SMTP deliverability impact, and required remediation:
+      </p>
+
+      <section class="not-prose my-6" aria-label="Reverse IP and FCrDNS verification matrix">
+        <div class="glass overflow-x-auto rounded-2xl p-5 shadow-lg sm:p-7">
+          <table class="pdns-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>Verification State</th>
+                <th><code>PTR</code> Lookup Output</th>
+                <th><code>FCrDNS</code> Forward Match (<code>A</code> / <code>AAAA</code>)</th>
+                <th>Infrastructure &amp; Email Deliverability Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium text-ink font-semibold">1. Valid <code>FCrDNS</code> Pass</td>
+                <td class="text-sm text-ink-dim">Returns custom hostname (<code>mail.example.com</code>)</td>
+                <td class="text-sm text-emerald-400 font-medium">Resolves back to the exact queried IP</td>
+                <td class="text-sm text-ink-dim">Passes Gmail, Microsoft 365, and Yahoo reverse DNS checks for outbound SMTP servers.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink font-semibold">2. Generic Provider <code>PTR</code></td>
+                <td class="text-sm text-ink-dim">Returns ISP/cloud pool name (<code>ec2-203-0-113-5.compute.amazonaws.com</code>)</td>
+                <td class="text-sm text-emerald-400 font-medium">Resolves back to the queried IP</td>
+                <td class="text-sm text-ink-dim">Safe for web servers and CDNs; triggers spam-folder filtering or <code>550</code> rejections on outbound mail servers.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink font-semibold">3. Broken <code>FCrDNS</code> Mismatch</td>
+                <td class="text-sm text-ink-dim">Returns hostname (<code>mail.example.com</code>)</td>
+                <td class="text-sm text-rose-400 font-medium">Resolves to a different IP or <code>NXDOMAIN</code></td>
+                <td class="text-sm text-ink-dim">Treated as unverified or forged rDNS by receiving MTAs; update the forward <code>A</code>/<code>AAAA</code> record or the provider <code>PTR</code>.</td>
+              </tr>
+              <tr>
+                <td class="font-medium text-ink font-semibold">4. Missing <code>PTR</code> (<code>NXDOMAIN</code>)</td>
+                <td class="text-sm text-ink-dim">No <code>PTR</code> record published in <code>.in-addr.arpa</code> / <code>.ip6.arpa</code></td>
+                <td class="text-sm text-amber-400 font-medium">Cannot evaluate forward confirmation</td>
+                <td class="text-sm text-ink-dim">Normal for residential connections; causes immediate SMTP connection rejection (<code>421</code> or <code>550 5.7.1</code>) for mail-sending IPs.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p>
+        Dedicated outbound email servers require State 1 (<strong class="text-ink">Valid <code>FCrDNS</code> Pass</strong>) where the <code>PTR</code> hostname also matches the mail server's SMTP <code>EHLO</code>/<code>HELO</code> banner to protect <a href="/email-deliverability/" class="text-accent underline hover:text-accent-hover">Email Deliverability</a>. To inspect the network operator, Regional Internet Registry allocation, and BGP routing owner behind any IP address, run our <a href="/ip-lookup/" class="text-accent underline hover:text-accent-hover">IP Lookup: Location, ASN, and PTR</a> tool or read <a href="/asn-explained/" class="text-accent underline hover:text-accent-hover">What Is an ASN (Autonomous System Number)?</a>.
+      </p>
+
+      <h2>How to Fix Missing or Mismatched Reverse DNS (PTR) Records</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish the forward record first.</strong> Set the forward <code>A</code> or <code>AAAA</code> record on your domain (for example, <code>mail.example.com</code> to <code>203.0.113.5</code>) and wait for propagation: most cloud providers refuse to save a PTR record unless the forward A record already resolves to that IP.</li>
+        <li><strong>Identify the IP block owner.</strong> Use the Controlling ASN and IP Holder column in this tool's result to determine which cloud provider, data center, or ISP owns the IP: AWS Elastic IP console, Google Cloud network tier, DigitalOcean Droplet networking, Hetzner Cloud console, or an ISP ticket.</li>
+        <li><strong>Configure the PTR in the owner's panel.</strong> Set the PTR hostname inside the IP owner's control panel, or request RFC 2317 classless CNAME delegation if your ISP allocated a subnet smaller than /24 (no direct PTR control).</li>
+        <li><strong>Align the SMTP banner.</strong> Match your mail server's outbound EHLO/HELO banner to the exact PTR hostname so Gmail, Microsoft 365, and Yahoo pass FCrDNS checks on every inbound connection.</li>
+      </ol>
+
+      <h2>Verify Reverse IP and FCrDNS from the command line (dig, host, and nslookup)</h2>
+      <pre><code># 1. IPv4 reverse lookup
+dig -x 8.8.8.8 +short
+
+# 2. IPv6 reverse lookup
+dig -x 2001:4860:4860::8888 +short
+
+# 3. Manual two-step FCrDNS verification (PTR then forward A)
+dig +short dns.google A
+
+# 4. Raw .in-addr.arpa question section and TTL
+dig 8.8.8.8.in-addr.arpa PTR +noall +answer
+
+# 5. Linux, macOS, and Windows equivalents
+host 8.8.8.8
+nslookup 8.8.8.8</code></pre>
+
+      <h2>Reference table: IPv4 vs IPv6 reverse DNS zones and reverse IP lookup methods</h2>
+      <p>The table below defines the six reverse lookup methods and zones, including the ASN resolution this tool performs.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Reverse Lookup Method / Zone</th><th>Input to Query Format</th><th>Governing Standard</th><th>What It Returns and Limitation</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">IPv4 reverse DNS (.in-addr.arpa)</td><td class="font-mono text-xs text-ink-dim">203.0.113.5 to 5.113.0.203.in-addr.arpa PTR</td><td class="text-sm text-ink-dim">RFC 1035 section 3.5</td><td class="text-sm text-ink-dim">Canonical hostname for a 32-bit IPv4 address; delegated on /8, /16, or /24 boundaries.</td></tr>
+            <tr><td class="font-medium text-ink">IPv6 reverse DNS (.ip6.arpa)</td><td class="font-mono text-xs text-ink-dim">2001:4860:4860::8888 to 32 reversed hex nibbles + .ip6.arpa PTR</td><td class="text-sm text-ink-dim">RFC 3596 section 2.5</td><td class="text-sm text-ink-dim">Canonical hostname for a 128-bit IPv6 address; delegated on 4-bit nibble boundaries.</td></tr>
+            <tr><td class="font-medium text-ink">Classless sub-/24 reverse DNS</td><td class="font-mono text-xs text-ink-dim">203.0.113.5 in a /28 block: CNAME to child zone</td><td class="text-sm text-ink-dim">RFC 2317</td><td class="text-sm text-ink-dim">Allows ISPs to delegate PTR control for subnets smaller than /24 (/25 to /30).</td></tr>
+            <tr><td class="font-medium text-ink">Forward-Confirmed reverse DNS (FCrDNS)</td><td class="font-mono text-xs text-ink-dim">IP to PTR hostname to A/AAAA IP match</td><td class="text-sm text-ink-dim">RFC 1912 section 2.1 and RFC 7601</td><td class="text-sm text-ink-dim">Proves the domain owner and IP block owner both authorized the mapping.</td></tr>
+            <tr><td class="font-medium text-ink">IP-to-ASN BGP origin lookup</td><td class="font-mono text-xs text-ink-dim">reversed-ip.origin.asn.cymru.com TXT</td><td class="text-sm text-ink-dim">RFC 4271 BGP / RIR RDAP</td><td class="text-sm text-ink-dim">Identifies the Autonomous System Number and network operator that controls the .arpa zone.</td></tr>
+            <tr><td class="font-medium text-ink">Passive DNS virtual-host enumeration (non-DNS)</td><td class="font-mono text-xs text-ink-dim">Proprietary crawler database query</td><td class="text-sm text-ink-dim">RFC 3425 (obsoleted DNS IQUERY)</td><td class="text-sm text-ink-dim">Lists historical websites sharing a server IP; cannot be queried via live public DNS.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Standard DNS has no inverse query to list every virtual-host domain pointing an A record to a shared web server IP (IQUERY Opcode 1 was retired by RFC 3425), so this tool queries the authoritative PTR record and FCrDNS status rather than a commercial passive-DNS crawler database.</li>
+        <li>A passing FCrDNS check on a mail server IP does not replace SPF, DKIM, and DMARC domain alignment: the three mechanisms are complementary and each must be verified separately.</li>
+        <li>Many cloud CDN and anycast edge IPs (such as Cloudflare proxy IPs) intentionally publish no PTR record or a generic provider PTR because they serve millions of domains simultaneously.</li>
+        <li>If an IP address publishes multiple PTR records, recursive resolvers return them in unsorted order, which can cause intermittent FCrDNS failures on strict mail gateways.</li>
+      </ul>
+      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin Field Notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim italic">
+          In real-world cloud migrations on AWS, Google Cloud, DigitalOcean, and Hetzner, administrators often try to add a PTR record inside their domain registrar's DNS panel (such as Cloudflare or Namecheap) and wonder why reverse IP lookups still fail. Adding a PTR record inside your normal domain zone does nothing because queries for x.x.x.x.in-addr.arpa route to the cloud provider that owns the IP netblock. Always set reverse DNS inside your cloud VPS networking console (or open a support ticket if your provider delegates sub-/24 CIDR blocks via RFC 2317 CNAME records) after verifying that your forward A record is already live.
+        </p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        Across production domain audits, the clearest divide is between dedicated mail and infrastructure IPs, which publish strict one-to-one FCrDNS-validated PTR hostnames, and cloud compute or CDN IPs: AWS EC2 instances default to generic ec2-*.compute.amazonaws.com PTR names, while Cloudflare anycast edge IPs often publish no PTR at all because they serve millions of domains simultaneously.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between reverse IP lookup and reverse DNS (rDNS)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">In networking and email standards (RFC 1035, RFC 1912), reverse IP lookup and reverse DNS lookup are synonyms: both query an IP address's PTR record in .in-addr.arpa or .ip6.arpa to find its canonical hostname. In SEO and security recon tools, "reverse IP" sometimes refers to querying a passive-DNS database to list multiple websites hosted on the same shared IP, which is a different operation that live DNS cannot perform since IQUERY was obsoleted by RFC 3425.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my IP address have no PTR record (NXDOMAIN)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">ISPs and cloud hosts do not publish custom PTR records by default on residential links, anycast CDN edges, or fresh VPS instances. The PTR record only appears once the IP block owner (the cloud provider, data center, or ISP identified by the controlling ASN) configures the reverse zone entry. Residential IPs almost never have PTR records; mail-serving IPs always need one.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Who can change the PTR record for my IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Only the organization that owns the IP CIDR block, identified by the controlling ASN in this tool's result: your cloud VPS provider, data center, or ISP. Your domain registrar has no authority over reverse DNS zones because .in-addr.arpa and .ip6.arpa are delegated by the Regional Internet Registries (ARIN, RIPE NCC, APNIC) directly to the network operator, not to domain registrants.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a single IP address have multiple PTR records in reverse DNS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, the DNS protocol technically permits multiple PTR records on the same reverse zone name. However, RFC 1912 Section 2.1 strongly discourages it: recursive resolvers return multiple PTR records in unsorted round-robin order, which enlarges UDP response packets and causes erratic Forward-Confirmed Reverse DNS failures when strict mail gateways inspect only the first returned hostname.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a missing or generic reverse IP lookup result hurt website SEO?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, in practice a missing or generic PTR record has zero impact on Google web search rankings, crawl budget, or HTTPS browser connections when your domain uses a CDN, shared host, or reverse proxy. Reverse IP lookup and FCrDNS alignment are strictly required for outbound SMTP mail server IPs, enterprise firewall logging, and network diagnostics, not for web hosting.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>The dedicated mail-server rDNS check with FCrDNS specifics is in the <a href="/ptr-record-lookup/">PTR record lookup</a>.</li>
+        <li>Verify that a crawler visiting your site is genuine using <a href="/ai-crawler-verification/">AI crawler verification</a> by reverse DNS.</li>
+        <li>Check whether the sending infrastructure behind a domain is listed on blocklists with the <a href="/blacklist-checker/">blocklist checker</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 1035, Domain Names - Implementation and Specification (section 3.5, IN-ADDR.ARPA): <a href="https://www.rfc-editor.org/rfc/rfc1035" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1035</a></li>
+        <li>IETF RFC 3596, DNS Extensions to Support IP Version 6 (section 2.5, IP6.ARPA): <a href="https://www.rfc-editor.org/rfc/rfc3596" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc3596</a></li>
+        <li>IETF RFC 1912, Common DNS Operational and Configuration Errors (section 2.1): <a href="https://www.rfc-editor.org/rfc/rfc1912" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1912</a></li>
+        <li>IETF RFC 2317, Classless IN-ADDR.ARPA Delegation: <a href="https://www.rfc-editor.org/rfc/rfc2317" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2317</a></li>
+        <li>IETF RFC 3425, Obsoleting IQUERY: <a href="https://www.rfc-editor.org/rfc/rfc3425" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc3425</a></li>
+      </ul>
+    </article>
   </div>
 </BaseLayout>
+
 <script>
-  import { lookup, RESOLVERS } from '../lib/doh';
-  import { reverseIp } from '../lib/dnsbl';
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (ri-).
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
   import { ptrOf } from '../lib/ipinfo';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
   const form = document.getElementById('ri-form') as HTMLFormElement;
   const input = document.getElementById('ri-ip') as HTMLInputElement;
   const statusEl = document.getElementById('ri-status')!;
   const resultsEl = document.getElementById('ri-results')!;
   const tbody = document.getElementById('ri-tbody')!;
+  const TOOL = 'reverse-ip-lookup';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'IP lookup', href: '/ip-lookup/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  // Resolve a domain to its first A record via DoH
+  async function resolveDomain(d: string): Promise<string | null> {
+    const r = await lookup(d, 'A', RESOLVERS[0]);
+    return r.answers.find((x) => x.type === 1)?.data ?? null;
+  }
+
+  // Team Cymru ASN lookup via DoH TXT
+  async function asnLookup(ip: string): Promise<{ asn: string; holder: string } | null> {
+    try {
+      let queryName: string;
+      if (ip.includes(':')) {
+        // IPv6: expand to full 32 nibbles, reverse, append .origin6.asn.cymru.com
+        const expanded = expandV6(ip);
+        if (!expanded) return null;
+        queryName = expanded.split('').reverse().join('.') + '.origin6.asn.cymru.com';
+      } else {
+        const octets = ip.split('.').map(Number);
+        if (octets.length !== 4 || octets.some((o) => o > 255 || o < 0)) return null;
+        queryName = octets.reverse().join('.') + '.origin.asn.cymru.com';
+      }
+      const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(queryName)}&type=TXT`, {
+        headers: { Accept: 'application/dns-json' },
+        signal: AbortSignal.timeout(6000),
+      });
+      const j = await res.json();
+      const txt = j.Answer?.find((a: any) => a.type === 16)?.data?.replace(/^"|"$/g, '');
+      if (!txt) return null;
+      // Format: "ASN | prefix | country | registry | date" (possibly multi-line with " | " separators)
+      const firstLine = txt.split('\n')[0].trim();
+      const fields = firstLine.split('|').map((s: string) => s.trim());
+      const asn = fields[0]?.replace(/^AS/i, '') ?? '';
+      if (!asn) return null;
+      // Resolve the ASN holder name via a second Cymru query
+      let holder = fields[2] ?? '';
+      try {
+        const holderRes = await fetch(`https://cloudflare-dns.com/dns-query?name=AS${asn}.asn.cymru.com&type=TXT`, {
+          headers: { Accept: 'application/dns-json' },
+          signal: AbortSignal.timeout(6000),
+        });
+        const hj = await holderRes.json();
+        const holderTxt = hj.Answer?.find((a: any) => a.type === 16)?.data?.replace(/^"|"$/g, '');
+        if (holderTxt) {
+          const hf = holderTxt.split('|').map((s: string) => s.trim());
+          if (hf[4]) holder = hf[4];
+        }
+      } catch { /* keep the country fallback */ }
+      return { asn: 'AS' + asn, holder: holder || 'Unknown' };
+    } catch {
+      return null;
+    }
+  }
+
+  function expandV6(addr: string): string | null {
+    try {
+      // Basic expansion using URL parsing (IPv6 in brackets)
+      const url = new URL('http://[' + addr + ']');
+      const full = url.hostname;
+      const groups = full.split(':');
+      if (groups.length !== 8) return null;
+      return groups.map((g) => g.padStart(4, '0')).join('').toLowerCase();
+    } catch { return null; }
+  }
+
+  interface ResultRow {
+    queried: string;
+    resolvedIp: string;
+    ptr: string | null;
+    fcrdns: 'pass' | 'mismatch' | 'no_ptr' | null;
+    fcrdnsDetail: string;
+    asn: string | null;
+    holder: string | null;
+    ttl: number | null;
+  }
+
+  async function checkOne(queried: string): Promise<ResultRow> {
+    // Resolve domains to IPs first
+    let ip = queried;
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(queried) && !queried.includes(':')) {
+      const resolved = await resolveDomain(queried);
+      if (!resolved) return { queried, resolvedIp: 'unresolvable', ptr: null, fcrdns: null, fcrdnsDetail: 'Domain did not resolve to an IP.', asn: null, holder: null, ttl: null };
+      ip = resolved;
+    }
+    const ptr = await ptrOf(ip);
+    if (!ptr) return { queried, resolvedIp: ip, ptr: null, fcrdns: 'no_ptr', fcrdnsDetail: 'No PTR record published (NXDOMAIN).', asn: null, holder: null, ttl: null };
+    const fwdType = ip.includes(':') ? 'AAAA' : 'A';
+    const fwd = await lookup(ptr, fwdType, RESOLVERS[0]);
+    const fwdIps = fwd.answers.filter((x) => x.type === (ip.includes(':') ? 28 : 1)).map((x) => x.data);
+    const confirmed = fwdIps.includes(ip);
+    const ttl = fwd.answers.find((x) => x.type === (ip.includes(':') ? 28 : 1))?.TTL ?? null;
+    const asnResult = await asnLookup(ip);
+    return {
+      queried,
+      resolvedIp: ip,
+      ptr,
+      fcrdns: confirmed ? 'pass' : 'mismatch',
+      fcrdnsDetail: confirmed ? 'Resolves back to ' + ip : fwdIps.length ? 'Resolves to ' + fwdIps.join(', ') + ' (mismatch)' : 'Forward lookup returned no address',
+      asn: asnResult?.asn ?? null,
+      holder: asnResult?.holder ?? null,
+      ttl,
+    };
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const ip = input.value.trim();
-    if (!ip) { statusEl.textContent = 'Enter an IP address.'; return; }
-    statusEl.textContent = `Resolving ${ip}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    const parts = input.value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean).slice(0, 10);
+    const targets = [...new Set(parts)];
+    if (!targets.length) { setStatus('fail', 'Enter 1 to 10 IPs or domains.'); return; }
+    setStatus('loading', `Resolving PTR and ASN for ${targets.length} target${targets.length === 1 ? '' : 's'}...`);
     resultsEl.classList.add('hidden');
-    const ptr = await ptrOf(ip);
-    if (!ptr) { statusEl.textContent = 'No PTR record for that address.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-warn/10 text-warn border border-warn/30'; return; }
-    const fwd = await lookup(ptr, ip.includes(':') ? 'AAAA' : 'A', RESOLVERS[0]);
-    const fwdIp = fwd.answers.find(x => x.type === (ip.includes(':') ? 28 : 1))?.data;
-    const confirmed = fwdIp === ip;
+    tbody.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     document.getElementById('ri-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = `
-      <tr><td class="text-ink-dim">PTR hostname</td><td class="font-mono text-xs text-accent">${ptr}</td></tr>
-      <tr><td class="text-ink-dim">Forward lookup</td><td class="font-mono text-xs">${fwdIp ?? 'no address'}</td></tr>
-      <tr><td class="text-ink-dim">Forward-confirmed</td><td class="text-sm ${confirmed ? 'text-pass' : 'text-warn'}">${confirmed ? 'Yes, matches' : 'No match (common for shared hosts)'}</td></tr>`;
-    statusEl.textContent = `${ip} → ${ptr}`;
-    statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-pass/10 text-pass border border-pass/30';
-    resultsEl.classList.remove('hidden');
+
+    try {
+      const results: ResultRow[] = [];
+      for (const t of targets) {
+        results.push(await checkOne(t));
+      }
+
+      for (const r of results) {
+        const tr = document.createElement('tr');
+        tr.append(el('td', 'font-mono text-xs text-ink', r.queried !== r.resolvedIp ? r.queried + ' (' + r.resolvedIp + ')' : r.queried));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.ptr ?? 'No PTR (NXDOMAIN)'));
+        const fcrdnsCell = el('td', `text-sm font-medium ${r.fcrdns === 'pass' ? 'text-pass' : r.fcrdns === 'mismatch' ? 'text-fail' : 'text-ink-faint'}`, r.fcrdns === 'pass' ? 'Pass' : r.fcrdns === 'mismatch' ? 'Mismatch' : r.fcrdns === 'no_ptr' ? 'Cannot evaluate' : '-');
+        tr.append(fcrdnsCell);
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.asn ? r.asn + ' ' + r.holder : 'not resolved'));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.ttl !== null ? r.ttl + 's' : '-'));
+        const verdict = r.fcrdns === 'pass' ? ['Valid FCrDNS pass', 'text-pass'] : r.fcrdns === 'mismatch' ? ['Broken FCrDNS', 'text-fail'] : r.fcrdns === 'no_ptr' ? ['No PTR', 'text-warn'] : ['Unresolvable', 'text-fail'];
+        tr.append(el('td', `text-sm font-medium ${verdict[1]}`, verdict[0]));
+        tbody.append(tr);
+      }
+      resultsEl.classList.remove('hidden');
+
+      const passCount = results.filter((r) => r.fcrdns === 'pass').length;
+      const mismatchCount = results.filter((r) => r.fcrdns === 'mismatch').length;
+      const noPtrCount = results.filter((r) => r.fcrdns === 'no_ptr').length;
+      setStatus(passCount === results.length ? 'pass' : mismatchCount > 0 ? 'fail' : 'warn',
+        `${passCount} FCrDNS pass, ${mismatchCount} mismatch, ${noPtrCount} no PTR across ${results.length} target${results.length === 1 ? '' : 's'}.`);
+      emit(targets.join(', '), passCount === results.length ? 'pass' : 'warn', `Reverse IP: ${passCount} FCrDNS pass, ${mismatchCount} mismatch, ${noPtrCount} no PTR.`,
+        [{ code: 'REVERSE_IP_CHECK', detail: results.map((r) => r.queried + '=' + (r.fcrdns ?? '?')).join(', ').slice(0, 300) }]);
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolvers. This is an inconclusive result, not a pass or fail.');
+    }
   });
 </script>
