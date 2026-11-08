@@ -1,12 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'How do I find who owns an IP address?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Enter the IP address in this tool to see its originating ASN, network holder, BGP prefix, and country. For the registered organization of record, query the RIR RDAP database (ARIN, RIPE NCC, APNIC, LACNIC, or AFRINIC) using the IP address. The RDAP response includes the organization handle, abuse contact, and allocation date.' } },
+    { '@type': 'Question', 'name': 'How accurate is IP address geolocation?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'IP geolocation is accurate at the country level nearly always and at the city level roughly 80 percent of the time for desktop connections. However, accuracy drops sharply for mobile carriers, VPN users, and anycast networks, where the registered location of the IP block may be thousands of kilometers from the actual device. Treat city-level results as approximate.' } },
+    { '@type': 'Question', 'name': 'Why does an IP lookup show a different city than where I live?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Your ISP routes your traffic through a regional gateway or the geolocation database maps your IP block to the ISP headquarters city rather than your physical location. CGNAT (Carrier-Grade NAT) and VPN tunnels also cause mismatches. The country result is nearly always correct; city-level results are best treated as approximate.' } },
+    { '@type': 'Question', 'name': "Can an IP lookup reveal a person's name or home street address?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, an IP lookup reveals the organization that owns the IP block (an ISP, cloud provider, or data center), not the individual subscriber. Personal names and street addresses are protected by privacy regulations and are only released by the ISP to law enforcement with a legal order. The WHOIS registrant fields for IP blocks show the organization, not the end user.' } },
+    { '@type': 'Question', 'name': "Why does looking up a website's IP address show Cloudflare or Amazon AWS instead of the business owner?", 'acceptedAnswer': { '@type': 'Answer', 'text': 'The website sits behind a reverse proxy or CDN. When Cloudflare proxies traffic, the public IP belongs to Cloudflare (AS13335), not to the origin web host. The same applies to AWS CloudFront (AS16509) and Akamai (AS20940). The origin IP is hidden by design; to find it, you would need historical DNS records, Certificate Transparency logs, or passive DNS data.' } },
+  ],
+};
 ---
-<BaseLayout
-  title="IP Lookup, Location, ASN & Reverse DNS"
-  description="Free IP lookup: geolocation, ASN and network owner, plus reverse DNS (PTR) resolved through our own DNS-over-HTTPS engine."
->
+<BaseLayout title="IP Lookup: Check IP Geolocation, ASN, BGP Prefix, RDAP & Reverse DNS (PTR)" description="Free IP lookup: inspect BGP ASN, network holder, announced prefix, RPKI ROA validity, RDAP registration, reverse DNS PTR hostname, FCrDNS, and geolocation for any IPv4 or IPv6 address or domain." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -15,97 +24,303 @@ import ToolPanel from '../components/ToolPanel.astro';
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">IP Lookup</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IP Lookup: Geolocation, ASN and PTR for Any Address</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free IP lookup: get geolocation, ASN, ISP and reverse DNS for any IP address.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">IP Lookup: Inspect Location, ASN, BGP Prefix, RPKI, and Reverse DNS</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Look up any IPv4 or IPv6 address (or domain name) to inspect its BGP Autonomous System Number (ASN), network holder, announced CIDR prefix, RPKI ROA validity, RDAP registration, reverse DNS (PTR) hostname, and geolocation.</p>
 
-    <ToolPanel>
-      <form id="ipl-form" class="flex flex-col gap-3 sm:flex-row">
-        <label class="sr-only" for="ipl-input">IP address</label>
-        <input id="ipl-input" type="text" autocomplete="off" spellcheck="false" placeholder="8.8.8.8 or 2606:4700::1111"
-          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
-        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Lookup IP</button>
-      </form>
-
-      <div id="ipl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-
-      <div id="ipl-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
-
-      <p id="ipl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
-      </p>
-<div id="ipl-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-        <table class="pdns-table">
-          <thead><tr><th>Property</th><th>Value</th></tr></thead>
-          <tbody id="ipl-tbody"><tr><td class="font-medium text-ink">IP</td><td><code>8.8.8.8</code></td></tr><tr><td class="font-medium text-ink">Organization</td><td class="text-sm text-ink-dim">GOOGLE</td></tr><tr><td class="font-medium text-ink">Country</td><td class="text-sm text-ink-dim">United States</td></tr><tr><td class="font-medium text-ink">PTR</td><td class="text-sm text-ink-dim"><code>dns.google</code></td></tr></tbody>
-        </table>
-</div>
-    </ToolPanel>
-
-    <p class="mt-6 text-base leading-relaxed text-ink-dim">
-      Every public IP address is announced by an autonomous system, and our guide <a href="/asn-explained/" class="text-accent hover:text-accent-soft">What Is an ASN (Autonomous System Number)?</a> explains how announcing networks are identified. Run the full <a href="/asn-lookup/" class="text-accent hover:text-accent-soft">ASN lookup</a> to inspect BGP prefixes and RPKI status. Addresses are assigned statically or dynamically: the <a href="/static-vs-dynamic-ip/" class="text-accent hover:text-accent-soft">Static vs Dynamic IP Addresses</a> guide shows how to tell which assignment you have, and the <a href="/reverse-ip-lookup/" class="text-accent hover:text-accent-soft">Reverse IP Lookup (PTR)</a> resolves any address back to its hostname.
-    </p>
-
-    <ToolArticle slug="ip-lookup" />
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="ipl-form" class="flex flex-col gap-3 sm:flex-row">
+          <label class="sr-only" for="ipl-input">IP address or domain</label>
+          <input id="ipl-input" type="text" autocomplete="off" spellcheck="false" placeholder="8.8.8.8 or cloudflare.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Look Up IP</button>
+        </form>
+        <div class="mt-2 flex flex-wrap gap-2 text-xs text-ink-faint">
+          <span>Try:</span>
+          <button type="button" class="ipl-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="1.1.1.1">1.1.1.1</button>
+          <button type="button" class="ipl-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="8.8.8.8">8.8.8.8</button>
+          <button type="button" class="ipl-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="2606:4700:4700::1111">2606:4700:4700::1111</button>
+          <button type="button" class="ipl-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="github.com">github.com</button>
+        </div>
+        <div id="ipl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="ipl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Enter an IPv4 or IPv6 address or a domain name. The tool queries BGP routing data, reverse DNS, and RIR registration records live.
+        </p>
+        <div id="ipl-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="ipl-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody id="ipl-tbody"></tbody></table>
+        </div>
+        <ResultCard tool="ip-lookup" />
+      </ToolPanel>
     </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 IP address and network classification states</h2>
+      <p>Every public IP address falls into one of 5 network classes, each with different infrastructure implications. The table below defines them.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Network Class</th><th>Typical ASN Pattern</th><th>What the PTR and ASN Show</th><th>Operational Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Public ISP / Residential broadband</td><td class="text-sm text-ink-dim">Regional ISP ASN with DHCP pool PTR patterns</td><td class="text-sm text-ink-dim">PTR contains dhcp, pool, dsl, or cable tokens; no custom PTR</td><td class="text-sm text-ink-dim">Standard consumer connection; not suitable for hosting servers.</td></tr>
+            <tr><td class="font-medium text-ink">Cloud data center / VPS hosting</td><td class="text-sm text-ink-dim">AWS (AS16509), Google Cloud (AS396982), Azure (AS8075), Hetzner (AS24940), DigitalOcean (AS14061)</td><td class="text-sm text-ink-dim">PTR contains ec2-*.compute.amazonaws.com or similar provider patterns</td><td class="text-sm text-ink-dim">Production hosting infrastructure with configurable PTR.</td></tr>
+            <tr><td class="font-medium text-ink">Anycast CDN or reverse proxy edge</td><td class="text-sm text-ink-dim">Cloudflare (AS13335), Fastly (AS54113), Akamai (AS20940)</td><td class="text-sm text-ink-dim">No PTR or generic provider PTR; anycast IP serving millions of domains</td><td class="text-sm text-ink-dim">The public IP belongs to the CDN, not to the origin web host.</td></tr>
+            <tr><td class="font-medium text-ink">Dedicated mail server</td><td class="text-sm text-ink-dim">Custom PTR (mail.example.com) with valid FCrDNS and RPKI valid</td><td class="text-sm text-ink-dim">PTR matches the SMTP banner and forward-confirms to the same IP</td><td class="text-sm text-ink-dim">Properly configured for outbound email deliverability.</td></tr>
+            <tr><td class="font-medium text-ink">Private, loopback, or CGNAT</td><td class="text-sm text-ink-dim">RFC 1918 (10/8, 172.16/12, 192.168/16), RFC 6598 (100.64/10), or 127/8</td><td class="text-sm text-ink-dim">Not routable on the public internet; no PTR in public DNS</td><td class="text-sm text-ink-dim">Internal LAN or carrier NAT space: no public infrastructure role.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to trace an IP address to its network owner, abuse contact, and server location</h2>
+      <p>Tracing an IP to its owner proceeds through 4 sequential steps:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Resolve the IP to its originating ASN.</strong> Query Team Cymru DNS or RIPEstat to find the Autonomous System Number that announces the IP prefix in BGP, which identifies the network operator.</li>
+        <li><strong>Identify the network holder and RIR.</strong> The ASN maps to an organization name and a Regional Internet Registry (ARIN, RIPE NCC, APNIC, LACNIC, or AFRINIC) that allocated the IP block.</li>
+        <li><strong>Verify the PTR and FCrDNS alignment.</strong> Query the reverse DNS record and forward-confirm it to prove that the hostname owner and IP block owner both authorized the mapping.</li>
+        <li><strong>Query RDAP for registration and abuse contacts.</strong> The RDAP response includes the registered organization, abuse mailbox, and allocation date from the RIR database.</li>
+      </ol>
+
+      <h2>Look up IP details, ASN, RDAP, and PTR from the command line</h2>
+      <pre><code># 1. Reverse DNS (PTR) lookup
+dig -x 8.8.8.8 +short
+
+# 2. IP to ASN via Team Cymru DNS
+dig +short 8.8.8.8.origin.asn.cymru.com TXT
+
+# 3. RDAP registration data from ARIN
+curl -s https://rdap.arin.net/registry/ip/8.8.8.8 | jq .
+
+# 4. Legacy WHOIS
+whois 8.8.8.8</code></pre>
+
+      <h2>Reference table: the 6 data layers combined in an IP lookup</h2>
+      <p>The table below defines each data layer this tool queries and what it proves.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Data Layer</th><th>Protocol / Source</th><th>Governing Standard</th><th>What It Proves and Accuracy</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">BGP origin ASN and prefix</td><td class="text-sm text-ink-dim">Team Cymru DNS TXT</td><td class="text-sm text-ink-dim">RFC 4271 (BGP)</td><td class="text-sm text-ink-dim">Which AS announces the IP prefix in the global routing table. Near-real-time.</td></tr>
+            <tr><td class="font-medium text-ink">RPKI route origin validation</td><td class="text-sm text-ink-dim">RIPEstat / RPKI ROA</td><td class="text-sm text-ink-dim">RFC 6811</td><td class="text-sm text-ink-dim">Whether the BGP announcement is cryptographically authorized. Current.</td></tr>
+            <tr><td class="font-medium text-ink">RIR registration data</td><td class="text-sm text-ink-dim">RDAP (ARIN / RIPE / APNIC)</td><td class="text-sm text-ink-dim">RFC 9083</td><td class="text-sm text-ink-dim">Organization of record, allocation date, abuse contact. Official but may lag.</td></tr>
+            <tr><td class="font-medium text-ink">Reverse DNS (PTR) and FCrDNS</td><td class="text-sm text-ink-dim">DNS PTR + forward A/AAAA</td><td class="text-sm text-ink-dim">RFC 1035 / RFC 1912</td><td class="text-sm text-ink-dim">Canonical hostname and its forward confirmation. Live per-resolver.</td></tr>
+            <tr><td class="font-medium text-ink">IP geolocation</td><td class="text-sm text-ink-dim">ipwho.is database</td><td class="text-sm text-ink-dim">Commercial databases</td><td class="text-sm text-ink-dim">Country nearly always correct; city approximate (roughly 80 percent for desktop).</td></tr>
+            <tr><td class="font-medium text-ink">Abuse and security contact</td><td class="text-sm text-ink-dim">RDAP entities with abuse role</td><td class="text-sm text-ink-dim">RFC 2142</td><td class="text-sm text-ink-dim">Mailbox for reporting abuse from that IP block. Official.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>This tool queries recursive DoH resolvers, not authoritative nameservers directly: the returned PTR may be cached rather than the current authoritative answer.</li>
+        <li>IP geolocation databases are commercial and approximate: country is nearly always correct but city and coordinates can be hundreds of kilometers off, especially for mobile carriers and CGNAT.</li>
+        <li>The tool does not check whether the IP is currently listed on DNS blocklists: use the blocklist checker for that separate test.</li>
+        <li>Anycast and CDN IPs serve millions of domains from the same address: the PTR and ASN identify the CDN edge, not the origin web host behind it.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The classic anycast GeoIP confusion: 1.1.1.1 is registered by APNIC (Australia) in the RDAP database, yet it routes to your nearest Cloudflare point of presence in 2 milliseconds because BGP anycast delivers traffic topologically, not geographically. The registration location and the routing location are two different facts: RDAP tells you who owns the block, BGP tells you where it is announced from, and latency tells you how close it is.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        Across production IP lookups, the dominant pattern is anycast CDN edge consolidation: a small set of hyperscale ASNs (Cloudflare, Google, Amazon, Fastly) carries a disproportionate share of web traffic, while direct origin hosting on dedicated IPs is increasingly rare outside enterprise mail and legacy infrastructure. IPv6 dual-stack parity is also uneven: some providers announce identical A and AAAA prefixes, while others have IPv6 gaps that cause resolution asymmetry.
+      </p>
+
+      <h2>Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find who owns an IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the IP address in this tool to see its originating ASN, network holder, BGP prefix, and country. For the registered organization of record, query the RIR RDAP database (ARIN, RIPE NCC, APNIC, LACNIC, or AFRINIC) using the IP address. The RDAP response includes the organization handle, abuse contact, and allocation date.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How accurate is IP address geolocation?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">IP geolocation is accurate at the country level nearly always and at the city level roughly 80 percent of the time for desktop connections. However, accuracy drops sharply for mobile carriers, VPN users, and anycast networks, where the registered location of the IP block may be thousands of kilometers from the actual device. Treat city-level results as approximate.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does an IP lookup show a different city than where I live?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Your ISP routes your traffic through a regional gateway or the geolocation database maps your IP block to the ISP headquarters city rather than your physical location. CGNAT (Carrier-Grade NAT) and VPN tunnels also cause mismatches. The country result is nearly always correct; city-level results are best treated as approximate.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can an IP lookup reveal a person's name or home street address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, an IP lookup reveals the organization that owns the IP block (an ISP, cloud provider, or data center), not the individual subscriber. Personal names and street addresses are protected by privacy regulations and are only released by the ISP to law enforcement with a legal order. The WHOIS registrant fields for IP blocks show the organization, not the end user.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does looking up a website's IP address show Cloudflare or Amazon AWS instead of the business owner?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The website sits behind a reverse proxy or CDN. When Cloudflare proxies traffic, the public IP belongs to Cloudflare (AS13335), not to the origin web host. The same applies to AWS CloudFront (AS16509) and Akamai (AS20940). The origin IP is hidden by design; to find it, you would need historical DNS records, Certificate Transparency logs, or passive DNS data.</p></details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Run the full <a href="/asn-lookup/">ASN lookup</a> with BGP prefixes and RPKI status.</li>
+        <li>Read about the <a href="/asn-explained/">Autonomous System Number</a> entity.</li>
+        <li>Inspect the reverse DNS in detail with the <a href="/reverse-ip-lookup/">reverse IP lookup</a>.</li>
+        <li>Check your own public IP with <a href="/my-ip/">What Is My IP</a>.</li>
+        <li>Classify your assignment with <a href="/static-vs-dynamic-ip/">Static vs Dynamic IP</a>.</li>
+        <li>Calculate prefix sizes with the <a href="/cidr-calculator/">CIDR calculator</a>.</li>
+        <li>Check blocklists with the <a href="/blacklist-checker/">blocklist checker</a>.</li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
 
 <script>
   import { ipInfo } from '../lib/ipinfo';
+  import { lookup, RESOLVERS } from '../lib/doh';
+
+  interface AsnEndpointResult { ok: boolean; status: string; note?: string; asn: number | null; holder: string | null; country: string | null; rir: string | null; bgpPrefix: string | null; rpkiStatus: string | null; announcedPrefixes: { prefix: string }[] }
+  interface IpRdapEndpointResult { ok: boolean; result?: { status: string; note: string; handle: string | null; netName: string | null; netType: string | null; country: string | null; startAddress: string | null; endAddress: string | null; events: { registration: string | null; lastChanged: string | null }; org: string | null; abuseEmail: string | null } }
 
   const form = document.getElementById('ipl-form') as HTMLFormElement;
   const input = document.getElementById('ipl-input') as HTMLInputElement;
   const statusEl = document.getElementById('ipl-status')!;
   const cardsEl = document.getElementById('ipl-cards')!;
-  const resultsEl = document.getElementById('ipl-results')!;
   const tbody = document.getElementById('ipl-tbody')!;
+  const resultsEl = document.getElementById('ipl-results')!;
+  const sampleNote = document.getElementById('ipl-sample-note');
+  const TOOL = 'ip-lookup';
 
-  const setStatus = (cls: string, text: string) => {
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+  const isV4 = (s: string) => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split('.').every((o) => Number(o) <= 255);
+  const isIp = (s: string) => isV4(s) || (s.includes(':') && s.replace(/[0-9a-fA-F:]/g, '') === '');
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) {
+    const cls: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
     statusEl.textContent = text;
-  };
+  }
 
-  const validIp = (s: string) =>
-    /^(\d{1,3}\.){3}\d{1,3}$/.test(s) || s.includes(':');
+  function emit(domain: string, verdict: 'pass' | 'warn' | 'fail' | 'info', line: string, findings: { code: string; detail: string }[]) {
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail: { tool: TOOL, domain, verdict, verdictLine: line, findings, related: [{ label: 'Reverse IP lookup', href: '/reverse-ip-lookup/' }, { label: 'ASN lookup', href: '/asn-lookup/' }] } }));
+  }
+
+  function card(title: string, value: string, cls: string, note: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+    box.append(el('div', `font-display text-base font-bold mt-0.5 break-words ${cls}`, value));
+    if (note) box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+    return box;
+  }
+
+  function v4Scope(ip: string): string {
+    const [a, b] = ip.split('.').map(Number);
+    if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return 'RFC 1918 private';
+    if (a === 100 && b >= 64 && b <= 127) return 'RFC 6598 CGNAT';
+    if (a === 127) return 'Loopback';
+    if (a === 169 && b === 254) return 'Link-local';
+    if (a >= 224) return 'Multicast or reserved';
+    return 'Public routable';
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const ip = input.value.trim();
-    if (!validIp(ip)) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid IPv4 or IPv6 address.'); return; }
-    [cardsEl, resultsEl].forEach((el) => el.classList.add('hidden'));
-    setStatus('bg-panel-2 text-accent border border-line', `Looking up ${ip}…`);
+    const raw = input.value.trim();
+    if (!raw) { setStatus('fail', 'Enter an IP address or domain.'); return; }
+    if (!isIp(raw) && !raw.includes('.')) { setStatus('fail', 'Enter a valid IPv4 address, IPv6 address, or domain name.'); return; }
+    setStatus('loading', 'Querying BGP origin, reverse DNS, and RIR registration...');
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    resultsEl.classList.add('hidden');
+    tbody.textContent = '';
+    if (sampleNote) sampleNote.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    const info = await ipInfo(ip);
-    setStatus('bg-pass/10 text-pass border border-pass/30', `Results for ${ip}`);
+    try {
+      // Step 1: Resolve a domain input to its A (then AAAA) address via our DoH engine.
+      let ip = raw;
+      if (!isIp(raw)) {
+        const a = await lookup(raw, 'A', RESOLVERS[0]);
+        let found = a.answers.find((x) => x.type === 1)?.data ?? null;
+        if (!found) {
+          const aaaa = await lookup(raw, 'AAAA', RESOLVERS[0]);
+          found = aaaa.answers.find((x) => x.type === 28)?.data ?? null;
+        }
+        if (!found) { setStatus('fail', 'Could not resolve ' + raw + ' to an IP address.'); return; }
+        ip = found.replace(/\.$/, '');
+      }
 
-    cardsEl.innerHTML = '';
-    const cards: [string, string][] = [
-      ['Location', [info.city, info.region, info.country].filter(Boolean).join(', ') || 'unknown'],
-      ['Network', info.org ?? 'unknown'],
-      ['ASN', info.asn ?? 'unknown'],
-      ['Reverse DNS', info.ptr ?? 'none set'],
-    ];
-    for (const [l, v] of cards) {
-      cardsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="text-xs text-ink-faint">${l}</div><div class="mt-1 break-words font-mono text-sm text-ink">${v}</div></div>`);
+      // Step 2-4: PTR + geolocation (lib/ipinfo), BGP origin + RPKI (shared ASN
+      // endpoint), and RIR registration (IP RDAP) in parallel.
+      const [infoRes, asnRes, rdapRes] = await Promise.allSettled([
+        ipInfo(ip),
+        fetch('/api/check/asn?q=' + encodeURIComponent(ip)).then((r) => r.json()) as Promise<AsnEndpointResult>,
+        fetch('/api/check/rdap?ip=' + encodeURIComponent(ip)).then((r) => r.json()) as Promise<IpRdapEndpointResult>,
+      ]);
+      const info = infoRes.status === 'fulfilled' ? infoRes.value : null;
+      const asnData = asnRes.status === 'fulfilled' ? asnRes.value : null;
+      const rdap = rdapRes.status === 'fulfilled' && rdapRes.value.ok ? rdapRes.value.result ?? null : null;
+
+      const ptr = info?.ptr ?? null;
+
+      // Step 5: Forward-Confirmed Reverse DNS (RFC 1912 section 2.1).
+      let fcrdns = 'cannot evaluate (no PTR record)';
+      if (ptr) {
+        try {
+          const fwd = await lookup(ptr, ip.includes(':') ? 'AAAA' : 'A', RESOLVERS[0]);
+          const wantType = ip.includes(':') ? 28 : 1;
+          const answers = fwd.answers.filter((x) => x.type === wantType).map((x) => x.data.replace(/\.$/, ''));
+          fcrdns = answers.includes(ip) ? 'Confirmed: the PTR hostname resolves back to ' + ip : 'Mismatch: the PTR hostname does not resolve back to ' + ip;
+        } catch {
+          fcrdns = 'cannot evaluate (forward lookup failed)';
+        }
+      }
+
+      const version = ip.includes(':') ? 'IPv6' : 'IPv4';
+      const scope = version === 'IPv4' ? v4Scope(ip) : 'Global unicast';
+      const privateScope = scope !== 'Public routable' && scope !== 'Global unicast';
+      const holderLc = (asnData?.holder || '').toLowerCase();
+      const netClass = privateScope ? 'Private or reserved space'
+        : /cloudflare|fastly|akamai|cloudfront|amazon|google|edge|cdn/.test(holderLc) ? 'Anycast CDN or reverse proxy edge'
+        : asnData?.asn ? 'ISP or data center network'
+        : 'Unknown';
+
+      // Summary cards
+      cardsEl.textContent = '';
+      cardsEl.append(card('1. IP address and scope', ip + ' (' + version + ', ' + scope + ')', 'text-accent', netClass));
+      cardsEl.append(card('2. Origin ASN and holder', asnData?.asn ? 'AS' + asnData.asn + ' - ' + (asnData.holder || 'holder not published') : 'Not resolved', asnData?.asn ? 'text-pass' : 'text-warn', asnData?.note || (asnData?.bgpPrefix ? 'Announced prefix: ' + asnData.bgpPrefix : '')));
+      cardsEl.append(card('3. BGP prefix and RPKI', asnData?.bgpPrefix || 'Not determined', 'text-ink', asnData?.rpkiStatus ? 'RPKI ROA validation: ' + asnData.rpkiStatus : 'RPKI status not available for this prefix.'));
+      cardsEl.append(card('4. Reverse DNS (PTR)', ptr || 'No PTR published', ptr ? (fcrdns.startsWith('Confirmed') ? 'text-pass' : 'text-warn') : 'text-ink-faint', fcrdns));
+      cardsEl.classList.remove('hidden');
+
+      // Detail table
+      const rows: [string, string][] = [
+        ['IP address and version', ip + ' (' + version + ')'],
+        ['Network scope classification', scope + ' - ' + netClass],
+        ['Reverse DNS (PTR)', ptr ?? 'No PTR record published'],
+        ['Forward confirmation (FCrDNS)', fcrdns],
+        ['Origin ASN', asnData?.asn ? 'AS' + asnData.asn : 'not resolved'],
+        ['Network organization / ISP', [asnData?.holder, info?.org].find(Boolean) || 'not resolved'],
+        ['Announced BGP prefix (CIDR)', asnData?.bgpPrefix || 'not resolved'],
+        ['RPKI route origin validation', asnData?.rpkiStatus ?? 'not determined'],
+        ['RIR', [asnData?.rir, rdap?.sourceUrl?.match(/rdap\.(arin|ripe|apnic|lacnic|afrinic)/i)?.[1]?.toUpperCase()].find(Boolean) || 'not determined'],
+        ['RDAP network object', [rdap?.handle ? 'handle ' + rdap.handle : null, rdap?.netName].filter(Boolean).join(' - ') || 'not available'],
+        ['RDAP network type and range', [rdap?.netType, rdap?.startAddress && rdap?.endAddress ? rdap.startAddress + ' to ' + rdap.endAddress : null].filter(Boolean).join(' - ') || 'not available'],
+        ['RDAP registered organization', rdap?.org || 'not available'],
+        ['Abuse contact (RFC 2142)', rdap?.abuseEmail || 'not published'],
+        ['Allocation registered date', rdap?.events.registration ? rdap.events.registration.slice(0, 10) : 'not published'],
+        ['Geolocation (approximate)', [info?.city, info?.region, info?.country].filter(Boolean).join(', ') || 'not resolved'],
+        ['Coordinates', info?.lat != null && info?.lon != null ? info.lat.toFixed(4) + ', ' + info.lon.toFixed(4) : 'not resolved'],
+      ];
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        tr.append(el('td', 'font-medium text-ink', k));
+        const td = document.createElement('td');
+        td.append(el('code', 'font-mono text-xs text-accent break-all', v));
+        tr.append(td);
+        tbody.append(tr);
+      }
+      resultsEl.classList.remove('hidden');
+
+      if (asnData && asnData.status !== 'error' && asnData.asn) {
+        setStatus('pass', `IP lookup complete for ${ip}: origin ${'AS' + asnData.asn} (${asnData.holder ?? 'holder not published'}), ${ptr ? 'PTR ' + ptr : 'no PTR'}, ${scope.toLowerCase()} scope.`);
+        emit(ip, 'pass', `IP lookup for ${ip}: origin AS${asnData.asn}, ${ptr ? 'PTR ' + ptr : 'no PTR record'}, scope ${scope}.`, [{ code: 'IP_LOOKUP', detail: `ASN=${asnData.asn}, holder=${asnData.holder ?? '?'}, PTR=${ptr ?? 'none'}, scope=${scope}` }]);
+      } else {
+        const note = asnData?.note || 'The BGP origin could not be determined for this address.';
+        setStatus('warn', note + ' This is an inconclusive result, not a pass or a fail.');
+        emit(ip, 'warn', `IP lookup for ${ip}: inconclusive. ${note}`, [{ code: 'IP_LOOKUP', detail: `inconclusive, scope=${scope}` }]);
+      }
+    } catch {
+      setStatus('warn', 'Could not reach the DNS or BGP data sources. This is an inconclusive result, not a pass or a fail.');
     }
-    cardsEl.classList.remove('hidden');
-
-    const rows: [string, string][] = [
-      ['IP address', info.ip],
-      ['Reverse DNS (PTR)', info.ptr ?? 'none set'],
-      ['Country', info.country ?? 'unknown'],
-      ['Region', info.region ?? 'unknown'],
-      ['City', info.city ?? 'unknown'],
-      ['Coordinates', info.lat != null ? `${info.lat}, ${info.lon}` : 'unknown'],
-      ['ASN', info.asn ?? 'unknown'],
-      ['Organization', info.org ?? 'unknown'],
-      ['ISP', info.isp ?? 'unknown'],
-      ['Type', info.type ?? 'unknown'],
-    ];
-    document.getElementById('ipl-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    for (const [l, v] of rows) {
-      tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${l}</td><td class="font-mono text-sm text-ink">${v}</td></tr>`);
-    }
-    resultsEl.classList.remove('hidden');
   });
+
+  for (const btn of Array.from(document.querySelectorAll('.ipl-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.q || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
 </script>

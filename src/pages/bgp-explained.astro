@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 
 const faqSchema = {
   '@context': 'https://schema.org',
@@ -12,19 +13,19 @@ const faqSchema = {
   ],
 };
 ---
-<BaseLayout title="What Is BGP (Border Gateway Protocol)? How Internet Routing Works (RFC 4271)" description="BGP explained: how Border Gateway Protocol routes traffic between autonomous systems, session lifecycle, best-path selection, anycast DNS, and BGP security threats." schema={[faqSchema]}>
+<BaseLayout title="What Is BGP (Border Gateway Protocol)? How Internet Routing Works (RFC 4271)" description="BGP explained: how Border Gateway Protocol routes traffic between autonomous systems, session lifecycle, best-path selection, anycast DNS, and BGP security threats." schema={[faqSchema]} breadcrumb={[["Home", "/"], ["IP & Networking", "/ip-and-networking/"], ["BGP Explained"]]}>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
       <span aria-hidden="true">/</span>
-      <a href="/ip-and-networking/" class="hover:text-accent">IP & Networking</a>
+      <a href="/ip-and-networking/" class="hover:text-accent">IP &amp; Networking</a>
       <span aria-hidden="true">/</span>
       <span class="text-ink-dim">BGP Explained</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">What Is BGP (Border Gateway Protocol)? How Autonomous Systems Route the Internet</h1>
     <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        <strong class="text-ink">Border Gateway Protocol (BGP) is the routing protocol that autonomous systems use to exchange IP prefix reachability across the internet.</strong> Every packet that crosses an AS boundary was routed by a BGP best-path decision. <strong class="text-ink">Without BGP, the internet's decentralized architecture of independent networks could not exist.</strong>
+        <strong class="text-ink">Border Gateway Protocol (BGP) is the routing protocol that autonomous systems use to exchange IP prefix reachability across the internet.</strong> Every packet that crosses an AS boundary was routed by a BGP best-path decision, and every anycast DNS platform steers your queries to the nearest point of presence with the same protocol.
       </p>
     </div>
 
@@ -34,10 +35,10 @@ const faqSchema = {
         <li><a href="#bgp-definition">What Is BGP and How Does Inter-Domain Routing Work?</a></li>
         <li><a href="#bgp-session-lifecycle">Session Lifecycle and Best-Path Selection</a></li>
         <li><a href="#ebgp-vs-ibgp">eBGP vs iBGP vs Interior Gateway Protocols</a></li>
+        <li><a href="#bgp-rfc-history">The BGP RFC Timeline (1989 to Today)</a></li>
         <li><a href="#bgp-anycast-dns">How BGP Powers Anycast DNS</a></li>
         <li><a href="#bgp-security">BGP Security Threats and Diagnostics</a></li>
         <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
-        <li><a href="#sources">Sources</a></li>
       </ul>
     </nav>
 
@@ -60,6 +61,13 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        The diagram below shows how a customer prefix travels outward through provider networks, with each AS prepending its own number to the AS_PATH attribute.
+      </p>
+      <Diagram name="bgp-peering" caption="Figure: an eBGP announcement travels from the origin AS through a transit ISP to a Tier-1 backbone, with the AS_PATH growing at every hop." />
+      <p>
+        BGP sits at the top of the routing stack conceptually as well as topologically. An <a href="/asn-explained/">Autonomous System Number</a> identifies who is speaking, the prefix (which you can decompose with the <a href="/cidr-calculator/">CIDR calculator</a>) identifies what is being announced, and the AS_PATH records who relayed the announcement - and the live trace tool further down this page lets you read all three for any address.
+      </p>
 
       <h2 id="bgp-session-lifecycle">How the BGP Session Lifecycle and Best-Path Selection Algorithm Work</h2>
       <p>BGP session establishment and route exchange proceed through 4 phases:</p>
@@ -84,6 +92,9 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        Two properties of this algorithm explain most real-world routing behavior. First, LOCAL_PREF and AS_PATH are the only knobs a network genuinely uses day to day: traffic engineering in BGP means making your own paths longer (AS_PATH prepending) or your preferred paths administratively favored. Second, the algorithm is deterministic, which is exactly why anycast works at all: every router on earth independently computes a route to the nearest announcing site.
+      </p>
 
       <h2 id="ebgp-vs-ibgp">eBGP vs iBGP vs Interior Gateway Protocols (OSPF, IS-IS, and EIGRP)</h2>
       <p>The table below contrasts the three routing domains:</p>
@@ -98,13 +109,39 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        The division of labor is strict: the IGP knows only internal links and never carries full internet routes, iBGP spreads everything the edge routers learn to every other router in the AS, and eBGP decides what the outside world hears from you. A route that fails at any layer stops propagating, which is why an iBGP split-brain can silently isolate an entire ASN from a prefix while eBGP sessions on the edge stay perfectly healthy.
+      </p>
+
+      <h2 id="bgp-rfc-history">The BGP RFC Timeline: From RFC 1105 to RFC 9234</h2>
+      <p>
+        BGP is one of the oldest protocols still running the internet core, and its specification history explains several quirks that survive in production networks today. The table below lists the significant milestones:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Year</th><th>RFC</th><th>What It Changed</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">1989</td><td class="text-sm text-ink-dim">RFC 1105 (BGP-1)</td><td class="text-sm text-ink-dim">First BGP specification, replacing EGP (Exterior Gateway Protocol, RFC 904)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">1990</td><td class="text-sm text-ink-dim">RFC 1163 (BGP-2)</td><td class="text-sm text-ink-dim">Introduced path attributes, including AS_PATH and NEXT_HOP</td></tr>
+            <tr><td class="font-mono text-xs text-ink">1991</td><td class="text-sm text-ink-dim">RFC 1267 (BGP-3)</td><td class="text-sm text-ink-dim">Added collision detection and refined the UPDATE message format</td></tr>
+            <tr><td class="font-mono text-xs text-ink">1995</td><td class="text-sm text-ink-dim">RFC 1771 (BGP-4)</td><td class="text-sm text-ink-dim">CIDR support: classless prefixes replaced the classful network model</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2006</td><td class="text-sm text-ink-dim">RFC 4271 (current)</td><td class="text-sm text-ink-dim">The authoritative BGP-4 standard in force today</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2012</td><td class="text-sm text-ink-dim">RFC 6793</td><td class="text-sm text-ink-dim">4-byte (32-bit) ASNs, with AS_TRANS (AS23456) backward compatibility</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2017</td><td class="text-sm text-ink-dim">RFC 8205 (BGPsec)</td><td class="text-sm text-ink-dim">Per-hop cryptographic signing of the AS_PATH</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2022</td><td class="text-sm text-ink-dim">RFC 9234</td><td class="text-sm text-ink-dim">Route Leak Prevention: BGP Role and Only-To-Customer (OTC) attribute</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The timeline explains the quirks: AS_PATH exists because of BGP-2 (1990), CIDR support arrived only with BGP-4 in 1995 (which is why the 1993 RFC 1519 CIDR spec needed a routing protocol that could carry prefixes), and the 4-byte ASN transition left AS_TRANS artifacts you can still see in looking glasses today. The 2022 route-leak work shows the pattern continues: BGP security is being retrofitted one RFC at a time onto a 1989 protocol design.
+      </p>
 
       <h2 id="bgp-anycast-dns">How BGP Powers Anycast DNS (1.1.1.1 and 8.8.8.8) and Affects Web and Email Uptime</h2>
       <p>
         Anycast DNS providers such as Cloudflare (AS13335) and Google (AS15169) announce the exact same IPv4 /24 and IPv6 /48 prefixes from hundreds of global locations. BGP AS_PATH routing automatically sends each user's DNS query to the topologically nearest POP because the shortest AS_PATH leads to the closest announcing site. This is why 1.1.1.1 answers within milliseconds from almost anywhere on earth: BGP selected the nearest of 300+ cities without any DNS-level configuration.
       </p>
       <p>
-        The same mechanism affects web hosting: if your authoritative nameservers use anycast, a BGP route leak or hijack on your provider's prefixes can blackhole DNS resolution for your domain globally. Understanding BGP is therefore essential for DNS reliability, not just for network engineers.
+        The same mechanism affects web hosting: if your authoritative nameservers use anycast, a BGP route leak or hijack on your provider's prefixes can blackhole DNS resolution for your domain globally. Understanding BGP is therefore essential for DNS reliability, not just for network engineers. You can see which AS and prefix answers for any address with the <a href="/ip-lookup/">IP lookup</a>, and the <a href="/dns-hijacking/">DNS hijacking</a> guide covers the resolution-layer attacks that pair with route-level ones.
       </p>
 
       <h2 id="bgp-security">BGP Security Threats (Route Leaks and Hijacks) and Command-Line Diagnostics</h2>
@@ -115,11 +152,14 @@ const faqSchema = {
           <tbody>
             <tr><td class="font-medium text-ink">Sub-prefix BGP hijack</td><td class="text-sm text-ink-dim">An attacker announces a more-specific prefix (e.g. /24 inside a /16) that attracts all traffic to that range</td><td class="text-sm text-ink-dim">RPKI ROA with MaxLength set to the exact announced prefix length</td></tr>
             <tr><td class="font-medium text-ink">Origin AS spoofing</td><td class="text-sm text-ink-dim">A different AS announces the prefix, claiming to be the legitimate origin</td><td class="text-sm text-ink-dim">RPKI ROA binding the prefix to the authorized origin ASN</td></tr>
-            <tr><td class="font-medium text-ink">Route leak (valley-free violation)</td><td class="text-sm text-ink-dim">An AS accidentally re-advertisizes learned routes to its own upstream, creating transit loops</td><td class="text-sm text-ink-dim">IRR prefix filters, RFC 7908 route leak classification, peer lock</td></tr>
+            <tr><td class="font-medium text-ink">Route leak (valley-free violation)</td><td class="text-sm text-ink-dim">An AS accidentally re-advertises learned routes to its own upstream, creating transit loops</td><td class="text-sm text-ink-dim">IRR prefix filters, RFC 7908 route leak classification, peer lock</td></tr>
             <tr><td class="font-medium text-ink">BGP session reset or prefix flap</td><td class="text-sm text-ink-dim">Unstable peering causes repeated withdrawals and re-announcements</td><td class="text-sm text-ink-dim">MAX_PREFIX limits, route dampening, TCP-AO (RFC 5925) session protection</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        Every defense in that table except route dampening depends on knowing which origin <em>should</em> be announcing a prefix. That is exactly the guarantee <a href="/rpki-roa-explained/">RPKI and ROAs</a> provide: cryptographically signed statements binding prefixes to origin ASNs that validating routers enforce globally within minutes.
+      </p>
       <pre><code># Verify the origin ASN for any IP via Team Cymru DNS
 dig +short 1.1.1.1.origin.asn.cymru.com TXT
 
@@ -130,23 +170,52 @@ whois -h whois.radb.net 1.1.1.0/24
 mtr -z 1.1.1.1
 traceroute -A 1.1.1.1</code></pre>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is BGP the only routing protocol that connects autonomous systems?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, BGP is the only routing protocol used to exchange routing information between different autonomous systems on the public internet. Interior gateway protocols (OSPF, IS-IS, EIGRP) handle routing within a single AS, but when traffic must cross an AS boundary, BGP is the universal protocol that both peers speak over TCP port 179.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does BGP use TCP or UDP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">BGP uses TCP on port 179. Every BGP session is a long-lived TCP connection between two routing peers, which provides reliable delivery, ordering, and retransmission without requiring BGP itself to implement those functions. This is unlike OSPF or EIGRP, which send packets directly over IP.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can BGP be hijacked, and how does RPKI prevent it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, BGP hijacks occur when an AS announces a prefix it does not own, either intentionally or by misconfiguration. RPKI (Resource Public Key Infrastructure) prevents origin hijacks by using cryptographically signed Route Origin Authorizations (ROAs) that bind each prefix to its authorized originating ASN. Routers that validate RPKI reject announcements that fail the ROA check.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does anycast DNS depend on BGP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Anycast DNS providers announce the same IP prefix from hundreds of global locations. BGP is the protocol that automatically routes each user to the topologically nearest announcing location, because the AS_PATH to the nearest POP is shortest. Without BGP, anycast load distribution would not work, and every DNS query would travel to a single data center.</p></details>
+      <div id="bgp-origin-embed" class="my-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+        <p class="text-sm font-semibold text-ink">Trace a BGP origin live</p>
+        <p class="mt-1 text-xs text-ink-faint">Enter any IP address or AS number to see the originating ASN, announced prefix, and RPKI status, exactly as a BGP router would evaluate it. Run the full check in the <a href="/asn-lookup/" class="text-accent hover:text-accent-soft">ASN lookup tool</a>.</p>
+        <form id="bgp-widget-form" class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input id="bgp-widget-q" type="text" value="1.1.1.1" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <button type="submit" class="rounded-md border border-accent/40 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/10">Trace Origin</button>
+        </form>
+        <div id="bgp-widget-result" class="mt-2 text-sm text-ink-dim"></div>
       </div>
 
-      <h2>Next checks</h2>
-      <ul class="list-disc space-y-1.5 pl-5">
-        <li>Look up any ASN and its announced prefixes with the <a href="/asn-lookup/">ASN lookup</a>.</li>
-        <li>Secure your BGP routes with <a href="/rpki-roa-explained/">RPKI and ROAs</a>.</li>
-        <li>Read about the <a href="/asn-explained/">Autonomous System Number</a> entity.</li>
-        <li>Calculate subnet sizes with the <a href="/cidr-calculator/">CIDR calculator</a>.</li>
-        <li>Inspect any IP with the <a href="/ip-lookup/">IP lookup</a>.</li>
-        <li>Understand DNS hijacking risks in the <a href="/dns-hijacking/">DNS hijacking</a> guide.</li>
-      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The fastest way to watch BGP do its job from a laptop: run <code>mtr -z 1.1.1.1</code> and read the third column, which shows the origin ASN of every router on the path. A healthy path to an anycast target stays inside one or two ASNs. When a site is unreachable from one country but fine from another, the culprit is almost always a route leak or hijack that changed the AS_PATH for one region only - which is also why "works from my machine" is a genuine diagnostic result in BGP land, not a meme.</p>
+      </aside>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is BGP the only routing protocol that connects autonomous systems?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, BGP is the only routing protocol used to exchange routing information between different autonomous systems on the public internet. Interior gateway protocols (OSPF, IS-IS, EIGRP) handle routing within a single AS, but when traffic must cross an AS boundary, BGP is the universal protocol that both peers speak over TCP port 179.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does BGP use TCP or UDP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">BGP uses TCP on port 179. Every BGP session is a long-lived TCP connection between two routing peers, which provides reliable delivery, ordering, and retransmission without requiring BGP itself to implement those functions. This is unlike OSPF or EIGRP, which send packets directly over IP.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can BGP be hijacked, and how does RPKI prevent it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, BGP hijacks occur when an AS announces a prefix it does not own, either intentionally or by misconfiguration. RPKI (Resource Public Key Infrastructure) prevents origin hijacks by using cryptographically signed Route Origin Authorizations (ROAs) that bind each prefix to its authorized originating ASN. Routers that validate RPKI reject announcements that fail the ROA check.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does anycast DNS depend on BGP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Anycast DNS providers announce the same IP prefix from hundreds of global locations. BGP is the protocol that automatically routes each user to the topologically nearest announcing location, because the AS_PATH to the nearest POP is shortest. Without BGP, anycast load distribution would not work, and every DNS query would travel to a single data center.</p></details>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const bwForm = document.getElementById('bgp-widget-form') as HTMLFormElement;
+  const bwResult = document.getElementById('bgp-widget-result')!;
+  bwForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = (document.getElementById('bgp-widget-q') as HTMLInputElement).value.trim();
+    if (!q) return;
+    bwResult.textContent = 'Tracing BGP origin...';
+    try {
+      const res = await fetch('/api/check/asn?q=' + encodeURIComponent(q));
+      const d = await res.json();
+      if (d.ok && d.asn) {
+        bwResult.textContent = 'Origin AS' + d.asn + ': ' + (d.holder || 'Unknown') + (d.bgpPrefix ? ' | Announced prefix: ' + d.bgpPrefix : '') + (d.rpkiStatus ? ' | RPKI: ' + d.rpkiStatus : '');
+      } else if (d.note) {
+        bwResult.textContent = d.note;
+      } else {
+        bwResult.textContent = d.error || 'Lookup returned no data.';
+      }
+    } catch {
+      bwResult.textContent = 'Lookup failed (network error). Try again from the full ASN lookup tool.';
+    }
+  });
+</script>

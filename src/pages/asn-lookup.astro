@@ -66,6 +66,9 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        The state this tool reports most often in practice is the second row: a healthy public ASN whose prefixes carry no ROA. That is not an error - it means the network routes normally today but has not claimed the cryptographic protection RPKI offers. The two states worth immediate attention are the third (Invalid, where fixing the ROA or the announcement restores connectivity) and the fifth (reserved or private space, which should never appear as a public route origin at all).
+      </p>
 
       <h2>How to find the ASN of an IP address and verify route ownership</h2>
       <ol class="list-decimal space-y-2 pl-5">
@@ -109,6 +112,10 @@ curl -s "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS1333
           </tbody>
         </table>
       </div>
+      <p>
+        Two ranges account for most day-to-day confusion. The 64512 to 65534 block is RFC 6996 private space: networks that use these ASNs internally (lab topologies, corporate backbones, cloud VPCs) are invisible to this tool by design, because their announcements never reach the global table. The documentation ranges exist so tutorial authors can write realistic-looking ASNs without the risk of colliding with a real, routed network.
+      </p>
+      <p>The table below lists the well-known infrastructure ASNs you will encounter most often in lookups:</p>
       <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
           <thead><tr><th>ASN</th><th>Organization</th><th>Infrastructure Type</th></tr></thead>
@@ -124,6 +131,9 @@ curl -s "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS1333
           </tbody>
         </table>
       </div>
+      <p>
+        Recognizing these ASNs on sight is a genuine diagnostic shortcut: when an IP lookup resolves to one of the CDN or cloud rows, the address belongs to a proxy or hosting edge rather than a corporate network, and any reputation, geolocation, or abuse investigation should continue at that provider's layer.
+      </p>
 
       <h2>What this tool does not check</h2>
       <ul class="list-disc space-y-1.5 pl-5">

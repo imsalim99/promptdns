@@ -3,12 +3,14 @@
  *
  * JSON endpoint behind /domain-age-checker/ (and the Phase 3 expiry monitor):
  *   GET /api/check/rdap?domains=<d1,d2,...>   1 to 10 domains
+ * Also behind /ip-lookup/:
+ *   GET /api/check/rdap?ip=<address>          one IP network (RIR data)
  *
  * One-way imports only (rdap.ts, ai-crawlers.ts for the normalizer).
  * Concurrency capped at 4 parallel RDAP queries; 10 minute per-domain cache.
  */
 
-import { queryRdap, isUnsupportedTld, type RdapResult } from './rdap';
+import { queryRdap, isUnsupportedTld, queryIpRdap, isPlausibleIp, type RdapResult, type IpRdapResult } from './rdap';
 import { normalizeDomain } from './ai-crawlers';
 
 const CACHE_TTL_MS = 10 * 60_000;
@@ -16,9 +18,33 @@ const CACHE_MAX = 300;
 const MAX_DOMAINS = 10;
 const MAX_PARALLEL = 4;
 const rdapCache = new Map<string, { at: number; result: RdapResult }>();
+const ipRdapCache = new Map<string, { at: number; result: IpRdapResult }>();
+
+/** GET /api/check/rdap?ip=<address> : RIR registration data for one IP network. */
+async function handleIpRdapCheck(ipRaw: string): Promise<Response> {
+  const ip = ipRaw.trim();
+  if (!isPlausibleIp(ip)) {
+    return Response.json({ ok: false, error: 'Provide a valid IPv4 or IPv6 address.' }, { status: 400 });
+  }
+  const key = ip.toLowerCase();
+  const hit = ipRdapCache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return Response.json({ ok: true, result: hit.result });
+
+  const result = await queryIpRdap(ip);
+  ipRdapCache.set(key, { at: Date.now(), result });
+  if (ipRdapCache.size > CACHE_MAX) {
+    const oldest = ipRdapCache.keys().next().value;
+    if (oldest) ipRdapCache.delete(oldest);
+  }
+  return Response.json({ ok: true, result });
+}
 
 export async function handleRdapCheck(request: Request, _env: unknown): Promise<Response> {
   const url = new URL(request.url);
+
+  const ipParam = url.searchParams.get('ip');
+  if (ipParam) return handleIpRdapCheck(ipParam);
+
   const raw = url.searchParams.get('domains') || '';
   const domains: string[] = [];
   for (const part of raw.split(/[,\s]+/)) {

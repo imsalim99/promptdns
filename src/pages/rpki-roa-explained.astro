@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Diagram from '../components/Diagram.astro';
 
 const faqSchema = {
   '@context': 'https://schema.org',
@@ -12,19 +13,19 @@ const faqSchema = {
   ],
 };
 ---
-<BaseLayout title="What Is RPKI and a ROA (Route Origin Authorization)? BGP Security Guide" description="RPKI and ROA explained: how Route Origin Authorizations cryptographically secure BGP, the MaxLength trap, ROV validation states, and how to check RPKI status for any prefix." schema={[faqSchema]}>
+<BaseLayout title="What Is RPKI and a ROA (Route Origin Authorization)? BGP Security Guide" description="RPKI and ROA explained: how Route Origin Authorizations cryptographically secure BGP, the MaxLength trap, ROV validation states, and how to check RPKI status for any prefix." schema={[faqSchema]} breadcrumb={[["Home", "/"], ["IP & Networking", "/ip-and-networking/"], ["RPKI and ROA Explained"]]}>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
       <span aria-hidden="true">/</span>
-      <a href="/ip-and-networking/" class="hover:text-accent">IP & Networking</a>
+      <a href="/ip-and-networking/" class="hover:text-accent">IP &amp; Networking</a>
       <span aria-hidden="true">/</span>
       <span class="text-ink-dim">RPKI and ROA Explained</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">RPKI and ROAs Explained: How Route Origin Authorizations Secure BGP</h1>
     <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        <strong class="text-ink">RPKI (Resource Public Key Infrastructure) cryptographically binds IP prefixes to their authorized originating Autonomous Systems using signed Route Origin Authorizations.</strong> Validating routers compare BGP announcements against RPKI data and reject hijacked routes. <strong class="text-ink">Without RPKI, any AS can announce any prefix, accidentally or maliciously.</strong>
+        <strong class="text-ink">RPKI (Resource Public Key Infrastructure) cryptographically binds IP prefixes to their authorized originating Autonomous Systems using signed Route Origin Authorizations.</strong> Validating routers compare every BGP announcement against this signed data and classify it as Valid, Invalid, or NotFound per RFC 6811 - and an Invalid verdict means the route is dropped worldwide within minutes.
       </p>
     </div>
 
@@ -34,16 +35,16 @@ const faqSchema = {
         <li><a href="#rpki-roa-definition">What Is RPKI and What Is Inside a ROA?</a></li>
         <li><a href="#rov-validation">How Route Origin Validation Works</a></li>
         <li><a href="#maxlength-trap">The MaxLength Trap and RPKI vs BGPsec vs DNSSEC</a></li>
+        <li><a href="#rpki-rfc-timeline">The RPKI RFC Timeline</a></li>
         <li><a href="#how-to-check">How to Check RPKI ROA Status</a></li>
         <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
-        <li><a href="#sources">Sources</a></li>
       </ul>
     </nav>
 
     <div class="rich-text mt-8">
       <h2 id="rpki-roa-definition">What Is RPKI and What Is Inside a Route Origin Authorization (ROA)?</h2>
       <p>
-        RPKI (Resource Public Key Infrastructure) is <strong class="text-ink">a public key infrastructure built on top of the Regional Internet Registry (RIR) allocation system that allows IP prefix holders to cryptographically certify which AS is authorized to originate their prefixes in BGP</strong>. A Route Origin Authorization (ROA) is the signed object that carries this binding, formatted as a CMS-signed data structure per RFC 6482.
+        RPKI (Resource Public Key Infrastructure) is <strong class="text-ink">a public key infrastructure built on top of the Regional Internet Registry (RIR) allocation system that allows IP prefix holders to cryptographically certify which AS is authorized to originate their prefixes in BGP</strong>. A Route Origin Authorization (ROA) is the signed object that carries this binding, formatted as a CMS-signed data structure per RFC 6482. The <a href="/asn-explained/">Autonomous System Number</a> being certified and the routing it protects are covered in the <a href="/bgp-explained/">BGP explained</a> guide.
       </p>
       <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
@@ -59,6 +60,9 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        Read the table top to bottom and the enforcement logic falls out naturally: the ROA names exactly one origin ASN, covers exactly one prefix, and caps how specific a legitimate announcement may be. Everything a validating router decides comes from those three signed facts - it needs no WHOIS database, no manual filter lists, and no trust in any operator's word.
+      </p>
 
       <h2 id="rov-validation">How Route Origin Validation (ROV) Works: Valid, Invalid, and NotFound States</h2>
       <p>ROV proceeds through 4 steps from signing to enforcement:</p>
@@ -68,7 +72,8 @@ const faqSchema = {
         <li><strong>Push validated ROA payloads via RTR:</strong> The RP cache serves the VRP set to BGP routers using the RPKI-to-Router protocol (RFC 8210) on port 323 or 8282, keeping the set synchronized in near-real time.</li>
         <li><strong>Apply BGP route origin validation filtering:</strong> The BGP router compares each incoming announcement against its local VRP set and classifies it as Valid, Invalid, or NotFound, then applies the configured policy (accept, reject, or accept-with-tag).</li>
       </ol>
-      <p>The table below defines the three ROV states per RFC 6811:</p>
+      <p>The diagram below shows the router-side decision, and the table defines the three ROV states per RFC 6811:</p>
+      <Diagram name="rpki-rov" caption="Figure: a validating router checks each BGP announcement's origin ASN against the signed ROA set and classifies the route as Valid, NotFound, or Invalid." />
       <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
           <thead><tr><th>ROV State (RFC 6811)</th><th>Meaning</th><th>Router Behavior</th><th>What It Means for the Prefix Holder</th></tr></thead>
@@ -79,21 +84,48 @@ const faqSchema = {
           </tbody>
         </table>
       </div>
+      <p>
+        The asymmetry between Invalid and NotFound is the part operators most often get wrong. NotFound is the safe-but-weak default: the route is accepted everywhere, just unprotected. Invalid is the dangerous state, because a ROA exists and the announcement contradicts it - and enforcement is not optional anymore, since major transit providers and eyeball networks drop Invalid routes. The live status checker further down this page reports the current state for any prefix.
+      </p>
 
       <h2 id="maxlength-trap">The ROA MaxLength Trap (RFC 9319) and RPKI vs BGPsec vs DNSSEC</h2>
       <p>
         RFC 9319 recommends setting the MaxLength field in a ROA equal to the exact prefix length you actually announce in BGP. Setting a wide MaxLength (such as /24 on a /16 ROA) lets an attacker forge your ASN in the AS_PATH and announce any more-specific /24 sub-prefix, which validating routers would accept because the ROA technically covers it. Always set MaxLength to the exact announced prefix length unless you genuinely announce sub-prefixes.
       </p>
+      <p>The table below positions RPKI against the other two integrity mechanisms it is usually confused with:</p>
       <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
           <thead><tr><th>Mechanism</th><th>Governing RFC</th><th>What It Protects</th><th>How It Works</th></tr></thead>
           <tbody>
             <tr><td class="font-medium text-ink">RPKI ROA</td><td class="text-sm text-ink-dim">RFC 6480, RFC 6811</td><td class="text-sm text-ink-dim">BGP route origin (which AS may announce a prefix)</td><td class="text-sm text-ink-dim">Cryptographically signed ROAs validated by Relying Party caches and enforced on BGP routers.</td></tr>
             <tr><td class="font-medium text-ink">BGPsec</td><td class="text-sm text-ink-dim">RFC 8205</td><td class="text-sm text-ink-dim">Entire BGP AS_PATH (every hop, not just the origin)</td><td class="text-sm text-ink-dim">Each AS cryptographically signs the update as it traverses the path; deployment remains limited.</td></tr>
-            <tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">RFC 4033 to RFC 4035</td><td class="text-sm text-ink-dim">DNS record integrity (which nameserver is authorized to answer for a domain)</td><td class="text-sm text-ink-dim">DNS zone signing validated by recursive resolvers; protects domain resolution, not routing.</td></tr>
+            <tr><td class="font-medium text-ink">DNSSEC</td><td class="text-sm text-ink-dim">RFC 4033 to RFC 4035</td><td class="text-sm text-ink-dim">DNS record integrity (which nameserver is authorized to answer for a domain)</td><td class="text-sm text-ink-dim">DNS zone signing validated by recursive resolvers; protects domain resolution, not routing. See <a href="/what-is-dnssec/">What Is DNSSEC</a>.</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        The three mechanisms stack rather than compete. RPKI stops a hijacked <em>route</em>, DNSSEC stops a forged <em>answer</em>, and BGPsec (still rare in production) would stop path manipulation between the two endpoints. A domain secured at the DNS layer with DNSSEC can still be intercepted at the routing layer by a sub-prefix hijack, which is the exact scenario RPKI exists to close - the <a href="/dns-hijacking/">DNS hijacking</a> guide walks through attacks that span both layers.
+      </p>
+
+      <h2 id="rpki-rfc-timeline">The RPKI RFC Timeline (2012 to Today)</h2>
+      <p>
+        RPKI is younger than BGP by two decades, and its specification history shows a system that reached core stability early and has been hardening ever since. The table below lists the milestones:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Year</th><th>RFC</th><th>What It Defined</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">2012</td><td class="text-sm text-ink-dim">RFC 6480</td><td class="text-sm text-ink-dim">The RPKI architecture: certificate hierarchy, repositories, and trust anchors</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2012</td><td class="text-sm text-ink-dim">RFC 6482</td><td class="text-sm text-ink-dim">The Route Origin Authorization (ROA) signed object format</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2013</td><td class="text-sm text-ink-dim">RFC 6811</td><td class="text-sm text-ink-dim">BGP Prefix Origin Validation: the Valid / Invalid / NotFound semantics routers apply</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2017</td><td class="text-sm text-ink-dim">RFC 8210</td><td class="text-sm text-ink-dim">The RPKI-to-Router (RTR) protocol version 1 that feeds VRPs to routers</td></tr>
+            <tr><td class="font-mono text-xs text-ink">2022</td><td class="text-sm text-ink-dim">RFC 9319</td><td class="text-sm text-ink-dim">Updated MaxLength and prefix-length policy guidance to close sub-prefix hijack gaps</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Adoption, not specification, is the modern frontier: the RFCs have been stable since 2017, while the share of announced prefixes with valid ROAs and the share of routers enforcing Invalid rejection both keep climbing year over year. That is why the operational advice in this guide - create ROAs, set MaxLength exactly, keep them in sync with announcements - matters more today than any new protocol work.
+      </p>
 
       <h2 id="how-to-check">How to Check RPKI ROA Status for Any IP Prefix or ASN</h2>
       <pre><code># 1. Check RPKI validation status via RIPEstat
@@ -108,23 +140,53 @@ whois -h whois.bgpmon.net 1.1.1.0/24
 # 4. List all VRPs from a local Routinator cache
 curl -s http://localhost:9556/api/v1/status</code></pre>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between RPKI and DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">RPKI secures BGP routing by cryptographically binding IP prefixes to originating ASNs using signed Route Origin Authorizations stored in RIR repositories. DNSSEC secures DNS records by signing zone data with public-key cryptography stored in the DNS hierarchy. They protect different layers: RPKI protects routing, DNSSEC protects domain resolution. A domain can and should have both.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I set MaxLength too high on my ROA?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Setting MaxLength higher than the prefix you actually announce allows an attacker to announce a more-specific sub-prefix under your ASN. For example, a ROA for 10.0.0.0/16 with MaxLength 24 permits any /24 inside that /16 to be announced as coming from your ASN, enabling sub-prefix hijacks. RFC 9319 recommends setting MaxLength equal to the exact prefix length you announce in BGP.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need RPKI if my ISP already filters prefixes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, IRR-based prefix filters rely on manually maintained databases that are frequently stale or incomplete. RPKI ROAs provide cryptographic proof that is automatically verifiable by every participating router without relying on manual database accuracy. Both mechanisms together provide defense in depth.</p></details>
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a VRP (Validated ROA Payload)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A VRP is the output of a Relying Party (RP) cache after it has fetched and cryptographically validated all ROAs from the RIR repositories. Each VRP contains a tuple of (prefix, max prefix length, origin ASN) and is pushed to BGP routers via the RPKI-to-Router (RTR) protocol on port 323 or 8282. The router compares incoming BGP announcements against its VRP set to determine validity.</p></details>
+      <div id="rpki-embed" class="my-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+        <p class="text-sm font-semibold text-ink">Check RPKI status live</p>
+        <p class="mt-1 text-xs text-ink-faint">Enter an IP address, prefix, or ASN to see its BGP origin and RPKI ROA validation state. Run the full check in the <a href="/asn-lookup/" class="text-accent hover:text-accent-soft">ASN lookup tool</a>.</p>
+        <form id="rpki-widget-form" class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input id="rpki-widget-q" type="text" value="1.1.1.1" spellcheck="false" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none" />
+          <button type="submit" class="rounded-md border border-accent/40 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/10">Check RPKI</button>
+        </form>
+        <div id="rpki-widget-result" class="mt-2 text-sm text-ink-dim"></div>
       </div>
 
-      <h2>Next checks</h2>
-      <ul class="list-disc space-y-1.5 pl-5">
-        <li>Run a live ASN lookup with <a href="/asn-lookup/">ASN lookup</a> to check RPKI status on your prefixes.</li>
-        <li>Understand the BGP protocol that RPKI protects in the <a href="/bgp-explained/">BGP explained</a> guide.</li>
-        <li>Learn about the <a href="/asn-explained/">Autonomous System Number</a> entity.</li>
-        <li>Calculate prefix sizes with the <a href="/cidr-calculator/">CIDR calculator</a>.</li>
-        <li>Secure your domain layer with <a href="/what-is-dnssec/">DNSSEC</a>.</li>
-        <li>Understand DNS hijacking risks in the <a href="/dns-hijacking/">DNS hijacking</a> guide.</li>
-      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The most common self-inflicted RPKI outage: switching transit providers or origin ASN and forgetting to update the ROA. The moment the live announcement differs from the signed ROA, every validating router on earth classifies the route Invalid and drops it - enforcement is global and takes minutes, not days. Stage ROA changes in the RIR portal <em>before</em> changing what you announce, and remember that ROAs carry a notAfter expiry: a calendar reminder for ROA renewals is cheaper than a post-mortem.</p>
+      </aside>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between RPKI and DNSSEC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">RPKI secures BGP routing by cryptographically binding IP prefixes to originating ASNs using signed Route Origin Authorizations stored in RIR repositories. DNSSEC secures DNS records by signing zone data with public-key cryptography stored in the DNS hierarchy. They protect different layers: RPKI protects routing, DNSSEC protects domain resolution. A domain can and should have both.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if I set MaxLength too high on my ROA?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Setting MaxLength higher than the prefix you actually announce allows an attacker to announce a more-specific sub-prefix under your ASN. For example, a ROA for 10.0.0.0/16 with MaxLength 24 permits any /24 inside that /16 to be announced as coming from your ASN, enabling sub-prefix hijacks. RFC 9319 recommends setting MaxLength equal to the exact prefix length you announce in BGP.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need RPKI if my ISP already filters prefixes?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, IRR-based prefix filters rely on manually maintained databases that are frequently stale or incomplete. RPKI ROAs provide cryptographic proof that is automatically verifiable by every participating router without relying on manual database accuracy. Both mechanisms together provide defense in depth.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a VRP (Validated ROA Payload)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A VRP is the output of a Relying Party (RP) cache after it has fetched and cryptographically validated all ROAs from the RIR repositories. Each VRP contains a tuple of (prefix, max prefix length, origin ASN) and is pushed to BGP routers via the RPKI-to-Router (RTR) protocol on port 323 or 8282. The router compares incoming BGP announcements against its VRP set to determine validity.</p></details>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const rwForm = document.getElementById('rpki-widget-form') as HTMLFormElement;
+  const rwResult = document.getElementById('rpki-widget-result')!;
+  rwForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = (document.getElementById('rpki-widget-q') as HTMLInputElement).value.trim();
+    if (!q) return;
+    rwResult.textContent = 'Checking RPKI status...';
+    try {
+      const res = await fetch('/api/check/asn?q=' + encodeURIComponent(q));
+      const d = await res.json();
+      if (d.ok && d.asn) {
+        const state = d.rpkiStatus || 'RPKI status not available for this prefix';
+        rwResult.textContent = 'Origin AS' + d.asn + (d.holder ? ' (' + d.holder + ')' : '') + ' | Prefix: ' + (d.bgpPrefix || 'unknown') + ' | RPKI: ' + state;
+      } else if (d.note) {
+        rwResult.textContent = d.note;
+      } else {
+        rwResult.textContent = d.error || 'Lookup returned no data.';
+      }
+    } catch {
+      rwResult.textContent = 'Lookup failed (network error). Try again from the full ASN lookup tool.';
+    }
+  });
+</script>
