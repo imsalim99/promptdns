@@ -59,7 +59,7 @@ const DIGESTS: [number, string, string, string][] = [
           <p class="px-4 pt-3 text-xs font-semibold text-ink">Published parent DS records (Type 43)</p>
           <table class="pdns-table"><thead><tr><th>Key Tag</th><th>Algorithm</th><th>Digest Type</th><th>Digest (hex)</th><th>Child KSK match</th><th>TTL, resolvers</th><th>Verdict</th></tr></thead><tbody id="dsr-dsbody"><tr><td class="font-mono text-xs">2371</td><td class="text-sm text-ink-dim">13 (ECDSAP256SHA256)</td><td class="text-sm text-ink-dim">2 (SHA-256)</td><td class="font-mono text-xs">97E8596E...</td><td class="text-sm text-pass">Verified byte for byte</td><td class="font-mono text-xs">86400s, 3/3</td><td class="text-sm text-pass">Secure</td></tr></tbody></table>
         </div>
-        <div id="dsr-key" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60">
+        <div id="dsr-key" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
           <p class="px-4 pt-3 text-xs font-semibold text-ink">Child zone DNSKEY records discovered (Type 48)</p>
           <table class="pdns-table"><thead><tr><th>Role</th><th>Computed Key Tag</th><th>Algorithm</th><th>Protocol</th><th>Referenced by parent DS?</th></tr></thead><tbody id="dsr-keybody"></tbody></table>
         </div>
@@ -325,6 +325,8 @@ nslookup -type=ds example.com</code></pre>
     if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain.'); return; }
     setStatus('loading', `Querying parent DS and child DNSKEY across 3 resolvers for ${domain}...`);
     cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    dsPanel.classList.add('hidden');
+    keyPanel.classList.add('hidden'); keyBody.textContent = '';
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     document.getElementById('dsr-sample-note')?.classList.add('hidden');
 
