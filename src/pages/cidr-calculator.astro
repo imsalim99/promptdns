@@ -347,14 +347,16 @@ dig +short 34.216.184.93.origin.asn.cymru.com TXT</code></pre>
   }
 
   function v6Scope(base: bigint, p: number): string {
-    const inBlock = (hex: string, bp: number) => (base >> (128n - BigInt(bp))) === (BigInt('0x' + hex) >> (128n - BigInt(bp)));
+    // Compare the top bp bits of the address against the block's top-bit
+    // value: inBlock('20010db8', 32) matches every 2001:db8::/32 address.
+    const inBlock = (hex: string, bp: number) => (base >> BigInt(128 - bp)) === BigInt('0x' + hex);
     if (p >= 128 && base === 1n) return 'Loopback';
     if (p >= 128 && base === 0n) return 'Unspecified';
     if (inBlock('20010db8', 32)) return 'RFC 3849 documentation';
-    if (inBlock('fe80', 10)) return 'Link-local';
-    if (inBlock('fc00', 7)) return 'Unique local address (ULA, RFC 4193)';
-    if (inBlock('ff00', 8)) return 'Multicast';
-    if (inBlock('2000', 3)) return 'Global unicast';
+    if (inBlock('3fa', 10)) return 'Link-local';
+    if (inBlock('7e', 7)) return 'Unique local address (ULA, RFC 4193)';
+    if (inBlock('ff', 8)) return 'Multicast';
+    if (inBlock('1', 3)) return 'Global unicast';
     return 'Reserved per IANA';
   }
 
