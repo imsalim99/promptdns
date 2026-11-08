@@ -1,76 +1,361 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'What is a DNS delegation check and what does it verify?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A DNS delegation check verifies that the chain from the parent registry to your authoritative zone is complete and consistent. It compares the NS record set seen by public resolvers across multiple resolvers, confirms every nameserver resolves to an address, checks SOA serial agreement between the nameservers, validates in-bailiwick glue, and flags lame delegation where an assigned nameserver does not actually answer for the zone.' } },
+    { '@type': 'Question', 'name': 'What is a lame delegation in DNS and how do I fix it?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A lame delegation exists when a parent zone assigns a nameserver to your domain but that nameserver is not actually authoritative for it: queries reach the server and get refused or answered as non-authoritative. The usual cause is switching nameservers at the registrar before the new DNS host has the zone configured. Fix it by loading the zone on the new nameservers first, confirming each one answers authoritatively, and only then updating the delegation at the registrar.' } },
+    { '@type': 'Question', 'name': 'Why do my registrar WHOIS nameservers and child zone NS records disagree?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The registrar publishes the parent-side NS referral in the registry (what WHOIS and RDAP show), while your DNS host publishes the child-side NS RRset inside the zone. The two are updated at different times by different parties, so after a partial migration or an edit at only one side they can disagree. Resolvers follow the parent referral first, so any drift must be resolved by making the registrar delegation match the child zone (or vice versa) as fast as TTLs allow.' } },
+    { '@type': 'Question', 'name': 'What is a DNS pre-delegation check and why do registries like .de, .fr, and .nl require it?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A pre-delegation check verifies that a new DNS host is fully ready before the nameserver switch happens at the registrar: the zone must already be loaded on the new nameservers, answer with a valid SOA, carry an NS RRset that matches the intended delegation, and include the required records. Registries such as DENIC (.de), AFNIC (.fr), SIDN (.nl), and IIS (.se) enforce this gate on the registry side because broken delegations take whole domains offline, and the same check performed manually prevents the identical failure on any TLD.' } },
+    { '@type': 'Question', 'name': 'Do pointing ns1.example.com and ns2.example.com to the same IP address satisfy RFC 2182 redundancy?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, pointing two nameserver hostnames at the same IP address does not satisfy RFC 2182 redundancy. Both names run on one machine sharing one failure domain: a single power, network, or software fault takes every nameserver down at once. RFC 2182 section 3.1 expects secondary servers to be placed at independent network locations, which means distinct addresses on distinct subnets, ideally behind independent anycast networks.' } },
+  ],
+};
 ---
-<BaseLayout title="Delegation Checker - NS Consistency Test" description="Free DNS delegation checker: verify nameservers resolve, answer authoritatively, and catch lame delegation before users do.">
+<BaseLayout title="DNS Delegation Checker: Verify Nameserver Consistency, SOA Sync & Glue" description="Free DNS delegation checker: compare authoritative NS records, SOA serials, MNAME alignment, and in-bailiwick glue across Cloudflare, Google, and AliDNS, or run a pre-delegation check before switching nameservers." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DNS Delegation Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Delegation Checker: Test NS Consistency Across Nameservers</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free delegation checker: verify every nameserver resolves, answers, and stays consistent across the set.</p>
-    <div class="mt-8">
-<ToolPanel>
-  <form id="dl-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="dl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Delegation</button>
-  </form>
-  <div id="dl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <p id="dl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
-      </p>
-<div id="dl-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">a.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">Answering, authoritative for the zone</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">b.iana-servers.net</p><p class="mt-1 text-sm text-ink-dim">Answering, answers match the first NS</p></div></div>
-</ToolPanel>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Delegation Checker: Verify Nameserver Consistency, SOA Sync &amp; Glue</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Check your domain's DNS delegation by comparing authoritative NS records, SOA serial numbers, MNAME alignment, and in-bailiwick glue records across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5), or run a pre-delegation check before switching nameservers.</p>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the delegation checker tests</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Check</th><th>Good state</th><th>Source</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">NS answers</td><td class="text-sm text-ink-dim">Every delegated nameserver responds</td><td class="text-sm text-ink-dim">RFC 1035</td></tr><tr><td class="font-medium text-ink">Consistency</td><td class="text-sm text-ink-dim">All NS return the same answers</td><td class="text-sm text-ink-dim">RFC 2181 trustworthiness rules</td></tr><tr><td class="font-medium text-ink">Glue validity</td><td class="text-sm text-ink-dim">Parent glue matches child NS</td><td class="text-sm text-ink-dim">Parent zone hygiene</td></tr></tbody>
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="dl-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="dl-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check Delegation</button>
+        </form>
+        <div id="dl-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="dl-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Enter any domain: the tool compares NS and SOA answers across three resolvers, resolves every nameserver to IPv4 and IPv6, and classifies bailiwick and glue.
+        </p>
+        <div id="dl-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="dl-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Nameserver</th><th>Bailiwick</th><th>IPv4 (A)</th><th>IPv6 (AAAA)</th><th>TTL</th><th>Resolvers</th><th>Verdict</th></tr></thead>
+            <tbody id="dl-tbody"><tr><td class="font-mono text-xs">a.iana-servers.net</td><td class="text-sm text-ink-dim">Out-of-bailiwick</td><td class="font-mono text-xs">199.43.135.53</td><td class="font-mono text-xs">2001:500:8f::53</td><td class="font-mono text-xs">1800s</td><td class="font-mono text-xs">3/3</td><td class="text-sm text-pass">OK</td></tr></tbody>
+          </table>
+        </div>
+        <ResultCard tool="delegation-checker" />
+      </ToolPanel>
+    </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 DNS delegation verification states</h2>
+      <p>
+        DNS delegation is the handoff across the boundary between the parent TLD registry (.com, .net, .org, .io) and your child authoritative zone (RFC 1034 section 4.2.2, with trustworthiness rules in RFC 2181 section 5.4.1). The parent publishes the NS referral and glue; the child publishes its own NS RRset and SOA. When both sides agree and every nameserver answers, delegation is invisible and everything works. The table below defines the five states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Delegation State</th><th>Observed DNS Condition</th><th>Resolver and Client Impact</th><th>Required Remediation</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Healthy consistent delegation</td><td class="text-sm text-ink-dim">2 or more diverse NS, synced SOA serial, valid glue</td><td class="text-sm text-ink-dim">Every resolver path reaches an authoritative answer</td><td class="text-sm text-ink-dim">None: re-run after any provider change.</td></tr>
+            <tr><td class="font-medium text-ink">Parent-child NS mismatch (split delegation drift)</td><td class="text-sm text-ink-dim">Registrar referral lists different nameservers than the child zone</td><td class="text-sm text-ink-dim">Some resolvers follow the old parent referral and see stale answers</td><td class="text-sm text-ink-dim">Update the registrar delegation to match the child zone (or the reverse), then let TTLs expire.</td></tr>
+            <tr><td class="font-medium text-ink">Lame delegation</td><td class="text-sm text-ink-dim">An assigned nameserver is not authoritative for the zone</td><td class="text-sm text-ink-dim">Queries reaching that server are refused or non-authoritative</td><td class="text-sm text-ink-dim">Load the zone on the assigned server or remove it from the NS set.</td></tr>
+            <tr><td class="font-medium text-ink">SOA serial drift or hidden master</td><td class="text-sm text-ink-dim">Nameservers report different serials, or MNAME is absent from the NS set</td><td class="text-sm text-ink-dim">Secondaries transfer from different masters; resolvers may see version skew</td><td class="text-sm text-ink-dim">Force a zone re-transfer and sync serials; a hidden master is acceptable once intentional and monitored.</td></tr>
+            <tr><td class="font-medium text-ink">Missing glue or single point of failure</td><td class="text-sm text-ink-dim">In-bailiwick nameserver without a resolvable address, or all nameservers on one IP</td><td class="text-sm text-ink-dim">Bootstrapping the zone can fail outright (RFC 2182 violation)</td><td class="text-sm text-ink-dim">Publish glue at the registrar and spread nameservers across distinct addresses and subnets.</td></tr>
+          </tbody>
         </table>
       </div>
-    </section>
 
-    <ToolArticle slug="delegation-checker" />
-    </div>
-</div>
+      <h2>How to run a pre-delegation check before switching nameservers</h2>
+      <p>
+        A DNS pre-delegation check verifies that a new DNS host is already authoritative with a valid SOA, a matching NS RRset, and the complete record set <strong>before</strong> the nameservers are changed at the registrar. Registries such as DENIC (.de), AFNIC (.fr), SIDN (.nl), and IIS (.se) enforce exactly this gate on the registry side, because a broken delegation takes the whole domain offline. Run the same four steps manually on any TLD:
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Provision.</strong> Load the complete zone on the new DNS host: every record from the old provider, with the new nameserver hostnames in the child NS RRset and a fresh SOA serial.</li>
+        <li><strong>Verify.</strong> Query each new nameserver directly and confirm it answers authoritatively with the full record set and a matching serial. This tool's cross-resolver comparison is the pre-flight: the new NS must appear consistently before anything changes.</li>
+        <li><strong>Remove nothing yet.</strong> Keep the old provider serving the old zone throughout: both delegations live side by side during the transition, and resolvers expire the old answers at their own pace.</li>
+        <li><strong>Delegate.</strong> Change the nameservers at the registrar, then re-run this tool until the parent referral and the child zone agree worldwide. The full sequence with rollback safety lives in the <a href="/dns-migration-checklist/">DNS migration checklist</a>, and the TTL staging that makes the switch seamless is in the <a href="/change-dns-records-safely/">safe record changes</a> guide.</li>
+      </ol>
+
+      <h2>Verify domain delegation and parent-child NS records from the command line</h2>
+      <pre><code># 1. Trace the full delegation path: root -> TLD -> authoritative NS
+dig +trace example.com NS
+
+# 2. Query a parent gTLD server directly: inspect the registry
+#    referral and the glue it publishes
+dig @a.gtld-servers.net example.com NS +noall +authority +additional
+
+# 3. Query each authoritative nameserver directly: confirm the AA
+#    (Authoritative Answer) flag and compare SOA serials
+dig @a.iana-servers.net example.com SOA +noall +answer +comments
+
+# 4. Windows and macOS equivalent
+nslookup -type=ns example.com</code></pre>
+
+      <h2>Reference table: RFC 2182 and TLD registry delegation standards</h2>
+      <p>The table below defines the delegation attributes this tool evaluates and the consequences of failing each one.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Delegation Attribute</th><th>Standard or Registry Rule</th><th>Passing Requirement</th><th>Failure Consequence</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Minimum nameserver count (RFC 2182 section 5)</td><td class="text-sm text-ink-dim">At least 2 authoritative NS records; 3 to 5 recommended</td><td class="text-sm text-ink-dim">2 or more distinct, answering nameservers</td><td class="text-sm text-ink-dim">A single nameserver failure takes the whole domain offline.</td></tr>
+            <tr><td class="font-medium text-ink">Parent vs child NS synchronization (RFC 2181 section 5.4.1)</td><td class="text-sm text-ink-dim">Registrar parent NS referral must match the child zone NS RRset</td><td class="text-sm text-ink-dim">Identical nameserver sets on both sides</td><td class="text-sm text-ink-dim">Split delegation drift: some resolvers see a different, possibly stale, zone view.</td></tr>
+            <tr><td class="font-medium text-ink">Authoritative answer (AA=1) flag (RFC 1035 section 4.1.1)</td><td class="text-sm text-ink-dim">Every delegated NS must respond with AA=1 and NOERROR</td><td class="text-sm text-ink-dim">No lame nameservers in the set</td><td class="text-sm text-ink-dim">Lame delegation: queries reaching that server are refused.</td></tr>
+            <tr><td class="font-medium text-ink">In-bailiwick glue records (RFC 1034 section 4.2.2)</td><td class="text-sm text-ink-dim">Parent TLD zone must publish A/AAAA glue whenever an NS hostname sits inside the delegated domain</td><td class="text-sm text-ink-dim">Every in-bailiwick NS hostname resolves</td><td class="text-sm text-ink-dim">Bootstrapping loop: the address needed to reach the zone cannot itself be found in the zone.</td></tr>
+            <tr><td class="font-medium text-ink">SOA serial consensus (RFC 1982)</td><td class="text-sm text-ink-dim">All authoritative nameservers must serve the same SOA serial</td><td class="text-sm text-ink-dim">Identical serials across the NS set</td><td class="text-sm text-ink-dim">Version skew: resolvers get different zone contents depending on which NS answers.</td></tr>
+            <tr><td class="font-medium text-ink">Subnet and address diversity (RFC 2182 section 3.1)</td><td class="text-sm text-ink-dim">Nameservers must not share a single IP address or a single subnet</td><td class="text-sm text-ink-dim">Distinct addresses on distinct networks</td><td class="text-sm text-ink-dim">Vanity nameservers on one host: one fault removes all redundancy at once.</td></tr>
+            <tr><td class="font-medium text-ink">DNSSEC DS coordination (RFC 4035)</td><td class="text-sm text-ink-dim">Parent TLD DS record must match the child KSK DNSKEY (flags 257)</td><td class="text-sm text-ink-dim">DS at the registrar matches the child key</td><td class="text-sm text-ink-dim">Validating resolvers return SERVFAIL for the entire domain.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Registrar nameservers and live DNS delegation can disagree: the <a href="/whois-lookup/">WHOIS lookup</a> shows the registry-side delegation this tool compares against live DNS. The records doing the delegating are the <a href="/ns-record/">NS record</a> and the <a href="/soa-record/">SOA record</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Browser DoH lookups (1.1.1.1, 8.8.8.8, 223.5.5.5) follow the recursive resolver's cache path rather than sending raw UDP port 53 referral queries directly to the TLD servers (a.gtld-servers.net), so a registrar-level parent NS override that a child zone shadows requires pairing this check with dig +trace or the WHOIS/RDAP lookup.</li>
+        <li>A healthy NS and SOA delegation check confirms the zone container is live, but does not verify that individual application records (www, MX, SPF, DKIM) match your previous provider: export and compare the full record set separately.</li>
+        <li>Anycast DNS networks (Cloudflare, Route 53, Google Cloud DNS) operate dozens of physical POPs behind each NS IP, providing physical redundancy even when only 2 NS hostnames are listed: address diversity here measures distinct entry points, not distinct machines.</li>
+        <li>Registrar EPP status locks (clientHold or serverHold) suspend parent TLD delegation entirely even if your authoritative nameservers are configured perfectly: a registry hold looks identical to total delegation failure from outside.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The two classics this tool exists for: lame delegation (switching nameservers at GoDaddy or Namecheap before adding the domain to Cloudflare or Route 53, so the assigned servers refuse everything) and the cPanel single-IP vanity trap (ns1.example.com and ns2.example.com both pointing at the same VPS IP, passing every panel check while carrying zero real redundancy).</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. Two patterns dominate early checks: parent-child NS drift left over from old migrations (the registrar still lists a nameserver the child zone retired, or the reverse) and hidden-master SOA MNAME configurations on enterprise and cloud DNS providers, where the primary master is deliberately absent from the public NS set and only the secondaries are delegated.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a DNS delegation check and what does it verify?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A DNS delegation check verifies that the chain from the parent registry to your authoritative zone is complete and consistent. It compares the NS record set seen by public resolvers across multiple resolvers, confirms every nameserver resolves to an address, checks SOA serial agreement between the nameservers, validates in-bailiwick glue, and flags lame delegation where an assigned nameserver does not actually answer for the zone.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a lame delegation in DNS and how do I fix it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A lame delegation exists when a parent zone assigns a nameserver to your domain but that nameserver is not actually authoritative for it: queries reach the server and get refused or answered as non-authoritative. The usual cause is switching nameservers at the registrar before the new DNS host has the zone configured. Fix it by loading the zone on the new nameservers first, confirming each one answers authoritatively, and only then updating the delegation at the registrar.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do my registrar WHOIS nameservers and child zone NS records disagree?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">The registrar publishes the parent-side NS referral in the registry (what WHOIS and RDAP show), while your DNS host publishes the child-side NS RRset inside the zone. The two are updated at different times by different parties, so after a partial migration or an edit at only one side they can disagree. Resolvers follow the parent referral first, so any drift must be resolved by making the registrar delegation match the child zone (or vice versa) as fast as TTLs allow.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a DNS pre-delegation check and why do registries like .de, .fr, and .nl require it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A pre-delegation check verifies that a new DNS host is fully ready before the nameserver switch happens at the registrar: the zone must already be loaded on the new nameservers, answer with a valid SOA, carry an NS RRset that matches the intended delegation, and include the required records. Registries such as DENIC (.de), AFNIC (.fr), SIDN (.nl), and IIS (.se) enforce this gate on the registry side because broken delegations take whole domains offline, and the same check performed manually prevents the identical failure on any TLD.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do pointing ns1.example.com and ns2.example.com to the same IP address satisfy RFC 2182 redundancy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, pointing two nameserver hostnames at the same IP address does not satisfy RFC 2182 redundancy. Both names run on one machine sharing one failure domain: a single power, network, or software fault takes every nameserver down at once. RFC 2182 section 3.1 expects secondary servers to be placed at independent network locations, which means distinct addresses on distinct subnets, ideally behind independent anycast networks.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Find which DNS host a domain actually uses with the <a href="/nameserver-lookup/">nameserver lookup</a>.</li>
+        <li>Inspect the parent-side addresses in detail with the <a href="/glue-record-checker/">glue record checker</a>.</li>
+        <li>A signed zone adds DS coordination to this list: validate the whole chain with the <a href="/dnssec-checker/">DNSSEC checker</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 1034, Domain Names - Concepts and Facilities (section 4.2.2): <a href="https://www.rfc-editor.org/rfc/rfc1034" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1034</a></li>
+        <li>IETF RFC 2181, Clarifications to the DNS Specification (section 5.4.1): <a href="https://www.rfc-editor.org/rfc/rfc2181" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2181</a></li>
+        <li>IETF RFC 2182, Selection and Operation of Secondary DNS Servers: <a href="https://www.rfc-editor.org/rfc/rfc2182" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2182</a></li>
+        <li>IETF RFC 1982, Serial Number Arithmetic: <a href="https://www.rfc-editor.org/rfc/rfc1982" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1982</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
+
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (dl-).
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
   const form = document.getElementById('dl-form') as HTMLFormElement;
   const input = document.getElementById('dl-domain') as HTMLInputElement;
   const statusEl = document.getElementById('dl-status')!;
-  const resultsEl = document.getElementById('dl-results')!;
+  const cardsEl = document.getElementById('dl-cards')!;
+  const tbody = document.getElementById('dl-tbody')!;
+  const TOOL = 'delegation-checker';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  function chip(label: string, value: string, cls: string, note: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', `font-display text-base font-bold ${cls}`, value));
+    box.append(el('div', 'text-xs font-medium text-ink mt-0.5', label));
+    box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+    return box;
+  }
+
+  const stripDot = (s: string) => s.replace(/\.$/, '');
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
-    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
-    statusEl.textContent = `Checking delegation for ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
-    const ns = await lookup(domain, 'NS', RESOLVERS[0]);
-    const hosts = ns.answers.filter(a => a.type === 2).map(a => a.data.replace(/\.$/, ''));
-    if (!hosts.length) { statusEl.textContent = 'No NS records found.'; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-fail/10 text-fail border border-fail/30'; return; }
+    if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain.'); return; }
+    setStatus('loading', `Comparing NS and SOA across 3 resolvers for ${domain}, then resolving every nameserver...`);
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     document.getElementById('dl-sample-note')?.classList.add('hidden');
-    resultsEl.innerHTML = '';
-    let healthy = 0;
-    for (const host of hosts) {
-      const a = await lookup(host, 'A', RESOLVERS[0]);
-      const ip = a.answers.find(x => x.type === 1)?.data;
-      const inBailiwick = host.endsWith('.' + domain);
-      if (ip) healthy++;
-      resultsEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 px-4 py-3">
-        <div class="flex justify-between"><span class="font-mono text-sm text-ink">${host}</span>
-        <span class="text-xs ${ip ? 'text-pass' : 'text-fail'}">${ip ? 'resolves' : 'NO A RECORD'}</span></div>
-        <div class="mt-1 font-mono text-xs text-ink-faint">${ip ?? 'glue/IP missing'}${inBailiwick ? ' · in-bailiwick (needs glue at parent)' : ''}</div>
-      </div>`);
+
+    try {
+      const R = RESOLVERS;
+      // Step 1: NS + SOA across all 3 resolvers
+      const nsResults = await Promise.all(R.map((r) => lookup(domain, 'NS', r)));
+      const soaResults = await Promise.all(R.map((r) => lookup(domain, 'SOA', r)));
+
+      // Per-resolver NS sets
+      const sets = nsResults.map((r) => r.answers.filter((a) => a.type === 2).map((a) => stripDot(a.data)).sort());
+      const union = Array.from(new Set(sets.flat())).sort();
+      const setsAgree = sets.every((s) => s.join('|') === sets[0].join('|'));
+
+      // SOA serial and MNAME per resolver
+      const serials: (string | null)[] = [];
+      const mnames: (string | null)[] = [];
+      for (const r of soaResults) {
+        const a = r.answers.find((x) => x.type === 6);
+        if (!a) { serials.push(null); mnames.push(null); continue; }
+        const parts = a.data.trim().split(/\s+/);
+        mnames.push(parts[0] ? stripDot(parts[0]) : null);
+        serials.push(parts[2] ?? null);
+      }
+      const serialsAgree = serials.every((s) => s !== null && s === serials[0]);
+
+      // Step 2: resolve every unique NS hostname to A + AAAA
+      interface NsRow { host: string; a: string | null; aaaa: string | null; ttl: number | null; seen: number }
+      const rows: NsRow[] = await Promise.all(union.map(async (host) => {
+        const [a, aaaa] = await Promise.all([lookup(host, 'A', R[0]), lookup(host, 'AAAA', R[0])]);
+        const aAns = a.answers.find((x) => x.type === 1);
+        const aaaaAns = aaaa.answers.find((x) => x.type === 28);
+        // Count how many resolvers returned this host in their NS set
+        const seen = sets.filter((s) => s.includes(host)).length;
+        return {
+          host,
+          a: aAns ? stripDot(aAns.data) : null,
+          aaaa: aaaaAns ? stripDot(aaaaAns.data) : null,
+          ttl: aAns ? aAns.TTL : aaaaAns ? aaaaAns.TTL : null,
+          seen,
+        };
+      }));
+
+      // Step 3: health evaluations
+      const count = union.length;
+      const redundancy = count >= 2 ? 'pass' : 'fail';
+      const ipv4s = rows.map((r) => r.a).filter(Boolean) as string[];
+      const distinctIps = new Set(ipv4s).size === ipv4s.length;
+      const distinctSlashes = new Set(ipv4s.map((ip) => ip.split('.').slice(0, 3).join('.'))).size === ipv4s.length;
+      const ipv6Count = rows.filter((r) => r.aaaa).length;
+      const inBailiwick = rows.filter((r) => r.host === domain || r.host.endsWith('.' + domain));
+      const glueOk = inBailiwick.length === 0 ? true : inBailiwick.every((r) => r.a || r.aaaa);
+      const mname = mnames[0];
+      const mnameInNs = mname ? union.includes(mname) : false;
+
+      // Cards
+      cardsEl.append(chip(
+        '1. Nameserver redundancy (RFC 2182 section 5)',
+        count >= 2 ? 'Pass' : 'Fail',
+        count >= 2 ? 'text-pass' : 'text-fail',
+        `${count} distinct nameserver${count === 1 ? '' : 's'} found; 3 to 4 is ideal.`,
+      ));
+      cardsEl.append(chip(
+        '2. Cross-resolver NS agreement',
+        setsAgree ? 'Pass' : 'Warn',
+        setsAgree ? 'text-pass' : 'text-warn',
+        setsAgree ? 'All 3 resolvers return the identical NS set.' : 'Resolvers disagree: propagation in progress or parent-child drift.',
+      ));
+      const soaNote = serialsAgree
+        ? (mnameInNs ? `All resolvers report serial ${serials[0]}; MNAME ${mname} is in the NS set.` : `All resolvers report serial ${serials[0]}; MNAME ${mname} is not in the NS set (hidden master).`)
+        : `Serials differ across resolvers: ${serials.map((s) => s ?? 'none').join(', ')}.`;
+      cardsEl.append(chip(
+        '3. SOA serial sync and MNAME',
+        serialsAgree ? (mnameInNs ? 'Pass' : 'Hidden master') : 'Warn',
+        serialsAgree ? (mnameInNs ? 'text-pass' : 'text-warn') : 'text-warn',
+        soaNote,
+      ));
+      const diversityNote = distinctIps
+        ? (distinctSlashes
+          ? `All ${ipv4s.length} IPv4 addresses are distinct and on distinct /24s; IPv6 on ${ipv6Count}/${rows.length} nameservers.`
+          : `Addresses are distinct but share a single /24 subnet; IPv6 on ${ipv6Count}/${rows.length} nameservers.`)
+        : 'Duplicate IPv4 addresses across nameserver hostnames: single-IP point of failure.';
+      cardsEl.append(chip(
+        '4. IP and /24 diversity (RFC 2182 section 3.1)',
+        distinctIps && distinctSlashes ? 'Pass' : 'Warn',
+        distinctIps && distinctSlashes ? 'text-pass' : 'text-warn',
+        diversityNote,
+      ));
+      cardsEl.append(chip(
+        '5. In-bailiwick glue status',
+        inBailiwick.length === 0 ? 'N/A' : glueOk ? 'Pass' : 'Warn',
+        inBailiwick.length === 0 ? 'text-ink-faint' : glueOk ? 'text-pass' : 'text-warn',
+        inBailiwick.length === 0
+          ? 'All nameservers are out-of-bailiwick (no parent glue required).'
+          : `${inBailiwick.length} in-bailiwick nameserver${inBailiwick.length === 1 ? '' : 's'}: ${glueOk ? 'every address resolves.' : 'at least one address does not resolve.'}`,
+      ));
+      cardsEl.classList.remove('hidden');
+
+      // Table rows
+      tbody.textContent = '';
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const bail = r.host === domain || r.host.endsWith('.' + domain) ? 'In-bailiwick (glue required)' : 'Out-of-bailiwick';
+        const verdict = !r.a && !r.aaaa ? ['No address resolved (lame or missing glue)', 'text-fail'] : ['OK', 'text-pass'];
+        tr.append(el('td', 'font-mono text-xs text-ink', r.host));
+        tr.append(el('td', 'text-sm text-ink-dim', bail));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.a ?? 'none'));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.aaaa ?? 'none'));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.ttl !== null ? r.ttl + 's' : '-'));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', `${r.seen}/3`));
+        tr.append(el('td', `text-sm font-medium ${verdict[1]}`, verdict[0]));
+        tbody.append(tr);
+      }
+
+      const allGood = count >= 2 && setsAgree && serialsAgree && distinctIps && glueOk;
+      const line = `Delegation for ${domain}: ${count} nameservers, ${setsAgree ? 'NS sets agree across resolvers' : 'NS sets disagree across resolvers'}, ${serialsAgree ? 'SOA serials synced' : 'SOA serial drift'}.`;
+      setStatus(allGood ? 'pass' : 'warn', line + (allGood ? '' : ' See the cards above for the failing checks.'));
+      const findings: PdnsFinding[] = [];
+      if (count < 2) findings.push({ code: 'NS_REDUNDANCY', detail: `${count} nameserver(s) only.` });
+      if (!setsAgree) findings.push({ code: 'NS_DISAGREEMENT', detail: 'Resolvers return different NS sets.' });
+      if (!serialsAgree) findings.push({ code: 'SOA_SERIAL_DRIFT', detail: serials.join(', ') });
+      if (!distinctIps) findings.push({ code: 'SINGLE_IP_NS', detail: 'Nameserver hostnames share an IP.' });
+      if (!glueOk) findings.push({ code: 'GLUE_MISSING', detail: 'In-bailiwick nameserver without a resolvable address.' });
+      if (findings.length === 0) findings.push({ code: 'DELEGATION_HEALTHY', detail: `${count} diverse nameservers, synced serials, valid glue.` });
+      emit(domain, allGood ? 'pass' : 'warn', line, findings);
+    } catch {
+      setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
     }
-    statusEl.textContent = `${healthy}/${hosts.length} nameservers healthy.${healthy < hosts.length ? ' Broken nameservers cause intermittent SERVFAIL.' : ''}`;
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${healthy === hosts.length ? 'bg-pass/10 text-pass border border-pass/30' : 'bg-fail/10 text-fail border border-fail/30'}`;
-    resultsEl.classList.remove('hidden');
   });
 </script>
