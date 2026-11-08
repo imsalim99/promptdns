@@ -1,9 +1,11 @@
 /**
- * PromptDNS Worker - API routes for the static site (Workers static assets).
+ * PromptDNS Worker - API routes and canonical redirects for the static site.
  *
- * Static asset requests never reach this script (the asset layer answers
- * first); only non-asset paths like /api/* arrive here. Everything else
- * falls through to the asset layer, which serves the Astro 404 page.
+ * wrangler.toml sets run_worker_first = true, so every request passes through
+ * this script: canonical 301 redirects (http -> https, extension-less page
+ * paths -> trailing slash) and a guaranteed-clean /robots.txt are handled
+ * here, /api/* routes run their handlers, and everything else falls through
+ * to the asset layer (Astro build output, 404-page handling included).
  */
 
 import { handleWaitlist, handleWaitlistVerify } from './waitlist';
@@ -25,36 +27,18 @@ export type { Env };
 
 export default {
   async fetch(request: Request, env: Env & AuthEnv): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const method = request.method;
-
-    if (path === '/api/waitlist') return handleWaitlist(request, env);
-    if (path === '/api/waitlist/verify') return handleWaitlistVerify(request, env);
-    if (path === '/api/auth/magic-link') return handleMagicLink(request, env);
-    if (path === '/api/auth/verify') return handleVerify(request, env);
-    if (path === '/api/auth/me') return handleMe(request, env);
-    if (path === '/api/auth/logout') return handleLogout(request, env);
-    if (path === '/api/domains' && method === 'GET') return handleDomainsList(request, env);
-    if (path === '/api/domains' && method === 'POST') return handleDomainsAdd(request, env);
-    if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
-    if (path === '/api/domains/pause') return handleDomainsPause(request, env);
-    if (path === '/api/domains/history') return handleHistory(request, env);
-    if (path === '/api/overview') return handleOverview(request, env);
-    if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
-    if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
-    if (path === '/api/domains/dmarc/upload' && method === 'POST') return handleDmarcUpload(request, env);
-    if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
-    if (path === '/api/domains/rescan') return handleRescan(request, env);
-    if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
-    if (path === '/api/alerts/read') return handleAlertsRead(request, env);
-
-    return env.ASSETS.fetch(request);
+    try {
+      return await handleFetch(request, env);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('Worker error:', msg);
+      return Response.json({ ok: false, error: 'Worker error: ' + msg.slice(0, 200) }, { status: 500 });
+    }
   },
 
   // Monitoring engine: re-scan every monitored domain every 6 hours
   // (crontab in wrangler.toml).
-  async scheduled(_event: ScheduledEvent, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_event: ScheduledController, env: Env & AuthEnv, ctx: ExecutionContext): Promise<void> {
     if (!env.DB) return;
     ctx.waitUntil(runScheduled(env));
   },
@@ -65,3 +49,87 @@ export default {
     await handleDmarcEmail(message, env);
   },
 } satisfies ExportedHandler<Env & AuthEnv>;
+
+async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Response> {
+  const url = new URL(request.url);
+  const path = url.pathname;
+  const method = request.method;
+
+  // Canonical 301 redirects (GET and HEAD only): http -> https, and
+  // extension-less page paths -> trailing slash. One hop combines both.
+  if ((method === 'GET' || method === 'HEAD') && isRedirectCandidate(url)) {
+    return permanentRedirect(url);
+  }
+
+  if (path === '/api/waitlist') return handleWaitlist(request, env);
+  if (path === '/api/waitlist/verify') return handleWaitlistVerify(request, env);
+  if (path === '/api/auth/magic-link') return handleMagicLink(request, env);
+  if (path === '/api/auth/verify') return handleVerify(request, env);
+  if (path === '/api/auth/me') return handleMe(request, env);
+  if (path === '/api/auth/logout') return handleLogout(request, env);
+  if (path === '/api/domains' && method === 'GET') return handleDomainsList(request, env);
+  if (path === '/api/domains' && method === 'POST') return handleDomainsAdd(request, env);
+  if (path === '/api/domains/delete') return handleDomainsDelete(request, env);
+  if (path === '/api/domains/pause') return handleDomainsPause(request, env);
+  if (path === '/api/domains/history') return handleHistory(request, env);
+  if (path === '/api/overview') return handleOverview(request, env);
+  if (path === '/api/domains/dmarc') return handleDmarcQuery(request, env);
+  if (path === '/api/domains/dmarc/mark') return handleDmarcMark(request, env);
+  if (path === '/api/domains/dmarc/upload' && method === 'POST') return handleDmarcUpload(request, env);
+  if (path === '/api/dev/dmarc-seed') return handleDmarcSeed(request, env);
+  if (path === '/api/domains/rescan') return handleRescan(request, env);
+  if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
+  if (path === '/api/alerts/read') return handleAlertsRead(request, env);
+
+  // /robots.txt is always our own file, never the Cloudflare managed block:
+  // strip a managed section if the edge ever injects one, and pin the
+  // content type for every user agent.
+  if (path === '/robots.txt') {
+    const asset = await env.ASSETS.fetch(request);
+    const body = stripManagedRobots(await asset.text());
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'public, max-age=3600',
+      },
+    });
+  }
+
+  return env.ASSETS.fetch(request);
+}
+
+/**
+ * True when this GET/HEAD request must be canonically redirected.
+ * Extension-less page paths (e.g. /ttl-checker) need the trailing slash;
+ * files (robots.txt, sitemap.xml, /_astro/* bundles, fonts, images) have a
+ * dot in the last segment and are left alone, as are API and .well-known
+ * paths. Any http:// request redirects so https is always canonical.
+ */
+function isRedirectCandidate(url: URL): boolean {
+  if (url.protocol === 'http:') return true;
+  const path = url.pathname;
+  if (path.endsWith('/')) return false;
+  if (path.startsWith('/api/') || path.startsWith('/_astro/') || path.startsWith('/.well-known/')) return false;
+  const lastSegment = path.slice(path.lastIndexOf('/') + 1);
+  return !lastSegment.includes('.');
+}
+
+/** 301 to the https trailing-slash form of the URL, preserving the query. */
+function permanentRedirect(url: URL): Response {
+  const target = new URL(url.toString());
+  target.protocol = 'https:';
+  if (!target.pathname.endsWith('/')) target.pathname += '/';
+  return new Response(null, {
+    status: 301,
+    headers: { location: target.toString() },
+  });
+}
+
+/** Remove a Cloudflare managed robots.txt section if one is ever injected. */
+function stripManagedRobots(body: string): string {
+  const begin = body.indexOf('# BEGIN Cloudflare Managed content');
+  const end = body.indexOf('# END Cloudflare Managed content');
+  if (begin === -1 || end === -1 || end < begin) return body;
+  return (body.slice(0, begin) + body.slice(end + '# END Cloudflare Managed content'.length)).replace(/^\s+/, '');
+}
