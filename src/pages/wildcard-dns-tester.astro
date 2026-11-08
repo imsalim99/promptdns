@@ -1,11 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Does a wildcard record cover the root domain?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, a wildcard record never covers the root domain. The record *.example.com only matches names below example.com, and the zone apex (example.com itself) always requires its own explicit A, AAAA, or ALIAS record. Querying the apex with only a wildcard published returns NODATA, which is why parked domains still need a real apex record to resolve.' } },
+    { '@type': 'Question', 'name': 'Does *.example.com match a.b.example.com?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, in DNS resolution a wildcard record matches multi-label names. Under RFC 4592 Section 2.2.1, *.example.com answers both b.example.com and a.b.example.com as long as no explicit record exists at b.example.com that would make it an existing node. The warning comes at the TLS layer: a wildcard certificate for *.example.com issued under RFC 6125 and CA/Browser Forum rules matches exactly one label, so a.b.example.com fails the certificate check with SSL_ERROR_BAD_CERT_DOMAIN even though DNS resolves it happily.' } },
+    { '@type': 'Question', 'name': 'Why does my wildcard not work for one subdomain?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Two RFC 4592 mechanisms cause this. The first is same-name type shadowing: any explicit record on the subdomain (a TXT, MX, or AAAA entry you added for verification or mail) disables the wildcard for every record type on that exact name, so the wildcard A stops answering there. The second is Empty Non-Terminal blocking: a deeper record such as verify.sub.example.com makes sub.example.com an existing node even with no records of its own, and that blocks the wildcard for the entire sub.example.com branch.' } },
+    { '@type': 'Question', 'name': 'What is the difference between a wildcard DNS record and a wildcard SSL certificate?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'They live in different layers and follow different matching rules. A wildcard DNS record (*.example.com as an A, AAAA, or CNAME in your zone file) is synthesized by the authoritative nameserver for any non-existing name below the apex, matching one or more labels. A wildcard TLS certificate is an X.509 credential with *.example.com as a Subject Alternative Name, used on port 443, and it matches strictly one label. Deep subdomains therefore resolve in DNS but fail in browsers unless the certificate uses a deeper wildcard such as *.app.example.com.' } },
+    { '@type': 'Question', 'name': 'Does enabling a wildcard DNS record create security or SEO risks?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, enabling an unnecessary catch-all wildcard record introduces three operational risks. First, subdomain takeover: a wildcard CNAME pointed at a cloud or PaaS provider answers for every unclaimed hostname, and an attacker who registers the dangling service can serve content on your subdomains. Second, search engine index bloat: if random subdomains return 200 OK HTML instead of 404, crawlers index endless junk hostnames. Third, cookie and CORS exposure: cookies scoped to a parent domain leak across arbitrary sibling subdomains that the wildcard just brought into existence.' } },
+  ],
+};
 ---
-<BaseLayout title="Wildcard DNS Tester" description="Free wildcard DNS tester: check whether a domain answers for random subdomains, and what a wildcard matches.">
+<BaseLayout title="Wildcard DNS Tester" description="Free wildcard DNS tester: probe random non-existent subdomains across A, AAAA and CNAME to detect a catch-all wildcard record, with the RFC 4592 matching rules applied to your zone." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
-        <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
@@ -13,50 +26,335 @@ import ToolPanel from '../components/ToolPanel.astro';
       <span class="text-ink-dim">Wildcard DNS Tester</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Wildcard DNS Tester: Detect Wildcard Records for Any Domain</h1>
-    <p class="mt-4 text-lg text-ink-dim">Query random subdomains to detect wildcard records: hosts you never created that answer anyway.</p>
-    <div class="mt-8">
-<ToolPanel>
-  <form id="wc-form" class="flex flex-col gap-3 sm:flex-row">
-    <input id="wc-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-    <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Test Wildcard</button>
-  </form>
-  <div id="wc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-  <p id="wc-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
-      </p>
-<div id="wc-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
-    <table class="pdns-table"><thead><tr><th>Random host</th><th>Result</th></tr></thead><tbody id="wc-tbody"><tr><td class="font-mono text-xs text-accent-soft">q7x2p9.example.com</td><td class="text-sm text-ink-dim">NXDOMAIN, no wildcard record detected</td></tr><tr><td class="font-mono text-xs text-accent-soft">k4m8w1.example.com</td><td class="text-sm text-ink-dim">NXDOMAIN, no wildcard record detected</td></tr></tbody></table>
-  </div>
-</ToolPanel>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Test whether your domain publishes a catch-all wildcard DNS record (*.domain) by probing random non-existent subdomains across A, AAAA, and CNAME records over DNS-over-HTTPS, and inspect how RFC 4592 wildcard matching rules apply to your zone.</p>
 
-    <ToolArticle slug="wildcard-dns-tester" />
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="wc-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="wc-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Test Wildcard</button>
+        </form>
+        <div id="wc-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="wc-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Sample diagnostic for <code>example.com</code>. Enter any domain above: the tool probes random non-existent labels and builds the RFC 4592 matching table from your own zone's answers.
+        </p>
+        <div id="wc-detect" class="mt-6 hidden grid gap-3 sm:grid-cols-3"></div>
+        <div id="wc-results" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Scenario (RFC 4592)</th><th>Query probed</th><th>Live response</th><th>Wildcard match?</th></tr></thead>
+            <tbody id="wc-tbody"><tr><td class="text-sm text-ink-dim">Single-label random subdomain</td><td class="font-mono text-xs">wcp-48213.example.com A</td><td class="text-sm text-ink-dim">NXDOMAIN</td><td class="text-sm text-pass">No wildcard published: correct default</td></tr></tbody>
+          </table>
+        </div>
+        <ResultCard tool="wildcard-dns-tester" />
+      </ToolPanel>
     </div>
-</div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: wildcard detection verdicts and RFC 4592 behavior</h2>
+      <p>
+        A wildcard DNS record is a zone entry whose owner name starts with the leftmost label <code>*</code>, such as <code>*.example.com</code>. When a client queries a name that does not exist anywhere in the zone, the authoritative nameserver synthesizes an answer on the fly from the wildcard's data instead of returning NXDOMAIN (RFC 1034 section 4.3.3, refined by RFC 4592). The table below defines the four verdicts this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Test Verdict</th><th>Probe Response</th><th>What It Means for Your Zone</th><th>Security and SEO Impact</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">No wildcard detected</td><td class="text-sm text-ink-dim">NXDOMAIN on all random probes</td><td class="text-sm text-ink-dim">Explicit-only zone: every name in use was published deliberately</td><td class="text-sm text-ink-dim">Recommended default for most production domains: nothing extra resolves, nothing extra gets indexed.</td></tr>
+            <tr><td class="font-medium text-ink">Wildcard A / AAAA active</td><td class="text-sm text-ink-dim">NOERROR with an IP on every random probe</td><td class="text-sm text-ink-dim">Every unconfigured subdomain resolves to the catch-all address</td><td class="text-sm text-ink-dim">Convenient for multi-tenant SaaS routing, but requires wildcard TLS coverage and strict Host header filtering so unknown hosts return 404.</td></tr>
+            <tr><td class="font-medium text-ink">Wildcard CNAME active</td><td class="text-sm text-ink-dim">NOERROR aliasing to a target host</td><td class="text-sm text-ink-dim">Every unconfigured subdomain aliases to the target hostname</td><td class="text-sm text-ink-dim">Highest subdomain takeover risk: if the target service does not claim every hostname, attackers can serve content on your names.</td></tr>
+            <tr><td class="font-medium text-ink">Inconsistent / partial response</td><td class="text-sm text-ink-dim">Different answers across probes, or NOERROR on one and NXDOMAIN on another</td><td class="text-sm text-ink-dim">Resolver cache mismatch or a split-horizon delegation issue</td><td class="text-sm text-ink-dim">Investigate before trusting any routing assumption: the probes disagree with each other.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to configure or remove a wildcard DNS record safely</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Audit whether you need one at all.</strong> A wildcard is only justified when the application genuinely routes unbounded names, such as a multi-tenant SaaS serving customer.yourapp.com. Everything else should use explicit records.</li>
+        <li><strong>Publish explicit records for every fixed name.</strong> The apex and names like www, mail, and _dmarc need their own A, AAAA, MX, or TXT entries: a wildcard never covers the apex, and any explicit subdomain record shadows it for all types on that name. The <a href="/a-record/">A record</a> guide covers the apex setup.</li>
+        <li><strong>Pair the wildcard with matching TLS and a 404 default.</strong> An active *.example.com record needs a *.example.com certificate (issued through a DNS-01 ACME challenge, and only for CAs your CAA record allows) plus a web server or CDN rule that returns 404 for unknown Host headers, so random subdomains never return indexable 200 pages. The <a href="/certificate-authorities-explained/">certificate authority guide</a> explains issuance, and the <a href="/caa-record/">CAA record</a> gates which CAs may issue for your domain.</li>
+        <li><strong>Prevent takeover and abuse.</strong> A wildcard <a href="/cname-record/">CNAME</a> multiplies takeover exposure: every unclaimed hostname aliases to the target, so remove wildcard CNAMEs you do not actively use, and audit zone exposure regularly with the AXFR checker.</li>
+      </ol>
+
+      <h2>Verify wildcard DNS records from the command line (dig and nslookup)</h2>
+      <pre><code># 1. Probe a random non-existent name: NXDOMAIN means no wildcard,
+#    NOERROR with an answer means one is active
+dig wildcard-check-98412.example.com A +noall +answer +comments
+
+# 2. DNSSEC zones: an answer synthesized from a wildcard carries an
+#    RRSIG whose label count is SMALLER than the queried name's label
+#    count (RFC 4035 section 5.3.2)
+dig wildcard-check-98412.example.com A +dnssec +multi
+
+# 3. Test an explicit record override or empty non-terminal
+dig existing-sub.example.com AAAA +noall +comments
+
+# 4. Windows and macOS equivalent
+nslookup wildcard-check-98412.example.com</code></pre>
+
+      <h2>Reference table: RFC 4592 wildcard DNS matching rules and edge cases</h2>
+      <p>The table below defines the seven matching rules, absorbing our earlier wildcard DNS explainer into one reference. The live table above generates the first rows from your own zone's answers.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Rule / Scenario (RFC 4592)</th><th>Zone File Entry</th><th>Query Tested</th><th>Result and Why It Happens</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Leftmost label rule (section 2.1.1)</td><td class="font-mono text-xs">*.example.com A 192.0.2.1</td><td class="font-mono text-xs">foo.example.com A</td><td class="text-sm text-ink-dim">Matches (192.0.2.1): the asterisk is the leftmost label of the owner name.</td></tr>
+            <tr><td class="font-medium text-ink">Multi-label subtree match (section 2.2.1)</td><td class="font-mono text-xs">*.example.com A 192.0.2.1</td><td class="font-mono text-xs">a.b.c.example.com A</td><td class="text-sm text-ink-dim">Matches (192.0.2.1): one leftmost asterisk covers one or more non-existing leftmost labels when nothing in between exists.</td></tr>
+            <tr><td class="font-medium text-ink">Root apex exclusion</td><td class="font-mono text-xs">*.example.com A 192.0.2.1</td><td class="font-mono text-xs">example.com A</td><td class="text-sm text-ink-dim">Does not match (NODATA): a wildcard never covers its own zone apex.</td></tr>
+            <tr><td class="font-medium text-ink">Same-name type shadowing (section 2.2.1)</td><td class="font-mono text-xs">*.example.com A 192.0.2.1 plus sub.example.com TXT "v=spf1 -all"</td><td class="font-mono text-xs">sub.example.com A</td><td class="text-sm text-ink-dim">Does not match (NODATA): any explicit record on sub disables the wildcard for all record types on that name.</td></tr>
+            <tr><td class="font-medium text-ink">Empty non-terminal (ENT) blocking (section 2.2.2)</td><td class="font-mono text-xs">*.example.com A 192.0.2.1 plus dev.api.example.com A 192.0.2.9</td><td class="font-mono text-xs">test.api.example.com A</td><td class="text-sm text-ink-dim">Does not match (NXDOMAIN): api.example.com exists as an empty non-terminal node, blocking the wildcard for the entire branch.</td></tr>
+            <tr><td class="font-medium text-ink">Mid-label asterisk</td><td class="font-mono text-xs">sub.*.example.com A 192.0.2.1</td><td class="font-mono text-xs">sub.foo.example.com A</td><td class="text-sm text-ink-dim">Does not match (NXDOMAIN): only a leftmost asterisk is a wildcard; a mid-label asterisk is a literal character.</td></tr>
+            <tr><td class="font-medium text-ink">Wildcard NS prohibition (section 4.2)</td><td class="font-mono text-xs">*.example.com NS ns2.other.com</td><td class="font-mono text-xs">Any subdomain</td><td class="text-sm text-ink-dim">Invalid and prohibited: wildcard NS delegation is undefined in DNS and rejected by modern zone validators.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Every rule above plays out on the record types behind the queries: the full set of types lives in the <a href="/dns-records/">DNS record types</a> directory.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Public DNS cannot list or read your raw zone file unless AXFR is left open, so this tool detects wildcards behaviorally by querying random high-entropy labels that cannot exist as explicit records.</li>
+        <li>A sub-zone wildcard (such as *.app.example.com when *.example.com has no root wildcard) is only detected if you enter app.example.com as the target domain.</li>
+        <li>Passing the wildcard check says nothing about TLS: whether your web server actually presents a valid *.example.com certificate on port 443 is a separate test this tool does not perform.</li>
+        <li>Depth rules differ between the layers: a wildcard DNS record resolves multi-label names like a.b.example.com, while a single-label wildcard TLS certificate (*.example.com) only covers one label, which triggers SSL_ERROR_BAD_CERT_DOMAIN in browsers on deep subdomains.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The two traps that fill support queues: the empty non-terminal (adding dev.api.example.com silently kills *.example.com for every other api.example.com name) and single-type shadowing (adding a _dmarc TXT record on a subdomain and wondering why its wildcard A record suddenly stopped resolving). Both are RFC 4592 working as designed, not a provider bug.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The recurring pattern in early checks is parked domains and shared-hosting default zones that ship with a *.domain catch-all A record out of the box: random typo subdomains resolve, return the host's default page, and some of them end up indexed by search engines, weakening cookie isolation and widening takeover exposure for no operational benefit.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a wildcard record cover the root domain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, a wildcard record never covers the root domain. The record *.example.com only matches names below example.com, and the zone apex (example.com itself) always requires its own explicit A, AAAA, or ALIAS record. Querying the apex with only a wildcard published returns NODATA, which is why parked domains still need a real apex record to resolve.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does *.example.com match a.b.example.com?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, in DNS resolution a wildcard record matches multi-label names. Under RFC 4592 Section 2.2.1, *.example.com answers both b.example.com and a.b.example.com as long as no explicit record exists at b.example.com that would make it an existing node. The warning comes at the TLS layer: a wildcard certificate for *.example.com issued under RFC 6125 and CA/Browser Forum rules matches exactly one label, so a.b.example.com fails the certificate check with SSL_ERROR_BAD_CERT_DOMAIN even though DNS resolves it happily.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my wildcard not work for one subdomain?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Two RFC 4592 mechanisms cause this. The first is same-name type shadowing: any explicit record on the subdomain (a TXT, MX, or AAAA entry you added for verification or mail) disables the wildcard for every record type on that exact name, so the wildcard A stops answering there. The second is Empty Non-Terminal blocking: a deeper record such as verify.sub.example.com makes sub.example.com an existing node even with no records of its own, and that blocks the wildcard for the entire sub.example.com branch.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between a wildcard DNS record and a wildcard SSL certificate?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">They live in different layers and follow different matching rules. A wildcard DNS record (*.example.com as an A, AAAA, or CNAME in your zone file) is synthesized by the authoritative nameserver for any non-existing name below the apex, matching one or more labels. A wildcard TLS certificate is an X.509 credential with *.example.com as a Subject Alternative Name, used on port 443, and it matches strictly one label. Deep subdomains therefore resolve in DNS but fail in browsers unless the certificate uses a deeper wildcard such as *.app.example.com.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does enabling a wildcard DNS record create security or SEO risks?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, enabling an unnecessary catch-all wildcard record introduces three operational risks. First, subdomain takeover: a wildcard CNAME pointed at a cloud or PaaS provider answers for every unclaimed hostname, and an attacker who registers the dangling service can serve content on your subdomains. Second, search engine index bloat: if random subdomains return 200 OK HTML instead of 404, crawlers index endless junk hostnames. Third, cookie and CORS exposure: cookies scoped to a parent domain leak across arbitrary sibling subdomains that the wildcard just brought into existence.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Inspect the exact records the wildcard synthesizes with the <a href="/dns-record-lookup/">DNS record lookup</a>.</li>
+        <li>Check whether your zone would leak its contents entirely if AXFR were left open with the <a href="/axfr-checker/">AXFR checker</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 4592, The Role of Wildcards in the Domain Name System: <a href="https://www.rfc-editor.org/rfc/rfc4592" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4592</a></li>
+        <li>IETF RFC 1034, Domain Names - Concepts and Facilities (section 4.3.3): <a href="https://www.rfc-editor.org/rfc/rfc1034" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1034</a></li>
+        <li>IETF RFC 4035, Protocol Modifications for the DNS Security Extensions (section 5.3.2): <a href="https://www.rfc-editor.org/rfc/rfc4035" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4035</a></li>
+        <li>IETF RFC 6125, Representation and Verification of Domain-Based Application Service Identity within PKIX Certificates: <a href="https://www.rfc-editor.org/rfc/rfc6125" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6125</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
+
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (wc-).
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
   const form = document.getElementById('wc-form') as HTMLFormElement;
   const input = document.getElementById('wc-domain') as HTMLInputElement;
   const statusEl = document.getElementById('wc-status')!;
-  const resultsEl = document.getElementById('wc-results')!;
+  const detectEl = document.getElementById('wc-detect')!;
   const tbody = document.getElementById('wc-tbody')!;
+  const TOOL = 'wildcard-dns-tester';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  const rand = (n = 5) => String(Math.floor(10000 + Math.random() * 89999)).slice(0, n);
+  const VERDICT_CLS: Record<string, string> = { good: 'text-pass', warn: 'text-warn', faint: 'text-ink-faint', bad: 'text-fail' };
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function chip(label: string, value: string, cls: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', `font-display text-lg font-bold ${cls}`, value));
+    box.append(el('div', 'text-xs text-ink-faint', label));
+    return box;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
-    if (!domain.includes('.')) { statusEl.textContent = 'Enter a valid domain.'; return; }
-    statusEl.textContent = `Probing random subdomains of ${domain}…`; statusEl.className = 'mt-4 rounded-md px-4 py-3 text-sm font-medium bg-panel-2 text-accent border border-line'; statusEl.classList.remove('hidden');
+    if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain.'); return; }
+    setStatus('loading', `Probing random non-existent labels of ${domain} across A, AAAA, and CNAME...`);
+    detectEl.classList.add('hidden'); detectEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     document.getElementById('wc-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    let answered = 0;
-    for (let i = 0; i < 3; i++) {
-      const rnd = 'wildcard-test-' + Math.random().toString(36).slice(2, 10);
-      const r = await lookup(`${rnd}.${domain}`, 'A', RESOLVERS[0]);
-      const ip = r.answers.find(x => x.type === 1)?.data;
-      if (ip) answered++;
-      tbody.insertAdjacentHTML('beforeend', `<tr><td class="font-mono text-xs">${rnd}.${domain}</td><td>${ip ? `<code>${ip}</code>` : '<span class="text-xs text-pass">NXDOMAIN (no wildcard)</span>'}</td></tr>`);
+
+    const r1 = 'wcp-' + rand(), r2 = 'wcp-' + rand(), r3 = 'wcp-' + rand(), r4 = 'wcp-' + rand();
+    const midLabel = `${r4}.*.${domain}`;
+    const R = RESOLVERS[0];
+    try {
+      const [r1a, r2a, r1aaaa, r1cn, apexA, apexNs, wwwA, wwwAaaa, multi, mid] = await Promise.all([
+        lookup(`${r1}.${domain}`, 'A', R),
+        lookup(`${r2}.${domain}`, 'A', R),
+        lookup(`${r1}.${domain}`, 'AAAA', R),
+        lookup(`${r1}.${domain}`, 'CNAME', R),
+        lookup(domain, 'A', R),
+        lookup(domain, 'NS', R),
+        lookup(`www.${domain}`, 'A', R),
+        lookup(`www.${domain}`, 'AAAA', R),
+        lookup(`${r3}.${rand()}.${domain}`, 'A', R),
+        lookup(midLabel, 'A', R),
+      ]);
+
+      const hasAns = (r: L) => r.status === 0 && r.answers.length > 0;
+      const wA = hasAns(r1a) && hasAns(r2a);
+      const wAAAA = hasAns(r1aaaa);
+      const wCN = hasAns(r1cn);
+      const inconsistent = hasAns(r1a) !== hasAns(r2a);
+
+      detectEl.append(chip('Wildcard A', wA ? 'Active' : hasAns(r1a) ? 'Inconsistent' : 'Not detected', wA ? 'text-warn' : 'text-pass'));
+      detectEl.append(chip('Wildcard AAAA', wAAAA ? 'Active' : 'Not detected', wAAAA ? 'text-warn' : 'text-pass'));
+      detectEl.append(chip('Wildcard CNAME', wCN ? 'Active' : 'Not detected', wCN ? 'text-fail' : 'text-pass'));
+      detectEl.classList.remove('hidden');
+
+      const firstAnswer = (r: L) => {
+        if (!hasAns(r)) return null;
+        const a = r.answers[0];
+        const d = a.data.replace(/\.$/, '');
+        return { text: d.length > 42 ? d.slice(0, 42) + '...' : d, ttl: a.TTL };
+      };
+      const wA1 = firstAnswer(r1a);
+      const wAAAA1 = firstAnswer(r1aaaa);
+      const wCN1 = firstAnswer(r1cn);
+      const multiA = firstAnswer(multi);
+      const midA = firstAnswer(mid);
+
+      tbody.textContent = '';
+      const addRow = (scenario: string, query: string, response: string, verdict: string, cls: string) => {
+        const tr = document.createElement('tr');
+        tr.append(el('td', 'text-sm text-ink', scenario));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', query));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', response));
+        tr.append(el('td', `text-sm font-medium ${cls}`, verdict));
+        tbody.append(tr);
+      };
+      const respOf = (v: { text: string; ttl: number } | null, r: L, kind?: string) =>
+        v ? (kind ? kind + ' to ' + v.text : v.text) + ` (TTL ${v.ttl}s)` : (r.status === 3 ? 'NXDOMAIN' : r.status === 0 ? 'NODATA (NOERROR, no answer)' : r.statusText);
+
+      // Row 1: single-label random probe
+      if (wA) {
+        addRow('Single-label non-existent subdomain', `${r1}.${domain} A`, respOf(wA1, r1a),
+          `Matches *.${domain}: yes, answer synthesized from the wildcard`, VERDICT_CLS.warn);
+      } else if (inconsistent) {
+        addRow('Single-label non-existent subdomain', `${r1}.${domain} A`, respOf(wA1, r1a),
+          'Inconsistent with the second probe: partial wildcard or cache mismatch', VERDICT_CLS.bad);
+      } else {
+        addRow('Single-label non-existent subdomain', `${r1}.${domain} A`, respOf(wA1, r1a),
+          'No: NXDOMAIN, no wildcard published (recommended default)', VERDICT_CLS.good);
+      }
+
+      // Row 2: multi-label probe (RFC 4592 2.2.1 with live ENT detection)
+      const multiQuery = `${r3}.${rand()}.${domain} A`;
+      if (wA && multiA) {
+        addRow('Multi-label non-existent subdomain', multiQuery, respOf(multiA, multi),
+          'Matches: yes, one leftmost asterisk covers multiple labels (section 2.2.1)', VERDICT_CLS.warn);
+      } else if (wA && !multiA) {
+        addRow('Multi-label non-existent subdomain', multiQuery, respOf(multiA, multi),
+          'Blocked live: an intermediate node exists (empty non-terminal, section 2.2.2)', VERDICT_CLS.bad);
+      } else {
+        addRow('Multi-label non-existent subdomain', multiQuery, respOf(multiA, multi),
+          'No wildcard at the apex to match: NXDOMAIN is the expected result', VERDICT_CLS.good);
+      }
+
+      // Row 3: apex exclusion
+      const apexAns = firstAnswer(apexA);
+      const nsAns = apexNs.answers.find((a) => a.type === 2)?.data.replace(/\.$/, '');
+      addRow('Zone apex', `${domain} A` + (nsAns ? ` (zone NS: ${nsAns})` : ''),
+        apexAns ? `${apexAns.text} (TTL ${apexAns.ttl}s)` : (apexA.status === 0 ? 'NODATA' : apexA.statusText),
+        'No: a wildcard never covers its own apex; the apex uses its own explicit records', VERDICT_CLS.good);
+
+      // Row 4: explicit name shadowing (www)
+      const wwwA1 = firstAnswer(wwwA);
+      const wwwAAAAans = wwwAaaa.status === 0 && wwwAaaa.answers.length > 0;
+      if (wwwA1 && !wwwAAAAans && wAAAA) {
+        addRow('Explicit subdomain type shadowing', `www.${domain} AAAA`, 'NODATA (NOERROR, no answer)',
+          'No: www has explicit records, so its missing types never fall back to the wildcard (section 2.2.1)', VERDICT_CLS.warn);
+      } else if (wwwA1) {
+        addRow('Explicit subdomain', `www.${domain} A`, respOf(wwwA1, wwwA),
+          'No: explicit records on www shadow the wildcard for all types on this name', VERDICT_CLS.good);
+      } else if (wwwA.status === 3 && wA) {
+        addRow('Explicit subdomain', `www.${domain} A`, 'NXDOMAIN',
+          'Unexpected with an active wildcard: www is shadowed by another node (check ENT)', VERDICT_CLS.bad);
+      } else {
+        addRow('Explicit subdomain', `www.${domain} A`, wwwA.status === 3 ? 'NXDOMAIN' : respOf(wwwA1, wwwA),
+          'No explicit record found: nothing to shadow the wildcard here', VERDICT_CLS.good);
+      }
+
+      // Row 5: empty non-terminal with live evidence
+      addRow('Empty non-terminal (ENT) blocking', 'any child of an existing intermediate node',
+        wA && !multiA ? 'Observed live on this zone (row 2 above)' : 'Not observed in these probes',
+        'No: an intermediate node with no records still blocks the wildcard for its whole branch (section 2.2.2)', VERDICT_CLS.faint);
+
+      // Row 6: mid-label asterisk
+      addRow('Mid-label asterisk', `${midLabel} A`, respOf(midA, mid),
+        'No: a mid-label asterisk is a literal character, only a leftmost * is a wildcard (section 2.1.1)', VERDICT_CLS.good);
+
+      const anyWildcard = wA || wAAAA || wCN;
+      const kinds = [wA && 'A', wAAAA && 'AAAA', wCN && 'CNAME'].filter(Boolean).join(', ');
+      setStatus(anyWildcard || inconsistent ? 'warn' : 'pass',
+        anyWildcard
+          ? `Wildcard detected on ${domain}: ${kinds} active. Check the takeover and Host-header guidance below.`
+          : `No wildcard detected on ${domain}: random probes return NXDOMAIN, the recommended default.`);
+      if (anyWildcard) {
+        emit(domain, 'warn', `Wildcard ${kinds} active on ${domain}.`,
+          [{ code: 'WILDCARD_ACTIVE', detail: 'Catch-all resolution is active for unconfigured subdomains.' }]);
+      } else if (inconsistent) {
+        emit(domain, 'warn', `Inconsistent wildcard probes on ${domain}.`,
+          [{ code: 'WILDCARD_INCONSISTENT', detail: 'Random probes disagreed: partial wildcard or cache mismatch.' }]);
+      } else {
+        emit(domain, 'pass', `No wildcard on ${domain}: probes return NXDOMAIN.`,
+          [{ code: 'NO_WILDCARD', detail: 'Explicit-only zone configuration.' }]);
+      }
+    } catch {
+      setStatus('warn', `Could not reach the DNS resolver for ${domain}. This is an inconclusive result, not a pass or fail.`);
     }
-    statusEl.textContent = answered ? `Wildcard detected: ${answered}/3 random hosts resolve. *.${domain} matches everything.` : 'No wildcard: random subdomains do not resolve.';
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${answered ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30'}`;
-    resultsEl.classList.remove('hidden');
   });
 </script>
