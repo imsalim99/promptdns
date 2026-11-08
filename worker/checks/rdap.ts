@@ -207,23 +207,21 @@ function vcardField(vcard: unknown, key: string): string | null {
 
 interface IpBootstrapEntry { prefixes: string[]; urls: string[] }
 const IP_BOOTSTRAP_TTL_MS = 24 * 3600 * 1000;
-let ipBootstrapCache: { at: number; v4: IpBootstrapEntry[]; v6: IpBootstrapEntry[] } | null = null;
+const ipBootstrapCache: { v4: { at: number; entries: IpBootstrapEntry[] } | null; v6: { at: number; entries: IpBootstrapEntry[] } | null } = { v4: null, v6: null };
 
-async function getIpBootstrap(): Promise<{ v4: IpBootstrapEntry[]; v6: IpBootstrapEntry[] }> {
-  if (ipBootstrapCache && Date.now() - ipBootstrapCache.at < IP_BOOTSTRAP_TTL_MS) return ipBootstrapCache;
-  const parse = (j: { services: [string[], string[]][] }): IpBootstrapEntry[] =>
-    j.services.map(([prefixes, urls]) => ({ prefixes, urls }));
+/** Fetch and cache one family's bootstrap file; each family gets its own timer. */
+async function getIpBootstrap(family: 'v4' | 'v6'): Promise<IpBootstrapEntry[]> {
+  const cached = ipBootstrapCache[family];
+  if (cached && Date.now() - cached.at < IP_BOOTSTRAP_TTL_MS) return cached.entries;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
   try {
-    const [v4res, v6res] = await Promise.all([
-      fetch('https://data.iana.org/rdap/ipv4.json', { signal: controller.signal }),
-      fetch('https://data.iana.org/rdap/ipv6.json', { signal: controller.signal }),
-    ]);
-    if (!v4res.ok || !v6res.ok) throw new Error('bootstrap HTTP ' + v4res.status + '/' + v6res.status);
-    const parsed = { at: Date.now(), v4: parse(await v4res.json()), v6: parse(await v6res.json()) };
-    ipBootstrapCache = parsed;
-    return parsed;
+    const res = await fetch('https://data.iana.org/rdap/' + family + '.json', { signal: controller.signal });
+    if (!res.ok) throw new Error('bootstrap HTTP ' + res.status);
+    const j = (await res.json()) as { services: [string[], string[]][] };
+    const entries: IpBootstrapEntry[] = j.services.map(([prefixes, urls]) => ({ prefixes, urls }));
+    ipBootstrapCache[family] = { at: Date.now(), entries };
+    return entries;
   } finally {
     clearTimeout(timer);
   }
@@ -282,16 +280,16 @@ function cidrMatch(prefix: string, ip: string): boolean {
 export async function queryIpRdap(ip: string): Promise<IpRdapResult> {
   const attempts: string[] = [];
   try {
-    const boot = await getIpBootstrap();
-    const table = ip.includes(':') ? boot.v6 : boot.v4;
+    const table = await getIpBootstrap(ip.includes(':') ? 'v6' : 'v4');
     const entry = table.find((e) => e.prefixes.some((p) => cidrMatch(p, ip)));
-    if (entry?.urls[0]) attempts.push(entry.urls[0].replace(/\/$/, '') + '/ip/' + ip);
+    if (entry?.urls[0]) attempts.push(entry.urls[0].replace(/\/$/, '') + '/ip/' + encodeURIComponent(ip));
   } catch {
     // bootstrap unreachable: fall straight through to rdap.org
   }
-  attempts.push('https://rdap.org/ip/' + ip);
+  attempts.push('https://rdap.org/ip/' + encodeURIComponent(ip));
 
   let lastErr = 'unknown error';
+  let firstErr: string | null = null;
   for (const url of attempts) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
@@ -305,7 +303,11 @@ export async function queryIpRdap(ip: string): Promise<IpRdapResult> {
       if (res.status === 404) {
         return { query: ip, status: 'not_found', note: 'No RIR network object covers this address in RDAP.', sourceUrl: servedBy, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
       }
-      if (!res.ok) { lastErr = 'HTTP ' + res.status + ' from ' + servedBy.slice(0, 80); continue; }
+      if (!res.ok) {
+        lastErr = 'HTTP ' + res.status + ' from ' + servedBy.slice(0, 80);
+        if (!firstErr) firstErr = lastErr;
+        continue;
+      }
       const j: any = await res.json();
       const events: IpRdapResult['events'] = { registration: null, lastChanged: null };
       for (const e of (j.events ?? []) as RdapEvent[]) {
@@ -344,9 +346,10 @@ export async function queryIpRdap(ip: string): Promise<IpRdapResult> {
       };
     } catch (e: unknown) {
       lastErr = e instanceof Error ? e.message : String(e);
+      if (!firstErr) firstErr = lastErr;
     } finally {
       clearTimeout(timer);
     }
   }
-  return { query: ip, status: 'error', note: 'RDAP lookup failed: ' + lastErr.slice(0, 120), sourceUrl: null, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
+  return { query: ip, status: 'error', note: 'RDAP lookup failed: ' + (firstErr ?? lastErr).slice(0, 120), sourceUrl: null, handle: null, netName: null, netType: null, country: null, startAddress: null, endAddress: null, events: { registration: null, lastChanged: null }, org: null, abuseEmail: null, statuses: [] };
 }
