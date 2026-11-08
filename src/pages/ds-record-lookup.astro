@@ -242,7 +242,9 @@ nslookup -type=ds example.com</code></pre>
   }
 
   // Local DoH query mirroring lib/doh, extended with cd=1 and the AD flag.
-  async function rawQuery(resolver: Resolver, name: string, type: RecordType, cd: boolean): Promise<DohResponse & { AD?: boolean }> {
+  // Normalizes the wire keys (Answer) into lowercase for the render code.
+  interface RawResp { Status: number; AD?: boolean; answers: DohAnswer[] }
+  async function rawQuery(resolver: Resolver, name: string, type: RecordType, cd: boolean): Promise<RawResp> {
     let url = resolver.url(name, type);
     if (cd) url += (url.includes('?') ? '&' : '?') + 'cd=1';
     const controller = new AbortController();
@@ -253,7 +255,8 @@ nslookup -type=ds example.com</code></pre>
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as DohResponse & { AD?: boolean };
+      const j = (await res.json()) as { Status?: number; AD?: boolean; Answer?: DohAnswer[] };
+      return { Status: j.Status ?? -1, AD: j.AD, answers: j.Answer ?? [] };
     } finally {
       clearTimeout(timer);
     }
@@ -335,7 +338,7 @@ nslookup -type=ds example.com</code></pre>
     document.getElementById('dsr-sample-note')?.classList.add('hidden');
 
     try {
-      type Q = { res: DohResponse & { AD?: boolean }; usedCd: boolean };
+      type Q = { res: { Status: number; AD?: boolean; answers: DohAnswer[] }; usedCd: boolean };
       const run = async (type: RecordType) => {
         const results: Q[] = [];
         for (const r of RESOLVERS) {
