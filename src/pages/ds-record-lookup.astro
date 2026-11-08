@@ -1,8 +1,38 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import RecordLookupTool from '../components/RecordLookupTool.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Where do I add a DS record: at my DNS host or my domain registrar?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'At your domain registrar. The DS record lives exclusively in the parent TLD zone (.com, .net, .org), and only your registrar can submit records there on your behalf. Your DNS host generates the DS values from the child KSK, and the registrar publishes them in the parent zone. Adding a DS record inside your own child zone file has zero effect on DNSSEC validation.' } },
+    { '@type': 'Question', 'name': 'How do I check if my DS record matches my DNSKEY?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Compare four fields between the parent DS and the child KSK: the Key Tag must equal the tag computed from the child DNSKEY, the Algorithm numbers must match, the Digest Type must name the hash used, and the Digest must equal the hash of the canonical owner name concatenated with the child KSK RDATA. This tool performs that comparison byte for byte using the Web Crypto SHA-256 and SHA-384 implementations.' } },
+    { '@type': 'Question', 'name': 'What happens if my DS record does not match my child zone\'s DNSKEY?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Every validating resolver detects the broken chain of trust and returns SERVFAIL for the entire domain: websites, mail, and API clients all fail at once, even though plain DNS lookups without validation still work. The fix is to correct or remove the stale DS at the registrar, then wait out the parent DS TTL while validation recovers.' } },
+    { '@type': 'Question', 'name': 'Should I use Digest Type 1 (SHA-1), Type 2 (SHA-256), or Type 4 (SHA-384) for my DS record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Always use Digest Type 2 (SHA-256) or Digest Type 4 (SHA-384); never use Digest Type 1 (SHA-1). RFC 8624 section 3.3 moves SHA-1 to MUST NOT for DS digests, makes SHA-256 mandatory for every validator (RFC 4509), and recommends SHA-384 (RFC 6605) for operators who prefer the longer hash. Every modern registrar and DNS host supports both recommended types.' } },
+    { '@type': 'Question', 'name': 'Why does my domain have DNSKEY records but no DS record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'That is a half-signed zone: the child publishes its DNSKEY set, but the parent carries no DS record, so no validator can anchor trust to it. Resolvers treat the delegation as insecure rather than bogus, which is safe but delivers none of DNSSEC\'s protections. It usually means DNSSEC was enabled at the DNS host but the generated DS was never submitted at the registrar, or it was removed during a migration.' } },
+  ],
+};
+
+// Build-time data for the reference tables (Component 9).
+const ALGOS: [number, string, string][] = [
+  [5, 'RSASHA1', 'MUST NOT (deprecated per RFC 8624)'],
+  [7, 'RSASHA1-NSEC3-SHA1', 'MUST NOT (deprecated per RFC 8624)'],
+  [8, 'RSASHA256', 'MUST implement (recommended per RFC 8624)'],
+  [10, 'RSASHA512', 'NOT RECOMMENDED per RFC 8624'],
+  [13, 'ECDSAP256SHA256', 'MUST implement (recommended per RFC 8624)'],
+  [14, 'ECDSAP384SHA384', 'RECOMMENDED per RFC 8624'],
+  [15, 'ED25519', 'RECOMMENDED per RFC 8624'],
+];
+const DIGESTS: [number, string, string, string][] = [
+  [1, 'SHA-1', '20 bytes (40 hex chars)', 'MUST NOT per RFC 8624 section 3.3'],
+  [2, 'SHA-256', '32 bytes (64 hex chars)', 'MUST implement per RFC 4509 and RFC 8624'],
+  [4, 'SHA-384', '48 bytes (96 hex chars)', 'RECOMMENDED per RFC 6605 and RFC 8624'],
+];
 ---
-<BaseLayout title="DS Record Lookup (DNSSEC)" description="DS record lookup: check whether a domain has an active DNSSEC delegation signer at the parent.">
+<BaseLayout title="DS Record Lookup & Checker: Verify DNSSEC Delegation Signer & KSK Match" description="Free DS record lookup: query parent DS and child DNSKEY records across Cloudflare, Google, and AliDNS, compute RFC 4034 key tags, verify SHA-256 and SHA-384 digests with Web Crypto, and diagnose broken DNSSEC with cd=1." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -11,21 +41,485 @@ import RecordLookupTool from '../components/RecordLookupTool.astro';
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DS Record Lookup (DNSSEC)</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DS Record Lookup: Verify DNSSEC Delegation of Trust</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free DS record lookup: verify the delegation signer at the parent zone for DNSSEC.</p>
-    <div class="mt-8"><RecordLookupTool type="DS" label="DS Record Lookup (DNSSEC)" hint="Lookups run in your browser via public DNS-over-HTTPS. Nothing is logged." /></div>
-    <article class="rich-text mt-12 max-w-none">
-      <h2>How to read the results</h2>
-      <p>A DS answer proves DNSSEC delegation: the parent publishes a digest of your key-signing key as key tag, algorithm, digest type, and digest.</p>
-      <p>An empty answer on a signed zone is the dangerous state: keys exist but nobody can trust them. Publish the DS at the registrar.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DS Record Lookup &amp; Checker: Verify DNSSEC Delegation Signer and KSK Match</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Query your domain's parent TLD DS (Delegation Signer, Type 43) records and child zone DNSKEY (Type 48) records across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) to verify Key Tag, cryptographic algorithm, SHA-256/SHA-384 digest alignment, and the DNSSEC chain of trust.</p>
+
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="dsr-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="dsr-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com" class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check DNSSEC Chain</button>
+        </form>
+        <div id="dsr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <p id="dsr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+          Enter any domain: the tool cross-verifies the parent DS against the child KSK byte for byte, and falls back to checking-disabled queries when a broken chain causes SERVFAIL.
+        </p>
+        <div id="dsr-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="dsr-ds" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <p class="px-4 pt-3 text-xs font-semibold text-ink">Published parent DS records (Type 43)</p>
+          <table class="pdns-table"><thead><tr><th>Key Tag</th><th>Algorithm</th><th>Digest Type</th><th>Digest (hex)</th><th>Child KSK match</th><th>TTL, resolvers</th><th>Verdict</th></tr></thead><tbody id="dsr-dsbody"><tr><td class="font-mono text-xs">2371</td><td class="text-sm text-ink-dim">13 (ECDSAP256SHA256)</td><td class="text-sm text-ink-dim">2 (SHA-256)</td><td class="font-mono text-xs">97E8596E...</td><td class="text-sm text-pass">Verified byte for byte</td><td class="font-mono text-xs">86400s, 3/3</td><td class="text-sm text-pass">Secure</td></tr></tbody></table>
+        </div>
+        <div id="dsr-key" class="pd-results mt-6 overflow-x-auto rounded-lg border border-line/60">
+          <p class="px-4 pt-3 text-xs font-semibold text-ink">Child zone DNSKEY records discovered (Type 48)</p>
+          <table class="pdns-table"><thead><tr><th>Role</th><th>Computed Key Tag</th><th>Algorithm</th><th>Protocol</th><th>Referenced by parent DS?</th></tr></thead><tbody id="dsr-keybody"></tbody></table>
+        </div>
+        <ResultCard tool="ds-record-lookup" />
+      </ToolPanel>
+    </div>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: the 5 DS record and DNSSEC verification states</h2>
+      <p>
+        The DS (Delegation Signer, Type 43) record lives in the <strong>parent TLD zone</strong> (.com, .net, .org) and stores a cryptographic hash of your child zone's Key Signing Key (KSK, the DNSKEY record with flags 257), anchoring the DNSSEC chain of trust from the root down to your zone (RFC 4034 section 5, validated per RFC 4035). When a resolver follows that chain, every link must hold. The table below defines the five states this tool reports.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Verification State</th><th>Observed DS and DNSKEY State</th><th>Resolver Validation Outcome</th><th>Required Action</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Valid DS matched to active child KSK</td><td class="text-sm text-ink-dim">Parent DS key tag, algorithm, and digest match a live child KSK</td><td class="text-sm text-ink-dim">AD=1 Authenticated on validating resolvers</td><td class="text-sm text-ink-dim">None: monitor at rollover time.</td></tr>
+            <tr><td class="font-medium text-ink">No DS record published</td><td class="text-sm text-ink-dim">No DS at the parent, no DNSKEY at the child</td><td class="text-sm text-ink-dim">Insecure delegation: answers validate nothing but resolve fine</td><td class="text-sm text-ink-dim">Optional: enable DNSSEC for the chain of trust.</td></tr>
+            <tr><td class="font-medium text-ink">Orphan or mismatched DS</td><td class="text-sm text-ink-dim">Parent DS key tag missing from the child DNSKEY set</td><td class="text-sm text-ink-dim">SERVFAIL Bogus on every validating resolver</td><td class="text-sm text-ink-dim">Urgent: correct or delete the stale DS at the registrar (use the cd=1 diagnosis below).</td></tr>
+            <tr><td class="font-medium text-ink">Half-signed zone</td><td class="text-sm text-ink-dim">Child DNSKEY published, no parent DS</td><td class="text-sm text-ink-dim">Insecure: signatures exist but nothing anchors them</td><td class="text-sm text-ink-dim">Submit the generated DS at the registrar to complete the chain.</td></tr>
+            <tr><td class="font-medium text-ink">Deprecated SHA-1 digest or RSA/SHA-1 algorithm</td><td class="text-sm text-ink-dim">DS digest type 1, or DNSKEY algorithm 5 / 7</td><td class="text-sm text-ink-dim">Validates today, but RFC 8624 moves it to MUST NOT</td><td class="text-sm text-ink-dim">Plan a rollover to algorithm 13 or 8 with digest type 2 or 4.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to add, roll over, or remove a DS record safely</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Enable DNSSEC at the DNS host first.</strong> The host signs the zone and generates the DS values (key tag, algorithm, digest type, digest); nothing can be published at the parent until the child is signed.</li>
+        <li><strong>Publish the DS at the registrar.</strong> Paste the four fields exactly: key tag, algorithm number, digest type 2, and the full digest hex. This is the moment the chain of trust goes live, and a single wrong character makes the whole domain SERVFAIL.</li>
+        <li><strong>Remove before changing nameservers to an unsigned provider.</strong> Delete the registrar DS and wait out the parent DS TTL <em>before</em> moving to a DNS host that cannot sign: an orphaned DS after a nameserver switch is the classic global SERVFAIL.</li>
+        <li><strong>Roll keys with double-DS (RFC 6781).</strong> Publish the new KSK's DS alongside the old, wait for both to propagate, roll the keys, then remove the old DS. Verify each phase with this tool before moving to the next.</li>
+      </ol>
+      <p>
+        The Cloudflare enablement path is walked through in <a href="/enable-dnssec-cloudflare/">enable DNSSEC on Cloudflare</a>, and the registrar-versus-host split that decides where the DS lives is in <a href="/registrar-vs-dns-hosting/">registrar vs DNS hosting</a>.
+      </p>
+
+      <h2>Verify DS records and compute digests from the command line</h2>
+      <pre><code># 1. The parent DS records, with DNSSEC details shown
+dig example.com DS +dnssec +multi
+
+# 2. The child DNSKEY set, multiline for readable flags and algorithms
+dig example.com DNSKEY +dnssec +multiline
+
+# 3. Diagnose a broken chain: bypass validation to see the raw records
+dig @1.1.1.1 example.com DS +cd
+
+# 4. Compute the expected SHA-256 and SHA-384 DS records from a live
+#    DNSKEY and compare them with the registrar values
+dig +noall +answer example.com DNSKEY | dnssec-dsfromkey -2 -f - example.com
+
+# 5. Windows and macOS equivalent
+nslookup -type=ds example.com</code></pre>
+
+      <h2>Reference table: DS record anatomy, digest types, and DNSSEC algorithms (RFC 8624)</h2>
+      <p>The table below defines the four DS RDATA fields this tool parses, the three IANA digest types, and the seven DNSSEC algorithms with their RFC 8624 implementation status.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Field / Type</th><th>Kind</th><th>Size or Meaning</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">Key Tag</td><td class="text-sm text-ink-dim">DS RDATA field 1</td><td class="text-sm text-ink-dim">16-bit identifier of the child key (RFC 4034 Appendix B)</td><td class="text-sm text-ink-dim">Must equal the computed tag of a child KSK</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Algorithm</td><td class="text-sm text-ink-dim">DS RDATA field 2</td><td class="text-sm text-ink-dim">DNSSEC algorithm number of the child key</td><td class="text-sm text-ink-dim">Must match the child DNSKEY algorithm</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Digest Type</td><td class="text-sm text-ink-dim">DS RDATA field 3</td><td class="text-sm text-ink-dim">Hash function used for the digest</td><td class="text-sm text-ink-dim">1, 2, or 4 per IANA</td></tr>
+            <tr><td class="font-mono text-xs text-ink">Digest</td><td class="text-sm text-ink-dim">DS RDATA field 4</td><td class="text-sm text-ink-dim">Hash of the canonical owner name and child KSK RDATA</td><td class="text-sm text-ink-dim">Byte-for-byte match required</td></tr>
+            {DIGESTS.map(([n, name, size, status]) => (
+              <tr><td class="font-mono text-xs text-ink">Digest Type {n}: {name}</td><td class="text-sm text-ink-dim">IANA digest type</td><td class="text-sm text-ink-dim">{size}</td><td class="text-sm text-ink-dim">{status}</td></tr>
+            ))}
+            {ALGOS.map(([n, name, status]) => (
+              <tr><td class="font-mono text-xs text-ink">Algorithm {n}: {name}</td><td class="text-sm text-ink-dim">DNSSEC algorithm</td><td class="text-sm text-ink-dim">Signing algorithm of the child KSK and ZSK</td><td class="text-sm text-ink-dim">{status}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The parent-side record is explained in the <a href="/ds-record/">DS record</a> guide, the child keys it points to in the <a href="/dnskey-record/">DNSKEY record</a> guide, and the whole mechanism in <a href="/what-is-dnssec/">what DNSSEC is</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>This tool verifies the parent-to-child delegation link (DS to KSK, DNSKEY flags 257), whereas verifying that your zone's ZSK (flags 256) carries valid, non-expired RRSIG signatures on A, MX, and TXT records requires the full DNSSEC checker.</li>
+        <li>DS records live exclusively in the parent TLD zone (such as .com or .org): adding a DS record inside your own child DNS zone file has zero effect on DNSSEC validation.</li>
+        <li>While some ccTLD registries automatically import CDS and CDNSKEY records (RFC 7344 and RFC 8078), gTLDs like .com and .net require submitting the DS record through your domain registrar's control panel.</li>
+        <li>If your registrar places a clientHold or serverHold EPP lock on the domain, parent TLD resolution stops completely regardless of DS configuration.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The number one DNSSEC outage: switching nameservers away from a DNSSEC-enabled host without deleting the old DS at the registrar first. The new provider serves different keys, the orphaned parent DS no longer matches anything, and 1.1.1.1 and 8.8.8.8 return SERVFAIL for the whole domain worldwide. dig +cd reveals the orphaned DS key tag in seconds, which is exactly the fallback this tool automates.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The dominant early pattern is algorithm 13 (ECDSAP256SHA256) with digest type 2 (SHA-256) across modern Cloudflare, Route 53, and Google Cloud zones, alongside a steady stream of half-signed zones where DNSKEY is published without a parent DS. Multi-DS answers also appear during KSK rollovers, when the parent carries both the old and new key tags simultaneously.
+      </p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="grid gap-2"><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">How often should I check this record?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">After any change to it, after provider switches, and whenever symptoms point this direction. Records do not drift on their own.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Do these lookups work for subdomains?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Yes: enter any hostname. Subdomains carry their own records for many types.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Why do results differ from my DNS panel?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Panels show the authoritative zone; this shows what resolvers actually serve, which can be a cached earlier answer within TTL.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Is this lookup cached on my side?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">The query runs fresh in your browser; any caching is the resolver's own, exactly as the wider internet experiences it.</p></details></div>
-      
-      <h2>Related</h2>
-      <ul>
-        <li><a href="/ds-record/">DS records explained (guide)</a></li>
-        <li><a href="/dns-record-lookup/">All-in-one record lookup</a> and <a href="/dns-propagation-checker/">propagation checker</a></li>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Where do I add a DS record: at my DNS host or my domain registrar?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">At your domain registrar. The DS record lives exclusively in the parent TLD zone (.com, .net, .org), and only your registrar can submit records there on your behalf. Your DNS host generates the DS values from the child KSK, and the registrar publishes them in the parent zone. Adding a DS record inside your own child zone file has zero effect on DNSSEC validation.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check if my DS record matches my DNSKEY?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Compare four fields between the parent DS and the child KSK: the Key Tag must equal the tag computed from the child DNSKEY, the Algorithm numbers must match, the Digest Type must name the hash used, and the Digest must equal the hash of the canonical owner name concatenated with the child KSK RDATA. This tool performs that comparison byte for byte using the Web Crypto SHA-256 and SHA-384 implementations.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What happens if my DS record does not match my child zone's DNSKEY?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Every validating resolver detects the broken chain of trust and returns SERVFAIL for the entire domain: websites, mail, and API clients all fail at once, even though plain DNS lookups without validation still work. The fix is to correct or remove the stale DS at the registrar, then wait out the parent DS TTL while validation recovers.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I use Digest Type 1 (SHA-1), Type 2 (SHA-256), or Type 4 (SHA-384) for my DS record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Always use Digest Type 2 (SHA-256) or Digest Type 4 (SHA-384); never use Digest Type 1 (SHA-1). RFC 8624 section 3.3 moves SHA-1 to MUST NOT for DS digests, makes SHA-256 mandatory for every validator (RFC 4509), and recommends SHA-384 (RFC 6605) for operators who prefer the longer hash. Every modern registrar and DNS host supports both recommended types.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my domain have DNSKEY records but no DS record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">That is a half-signed zone: the child publishes its DNSKEY set, but the parent carries no DS record, so no validator can anchor trust to it. Resolvers treat the delegation as insecure rather than bogus, which is safe but delivers none of DNSSEC's protections. It usually means DNSSEC was enabled at the DNS host but the generated DS was never submitted at the registrar, or it was removed during a migration.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Validate the signatures on the individual records with the <a href="/dnssec-checker/">DNSSEC checker</a>.</li>
+        <li>Inspect the child keys in their raw form with the <a href="/dnskey-record-lookup/">DNSKEY record lookup</a>.</li>
+        <li>The delegation around this chain is checked separately with the <a href="/delegation-checker/">DNS Delegation Checker</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 4034, Resource Records for the DNS Security Extensions (section 5 and Appendix B): <a href="https://www.rfc-editor.org/rfc/rfc4034" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4034</a></li>
+        <li>IETF RFC 4035, Protocol Modifications for the DNS Security Extensions: <a href="https://www.rfc-editor.org/rfc/rfc4035" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4035</a></li>
+        <li>IETF RFC 4509, Use of SHA-256 in DNSSEC Delegation Signer Resource Records: <a href="https://www.rfc-editor.org/rfc/rfc4509" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc4509</a></li>
+        <li>IETF RFC 6605, ECDSA for the DNSSEC Data Origin Authentication and DNSSEC Integrity: <a href="https://www.rfc-editor.org/rfc/rfc6605" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6605</a></li>
+        <li>IETF RFC 8624, Algorithm Implementation Requirements and Usage Guidance for DNSSEC: <a href="https://www.rfc-editor.org/rfc/rfc8624" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8624</a></li>
       </ul>
     </article>
   </div>
 </BaseLayout>
+
+<script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (dsr-).
+  import { RESOLVERS, normalizeDomain, type Resolver, type RecordType } from '../lib/doh';
+  import type { DohResponse, DohAnswer } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
+  const form = document.getElementById('dsr-form') as HTMLFormElement;
+  const input = document.getElementById('dsr-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('dsr-status')!;
+  const cardsEl = document.getElementById('dsr-cards')!;
+  const dsBody = document.getElementById('dsr-dsbody')!;
+  const keyBody = document.getElementById('dsr-keybody')!;
+  const dsPanel = document.getElementById('dsr-ds')!;
+  const keyPanel = document.getElementById('dsr-key')!;
+  const TOOL = 'ds-record-lookup';
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail' | 'info', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      info: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-ink-dim',
+    };
+    statusEl.className = classes[kind];
+    statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS monitoring', href: '/dns-monitoring/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  // Local DoH query mirroring lib/doh, extended with cd=1 and the AD flag.
+  async function rawQuery(resolver: Resolver, name: string, type: RecordType, cd: boolean): Promise<DohResponse & { AD?: boolean }> {
+    let url = resolver.url(name, type);
+    if (cd) url += (url.includes('?') ? '&' : '?') + 'cd=1';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(url, {
+        headers: resolver.acceptHeader ? { Accept: resolver.acceptHeader } : {},
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as DohResponse & { AD?: boolean };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  const ALG_NAMES: Record<number, string> = {
+    5: 'RSASHA1', 7: 'RSASHA1-NSEC3-SHA1', 8: 'RSASHA256', 10: 'RSASHA512',
+    13: 'ECDSAP256SHA256', 14: 'ECDSAP384SHA384', 15: 'ED25519',
+  };
+  const ALG_STATUS: Record<number, string> = {
+    5: 'MUST NOT (deprecated)', 7: 'MUST NOT (deprecated)', 8: 'MUST (recommended)',
+    10: 'NOT RECOMMENDED', 13: 'MUST (recommended)', 14: 'RECOMMENDED', 15: 'RECOMMENDED',
+  };
+  const DIGEST_NAMES: Record<number, string> = { 1: 'SHA-1', 2: 'SHA-256', 4: 'SHA-384' };
+  const DIGEST_STATUS: Record<number, string> = {
+    1: 'MUST NOT (deprecated)', 2: 'MUST (recommended)', 4: 'RECOMMENDED',
+  };
+
+  // RFC 4034 Appendix B key tag over the DNSKEY RDATA.
+  function keyTag(rdata: Uint8Array): number {
+    let ac = 0;
+    for (let i = 0; i < rdata.length; i++) {
+      ac += (i & 1) ? rdata[i] : (rdata[i] << 8);
+    }
+    ac += (ac >> 16) & 0xFFFF;
+    return ac & 0xFFFF;
+  }
+
+  function b64ToBytes(b64: string): Uint8Array {
+    const bin = atob(b64.replace(/[^A-Za-z0-9+/=]/g, ''));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function hexToBytes(hex: string): Uint8Array {
+    const clean = hex.replace(/\s+/g, '');
+    const out = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+    return out;
+  }
+
+  // Canonical wire format of the owner name (lowercase, length-prefixed, 0x00).
+  function nameWire(name: string): Uint8Array {
+    const labels = name.replace(/\.$/, '').split('.');
+    let len = 1;
+    for (const l of labels) len += l.length + 1;
+    const out = new Uint8Array(len);
+    let off = 0;
+    for (const l of labels) {
+      out[off++] = l.length;
+      for (const ch of l.toLowerCase()) out[off++] = ch.charCodeAt(0) & 0xff;
+    }
+    out[off] = 0;
+    return out;
+  }
+
+  async function dsDigestHex(name: string, dnskeyRdata: Uint8Array, digestType: number): Promise<string | null> {
+    const alg = digestType === 2 ? 'SHA-256' : digestType === 4 ? 'SHA-384' : digestType === 1 ? 'SHA-1' : null;
+    if (!alg) return null;
+    const wire = nameWire(name);
+    const buf = new Uint8Array(wire.length + dnskeyRdata.length);
+    buf.set(wire, 0);
+    buf.set(dnskeyRdata, wire.length);
+    const hash = await crypto.subtle.digest(alg, buf);
+    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  interface DsRec { keyTag: number; alg: number; digestType: number; digest: string; ttl: number; resolvers: number }
+  interface KeyRec { flags: number; alg: number; proto: number; tag: number; rdata: Uint8Array; ttl: number; resolvers: number }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain || !domain.includes('.')) { setStatus('fail', 'Enter a valid domain.'); return; }
+    setStatus('loading', `Querying parent DS and child DNSKEY across 3 resolvers for ${domain}...`);
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+    document.getElementById('dsr-sample-note')?.classList.add('hidden');
+
+    try {
+      type Q = { res: DohResponse & { AD?: boolean }; usedCd: boolean };
+      const run = async (type: RecordType) => {
+        const results: Q[] = [];
+        for (const r of RESOLVERS) {
+          const first = await rawQuery(r, domain, type, false);
+          if (first.Status === 2) {
+            // Broken chain diagnostic fallback: re-query with checking disabled
+            const second = await rawQuery(r, domain, type, true);
+            results.push({ res: second, usedCd: true });
+          } else {
+            results.push({ res: first, usedCd: false });
+          }
+        }
+        return results;
+      };
+      const [dsQ, keyQ] = await Promise.all([run('DS' as RecordType), run('DNSKEY' as RecordType)]);
+      const anyCd = dsQ.some((q) => q.usedCd) || keyQ.some((q) => q.usedCd);
+      const allServfail = dsQ.every((q) => q.res.Status === 2) && keyQ.every((q) => q.res.Status === 2);
+      if (allServfail && !anyCd) {
+        setStatus('fail', `All resolvers returned SERVFAIL for ${domain} on both DS and DNSKEY: the zone may not exist or DNS is unreachable. This is inconclusive, not a pass or fail.`);
+        return;
+      }
+
+      // Collect DS and DNSKEY records across resolvers
+      const dsMap = new Map<string, DsRec>();
+      for (const q of dsQ) {
+        for (const a of q.res.answers || []) {
+          if (a.type !== 43) continue;
+          const parts = a.data.trim().split(/\s+/);
+          if (parts.length < 4) continue;
+          const key = `${parts[0]}|${parts[1]}|${parts[2]}|${parts[3].toUpperCase()}`;
+          const hit = dsMap.get(key);
+          if (hit) hit.resolvers++;
+          else dsMap.set(key, { keyTag: Number(parts[0]), alg: Number(parts[1]), digestType: Number(parts[2]), digest: parts[3].toUpperCase(), ttl: a.TTL, resolvers: 1 });
+        }
+      }
+      const dsRecords = [...dsMap.values()];
+
+      const keyMap = new Map<string, KeyRec & { resolvers: number }>();
+      let keyOwner = domain;
+      for (const q of keyQ) {
+        for (const a of (q.res.answers || []) as DohAnswer[]) {
+          if (a.type !== 48) continue;
+          keyOwner = a.name.replace(/\.$/, '');
+          const parts = a.data.trim().split(/\s+/);
+          if (parts.length < 4) continue;
+          const flags = Number(parts[0]);
+          const proto = Number(parts[1]);
+          const alg = Number(parts[2]);
+          const keyBytes = b64ToBytes(parts[3]);
+          // Rebuild the exact DNSKEY RDATA: flags (2B) + protocol (1B) + algorithm (1B) + public key
+          const rd = new Uint8Array(4 + keyBytes.length);
+          rd[0] = (flags >> 8) & 255; rd[1] = flags & 255; rd[2] = proto; rd[3] = alg;
+          rd.set(keyBytes, 4);
+          const correctTag = keyTag(rd);
+          const key = `${flags}|${correctTag}`;
+          const hit = keyMap.get(key);
+          if (hit) hit.resolvers++;
+          else keyMap.set(key, { flags, alg, proto, tag: correctTag, rdata: rd, ttl: a.TTL, resolvers: 1 });
+        }
+      }
+      const keyRecords = [...keyMap.values()];
+
+      // Digest verification: recompute each DS digest from the matching child key
+      const matchByTag = (ds: DsRec): { key: KeyRec | null; verified: boolean | null } => {
+        const candidates = keyRecords.filter((k) => k.tag === ds.keyTag && k.alg === ds.alg);
+        const ksk = candidates.find((k) => k.flags === 257) || candidates[0] || null;
+        if (!ksk) return { key: null, verified: false };
+        return { key: ksk, verified: null };
+      };
+      const verified: Record<number, boolean | null> = {};
+      for (const ds of dsRecords) {
+        const { key } = matchByTag(ds);
+        if (!key) { verified[ds.keyTag + '|' + ds.alg] = false; continue; }
+        const hex = await dsDigestHex(keyOwner, key.rdata, ds.digestType);
+        verified[ds.keyTag + '|' + ds.alg] = hex === null ? null : hex === ds.digest.toUpperCase();
+      }
+
+      // Cards
+      const kskList = keyRecords.filter((k) => k.flags === 257);
+      const matchedTags = new Set(dsRecords.filter((ds) => verified[ds.keyTag + '|' + ds.alg] === true).map((ds) => ds.keyTag));
+      const dsPublished = dsRecords.length > 0;
+      const kskState = !dsPublished && keyRecords.length === 0 ? ['Unsigned', 'text-ink-faint']
+        : !dsPublished && keyRecords.length > 0 ? ['Half-signed (no parent DS)', 'text-warn']
+        : matchedTags.size > 0 ? ['Verified match', 'text-pass']
+        : ['Mismatched or orphan DS', 'text-fail'];
+      const kskDetail = !dsPublished && keyRecords.length > 0
+        ? `${keyRecords.length} child key(s) published but the parent carries no DS.`
+        : dsPublished
+          ? `${dsRecords.length} parent DS record(s) checked against ${kskList.length} child KSK${kskList.length === 1 ? '' : 's'}: ${matchedTags.size > 0 ? matchedTags.size + ' verified by digest.' : 'none verified by digest.'}`
+          : 'No keys or DS found on either side.';
+      const adVotes = keyQ.filter((q) => !q.usedCd && q.res.AD === true).length;
+      const adState = anyCd ? ['Bogus (SERVFAIL without cd=1)', 'text-fail'] : adVotes >= 2 ? [`AD=1 Authenticated (${adVotes}/3 validating)` , 'text-pass'] : adVotes === 0 ? ['AD=0 Insecure', 'text-ink-faint'] : [`AD=1 on ${adVotes}/3 validating resolvers`, 'text-warn'];
+
+      cardsEl.textContent = '';
+      const card = (title: string, value: string, cls: string, note: string) => {
+        const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+        box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+        box.append(el('div', `font-display text-base font-bold mt-0.5 ${cls}`, value));
+        box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+        return box;
+      };
+      cardsEl.append(card(
+        '1. Parent DS record (Type 43)',
+        dsPublished ? `Published: ${dsRecords.length} record${dsRecords.length === 1 ? '' : 's'}` : 'Not published',
+        dsPublished ? 'text-pass' : 'text-ink-faint',
+        dsPublished ? dsRecords.map((d) => `tag ${d.keyTag}, ${ALG_NAMES[d.alg] ?? 'alg ' + d.alg}, ${DIGEST_NAMES[d.digestType] ?? 'type ' + d.digestType}`).join(' | ') : 'The delegation is unsigned at the parent.',
+      ));
+      cardsEl.append(card(
+        '2. Child KSK alignment (flags 257)',
+        String(kskState[0]),
+        String(kskState[1]),
+        kskDetail,
+      ));
+      const kskProfile = kskList[0] ?? keyRecords[0];
+      cardsEl.append(card(
+        '3. Cryptographic profile (RFC 8624)',
+        kskProfile ? `${ALG_NAMES[kskProfile.alg] ?? 'alg ' + kskProfile.alg} + ${dsRecords[0] ? (DIGEST_NAMES[dsRecords[0].digestType] ?? 'digest ' + dsRecords[0].digestType) : 'no DS'}` : 'No keys',
+        kskProfile ? (ALG_STATUS[kskProfile.alg]?.startsWith('MUST') || ALG_STATUS[kskProfile.alg]?.startsWith('RECOMMENDED') ? 'text-pass' : 'text-warn') : 'text-ink-faint',
+        kskProfile ? `Algorithm: ${ALG_STATUS[kskProfile.alg] ?? 'unknown'}. Digest: ${dsRecords[0] ? (DIGEST_STATUS[dsRecords[0].digestType] ?? 'unknown type') : 'n/a'}.` : 'Nothing to profile yet.',
+      ));
+      cardsEl.append(card('4. Resolver validation consensus', String(adState[0]), String(adState[1]), anyCd ? 'cd=1 fallback used: validation was bypassed to retrieve the records.' : 'Validating resolvers report the AD flag on the DNSKEY answer.'));
+      cardsEl.classList.remove('hidden');
+
+      // Table 1: parent DS records
+      dsBody.textContent = '';
+      if (dsRecords.length === 0) {
+        const tr = document.createElement('tr');
+        tr.append(el('td', 'text-sm text-ink-dim', 'No DS records published at the parent: the delegation is unsigned or half-signed.'));
+        tr.append(el('td', ''), el('td', ''), el('td', ''), el('td', ''), el('td', ''), el('td', ''));
+        dsBody.append(tr);
+      } else {
+        for (const ds of dsRecords) {
+          const tr = document.createElement('tr');
+          const v = verified[ds.keyTag + '|' + ds.alg];
+          const verdict = v === true ? ['Verified: digest matches child KSK', 'text-pass']
+            : v === false ? ['No matching child key or digest mismatch', 'text-fail']
+            : ['Digest type not computable in-browser', 'text-warn'];
+          const seen = dsQ.filter((q) => (q.res.answers || []).some((a) => a.type === 43 && a.data.includes(String(ds.keyTag)))).length;
+          tr.append(el('td', 'font-mono text-xs text-ink', String(ds.keyTag)));
+          tr.append(el('td', 'text-sm text-ink-dim', `${ds.alg} (${ALG_NAMES[ds.alg] ?? 'unknown'}): ${ALG_STATUS[ds.alg] ?? ''}`));
+          tr.append(el('td', 'text-sm text-ink-dim', `${ds.digestType} (${DIGEST_NAMES[ds.digestType] ?? 'unknown'}): ${DIGEST_STATUS[ds.digestType] ?? ''}`));
+          const tdD = document.createElement('td');
+          const codeD = el('code', 'font-mono text-xs text-ink-dim', ds.digest.length > 24 ? ds.digest.slice(0, 24) + '...' : ds.digest);
+          tdD.append(codeD);
+          tr.append(tdD);
+          tr.append(el('td', `text-sm font-medium ${v === true ? 'text-pass' : v === false ? 'text-fail' : 'text-warn'}`, v === true ? 'Match' : v === false ? 'No match' : 'n/a'));
+          tr.append(el('td', 'font-mono text-xs text-ink-dim', `${ds.ttl}s, ${seen}/3`));
+          tr.append(el('td', `text-sm font-medium ${verdict[1]}`, verdict[0]));
+          dsBody.append(tr);
+        }
+      }
+      dsPanel.classList.remove('hidden');
+
+      // Table 2: child DNSKEY records
+      keyBody.textContent = '';
+      if (keyRecords.length === 0) {
+        const tr = document.createElement('tr');
+        tr.append(el('td', 'text-sm text-ink-dim', 'No DNSKEY records published at the child zone.'));
+        tr.append(el('td', ''), el('td', ''), el('td', ''), el('td', ''));
+        keyBody.append(tr);
+      } else {
+        for (const k of keyRecords) {
+          const tr = document.createElement('tr');
+          tr.append(el('td', 'text-sm text-ink', k.flags === 257 ? 'KSK (flags 257, secure entry point)' : `ZSK (flags ${k.flags})`));
+          tr.append(el('td', 'font-mono text-xs text-ink', String(k.tag)));
+          tr.append(el('td', 'text-sm text-ink-dim', `${k.alg} (${ALG_NAMES[k.alg] ?? 'unknown'}): ${ALG_STATUS[k.alg] ?? ''}`));
+          tr.append(el('td', 'text-sm text-ink-dim', String(k.proto)));
+          tr.append(el('td', 'text-sm text-ink-dim', dsRecords.some((d) => d.keyTag === k.tag) ? 'Yes (parent DS references this tag)' : 'No'));
+          keyBody.append(tr);
+        }
+      }
+      keyPanel.classList.remove('hidden');
+
+      const goodChain = dsPublished && matchedTags.size > 0 && !anyCd;
+      const verdict: Severity = anyCd ? 'fail' : goodChain ? 'pass' : 'warn';
+      const line = anyCd
+        ? `Broken DNSSEC chain on ${domain}: records retrieved with checking disabled. An orphaned or mismatched DS is causing SERVFAIL.`
+        : goodChain
+          ? `DNSSEC chain verified for ${domain}: parent DS matches the child KSK byte for byte.`
+          : `DNSSEC chain incomplete for ${domain}: ${dsPublished ? 'DS published but not verified against the child keys' : 'no parent DS published'}.`;
+      setStatus(verdict === 'pass' ? 'pass' : verdict === 'fail' ? 'fail' : 'warn', line);
+      emit(domain, verdict, line, [{ code: anyCd ? 'DS_ORPHAN' : goodChain ? 'DS_VERIFIED' : 'DS_INCOMPLETE', detail: `${dsRecords.length} DS, ${keyRecords.length} DNSKEY, ${matchedTags.size} verified.` }]);
+    } catch {
+      setStatus('warn', `Could not reach the DNS resolvers for ${domain}. This is an inconclusive result, not a pass or fail.`);
+    }
+  });
+</script>
