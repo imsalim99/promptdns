@@ -15,6 +15,7 @@ import { handleRescan, runScheduled, handleAlertsList, handleAlertsRead, handleH
 import { handleDmarcEmail, handleDmarcQuery, handleDmarcMark, handleDmarcUpload } from './dmarc-ingest';
 import { handleOverview } from './overview';
 import { handleDmarcSeed } from './dev-tools';
+import { handleAiCrawlerCheck } from './checks/ai-crawlers';
 
 interface Env {
   DB?: D1Database;
@@ -80,6 +81,7 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
   if (path === '/api/domains/rescan') return handleRescan(request, env);
   if (path === '/api/alerts' && method === 'GET') return handleAlertsList(request, env);
   if (path === '/api/alerts/read') return handleAlertsRead(request, env);
+  if (path === '/api/check/ai-crawlers' && method === 'GET') return handleAiCrawlerCheck(request, env);
 
   // /robots.txt is always our own file, never the Cloudflare managed block:
   // strip a managed section if the edge ever injects one, and pin the
@@ -99,15 +101,21 @@ async function handleFetch(request: Request, env: Env & AuthEnv): Promise<Respon
   return env.ASSETS.fetch(request);
 }
 
+/** Local development hosts keep their scheme; production is always https. */
+function isLocalHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.localhost');
+}
+
 /**
  * True when this GET/HEAD request must be canonically redirected.
  * Extension-less page paths (e.g. /ttl-checker) need the trailing slash;
  * files (robots.txt, sitemap.xml, /_astro/* bundles, fonts, images) have a
  * dot in the last segment and are left alone, as are API and .well-known
- * paths. Any http:// request redirects so https is always canonical.
+ * paths. Any non-local http:// request redirects so https is always
+ * canonical in production.
  */
 function isRedirectCandidate(url: URL): boolean {
-  if (url.protocol === 'http:') return true;
+  if (url.protocol === 'http:' && !isLocalHost(url.hostname)) return true;
   const path = url.pathname;
   if (path.endsWith('/')) return false;
   if (path.startsWith('/api/') || path.startsWith('/_astro/') || path.startsWith('/.well-known/')) return false;
@@ -118,7 +126,7 @@ function isRedirectCandidate(url: URL): boolean {
 /** 301 to the https trailing-slash form of the URL, preserving the query. */
 function permanentRedirect(url: URL): Response {
   const target = new URL(url.toString());
-  target.protocol = 'https:';
+  if (!isLocalHost(url.hostname)) target.protocol = 'https:';
   if (!target.pathname.endsWith('/')) target.pathname += '/';
   return new Response(null, {
     status: 301,

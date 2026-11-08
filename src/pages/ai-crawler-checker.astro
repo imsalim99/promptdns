@@ -2,20 +2,57 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolPanel from '../components/ToolPanel.astro';
 
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "Does blocking GPTBot remove my site from ChatGPT answers?", "acceptedAnswer": { '@type': 'Answer', "text": "Blocking GPTBot prevents OpenAI from crawling your content for training, but it does not immediately remove already-indexed content from ChatGPT responses. Search bots like OAI-SearchBot control search citations separately." } },
-    {'@type': 'Question', 'name': "Is blocking AI crawlers bad for my SEO?", "acceptedAnswer": { '@type': 'Answer', "text": "Not necessarily. Blocking training bots (GPTBot, CCBot) preserves your content for search indexing while preventing AI model training. Blocking search bots (OAI-SearchBot, PerplexityBot) may reduce your visibility in AI-powered search answers." } },
-    {'@type': 'Question', 'name': "Can AI crawlers bypass my robots.txt rules?", "acceptedAnswer": { '@type': 'Answer', "text": "Reputable AI companies respect robots.txt. However, there is no global enforcement mechanism, and some lesser-known crawlers may ignore it. Our checker reports which major AI crawlers are currently accessing your site." } },
-    {'@type': 'Question', 'name': "How do I allow AI crawlers for search but block training?", "acceptedAnswer": { '@type': 'Answer', "text": "Use different user-agent rules: Allow OAI-SearchBot and PerplexityBot (search) while Disallow GPTBot and CCBot (training). Our checker shows you which crawlers are currently allowed or blocked." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Can GPTBot crawl my site?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'It depends on two layers. In robots.txt, a User-agent: GPTBot group with Allow makes OpenAI\'s training crawler welcome, while a Disallow rule in the GPTBot group (or in the wildcard User-agent: * group when no GPTBot group exists) forbids it. Above that, edge rules such as a WAF or Cloudflare bot protection can refuse the fetch even when robots.txt allows it, which is why this tool reports the robots.txt verdict and the live HTTP response separately. GPTBot is the training crawler: OAI-SearchBot is the separate search crawler and needs its own allowance.' } },
+    { '@type': 'Question', 'name': 'Does blocking Google-Extended affect Google Search rankings?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, blocking Google-Extended does not affect Google Search rankings. Google documents Google-Extended as a control token that only governs Gemini training and grounding. Google Search indexing and AI Overviews are governed by Googlebot, which follows its own robots.txt rules.' } },
+    { '@type': 'Question', 'name': 'Why does robots.txt allow a bot while the site still returns 403 Forbidden to it?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'robots.txt is advisory and sits one layer above the network. Edge defenses act before a page is served: Cloudflare Bot Fight Mode or AI Crawl Control, a WAF rule, datacenter ASN blocking, or a JavaScript challenge can all answer 403, 429, or 503 to a fetch that robots.txt allows. If you want a bot through, it needs an allowance in both layers.' } },
+    { '@type': 'Question', 'name': 'How do I check whether AI assistants can crawl my site?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Check two things per bot: the robots.txt verdict for its token (or the wildcard group when no named group exists) and the live HTTP status for its user agent. For the assistant experiences specifically, test OAI-SearchBot and ChatGPT-User for ChatGPT, Claude-SearchBot and Claude-User for Claude, and PerplexityBot and Perplexity-User for Perplexity. This tool runs both checks for all of them in one pass.' } },
+  ],
+};
+
+const purposeBadge: Record<string, string> = {
+  training: 'bg-violet/10 text-violet',
+  search: 'bg-accent/10 text-accent',
+  'user-fetch': 'bg-pass/10 text-pass',
+  control: 'bg-panel-2 text-ink-faint',
+};
+// R61: one link per target URL inside main. The Sources section links the
+// six core sources, so the reference table links only the operator docs
+// that are NOT cited there; overlapping rows show plain text.
+const SOURCES_LINKED = new Set([
+  'https://platform.openai.com/docs/bots',
+  'https://docs.anthropic.com/en/docs/agents-and-tools/crawlers',
+  'https://developers.google.com/search/docs/crawling-indexing/overview-google-crawlers',
+  'https://support.apple.com/en-us/HT204684',
+  'https://docs.perplexity.ai/guides/bots',
+]);
+const crawlerRows: [string, string, string, string | null, string, string][] = [
+  ['GPTBot', 'OpenAI', 'Model Training', 'https://platform.openai.com/docs/bots', 'Reverse DNS on *.openai.com per operator docs', 'training'],
+  ['OAI-SearchBot', 'OpenAI', 'AI Search Index', 'https://platform.openai.com/docs/bots', 'Reverse DNS on *.openai.com per operator docs', 'search'],
+  ['ChatGPT-User', 'OpenAI', 'User-Initiated Fetch', 'https://platform.openai.com/docs/bots', 'Reverse DNS on *.openai.com per operator docs', 'user-fetch'],
+  ['ClaudeBot', 'Anthropic', 'Model Training', 'https://docs.anthropic.com/en/docs/agents-and-tools/crawlers', 'Reverse DNS on *.anthropic.com per operator docs', 'training'],
+  ['Claude-SearchBot', 'Anthropic', 'AI Search Index', 'https://docs.anthropic.com/en/docs/agents-and-tools/crawlers', 'Reverse DNS on *.anthropic.com per operator docs', 'search'],
+  ['Claude-User', 'Anthropic', 'User-Initiated Fetch', 'https://docs.anthropic.com/en/docs/agents-and-tools/crawlers', 'Reverse DNS on *.anthropic.com per operator docs', 'user-fetch'],
+  ['PerplexityBot', 'Perplexity', 'AI Search Index', 'https://docs.perplexity.ai/guides/bots', 'Reverse DNS on *.perplexity.ai per operator docs', 'search'],
+  ['Perplexity-User', 'Perplexity', 'User-Initiated Fetch', 'https://docs.perplexity.ai/guides/bots', 'Reverse DNS on *.perplexity.ai per operator docs', 'user-fetch'],
+  ['Google-Extended', 'Google', 'Control Token Only', 'https://developers.google.com/search/docs/crawling-indexing/overview-google-crawlers', 'No crawler fetches under this name', 'control'],
+  ['Applebot-Extended', 'Apple', 'Control Token Only', 'https://support.apple.com/en-us/HT204684', 'No crawler fetches under this name', 'control'],
+  ['CCBot', 'Common Crawl', 'Model Training', 'https://commoncrawl.org/ccbot', 'Operator documents robots.txt respect; reverse DNS on *.commoncrawl.org', 'training'],
+  ['Bytespider', 'ByteDance', 'Model Training', null, 'No public operator documentation or verification method', 'training'],
+  ['Amazonbot', 'Amazon', 'Model Training', 'https://developer.amazon.com/support/amazonbot', 'Reverse DNS on *.amazonbot.com per operator docs', 'training'],
+  ['Meta-ExternalAgent', 'Meta', 'Model Training', 'https://developers.facebook.com/docs/sharing/webmasters/crawler', 'Reverse DNS on Meta-owned crawler hosts per operator docs', 'training'],
+  ['cohere-ai', 'Cohere', 'Model Training', null, 'No public operator documentation or verification method', 'training'],
+  ['Diffbot', 'Diffbot', 'Model Training', 'https://docs.diffbot.com/', 'Operator documents its crawler in its own docs; no published IP list', 'training'],
+  ['YouBot', 'You.com', 'Model Training', null, 'No public operator documentation or verification method', 'training'],
+];
 ---
 <BaseLayout
-  title="AI Crawler Checker, Is Your Site Blocking AI Bots?"
-  description="Free AI crawler checker: see whether GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot and other AI bots are allowed or blocked by your robots.txt."
+  title="AI Crawler Checker: Test GPTBot, ClaudeBot and PerplexityBot Access"
+  description="Free AI crawler checker: test robots.txt rules and live HTTP responses for GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot and 13 more AI agents, with managed robots.txt and llms.txt detection."
   schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -26,8 +63,16 @@ const faqSchema = {
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">AI Crawler Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Crawler Checker: Test GPTBot, ClaudeBot and CCBot Access</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free AI crawler checker: test whether GPTBot, ClaudeBot, Google-Extended and other AI agents can access your site.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">AI Crawler Checker: Test GPTBot, ClaudeBot and PerplexityBot Access</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">This browser and edge diagnostic tool inspects your domain's robots.txt rules (RFC 9309), live HTTP response codes, Content-Signal directives, and /llms.txt presence to verify which AI training crawlers, AI search indexers, and user-initiated agents can access your site.</p>
+
+    <div class="mt-4 flex flex-wrap gap-2" aria-label="Tool attributes">
+      <span class="rounded-md border border-line bg-panel/60 px-2.5 py-1 text-xs font-medium text-ink-dim">Free</span>
+      <span class="rounded-md border border-line bg-panel/60 px-2.5 py-1 text-xs font-medium text-ink-dim">No sign-up</span>
+      <span class="rounded-md border border-line bg-panel/60 px-2.5 py-1 text-xs font-medium text-ink-dim">RFC 9309 parser</span>
+      <span class="rounded-md border border-line bg-panel/60 px-2.5 py-1 text-xs font-medium text-ink-dim">17 AI tokens</span>
+      <span class="rounded-md border border-line bg-panel/60 px-2.5 py-1 text-xs font-medium text-ink-dim">Live edge probes</span>
+    </div>
 
     <ToolPanel>
       <form id="aic-form" class="flex flex-col gap-3 sm:flex-row">
@@ -36,118 +81,294 @@ const faqSchema = {
           class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
         <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check AI Access</button>
       </form>
+      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+        <span>Try:</span>
+        <button type="button" class="aic-example rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-domain="promptdns.com">promptdns.com</button>
+        <button type="button" class="aic-example rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-domain="openai.com">openai.com</button>
+        <button type="button" class="aic-example rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-domain="anthropic.com">anthropic.com</button>
+      </div>
 
       <div id="aic-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-
       <div id="aic-summary" class="mt-4 hidden grid gap-3 sm:grid-cols-4"></div>
 
       <p id="aic-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+        Sample diagnostic for <code>example.com</code>. Enter your own domain above: the tool fetches robots.txt and probes the site once per real crawler user agent.
       </p>
-<div id="aic-results" class="pd-results mt-6 grid gap-2" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">GPTBot</p><p class="mt-1 text-sm text-ink-dim">Allowed on all paths</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">ClaudeBot</p><p class="mt-1 text-sm text-ink-dim">Allowed on all paths</p></div><div class="rounded-lg border border-line bg-panel/60 p-4"><p class="font-medium text-ink">CCBot</p><p class="mt-1 text-sm text-ink-dim">Blocked by Disallow: /</p></div></div>
-
-      <div id="aic-raw" class="mt-6 hidden">
-        <p class="mb-2 text-sm font-semibold text-ink">robots.txt (parsed rules per bot)</p>
-        <div id="aic-raw-content" class="grid gap-1"></div>
-    </div>
+      <div id="aic-notices" class="mt-4 hidden grid gap-2"></div>
+      <div id="aic-results" class="mt-6 grid gap-2" aria-live="polite"></div>
     </ToolPanel>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">What the AI crawler checker tests</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Check</th><th>Threshold</th><th>Source</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">robots.txt presence</td><td class="text-sm text-ink-dim">Fetchable at the root</td><td class="text-sm text-ink-dim">RFC 9309</td></tr><tr><td class="font-medium text-ink">Per-crawler rules</td><td class="text-sm text-ink-dim">Allow/Disallow per known token</td><td class="text-sm text-ink-dim">Operator documentation</td></tr><tr><td class="font-medium text-ink">Crawler identity</td><td class="text-sm text-ink-dim">Reverse DNS of fetching IPs where documented</td><td class="text-sm text-ink-dim">Operator documentation</td></tr></tbody>
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means</h2>
+      <p>The table below defines the verdicts this tool reports and the layer combination each one represents.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Verdict</th><th>robots.txt layer</th><th>Live HTTP layer</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Allowed</td><td class="text-sm text-ink-dim">Token allowed, by its named group or the wildcard group</td><td class="text-sm text-ink-dim">2xx on the probe</td><td class="text-sm text-ink-dim">The crawler is welcome at both layers and can fetch your pages.</td></tr>
+            <tr><td class="font-medium text-ink">Disallowed by robots.txt</td><td class="text-sm text-ink-dim">A matching Disallow rule wins for the probed path</td><td class="text-sm text-ink-dim">Any (not decisive)</td><td class="text-sm text-ink-dim">A compliant crawler stays away. The exact matched group and rule line are shown so you can edit the right one.</td></tr>
+            <tr><td class="font-medium text-ink">Blocked at edge or WAF</td><td class="text-sm text-ink-dim">Token allowed</td><td class="text-sm text-ink-dim">401, 403, 429, or 503 on the probe</td><td class="text-sm text-ink-dim">The network layer refuses the fetch regardless of robots.txt. Fix belongs in the CDN or WAF, not in the file.</td></tr>
+            <tr><td class="font-medium text-ink">Contradictory or prepended CDN rules</td><td class="text-sm text-ink-dim">Managed section sits in front of your own rules</td><td class="text-sm text-ink-dim">Either</td><td class="text-sm text-ink-dim">The file contradicts itself. The tool flags the managed section and shows which rule actually matched, so one policy can be restored.</td></tr>
+            <tr><td class="font-medium text-ink">Inconclusive</td><td class="text-sm text-ink-dim">robots.txt unreachable, or probe timed out or got a 5xx</td><td class="text-sm text-ink-dim">No usable answer</td><td class="text-sm text-ink-dim">No verdict is reported. A timeout is never presented as a pass or a block.</td></tr>
+          </tbody>
         </table>
       </div>
-    </section>
+      <p>
+        The contradictory state is not hypothetical: in early November 2026 this tool's own domain served a
+        Cloudflare managed robots.txt section that disallowed AI crawlers in front of our own Allow rules, so the
+        same bot read as both allowed and disallowed depending on which line you trusted. Sprint 0 reduced the file
+        to one policy, and the checker now flags managed sections wherever they appear, including on our own domain
+        if that ever changes.
+      </p>
 
-    <article class="rich-text mt-14 max-w-none">
-      <h2>Why this matters</h2>
-      <p>AI assistants (ChatGPT, Claude, Perplexity, Gemini) decide what they can read from your site using robots.txt user-agent rules like <code>GPTBot</code> and <code>Google-Extended</code>. Blocking them stops training and retrieval; allowing them puts your content into answers and citations. There is no single right answer, but you should decide deliberately, not by accident.</p>
-      
+      <h2>How to fix AI crawler access or blocking issues</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Decide the policy per purpose class.</strong> A common choice: allow AI search indexers (OAI-SearchBot, Claude-SearchBot, PerplexityBot) and user-fetch agents (ChatGPT-User, Claude-User, Perplexity-User), and decide training crawlers (GPTBot, ClaudeBot, CCBot, Bytespider, Amazonbot) one by one.</li>
+        <li><strong>Fix the robots.txt layer.</strong> Give each token its own named group instead of relying on the wildcard, because a named group always wins over <code>User-agent: *</code>. Search tokens get <code>Allow: /</code>; training tokens you refuse get <code>Disallow: /</code> inside their own group.</li>
+        <li><strong>Fix the managed layer.</strong> If the tool reports a Cloudflare managed robots.txt section, disable the managed robots.txt prepend for your zone so only your own file serves, then re-run this check: the notice must disappear.</li>
+        <li><strong>Fix the WAF layer.</strong> For a Blocked at edge verdict, allow the tokens you welcome in Cloudflare's bot controls (AI Crawl Control or a WAF rule on the user agent) and re-check: the probe must return 2xx, not 403.</li>
+        <li><strong>Verify from two places.</strong> Re-run this tool after every change and confirm with the command-line probes below before declaring the issue fixed.</li>
+      </ol>
+
+      <h2>Verify AI crawler access from the command line</h2>
+      <pre><code># What a compliant crawler reads from your robots.txt
+curl -s https://yourdomain.com/robots.txt
+
+# Test the live HTTP layer for each purpose class
+curl -I -A "GPTBot/1.0" https://yourdomain.com/
+curl -I -A "OAI-SearchBot/1.0" https://yourdomain.com/
+curl -I -A "ChatGPT-User/1.0" https://yourdomain.com/
+
+# Check for a Cloudflare managed section prepended to your file
+curl -s https://yourdomain.com/robots.txt | grep -n "Cloudflare Managed"</code></pre>
+
+      <h2>Reference table: 17 AI crawlers by operator, token, and purpose class</h2>
+      <p>Four purpose classes cover every token: Model Training, AI Search Index, User-Initiated Fetch, and Control Token Only. Control tokens are robots.txt policy declarations, not standalone crawlers, so no HTTP probe runs for them.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Token</th><th>Operator</th><th>Purpose class</th><th>Operator documentation</th><th>How real traffic is verified</th></tr></thead>
+          <tbody>
+            {crawlerRows.map(([token, operator, label, doc, verification, p]) => (
+              <tr>
+                <td class="font-mono text-xs text-ink">{token}</td>
+                <td class="text-sm text-ink-dim">{operator}</td>
+                <td><span class={`inline-block rounded px-2 py-0.5 text-xs font-medium ${purposeBadge[p]}`}>{label}</span></td>
+                <td class="text-sm text-ink-dim">{doc ? (SOURCES_LINKED.has(doc) ? 'Operator docs, see Sources' : <a href={doc} rel="noopener" target="_blank" class="text-accent hover:text-accent-soft">Operator docs</a>) : 'No public operator documentation'}</td>
+                <td class="text-sm text-ink-dim">{verification}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>robots.txt is a voluntary standard (RFC 9309): a non-compliant scraper can ignore it entirely, and only WAF or edge IP and ASN rules actually stop a fetch.</li>
+        <li>Google-Extended and Applebot-Extended are policy control tokens declared in robots.txt, not standalone HTTP crawlers, so no probe runs for them and none is needed.</li>
+        <li>The live probe fetches the homepage only: path-specific firewall rules, login walls, and per-directory WAF exceptions are not tested.</li>
+        <li>Allowing an AI search crawler makes your domain eligible for retrieval and citation; it does not guarantee your pages will be cited in any AI answer.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Treat the two layers as independent checklists. Teams that fix only robots.txt keep seeing 403s in their logs; teams that fix only the WAF wonder why compliant crawlers never arrive. The verdict matrix exists precisely to show which layer owns each failure.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        This checker shipped in November 2026, so these are first observations rather than statistics, and no
+        percentages are claimed. The recurring failure the checks surfaced during development is accidental
+        double-blocking: a site publishes Allow rules for AI bots while its CDN prepends a managed section with
+        stricter rules, and the edge refuses fetches independently of both layers. Our own domain carried exactly
+        that contradiction in early November 2026, which is why the contradictory state has a dedicated verdict.
+      </p>
+
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking GPTBot remove my site from ChatGPT answers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Blocking GPTBot prevents OpenAI from crawling your content for training, but it does not immediately remove already-indexed content from ChatGPT responses. Search bots like OAI-SearchBot control search citations separately.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is blocking AI crawlers bad for my SEO?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not necessarily. Blocking training bots (GPTBot, CCBot) preserves your content for search indexing while preventing AI model training. Blocking search bots (OAI-SearchBot, PerplexityBot) may reduce your visibility in AI-powered search answers.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can AI crawlers bypass my robots.txt rules?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Reputable AI companies respect robots.txt. However, there is no global enforcement mechanism, and some lesser-known crawlers may ignore it. Our checker reports which major AI crawlers are currently accessing your site.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I allow AI crawlers for search but block training?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Use different user-agent rules: Allow OAI-SearchBot and PerplexityBot (search) while Disallow GPTBot and CCBot (training). Our checker shows you which crawlers are currently allowed or blocked.</p></details></div>
-<h2>Related</h2>
-      <ul>
-        <li><a href="/ai-crawlers-list/">The complete list of AI crawlers</a> (guide)</li>
-        <li><a href="/how-to-block-ai-crawlers/">How to block AI crawlers</a> / <a href="/how-to-allow-ai-crawlers/">allow them</a></li>
-        <li><a href="/llms-txt-generator/">llms.txt Generator</a>, the complement to robots.txt</li>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can GPTBot crawl my site?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">It depends on two layers. In robots.txt, a User-agent: GPTBot group with Allow makes OpenAI's training crawler welcome, while a Disallow rule in the GPTBot group (or in the wildcard User-agent: * group when no GPTBot group exists) forbids it. Above that, edge rules such as a WAF or Cloudflare bot protection can refuse the fetch even when robots.txt allows it, which is why this tool reports the robots.txt verdict and the live HTTP response separately. GPTBot is the training crawler: OAI-SearchBot is the separate search crawler and needs its own allowance.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does blocking Google-Extended affect Google Search rankings?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, blocking Google-Extended does not affect Google Search rankings. Google documents Google-Extended as a control token that only governs Gemini training and grounding. Google Search indexing and AI Overviews are governed by Googlebot, which follows its own robots.txt rules.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does robots.txt allow a bot while the site still returns 403 Forbidden to it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">robots.txt is advisory and sits one layer above the network. Edge defenses act before a page is served: Cloudflare Bot Fight Mode or AI Crawl Control, a WAF rule, datacenter ASN blocking, or a JavaScript challenge can all answer 403, 429, or 503 to a fetch that robots.txt allows. If you want a bot through, it needs an allowance in both layers.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check whether AI assistants can crawl my site?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Check two things per bot: the robots.txt verdict for its token (or the wildcard group when no named group exists) and the live HTTP status for its user agent. For the assistant experiences specifically, test OAI-SearchBot and ChatGPT-User for ChatGPT, Claude-SearchBot and Claude-User for Claude, and PerplexityBot and Perplexity-User for Perplexity. This tool runs both checks for all of them in one pass.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>AI crawler access is decided by robots.txt user-agent groups: test any URL against any token with the <a href="/robots-txt-checker/">robots.txt checker</a>.</li>
+        <li>Confirm a fetching visitor is the real operator with <a href="/ai-crawler-verification/">AI crawler verification</a> by reverse DNS.</li>
+        <li>An edge refusal is a CDN setting: <a href="/block-ai-crawlers-cloudflare/">blocking AI crawlers on Cloudflare</a> explains the controls in both directions.</li>
+        <li>The <a href="/ai-crawlers-list/">complete list of AI crawlers</a> documents every token in the table above.</li>
+        <li>Declare your content preferences to assistants with the <a href="/llms-txt-generator/">llms.txt generator</a>, the complement to robots.txt.</li>
+        <li><a href="/how-to-block-ai-crawlers/">How to block AI crawlers</a> and <a href="/how-to-allow-ai-crawlers/">how to allow them</a> cover both policies file by file.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 9309, Robots Exclusion Protocol: <a href="https://www.rfc-editor.org/rfc/rfc9309" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc9309</a></li>
+        <li>OpenAI crawler documentation: <a href="https://platform.openai.com/docs/bots" rel="noopener" target="_blank">platform.openai.com/docs/bots</a></li>
+        <li>Anthropic crawler documentation: <a href="https://docs.anthropic.com/en/docs/agents-and-tools/crawlers" rel="noopener" target="_blank">docs.anthropic.com</a></li>
+        <li>Google Search Central, Google crawlers and Google-Extended: <a href="https://developers.google.com/search/docs/crawling-indexing/overview-google-crawlers" rel="noopener" target="_blank">developers.google.com</a></li>
+        <li>Apple Support, Applebot and Applebot-Extended: <a href="https://support.apple.com/en-us/HT204684" rel="noopener" target="_blank">support.apple.com</a></li>
+        <li>Perplexity bot documentation: <a href="https://docs.perplexity.ai/guides/bots" rel="noopener" target="_blank">docs.perplexity.ai/guides/bots</a></li>
       </ul>
     </article>
   </div>
 </BaseLayout>
 
 <script>
-  import { fetchText, hostOf } from '../lib/proxy';
-  import { parseRobots, verdictsFor, looksLikeHtml } from '../lib/robots';
-
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3).
   const form = document.getElementById('aic-form') as HTMLFormElement;
   const input = document.getElementById('aic-domain') as HTMLInputElement;
   const statusEl = document.getElementById('aic-status')!;
   const summaryEl = document.getElementById('aic-summary')!;
+  const noticesEl = document.getElementById('aic-notices')!;
   const resultsEl = document.getElementById('aic-results')!;
-  const rawEl = document.getElementById('aic-raw')!;
-  const rawContent = document.getElementById('aic-raw-content')!;
 
-  const setStatus = (cls: string, text: string) => {
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+  const DOMAIN_RE = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'idle' | 'invalid' | 'loading' | 'info' | 'pass' | 'fail', text: string) {
+    const classes: Record<string, string> = {
+      idle: 'hidden',
+      invalid: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      info: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = classes[kind];
     statusEl.textContent = text;
+  }
+
+  function normalize(input: string): string | null {
+    let d = input.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('?')[0];
+    if (d.endsWith('.')) d = d.slice(0, -1);
+    return DOMAIN_RE.test(d) ? d : null;
+  }
+
+  const VERDICTS: Record<string, { label: string; cls: string }> = {
+    allowed: { label: 'ALLOWED', cls: 'bg-pass/15 text-pass' },
+    disallowed: { label: 'DISALLOWED BY ROBOTS.TXT', cls: 'bg-fail/15 text-fail' },
+    blocked: { label: 'BLOCKED AT EDGE OR WAF', cls: 'bg-warn/15 text-warn' },
+    token: { label: 'CONTROL TOKEN', cls: 'bg-accent/10 text-accent' },
+    inconclusive: { label: 'INCONCLUSIVE', cls: 'bg-panel-2 text-ink-faint' },
   };
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const host = hostOf(input.value);
-    if (!host.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
-    [summaryEl, resultsEl, rawEl].forEach((el) => el.classList.add('hidden'));
-    setStatus('bg-panel-2 text-accent border border-line', `Fetching https://${host}/robots.txt…`);
+  function chip(label: string, value: string, cls: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    const num = el('div', `font-display text-2xl font-bold ${cls}`, value);
+    const name = el('div', 'text-xs text-ink-faint', label);
+    box.append(num, name);
+    return box;
+  }
 
-    const res = await fetchText(`https://${host}/robots.txt`);
-    if (!res.ok || looksLikeHtml(res.text)) {
-      setStatus('bg-warn/10 text-warn border border-warn/30', res.status === 0 ? `Could not reach ${host} - the site blocks automated fetches or public proxies are rate-limited; try again shortly.` : `No readable robots.txt at ${host}, with no rules, every AI crawler is allowed by default.`);
+  function botRow(b: any): HTMLElement {
+    const row = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    const head = el('div', 'flex flex-wrap items-center justify-between gap-2');
+    const who = el('div', 'flex flex-wrap items-center gap-2');
+    const token = el('span', 'font-mono text-sm font-semibold text-ink', b.token);
+    const op = el('span', 'text-xs text-ink-faint', b.operator);
+    const purpose = el('span', 'rounded bg-line/40 px-2 py-0.5 text-xs text-ink-dim', b.purposeLabel);
+    who.append(token, op, purpose);
+    const v = VERDICTS[b.verdict] || VERDICTS.inconclusive;
+    const badge = el('span', `rounded px-2 py-0.5 text-xs font-semibold ${v.cls}`, v.label);
+    head.append(who, badge);
+    row.append(head);
+
+    const detail = el('div', 'mt-2 text-xs text-ink-dim');
+    const robotsLine = b.robots.rule
+      ? `robots.txt: ${b.robots.verdict} via group ${b.robots.matchedGroup ?? '*'} (${b.robots.rule})`
+      : `robots.txt: ${b.robots.verdict} (${b.robots.note})`;
+    const httpLine = b.http
+      ? `live HTTP: ${b.http.status ?? 'no answer'} (${b.http.note})`
+      : 'live HTTP: no probe (control token)';
+    detail.append(el('p', '', robotsLine));
+    detail.append(el('p', '', httpLine));
+    for (const n of b.notes as string[]) {
+      detail.append(el('p', 'mt-1 text-warn', n));
+    }
+    row.append(detail);
+    return row;
+  }
+
+  async function run(domain: string) {
+    [summaryEl, noticesEl, resultsEl].forEach((c) => { c.textContent = ''; c.classList.add('hidden'); });
+    setStatus('loading', `Fetching robots.txt and probing ${domain} once per crawler user agent, this takes a few seconds...`);
+    let report: any;
+    try {
+      const res = await fetch('/api/check/ai-crawlers?domain=' + encodeURIComponent(domain));
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setStatus('invalid', data.error || 'The check could not run for that domain.');
+        return;
+      }
+      report = data;
+    } catch {
+      setStatus('fail', `Could not reach the server for ${domain}: the check is inconclusive, nothing was blocked or allowed by this result.`);
       return;
     }
+    document.getElementById('aic-sample-note')?.classList.add('hidden');
 
-    const { groups } = parseRobots(res.text);
-    const verdicts = verdictsFor(groups);
-    const allowed = verdicts.filter((v) => v.status === 'allowed' || v.status === 'no-rules').length;
-    const blocked = verdicts.filter((v) => v.status === 'blocked').length;
-    const partial = verdicts.filter((v) => v.status === 'partial').length;
-
-    setStatus('bg-pass/10 text-pass border border-pass/30', `robots.txt found (fetched via ${res.via}), ${allowed} AI bots allowed, ${blocked} blocked.`);
-
-    summaryEl.innerHTML = '';
-    for (const [l, v, cls] of [['Allowed', String(allowed), 'text-pass'], ['Blocked', String(blocked), 'text-fail'], ['Partial', String(partial), 'text-warn'], ['Bots tracked', '12', 'text-accent']] as [string, string, string][]) {
-      summaryEl.insertAdjacentHTML('beforeend', `<div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold ${cls}">${v}</div><div class="text-xs text-ink-faint">${l}</div></div>`);
-    }
+    const counts: [string, string, string][] = [
+      ['Allowed', String(report.counts.allowed), 'text-pass'],
+      ['Disallowed', String(report.counts.disallowed), 'text-fail'],
+      ['Blocked at edge', String(report.counts.blocked), 'text-warn'],
+      ['Inconclusive', String(report.counts.inconclusive), 'text-ink-faint'],
+    ];
+    for (const [l, v, c] of counts) summaryEl.append(chip(l, v, c));
     summaryEl.classList.remove('hidden');
 
-    document.getElementById('aic-sample-note')?.classList.add('hidden');
-    resultsEl.innerHTML = '';
-    for (const v of verdicts) {
-      const badge = v.status === 'blocked'
-        ? '<span class="rounded bg-fail/15 px-2 py-0.5 text-xs font-semibold text-fail">BLOCKED</span>'
-        : v.status === 'partial'
-        ? '<span class="rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">PARTIAL</span>'
-        : '<span class="rounded bg-pass/15 px-2 py-0.5 text-xs font-semibold text-pass">ALLOWED</span>';
-      const note = v.status === 'no-rules' ? '<span class="text-xs text-ink-faint">no specific or wildcard rules, allowed by default</span>' : '';
-      resultsEl.insertAdjacentHTML('beforeend', `<div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel/60 px-4 py-3">
-        <div>
-          <span class="font-mono text-sm text-ink">${v.bot.name}</span>
-          <span class="ml-2 text-xs text-ink-faint">${v.bot.vendor}, ${v.bot.purpose}</span>
-          ${note}
-        </div>
-        ${badge}
-      </div>`);
+    const r = report.robots;
+    if (r.classification !== 'ok') {
+      setStatus('info', `robots.txt for ${domain}: ${r.note}`);
+    } else {
+      setStatus('pass', `robots.txt for ${domain}: ${r.groupCount} rule group${r.groupCount === 1 ? '' : 's'} parsed${r.note ? ' (' + r.note + ')' : ''}.`);
     }
-    resultsEl.classList.remove('hidden');
+    const notices: string[] = [];
+    if (r.managed) notices.push('Cloudflare managed robots.txt section detected: its rules sit in front of your own file and win conflicts.');
+    if (r.contentSignals) notices.push('Content-Signal directives detected (non-standard extension).');
+    if (report.llmsTxt.present) notices.push('/llms.txt is present on this domain.');
+    for (const n of notices) {
+      const item = el('div', 'rounded-md border border-warn/30 bg-warn/10 px-4 py-2 text-xs font-medium text-warn', n);
+      noticesEl.append(item);
+    }
+    if (notices.length) noticesEl.classList.remove('hidden');
 
-    rawContent.innerHTML = '';
-    for (const v of verdicts) {
-      if (v.rules.length) {
-        rawContent.insertAdjacentHTML('beforeend', `<div class="rounded border border-line bg-panel-2 p-3"><p class="font-mono text-xs text-accent">${v.bot.name}</p>${v.rules.map((r) => `<p class="font-mono text-xs text-ink-dim">${r}</p>`).join('')}</div>`);
-      }
-    }
-    rawEl.classList.remove('hidden');
+    for (const b of report.bots as any[]) resultsEl.append(botRow(b));
+    resultsEl.classList.remove('hidden');
+    setStatus(r.classification === 'ok' ? 'pass' : 'info',
+      r.classification === 'ok' ? `Done: ${report.counts.allowed} allowed, ${report.counts.disallowed} disallowed by robots.txt, ${report.counts.blocked} blocked at the edge, ${report.counts.inconclusive} inconclusive.` : `robots.txt ${r.classification}: ${r.note}`);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const domain = normalize(input.value);
+    if (!domain) { setStatus('invalid', 'Enter a valid domain, e.g. example.com'); return; }
+    run(domain);
   });
+  for (const btn of Array.from(document.querySelectorAll('.aic-example'))) {
+    btn.addEventListener('click', () => {
+      const d = (btn as HTMLElement).dataset.domain || '';
+      input.value = d;
+      const domain = normalize(d);
+      if (domain) run(domain);
+    });
+  }
 </script>
