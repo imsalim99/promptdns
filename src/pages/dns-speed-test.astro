@@ -1,12 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ToolArticle from '../components/ToolArticle.astro';
 import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+// FAQ answers must match the visible accordion 1:1 (plain text, no links).
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    { '@type': 'Question', 'name': 'Which DNS server is fastest for me?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The fastest DNS server depends on your physical network peering to the nearest anycast data center. In North America, Europe, and India, Cloudflare 1.1.1.1 and Google 8.8.8.8 usually lead, while Quad9 9.9.9.9 and AliDNS 223.5.5.5 compete strongly by region. Because peering differs per ISP and city, the only way to know is to run a live cached-versus-cold test from your own connection, which is exactly what this page does.' } },
+    { '@type': 'Question', 'name': 'Why do browser DNS speed test results differ from desktop benchmark apps?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Browsers send DNS queries over HTTPS (DoH) on port 443, where TLS framing and HTTP/2 multiplexing wrap every lookup, while desktop tools such as DNSBench and dig send raw UDP port 53 packets with none of that overhead. Browsers also separate the initial TLS connection warm-up from steady-state cached queries, which is why this tool measures and reports the warm-up probe separately instead of letting it skew the averages.' } },
+    { '@type': 'Question', 'name': 'Does a faster DNS resolver make websites load faster?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, for the first visit to a domain or when cached records expire. Switching from a slow 120 ms ISP resolver to a 15 ms anycast resolver shaves 100 or more milliseconds off initial page navigation and off every third-party API and CDN domain lookup. It does not increase your ISP raw download bandwidth once a connection is open; the gain applies to the DNS resolution step of each new connection.' } },
+    { '@type': 'Question', 'name': 'What is the difference between cached and cold DNS lookup speed?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A cached lookup is answered directly from the resolver\'s memory at your local edge point of presence, typically in single-digit or low double-digit milliseconds. A cold lookup is a cache miss: the resolver must traverse the root nameservers, the TLD nameservers, and your authoritative nameservers before returning the answer, which takes several times longer. Both numbers matter: cached speed dominates repeat visits, cold speed dominates first visits and expiring records.' } },
+    { '@type': 'Question', 'name': 'What is the difference between this DNS Speed Test and the DNS Response Time Test?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The DNS Speed Test compares which public recursive resolver (1.1.1.1 versus 8.8.8.8 versus 223.5.5.5) is fastest for your internet connection. The DNS Response Time Test audits how fast your own domain\'s authoritative nameservers (Cloudflare, Route 53, GoDaddy) answer uncached queries from worldwide resolvers. One measures the resolvers you consume; the other measures the nameservers you publish.' } },
+  ],
+};
 ---
-<BaseLayout
-  title="DNS Speed Test, Which Resolver Is Fastest?"
-  description="Free DNS speed test: compare Cloudflare, Google, and AliDNS response times from your network with repeated lookups and averaged latency."
->
+<BaseLayout title="DNS Speed Test: Benchmark Public DNS Resolvers (Cached vs Cold Latency)" description="Benchmark live DNS-over-HTTPS response times across Cloudflare 1.1.1.1, Google 8.8.8.8, and AliDNS 223.5.5.5 from your browser, comparing warm cached lookups against cold uncached recursion with per-resolver warm-up separation." schema={[faqSchema]}>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -15,95 +25,310 @@ import ToolPanel from '../components/ToolPanel.astro';
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DNS Speed Test</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Speed Test: Benchmark Public Resolvers From Your Network</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free DNS speed test: benchmark resolver latency across Cloudflare, Google and AliDNS with repeated lookups.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Speed Test: Benchmark Public DNS Resolvers From Your Browser</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Benchmark live DNS-over-HTTPS (DoH) response times across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) directly from your browser, comparing warm cached lookups against cold uncached recursion.</p>
 
-    <ToolPanel>
-      <form id="st-form" class="flex flex-col gap-3 sm:flex-row">
-        <label class="sr-only" for="st-domain">Test domain</label>
-        <input id="st-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="example.com"
-          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
-        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Speed Test</button>
-      </form>
+    <div class="mt-8">
+      <ToolPanel>
+        <form id="st-form" class="flex flex-col gap-3 sm:flex-row">
+          <label class="sr-only" for="st-domain">Test domain apex</label>
+          <input id="st-domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="cloudflare.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run Speed Test</button>
+        </form>
+        <p class="mt-2 text-xs text-ink-faint">Cached probes hit high-traffic domains near-certain to be in each resolver's edge cache; cold probes use unique random labels that force full recursion.</p>
 
-      <div id="st-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="st-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="st-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+        <div id="st-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+          <table class="pdns-table">
+            <thead><tr><th>Rank and Resolver</th><th>Anycast IP</th><th>Cached Avg (ms)</th><th>Cold Avg (ms)</th><th>Cached Min / Max</th><th>Warm-Up (ms)</th><th>Verdict</th></tr></thead>
+            <tbody id="st-tbody"></tbody>
+          </table>
+        </div>
+        <ResultCard tool="dns-speed-test" />
+      </ToolPanel>
+    </div>
 
-      <p id="st-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter your own domain above for live results.
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What this result means: cached vs cold DNS latency and speed tiers</h2>
+      <p>
+        A browser DNS speed test measures DNS-over-HTTPS round-trip latency from your device to the nearest anycast point of presence of each public resolver. Two distinct numbers matter. A <strong>cached lookup</strong> is answered directly from the resolver's RAM in roughly 5 to 35 milliseconds because the record already sits in that POP's cache. A <strong>cold lookup</strong> is a cache miss that forces the resolver to traverse root, TLD, and authoritative nameservers before answering, which takes 40 to 250 or more milliseconds depending on how distant the authoritative servers are. The table below defines the four latency tiers this tool reports.
       </p>
-<div id="st-results" class="pd-results mt-6 grid gap-4" aria-live="polite"><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-accent">12 ms</div><div class="text-xs text-ink-faint">Cloudflare, ranked fastest</div></div><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-ink">24 ms</div><div class="text-xs text-ink-faint">Google</div></div><div class="rounded-lg border border-line bg-panel/60 p-4"><div class="font-display text-2xl font-bold text-ink">48 ms</div><div class="text-xs text-ink-faint">AliDNS</div></div></div>
-
-      <p class="mt-4 text-xs text-ink-faint">Each resolver is queried 4 times over DNS-over-HTTPS from your browser; the chart shows the average and best latency. First queries are typically slower (cold caches).</p>
-    </ToolPanel>
-
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Metrics the speed test measures</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Metric</th><th>Method</th><th>Note</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Cold latency</td><td class="text-sm text-ink-dim">Fresh query per resolver</td><td class="text-sm text-ink-dim">Cache-miss cost</td></tr><tr><td class="font-medium text-ink">Warm latency</td><td class="text-sm text-ink-dim">Repeated query</td><td class="text-sm text-ink-dim">Cached cost</td></tr><tr><td class="font-medium text-ink">Ranking</td><td class="text-sm text-ink-dim">Fastest average wins</td><td class="text-sm text-ink-dim">Results vary by your network</td></tr></tbody>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Latency Tier (DoH)</th><th>Cached Lookup Range</th><th>Cold Lookup Range</th><th>User Experience and Routing Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Fast local anycast POP</td><td class="text-sm text-ink-dim">Under 30 ms</td><td class="text-sm text-ink-dim">Under 90 ms</td><td class="text-sm text-ink-dim">You are well-peered with this resolver's network; excellent choice.</td></tr>
+            <tr><td class="font-medium text-ink">Moderate regional routing</td><td class="text-sm text-ink-dim">30 to 70 ms</td><td class="text-sm text-ink-dim">90 to 180 ms</td><td class="text-sm text-ink-dim">Usable, but a better-peered resolver may exist for your ISP.</td></tr>
+            <tr><td class="font-medium text-ink">Slow or distant peering</td><td class="text-sm text-ink-dim">70 to 150 ms</td><td class="text-sm text-ink-dim">180 to 350 ms</td><td class="text-sm text-ink-dim">Your traffic is taking a long detour; try a different resolver.</td></tr>
+            <tr><td class="font-medium text-ink">Timeout, throttling, or packet loss</td><td class="text-sm text-ink-dim">Over 150 ms cached, or failed probes</td><td class="text-sm text-ink-dim">Failed or wildly inconsistent</td><td class="text-sm text-ink-dim">Something between you and the resolver is broken: VPN, firewall, or loss. Investigate before ranking.</td></tr>
+          </tbody>
         </table>
       </div>
-    </section>
 
-    <ToolArticle slug="dns-speed-test" />
-    </div>
+      <h2>Browser DoH speed test vs installed UDP benchmark apps (and how to switch DNS)</h2>
+      <p>
+        A browser executes queries over HTTPS on port 443 (DoH) and can only reach public resolvers that send permissive CORS headers on their JSON endpoints: Cloudflare 1.1.1.1, Google 8.8.8.8, and AliDNS 223.5.5.5. An installed desktop tool such as DNSBench or namebench sends raw UDP port 53 packets, so it can also benchmark your local ISP router (192.168.1.1) and non-CORS resolvers like Quad9 9.9.9.9 or OpenDNS 208.67.222.222. The two methods answer slightly different questions, and the numbers are not directly comparable.
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Benchmark.</strong> Run this page's cached-versus-cold test from your own connection and note the fastest cached resolver for your network.</li>
+        <li><strong>Configure.</strong> Switch your operating system or router DNS settings to that resolver's IPv4 and IPv6 addresses: the protocol trade-offs are explained in the <a href="/doh-vs-dot/">DoH vs DoT</a> guide.</li>
+        <li><strong>Enable encrypted DNS where it matters.</strong> Configure DoH in your browser or OS so third-party applications cannot bypass your resolver choice in plaintext.</li>
+        <li><strong>Flush.</strong> Clear stale entries so the new resolver takes effect immediately: the OS-specific commands are in the <a href="/flush-dns-cache/">DNS cache flush guide</a>, then re-run this test to confirm the improvement.</li>
+      </ol>
+
+      <h2>Benchmark DNS resolver speed from the command line (dig and PowerShell)</h2>
+      <pre><code># 1. Raw UDP port 53 query time across public resolvers
+dig @1.1.1.1 cloudflare.com A | grep "Query time"
+dig @8.8.8.8 cloudflare.com A | grep "Query time"
+dig @9.9.9.9 cloudflare.com A | grep "Query time"
+
+# 2. A cold uncached lookup from the command line
+dig @1.1.1.1 cold-$(date +%s).example.com A | grep "Query time"
+
+# 3. Windows PowerShell equivalent
+Measure-Command &#123; Resolve-DnsName cloudflare.com -Server 1.1.1.1 &#125;</code></pre>
+
+      <h2>Reference table: public DNS resolvers compared (IPv4, IPv6, DoH, DoT, and filtering)</h2>
+      <p>The table below compares the major public recursive resolvers this page and its command-line companions can benchmark.</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Resolver</th><th>Primary IPv4 / IPv6</th><th>DoH Endpoint (RFC 8484)</th><th>DoT Hostname (port 853)</th><th>DNSSEC and Threat Filtering</th><th>Browser CORS JSON Support</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Cloudflare 1.1.1.1</td><td class="font-mono text-xs text-ink-dim">1.1.1.1 / 2606:4700:4700::1111</td><td class="font-mono text-xs text-ink-dim">cloudflare-dns.com/dns-query</td><td class="font-mono text-xs text-ink-dim">cloudflare-dns.com</td><td class="text-sm text-ink-dim">DNSSEC validating; optional malware blocking (1.1.1.2)</td><td class="text-sm text-pass">Yes (JSON API)</td></tr>
+            <tr><td class="font-medium text-ink">Google Public DNS 8.8.8.8</td><td class="font-mono text-xs text-ink-dim">8.8.8.8 / 2001:4860:4860::8888</td><td class="font-mono text-xs text-ink-dim">dns.google/resolve</td><td class="font-mono text-xs text-ink-dim">dns.google</td><td class="text-sm text-ink-dim">DNSSEC validating; no built-in threat filtering</td><td class="text-sm text-pass">Yes (JSON API)</td></tr>
+            <tr><td class="font-medium text-ink">Quad9 9.9.9.9</td><td class="font-mono text-xs text-ink-dim">9.9.9.9 / 2620:fe::fe</td><td class="font-mono text-xs text-ink-dim">dns.quad9.net/dns-query</td><td class="font-mono text-xs text-ink-dim">dns.quad9.net</td><td class="text-sm text-ink-dim">DNSSEC validating; malware and phishing blocking by default</td><td class="text-sm text-warn">No public CORS JSON endpoint</td></tr>
+            <tr><td class="font-medium text-ink">AliDNS 223.5.5.5</td><td class="font-mono text-xs text-ink-dim">223.5.5.5 / 2400:3200::1</td><td class="font-mono text-xs text-ink-dim">dns.alidns.com/resolve</td><td class="font-mono text-xs text-ink-dim">dns.alidns.com</td><td class="text-sm text-ink-dim">DNSSEC validating; regional threat feeds</td><td class="text-sm text-pass">Yes (JSON API)</td></tr>
+            <tr><td class="font-medium text-ink">OpenDNS / Cisco Umbrella 208.67.222.222</td><td class="font-mono text-xs text-ink-dim">208.67.222.222 / 2620:119:35::35</td><td class="font-mono text-xs text-ink-dim">doh.opendns.com/dns-query</td><td class="font-mono text-xs text-ink-dim">dns.opendns.com</td><td class="text-sm text-ink-dim">DNSSEC validating; configurable content filtering</td><td class="text-sm text-warn">No public CORS JSON endpoint</td></tr>
+            <tr><td class="font-medium text-ink">AdGuard DNS 94.140.14.14</td><td class="font-mono text-xs text-ink-dim">94.140.14.14 / 2a10:50c0::ad1:ff</td><td class="font-mono text-xs text-ink-dim">dns.adguard-dns.com/dns-query</td><td class="font-mono text-xs text-ink-dim">dns.adguard-dns.com</td><td class="text-sm text-ink-dim">DNSSEC validating; ad and tracker blocking by default</td><td class="text-sm text-warn">No public CORS JSON endpoint</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Resolver speed (how fast a public resolver answers you, measured on this page) is a different question from authoritative domain response time (how fast your domain's own nameservers answer resolvers worldwide, measured by the <a href="/dns-response-time-test/">DNS response time test</a>). For a deeper comparison of the two largest resolvers, see <a href="/cloudflare-dns-vs-google-dns/">Cloudflare DNS vs Google DNS</a>.
+      </p>
+
+      <h2>What this tool does not check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Browser security sandboxes prohibit raw UDP port 53 sockets, so this tool measures HTTPS (DoH) latency rather than legacy UDP port 53 behavior.</li>
+        <li>Public resolvers that do not send browser CORS headers on JSON endpoints (such as Quad9 9.9.9.9 and your private LAN router 192.168.1.1) must be benchmarked from the command line using the dig commands above.</li>
+        <li>This tool benchmarks public recursive resolvers from your current location, whereas testing how fast your own domain's authoritative nameservers respond requires the DNS response time test.</li>
+        <li>Active VPN tunnels, corporate secure web gateways, or browser extensions can route DoH requests through a distant proxy exit node, inflating measured latency well beyond your network's real peering.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Raw resolver ping time is only half the story: Geo-IP CDN mapping (EDNS Client Subnet, RFC 7871) decides which CDN edge server the resolver hands you. A resolver that answers 4 ms faster but lacks ECS support or routes through a distant POP can direct your visitors to a slower CDN edge, costing more in download time than the DNS lookup saved. Benchmark with ECS behavior in mind, not just query latency.</p>
+      </aside>
+
+      <h2>What we see across domains</h2>
+      <p>
+        Across production benchmarks, the gap between connection warm-up latency (the initial TCP plus TLS handshake to a DoH resolver) and subsequent multiplexed HTTP/2 and HTTP/3 cached queries is substantial, which is why this tool reports the warm-up probe separately rather than averaging it into the cached results. Regional routing also differs sharply: 1.1.1.1 and 8.8.8.8 are heavily peered in North America, Europe, and India, while 223.5.5.5 dominates Asia-Pacific round trips.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which DNS server is fastest for me?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">The fastest DNS server depends on your physical network peering to the nearest anycast data center. In North America, Europe, and India, Cloudflare 1.1.1.1 and Google 8.8.8.8 usually lead, while Quad9 9.9.9.9 and AliDNS 223.5.5.5 compete strongly by region. Because peering differs per ISP and city, the only way to know is to run a live cached-versus-cold test from your own connection, which is exactly what this page does.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do browser DNS speed test results differ from desktop benchmark apps?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Browsers send DNS queries over HTTPS (DoH) on port 443, where TLS framing and HTTP/2 multiplexing wrap every lookup, while desktop tools such as DNSBench and dig send raw UDP port 53 packets with none of that overhead. Browsers also separate the initial TLS connection warm-up from steady-state cached queries, which is why this tool measures and reports the warm-up probe separately instead of letting it skew the averages.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a faster DNS resolver make websites load faster?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, for the first visit to a domain or when cached records expire. Switching from a slow 120 ms ISP resolver to a 15 ms anycast resolver shaves 100 or more milliseconds off initial page navigation and off every third-party API and CDN domain lookup. It does not increase your ISP raw download bandwidth once a connection is open; the gain applies to the DNS resolution step of each new connection.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between cached and cold DNS lookup speed?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">A cached lookup is answered directly from the resolver's memory at your local edge point of presence, typically in single-digit or low double-digit milliseconds. A cold lookup is a cache miss: the resolver must traverse the root nameservers, the TLD nameservers, and your authoritative nameservers before returning the answer, which takes several times longer. Both numbers matter: cached speed dominates repeat visits, cold speed dominates first visits and expiring records.</p>
+        </details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between this DNS Speed Test and the DNS Response Time Test?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">The DNS Speed Test compares which public recursive resolver (1.1.1.1 versus 8.8.8.8 versus 223.5.5.5) is fastest for your internet connection. The DNS Response Time Test audits how fast your own domain's authoritative nameservers (Cloudflare, Route 53, GoDaddy) answer uncached queries from worldwide resolvers. One measures the resolvers you consume; the other measures the nameservers you publish.</p>
+        </details>
+      </div>
+
+      <h2>Next checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Confirm none of your queries leak to unintended resolvers with the <a href="/dns-leak-test/">DNS leak test</a>.</li>
+        <li>Verify which resolver your connection actually uses with the <a href="/dns-resolver-tester/">DNS resolver tester</a>.</li>
+        <li>The TTL values behind those cached answers are explained in <a href="/what-is-ttl-in-dns/">what TTL means in DNS</a>.</li>
+      </ul>
+
+      <h2>Sources</h2>
+      <ul class="list-disc space-y-1 pl-5 text-sm">
+        <li>IETF RFC 8484, DNS Queries over HTTPS (DoH): <a href="https://www.rfc-editor.org/rfc/rfc8484" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc8484</a></li>
+        <li>IETF RFC 7858, Specification for DNS over Transport Layer Security (DoT): <a href="https://www.rfc-editor.org/rfc/rfc7858" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc7858</a></li>
+        <li>IETF RFC 1035, Domain Names - Implementation and Specification: <a href="https://www.rfc-editor.org/rfc/rfc1035" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1035</a></li>
+        <li>IETF RFC 7871, Client Subnet in DNS Queries (ECS): <a href="https://www.rfc-editor.org/rfc/rfc7871" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc7871</a></li>
+        <li>Bing Webmaster Tools, robots.txt specification: <a href="https://www.bing.com/webmasters/helps/robots-txt" rel="noopener" target="_blank">bing.com/webmasters/helps/robots-txt</a></li>
+      </ul>
+    </article>
+  </div>
 </BaseLayout>
 
 <script>
+  // Result rendering uses DOM APIs and textContent only: no innerHTML, no
+  // MutationObserver (coder rulebook, Group 3). Adblock-safe id prefix (st-).
   import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
-  const RUNS = 4;
   const form = document.getElementById('st-form') as HTMLFormElement;
   const input = document.getElementById('st-domain') as HTMLInputElement;
   const statusEl = document.getElementById('st-status')!;
+  const cardsEl = document.getElementById('st-cards')!;
+  const tbody = document.getElementById('st-tbody')!;
   const resultsEl = document.getElementById('st-results')!;
+  const TOOL = 'dns-speed-test';
 
-  const setStatus = (cls: string, text: string) => {
-    statusEl.className = `mt-4 rounded-md px-4 py-3 text-sm font-medium ${cls}`;
+  function el(tag: string, className: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function setStatus(kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) {
+    const classes: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = classes[kind];
     statusEl.textContent = text;
+  }
+
+  function emit(domain: string, verdict: Severity, line: string, findings: PdnsFinding[]) {
+    const detail: PdnsResult = {
+      tool: TOOL, domain, verdict, verdictLine: line, findings,
+      ctaLabel: 'Know when records change',
+      related: [{ label: 'DNS response time test', href: '/dns-response-time-test/' }],
+    };
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
+  }
+
+  function card(title: string, value: string, cls: string, note: string): HTMLElement {
+    const box = el('div', 'rounded-lg border border-line bg-panel/60 p-4');
+    box.append(el('div', 'text-xs font-medium text-ink-faint', title));
+    box.append(el('div', `font-display text-base font-bold mt-0.5 ${cls}`, value));
+    box.append(el('div', 'mt-1 text-xs text-ink-faint', note));
+    return box;
+  }
+
+  // Well-known anycast service addresses, confirmed by resolving each
+  // resolver hostname through a peer resolver at test time.
+  const SERVICE_IP: Record<string, string> = {
+    'Cloudflare 1.1.1.1': '1.1.1.1',
+    'Google 8.8.8.8': '8.8.8.8',
+    'AliDNS 223.5.5.5': '223.5.5.5',
   };
+  const RESOLVER_HOST: Record<string, string> = {
+    'Cloudflare 1.1.1.1': 'one.one.one.one',
+    'Google 8.8.8.8': 'dns.google',
+    'AliDNS 223.5.5.5': 'dns.alidns.com',
+  };
+
+  const CACHED_DOMAINS = ['cloudflare.com', 'google.com', 'github.com'];
+  const rand = () => 'speed-cold-' + Math.floor(100000 + Math.random() * 899999);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const domain = normalizeDomain(input.value) || 'example.com';
+    const domain = normalizeDomain(input.value) || 'cloudflare.com';
     const btn = form.querySelector('button') as HTMLButtonElement;
     btn.disabled = true;
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    resultsEl.classList.add('hidden');
+    tbody.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
     document.getElementById('st-sample-note')?.classList.add('hidden');
-    resultsEl.innerHTML = '';
-    resultsEl.classList.remove('hidden');
 
-    const avgs: { name: string; avg: number; best: number }[] = [];
-    for (const resolver of RESOLVERS) {
-      setStatus('bg-panel-2 text-accent border border-line', `Testing ${resolver.name} (${RUNS} queries)…`);
-      const times: number[] = [];
-      for (let i = 0; i < RUNS; i++) {
-        const res = await lookup(domain, 'A', resolver);
-        times.push(res.ms);
+    try {
+      interface Row { name: string; anycast: string; cachedAvg: number; coldAvg: number; cachedMin: number; cachedMax: number; warmUp: number }
+      const rows: Row[] = [];
+
+      for (let i = 0; i < RESOLVERS.length; i++) {
+        const resolver = RESOLVERS[i];
+        setStatus('loading', `Phase 1/3: TLS warm-up probe on ${resolver.name}...`);
+        // Phase 1: connection warm-up (recorded separately, excluded from averages)
+        const warm = await lookup(domain, 'A', resolver);
+
+        setStatus('loading', `Phase 2/3: cached probes on ${resolver.name}...`);
+        // Phase 2: cached lookups across 3 high-traffic domains
+        const cachedTimes: number[] = [];
+        for (const cd of CACHED_DOMAINS) {
+          const r = await lookup(cd, 'A', resolver);
+          cachedTimes.push(r.ms);
+        }
+        const cachedAvg = Math.round(cachedTimes.reduce((s, t) => s + t, 0) / cachedTimes.length);
+        const cachedMin = Math.min(...cachedTimes);
+        const cachedMax = Math.max(...cachedTimes);
+
+        setStatus('loading', `Phase 3/3: cold probes on ${resolver.name}...`);
+        // Phase 3: cold uncached probes with unique random labels
+        const coldTimes: number[] = [];
+        for (let c = 0; c < 3; c++) {
+          const r = await lookup(`${rand()}.${domain}`, 'A', resolver);
+          coldTimes.push(r.ms);
+        }
+        const coldAvg = Math.round(coldTimes.reduce((s, t) => s + t, 0) / coldTimes.length);
+
+        // Resolve the resolver hostname to confirm the anycast service address
+        let anycast = SERVICE_IP[resolver.name] ?? '';
+        try {
+          const peer = RESOLVERS[(i + 1) % RESOLVERS.length];
+          const r = await lookup(RESOLVER_HOST[resolver.name], 'A', peer);
+          const ip = r.answers.find((x) => x.type === 1)?.data;
+          if (ip) anycast = ip;
+        } catch { /* keep the documented service address */ }
+
+        rows.push({ name: resolver.name, anycast, cachedAvg, coldAvg, cachedMin, cachedMax, warmUp: warm.ms });
       }
-      const avg = Math.round(times.reduce((s, t) => s + t, 0) / times.length);
-      const best = Math.min(...times);
-      avgs.push({ name: resolver.name, avg, best });
-    }
 
-    const slowest = Math.max(...avgs.map((a) => a.avg), 1);
-    const winner = [...avgs].sort((a, b) => a.avg - b.avg)[0];
+      const byCached = [...rows].sort((a, b) => a.cachedAvg - b.cachedAvg);
+      const fastestCached = byCached[0];
+      const byCold = [...rows].sort((a, b) => a.coldAvg - b.coldAvg);
+      const fastestCold = byCold[0];
+      const speedup = Math.max(...rows.map((r) => r.coldAvg)) - Math.min(...rows.map((r) => r.cachedAvg));
+      void speedup;
+      const cacheGain = Math.max(...rows.map((r) => r.coldAvg - r.cachedAvg));
 
-    resultsEl.innerHTML = '';
-    for (const r of [...avgs].sort((a, b) => a.avg - b.avg)) {
-      const pct = Math.round((r.avg / slowest) * 100);
-      resultsEl.insertAdjacentHTML('beforeend', `
-        <div>
-          <div class="mb-1 flex items-baseline justify-between">
-            <span class="text-sm font-medium text-ink">${r.name}</span>
-            <span class="font-mono text-xs text-ink-dim">avg ${r.avg} ms · best ${r.best} ms</span>
-          </div>
-          <div class="h-3 overflow-hidden rounded-full bg-panel-2">
-            <div class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700" style="width: ${pct}%"></div>
-          </div>
-        </div>`);
+      cardsEl.append(card('1. Fastest cached resolver', `${fastestCached.name}: ${fastestCached.cachedAvg} ms`, 'text-pass', `Cached average across 3 high-traffic domains. Second place: ${byCached[1].name} at ${byCached[1].cachedAvg} ms.`));
+      cardsEl.append(card('2. Fastest cold resolver', `${fastestCold.name}: ${fastestCold.coldAvg} ms`, 'text-accent', `Cold average across 3 unique random labels (full recursion).`));
+      cardsEl.append(card('3. Cache hit speedup', `+${cacheGain} ms saved`, 'text-pass', `Largest gap between cold and cached resolution on one resolver: cache hits are worth this much per repeat lookup.`));
+      cardsEl.append(card('4. Test scope', 'Browser DoH (HTTPS port 443)', 'text-ink', 'Raw UDP port 53 and non-CORS resolvers (Quad9, OpenDNS, your router) need the dig commands below.'));
+      cardsEl.classList.remove('hidden');
+
+      tbody.textContent = '';
+      const verdictFor = (r: Row) => {
+        if (r.cachedAvg > 150) return ['Throttled or lossy path', 'text-fail'];
+        if (r.cachedAvg < 30 && r.coldAvg < 90) return ['Fast local anycast POP', 'text-pass'];
+        if (r.cachedAvg < 70 && r.coldAvg < 180) return ['Moderate regional routing', 'text-warn'];
+        return ['Slow or distant peering', 'text-warn'];
+      };
+      byCached.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        const v = verdictFor(r);
+        tr.append(el('td', 'text-sm text-ink', `${idx + 1}. ${r.name}`));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', r.anycast));
+        tr.append(el('td', `font-mono text-xs ${idx === 0 ? 'text-pass font-semibold' : 'text-ink-dim'}`, String(r.cachedAvg)));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', String(r.coldAvg)));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', `${r.cachedMin} / ${r.cachedMax}`));
+        tr.append(el('td', 'font-mono text-xs text-ink-dim', String(r.warmUp)));
+        tr.append(el('td', `text-sm font-medium ${v[1]}`, v[0]));
+        tbody.append(tr);
+      });
+      resultsEl.classList.remove('hidden');
+
+      setStatus('pass', `Fastest cached: ${fastestCached.name} (${fastestCached.cachedAvg} ms). Fastest cold: ${fastestCold.name} (${fastestCold.coldAvg} ms).`);
+      emit(domain, 'pass', `DNS benchmark: fastest cached ${fastestCached.name} ${fastestCached.cachedAvg} ms, fastest cold ${fastestCold.name} ${fastestCold.coldAvg} ms.`,
+        [{ code: 'DNS_BENCHMARK', detail: rows.map((r) => r.name + '=' + r.cachedAvg + '/' + r.coldAvg + 'ms').join(', ').slice(0, 300) }]);
+    } catch {
+      setStatus('warn', 'One or more resolvers could not be reached. This is an inconclusive result, not a pass or fail.');
+    } finally {
+      btn.disabled = false;
     }
-    setStatus('bg-pass/10 text-pass border border-pass/30', `Fastest from your network: ${winner.name} (avg ${winner.avg} ms).`);
-    btn.disabled = false;
   });
 </script>

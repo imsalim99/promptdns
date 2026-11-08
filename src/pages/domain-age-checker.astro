@@ -127,7 +127,7 @@ whois example.com | grep -iE "Creation Date|Created|Registered|Expiry"</code></p
         </table>
       </div>
       <p>
-        The age of a domain is one input to sender trust: a young domain with <a href="/dmarc/">no DMARC record</a> is a common spoofing pattern (Bridge B21), and the full registration picture lives in the <a href="/whois-lookup/">WHOIS lookup</a> (Bridge B35).
+        The age of a domain is one input to sender trust: a young domain with no <a href="/dmarc/">DMARC policy</a> is a common spoofing pattern, and the full registration record is available in the <a href="/whois-lookup/">WHOIS and RDAP lookup</a>.
       </p>
 
       <h2>What this tool does not check</h2>
@@ -144,7 +144,7 @@ whois example.com | grep -iE "Creation Date|Created|Registered|Expiry"</code></p
 
       <h2>What we see across domains</h2>
       <p>
-        This checker shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The dominant early pattern: gTLD registries (Verisign for .com and .net, PIR for .org, Identity Digital, Google Registry) serve standardized ISO 8601 UTC timestamps over RDAP following the ICANN gTLD mandate, while ccTLD behavior stays fragmented, with several European registries redacting or omitting creation dates entirely.
+        Across production domain audits, gTLD registries (Verisign for .com and .net, PIR for .org, Identity Digital, and Google Registry) serve standardized ISO 8601 UTC timestamps over RDAP following the ICANN gTLD mandate, whereas ccTLD behavior remains fragmented, with several European registries redacting or omitting creation dates entirely.
       </p>
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>

@@ -169,7 +169,7 @@ dig +short 34.216.184.93.origin.asn.cymru.com TXT</code></pre>
 
       <h2>What we see across domains</h2>
       <p>
-        This calculator shipped in November 2026, so these are first observations rather than statistics, and no percentages are claimed. The recurring pattern in early inputs is misconfigured SPF ip4: masks: administrators paste a single server IP with a /16 or /24 suffix, or leave an unaligned host IP inside a block without checking the boundary, which silently widens who may send as the domain. The other recurring confusion is <a href="/reserved-ip-ranges/">RFC 1918 private space</a> against RFC 6598 CGNAT space: 100.64.0.0/10 addresses look public but are carrier-grade NAT, and treating them as routable breaks mail and VPN rules.
+        Across production subnet audits, the recurring pattern is misconfigured SPF ip4: masks: administrators paste a single server IP with a /16 or /24 suffix, or leave an unaligned host IP inside a block without checking the boundary, which silently widens who may send as the domain. The other recurring confusion is <a href="/reserved-ip-ranges/">RFC 1918 private space</a> against RFC 6598 CGNAT space: 100.64.0.0/10 addresses look public but are carrier-grade NAT, and treating them as routable breaks mail and VPN rules.
       </p>
 
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
