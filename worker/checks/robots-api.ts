@@ -10,14 +10,14 @@
  * fetches polite.
  */
 
-import { fetchRobots, parseRobots } from './robots';
+import { fetchRobots, parseRobots, type RobotsFetch } from './robots';
 import { normalizeDomain } from './ai-crawlers';
 
 const CACHE_TTL_MS = 120_000;
 const CACHE_MAX = 50;
 const robotsCache = new Map<string, { at: number; payload: unknown }>();
 
-export async function handleRobotsCheck(request: Request, _env: unknown): Promise<Response> {
+export async function handleRobotsCheck(request: Request, env: { ASSETS?: { fetch(request: Request): Promise<Response> } }): Promise<Response> {
   if (request.method === 'POST') {
     const body = (await request.json().catch(() => null)) as { content?: string } | null;
     if (!body || typeof body.content !== 'string' || !body.content.trim()) {
@@ -46,7 +46,25 @@ export async function handleRobotsCheck(request: Request, _env: unknown): Promis
   const hit = robotsCache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return Response.json(hit.payload);
 
-  const fetched = await fetchRobots(domain);
+  // A Worker fetching its own zone re-enters the same Worker route, which
+  // Cloudflare blocks in production ( surfacing as 522 ): serve self-domain
+  // scans straight from the asset bundle instead of the network.
+  const selfHost = normalizeDomain(url.hostname) || '';
+  let fetched: RobotsFetch;
+  if (env.ASSETS && domain === selfHost) {
+    const res = await env.ASSETS.fetch(new Request('https://' + domain + '/robots.txt'));
+    const body = res.ok ? await res.text() : null;
+    fetched = {
+      status: res.status,
+      classification: res.ok ? 'ok' : res.status >= 400 && res.status < 500 ? 'unavailable-4xx' : 'unreachable-5xx',
+      body,
+      finalUrl: 'https://' + domain + '/robots.txt',
+      redirects: 0,
+      note: 'self-domain scan: served from the same asset bundle',
+    };
+  } else {
+    fetched = await fetchRobots(domain);
+  }
   if (fetched.body === null) {
     const payload = {
       ok: true,
