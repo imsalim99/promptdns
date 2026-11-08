@@ -7,34 +7,42 @@ const faq = {
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Is my home IP address static or dynamic?",
+      "name": "How do I tell if I have a dynamic or static IP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Almost all residential home internet connections use a dynamic public IP address assigned automatically by your ISP's DHCP server. Unless you specifically pay your ISP an extra monthly fee for a static IP add-on or business plan, your public IP is dynamic."
+        "text": "On Windows, open Command Prompt and run ipconfig /all: if DHCP Enabled says Yes under your active adapter, your IP is dynamic. On macOS, System Settings > Network > TCP/IP shows 'Using DHCP' for dynamic addresses. On Linux, ip a displays the word 'dynamic' with a lease countdown. For your public WAN IP, check your router's status page or compare your IP before and after a router restart: if it changes, your ISP assigns dynamic addresses."
       }
     },
     {
       "@type": "Question",
-      "name": "Is DHCP the same as a dynamic IP address?",
+      "name": "Is 192.168 a static IP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No, DHCP (Dynamic Host Configuration Protocol) is the automated network protocol and server software that hands out IP addresses, while a dynamic IP address is the temporary numerical address that your device receives from the DHCP server."
+        "text": "No, 192.168.x.x is not automatically a static IP; it is a private local network (LAN) IP range defined in RFC 1918. Your Wi-Fi router assigns 192.168.x.x addresses to devices inside your home, and that assignment can be dynamic (DHCP lease) or static (a DHCP reservation pinning a specific IP to a device MAC address). This is entirely separate from whether your ISP gives your router a static or dynamic public WAN IP."
       }
     },
     {
       "@type": "Question",
-      "name": "Is a static IP or dynamic IP better for gaming and streaming?",
+      "name": "Is DHCP the same as a dynamic IP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "A dynamic IP address is just as fast as a static IP for online gaming and video streaming because IP assignment type does not affect bandwidth or ping latency. You only need a static IP (or a public non-CGNAT dynamic IP) if you host a dedicated game server for others to join. In practice, most home gamers experience identical network performance on dynamic connections without paying dedicated IP surcharges."
+        "text": "Yes, in everyday networking a dynamic IP address is an IP address assigned automatically by a DHCP (Dynamic Host Configuration Protocol, RFC 2131) server for a temporary lease period. The one edge case is a DHCP reservation (also called a static lease), where the DHCP server always assigns the exact same IP to a specific MAC address: the mechanism is still DHCP, but the outcome mimics a static assignment."
       }
     },
     {
       "@type": "Question",
-      "name": "How can I change my dynamic IP address to a new one?",
+      "name": "Why does an outbound email server need a static IP with matching PTR?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "To get a new dynamic public IP from your ISP, unplug your modem and Wi-Fi router from power for 15 to 30 minutes (or overnight if your ISP uses long DHCP leases) so your current lease expires and the ISP assigns a fresh IP when you reconnect. In real-world network troubleshooting, we recommend checking your router WAN interface first to confirm whether your provider uses Carrier-Grade NAT (CGNAT), which prevents public IP rotation entirely."
+        "text": "Receiving mail gateways perform reverse DNS lookups on every connecting IP: if the PTR hostname does not resolve back to the connecting IP (FCrDNS), or if the IP sits on a known dynamic range listed in the Spamhaus PBL, the message is rejected or spam-foldered. A static IP lets you publish a custom PTR record matching your mail server hostname and avoids the PBL listing that dynamic ranges carry."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is Dynamic DNS (DDNS) and when do I need it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Dynamic DNS (DDNS) is a service that automatically updates a domain name's DNS A record whenever your ISP assigns a new dynamic public IP. A background client on your router or server detects the change and pushes the new address to the DDNS provider via API. Use DDNS when you need to reach a home lab, NAS, or self-hosted service behind a dynamic ISP IP but do not want to pay for a static IP or business line."
       }
     }
   ]
@@ -59,7 +67,7 @@ const faq = {
 
     <div class="pd-answer" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        A static IP address is <strong class="text-ink">a permanent network address that never changes</strong>, whereas a dynamic IP address is <strong class="text-ink">a temporary address assigned automatically by a DHCP server that changes periodically</strong>. Internet Service Providers assign dynamic IPs to homes. The stability of a static IP supports hosting websites and servers.
+        Use a static IP address when hosting inbound services (an SMTP mail server requiring PTR/FCrDNS alignment, an authoritative DNS nameserver, a site-to-site IPsec VPN, or an enterprise firewall allowlist); use a dynamic IP address when connecting standard home or office client devices, or when hosting self-managed services behind Dynamic DNS (DDNS) or a Cloudflare Tunnel.
       </p>
     </div>
 
@@ -129,6 +137,14 @@ Wireless LAN adapter Wi-Fi:
         Residential internet accounts operate under dynamic addressing defaults. Unless an account holder pays an ongoing fee for a commercial allocation, internet providers assign dynamic public IP addresses to consumer accounts.
       </p>
 
+      <div id="sd-widget" class="my-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+        <p class="text-sm font-semibold text-ink">Is My Public IP Static or Dynamic? (Live Check)</p>
+        <div id="sd-widget-status" class="mt-2 text-sm text-ink-dim">Detecting your public IP...</div>
+        <div id="sd-widget-detail" class="mt-2 hidden text-sm text-ink-dim"></div>
+        <div id="sd-widget-compare" class="mt-2 hidden text-sm text-ink-dim"></div>
+        <button type="button" id="sd-snapshot-btn" class="mt-3 hidden rounded-md border border-accent/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/10">Save / Reset IP Snapshot</button>
+      </div>
+
       <h2 id="what-is-a-static-ip-address-and-how-does-it-work-advantages-and-trade-offs">What Is a Static IP Address and How Does It Work? (Advantages and Trade-Offs)</h2>
       <p>
         A static IP address is <strong class="text-ink">a fixed address permanently assigned to a server, router, or interface</strong>, providing <strong class="text-ink">4 infrastructure advantages alongside 1 operational trade-off</strong>.
@@ -164,7 +180,15 @@ Wireless LAN adapter Wi-Fi:
         <li><strong>Acknowledge:</strong> The DHCP server sends a DHCP Acknowledge (ACK) packet committing the lease to its database and enabling network communication.</li>
       </ol>
       <p>
-        Dynamic addresses remain consistent across active connections because devices renew leases at the 50 percent timer threshold. Many broadband providers place residential users behind <abbr class="pd-term" data-tip="Carrier-Grade NAT (CGNAT): large-scale network address translation where an ISP shares a single public IPv4 address across hundreds of subscriber homes">CGNAT</abbr> (Carrier-Grade NAT), sharing a single public address across multiple customer households.
+        Lease renewal timers prevent most disruptions: clients request renewal at the T1 threshold (50 percent of lease duration) and again at T2 (87.5 percent) if the first attempt fails. Many broadband providers place residential users behind <abbr class="pd-term" data-tip="Carrier-Grade NAT (CGNAT): large-scale network address translation where an ISP shares a single public IPv4 address across hundreds of subscriber homes">CGNAT</abbr> (Carrier-Grade NAT, RFC 6598 shared address space 100.64.0.0/10), sharing a single public address across multiple customer households.
+      </p>
+      <p>
+        Sticky dynamic IPs are common: a residential DHCP lease often renews the same address for weeks as long as the modem stays powered on, because the router's DHCP client requests renewal before the lease expires and ISPs typically honor the request with the same address. Only a power-off past the lease expiry (or a MAC address change) forces the ISP to assign a different IP.
+      </p>
+
+      <h2 id="private-vs-public-ip-disambiguation">Private (192.168.x.x) vs Public IP: Two Different Scopes</h2>
+      <p>
+        The addresses <code>192.168.x.x</code>, <code>10.x.x.x</code>, and <code>172.16.0.0/12</code> are <strong>private LAN addresses (RFC 1918)</strong> assigned inside your local network by your Wi-Fi router, whereas your <strong>public WAN IP</strong> is assigned by your ISP. A private <code>192.168.1.x</code> address can be either a dynamic DHCP lease from your router or a manual static LAN reservation, independent of whether your ISP gives your router a dynamic or static public WAN IP. The two scopes are independent: a dynamic 192.168.1.42 LAN lease can coexist with a static public WAN IP, and a static 192.168.1.10 LAN reservation can coexist with a dynamic public WAN IP. For the full range table, see <a href="/reserved-ip-ranges/">Reserved and Private IP Ranges</a>.
       </p>
 
       <h2 id="why-do-dns-records-web-servers-and-email-servers-need-a-static-ip">Why Do DNS Records, Web Servers, and Email Servers Need a Static IP?</h2>
@@ -206,28 +230,128 @@ Wireless LAN adapter Wi-Fi:
       </section>
 
       <p>
-        Production environments rely on permanent static addressing for DNS A and PTR records, secure access perimeters, and reliable server connectivity, whereas consumer internet plans depend on automated DHCP lease assignments. Evaluating infrastructure requirements clarifies the choice between static IP vs dynamic IP addressing. Explore related networking guides in the <a href="/ip-and-networking/">IP and Networking</a> knowledge base.
+        Production environments rely on permanent static addressing for DNS A and PTR records, secure access perimeters, and reliable server connectivity, whereas consumer internet plans depend on automated DHCP lease assignments. Evaluating infrastructure requirements clarifies the choice between static IP vs dynamic IP addressing.
       </p>
     </div>
 
     <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
     <div class="mt-3 grid gap-3">
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my home IP address static or dynamic?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Almost all residential home internet connections use a dynamic public IP address assigned automatically by your ISP's DHCP server. Unless you specifically pay your ISP an extra monthly fee for a static IP add-on or business plan, your public IP is dynamic.</p>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I tell if I have a dynamic or static IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">On Windows, open Command Prompt and run ipconfig /all: if DHCP Enabled says Yes under your active adapter, your IP is dynamic. On macOS, System Settings > Network > TCP/IP shows 'Using DHCP' for dynamic addresses. On Linux, ip a displays the word 'dynamic' with a lease countdown. For your public WAN IP, check your router's status page or compare your IP before and after a router restart: if it changes, your ISP assigns dynamic addresses.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DHCP the same as a dynamic IP address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, DHCP (Dynamic Host Configuration Protocol) is the automated network protocol and server software that hands out IP addresses, while a dynamic IP address is the temporary numerical address that your device receives from the DHCP server.</p>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is 192.168 a static IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, 192.168.x.x is not automatically a static IP; it is a private local network (LAN) IP range defined in RFC 1918. Your Wi-Fi router assigns 192.168.x.x addresses to devices inside your home, and that assignment can be dynamic (DHCP lease) or static (a DHCP reservation pinning a specific IP to a device MAC address). This is entirely separate from whether your ISP gives your router a static or dynamic public WAN IP.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is a static IP or dynamic IP better for gaming and streaming?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">A dynamic IP address is just as fast as a static IP for online gaming and video streaming because IP assignment type does not affect bandwidth or ping latency. You only need a static IP (or a public non-CGNAT dynamic IP) if you host a dedicated game server for others to join. In practice, most home gamers experience identical network performance on dynamic connections without paying dedicated IP surcharges.</p>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is DHCP the same as a dynamic IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, in everyday networking a dynamic IP address is an IP address assigned automatically by a DHCP (Dynamic Host Configuration Protocol, RFC 2131) server for a temporary lease period. The one edge case is a DHCP reservation (also called a static lease), where the DHCP server always assigns the exact same IP to a specific MAC address: the mechanism is still DHCP, but the outcome mimics a static assignment.</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How can I change my dynamic IP address to a new one?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
-        <p class="mt-3 text-sm leading-relaxed text-ink-dim">To get a new dynamic public IP from your ISP, unplug your modem and Wi-Fi router from power for 15 to 30 minutes (or overnight if your ISP uses long DHCP leases) so your current lease expires and the ISP assigns a fresh IP when you reconnect. In real-world network troubleshooting, we recommend checking your router WAN interface first to confirm whether your provider uses Carrier-Grade NAT (CGNAT), which prevents public IP rotation entirely.</p>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does an outbound email server need a static IP with matching PTR?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Receiving mail gateways perform reverse DNS lookups on every connecting IP: if the PTR hostname does not resolve back to the connecting IP (FCrDNS), or if the IP sits on a known dynamic range listed in the Spamhaus PBL, the message is rejected or spam-foldered. A static IP lets you publish a custom PTR record matching your mail server hostname and avoids the PBL listing that dynamic ranges carry.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is Dynamic DNS (DDNS) and when do I need it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Dynamic DNS (DDNS) is a service that automatically updates a domain name's DNS A record whenever your ISP assigns a new dynamic public IP. A background client on your router or server detects the change and pushes the new address to the DDNS provider via API. Use DDNS when you need to reach a home lab, NAS, or self-hosted service behind a dynamic ISP IP but do not want to pay for a static IP or business line.</p>
       </details>
     </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="sources">Sources</h2>
+    <ul class="list-disc space-y-1 pl-5 text-sm">
+      <li>IETF RFC 2131, Dynamic Host Configuration Protocol (DHCP): <a href="https://www.rfc-editor.org/rfc/rfc2131" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc2131</a></li>
+      <li>IETF RFC 1918, Address Allocation for Private Internets: <a href="https://www.rfc-editor.org/rfc/rfc1918" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1918</a></li>
+      <li>IETF RFC 6598, IANA-Reserved IPv4 Prefix for Shared Address Space (CGNAT): <a href="https://www.rfc-editor.org/rfc/rfc6598" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc6598</a></li>
+      <li>IETF RFC 1912, Common DNS Operational and Configuration Errors (section 2.1): <a href="https://www.rfc-editor.org/rfc/rfc1912" rel="noopener" target="_blank">rfc-editor.org/rfc/rfc1912</a></li>
+    </ul>
   </div>
 </BaseLayout>
+
+<script>
+  // Live widget: detect visitor's public IP, classify PTR pattern, compare snapshot.
+  // textContent rendering only; adblock-safe id prefix (sd-).
+  const DYNAMIC_TOKENS = /dhcp|dyn|dynamic|pool|dsl|cable|broadband|cpe|res|ppp|dip|fios|lan|wan/i;
+  const CLOUD_TOKENS = /cloudflare|amazonaws|google|digitalocean|hetzner|linode|vultr|ovh|azure|oracle/i;
+
+  async function getPublicIp(): Promise<string | null> {
+    try {
+      const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(5000) });
+      const j = await r.json();
+      return j.ip ?? null;
+    } catch { return null; }
+  }
+
+  async function getPtr(ip: string): Promise<string | null> {
+    try {
+      const octets = ip.split('.').reverse().join('.');
+      const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${octets}.in-addr.arpa&type=PTR`, {
+        headers: { Accept: 'application/dns-json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      const j = await res.json();
+      const ptr = j.Answer?.find((a: any) => a.type === 12)?.data;
+      return ptr ? ptr.replace(/\.$/, '') : null;
+    } catch { return null; }
+  }
+
+  async function getAsn(ip: string): Promise<string | null> {
+    try {
+      const octets = ip.split('.').reverse().join('.');
+      const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${octets}.origin.asn.cymru.com&type=TXT`, {
+        headers: { Accept: 'application/dns-json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      const j = await res.json();
+      const txt = j.Answer?.find((a: any) => a.type === 16)?.data?.replace(/^"|"$/g, '');
+      if (!txt) return null;
+      return 'AS' + txt.split('|')[0].trim();
+    } catch { return null; }
+  }
+
+  function classify(ptr: string | null, asn: string | null): string {
+    if (!ptr) return 'No PTR record published (common on residential and CDN IPs; classification inconclusive).';
+    if (DYNAMIC_TOKENS.test(ptr)) return 'Likely Dynamic ISP Assignment (Residential/DHCP pool PTR pattern detected in "' + ptr + '").';
+    if (CLOUD_TOKENS.test(ptr)) return 'Likely static or cloud/datacenter allocation (cloud provider PTR pattern detected in "' + ptr + '").';
+    if (asn && /15169|13335|16509|14618|14061|62567|24940/.test(asn.replace(/^AS/i, ''))) return 'Likely static or cloud/datacenter allocation (known cloud provider ASN ' + asn + ').';
+    return 'Custom PTR hostname detected ("' + ptr + '"): likely a static or business-class assignment, but only your ISP plan or a router-restart comparison proves permanence definitively.';
+  }
+
+  async function runWidget() {
+    const statusEl = document.getElementById('sd-widget-status')!;
+    const detailEl = document.getElementById('sd-widget-detail')!;
+    const compareEl = document.getElementById('sd-widget-compare')!;
+    const btn = document.getElementById('sd-snapshot-btn')!;
+
+    const ip = await getPublicIp();
+    if (!ip) { statusEl.textContent = 'Could not detect your public IP (network or extension blocked the request).'; return; }
+
+    const [ptr, asn] = await Promise.all([getPtr(ip), getAsn(ip)]);
+    statusEl.textContent = 'Your public IP: ' + ip + (asn ? ' (' + asn + ')' : '');
+    detailEl.textContent = classify(ptr, asn);
+    detailEl.classList.remove('hidden');
+
+    const saved = localStorage.getItem('pdns_saved_ip_check');
+    compareEl.classList.remove('hidden');
+    if (saved) {
+      try {
+        const s = JSON.parse(saved) as { ip: string; time: string };
+        if (s.ip && s.ip !== ip) {
+          compareEl.textContent = 'Confirmed Dynamic IP: your public IP changed from ' + s.ip + ' (checked ' + s.time + ') to ' + ip + '.';
+        } else {
+          compareEl.textContent = 'Unchanged so far: your public IP (' + ip + ') matches the snapshot saved on ' + s.time + '. Restart your modem or router (unplug for 5 minutes) and click "Save / Reset IP Snapshot" to test whether your ISP assigns a new DHCP lease.';
+        }
+      } catch { localStorage.removeItem('pdns_saved_ip_check'); }
+    } else {
+      compareEl.textContent = 'No snapshot saved yet. Click "Save / Reset IP Snapshot" to record your current IP, then restart your router later and compare.';
+    }
+    btn.classList.remove('hidden');
+    btn.onclick = () => {
+      localStorage.setItem('pdns_saved_ip_check', JSON.stringify({ ip, time: new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC' }));
+      runWidget();
+    };
+  }
+
+  if (document.getElementById('sd-widget')) runWidget();
+</script>
+
