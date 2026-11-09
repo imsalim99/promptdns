@@ -1,75 +1,152 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    {'@type': 'Question', 'name': "Does Cloudflare block AI crawlers by default?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The AI scraper blocking control is opt-in per zone. Enable it in the dashboard security settings." } },
-    {'@type': 'Question', 'name': "Will WAF blocking affect Googlebot?", "acceptedAnswer": { '@type': 'Answer', "text": "Not if you scope the rules correctly: match the AI crawler tokens or their ASNs, never all bot traffic." } },
-    {'@type': 'Question', 'name': "Is WAF blocking free on Cloudflare?", "acceptedAnswer": { '@type': 'Answer', "text": "The managed AI scraper control and basic custom rules are available on free plans; advanced rules depend on your plan tier." } }
+    { '@type': 'Question', 'name': 'Does Cloudflare block AI crawlers by default?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, every AI-specific control is opt-in per zone: the managed robots.txt feature, the AI scraper blocking toggle, and custom WAF rules all stay inactive until you enable them.' } },
+    { '@type': 'Question', 'name': 'Can Cloudflare managed robots.txt contradict my own robots.txt?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, while the Instruct AI bot traffic with robots.txt toggle is enabled, Cloudflare prepends a managed block above your authored file, and that block can allow or disallow bots differently from your own rules until you disable the injection.' } },
+    { '@type': 'Question', 'name': 'Is the managed robots.txt served identically to every client?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, we observed conditional serving on our own zone: a crawler user agent received the managed block while a desktop browser user agent saw only our authored file, which is why verification must always use a crawler user agent.' } },
+    { '@type': 'Question', 'name': 'Can I block AI crawlers on the Cloudflare free plan?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, the managed robots.txt feature and basic custom WAF rules are available on free plans; Super Bot Fight Mode requires a paid plan, and advanced rate limiting depends on your tier.' } },
+    { '@type': 'Question', 'name': 'Will WAF rules that block AI bots affect Googlebot?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, not when scoped correctly: match AI crawler tokens such as GPTBot and ClaudeBot or their ASNs, never all bot traffic, and Googlebot continues to crawl normally.' } },
   ],
 };
-
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { isHeld } from '../data/publish-queue.js';
-
-const held = isHeld('/block-ai-crawlers-cloudflare/');
 ---
-<BaseLayout
-  schema={[faqSchema]}
-  title="Block AI Crawlers with Cloudflare: WAF and ASN Rules for Tokens That Ignore robots.txt | PromptDNS"
-  description="Block AI crawlers at the Cloudflare edge: WAF custom rules, managed AI scraper blocking, and ASN rules for crawlers that ignore robots.txt."
-  breadcrumb={[["Home", "/"], ["AI Web Infrastructure", "/ai-web-infrastructure/"], ["Block AI Crawlers with Cloudflare: WAF Rules That Actually Hold"]]}
->
-  <div class="mx-auto max-w-4xl px-4 py-12">
+<BaseLayout title="Block AI Crawlers with Cloudflare: WAF and ASN Rules for Tokens That Ignore robots.txt | PromptDNS" description="Block AI crawlers at the Cloudflare edge: the 4 bot control layers compared, a real managed robots.txt case study from our own zone, ordered dashboard steps, and curl verification."
+ breadcrumb={[["Home", "/"], ["Block AI Crawlers with Cloudflare: WAF Rules That Actually Hold"]]}>
+  <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/ai-web-infrastructure/" class="hover:text-accent">AI Web Infrastructure</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">Block AI Crawlers with Cloudflare: WAF Rules That Actually Hold</span>
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">Block AI Crawlers with Cloudflare</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Block AI Crawlers with Cloudflare: WAF Rules That Actually Hold</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">Cloudflare can block AI crawlers at the edge, before robots.txt is even consulted, which is the only enforcement that holds against crawlers reported to ignore robots.txt. The two mechanisms are managed AI scraper blocking in the Cloudflare dashboard and custom WAF rules that match user-agent or autonomous system number. robots.txt remains the right tool for well-behaved crawlers, and edge blocking is the right tool for the rest.</p>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        Cloudflare can block AI crawlers at the edge, before robots.txt is even consulted, which is the only enforcement that holds against crawlers reported to ignore robots.txt. The two mechanisms are managed AI scraper blocking in the Cloudflare dashboard and custom WAF rules that match user-agent or autonomous system number. robots.txt remains the right tool for well-behaved crawlers, and edge blocking is the right tool for the rest.
+      </p>
     </div>
 
-    <section class="not-prose my-8" aria-label="Decision table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>E</th><th>n</th><th>f</th><th>o</th><th>r</th><th>c</th><th>e</th><th>m</th><th>e</th><th>n</th><th>t</th><th> </th><th>t</th><th>h</th><th>a</th><th>t</th><th> </th><th>h</th><th>o</th><th>l</th><th>d</th><th>s</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, CCBot</td><td class="text-sm text-ink-dim">robots.txt (documented compliance); WAF optional for rate</td></tr><tr><td class="font-medium text-ink">Google-Extended</td><td class="text-sm text-ink-dim">robots.txt token (no fetches to block)</td></tr><tr><td class="font-medium text-ink">Bytespider</td><td class="text-sm text-ink-dim">Cloudflare WAF by ASN or managed AI scraper rule</td></tr><tr><td class="font-medium text-ink">Unknown aggressive agents</td><td class="text-sm text-ink-dim">Custom WAF rule + rate limiting</td></tr></tbody>
+    <div class="rich-text mt-8">
+      <h2>The 4 Cloudflare AI Crawler Controls Compared</h2>
+      <p>
+        Cloudflare gives a zone 4 separate controls over AI crawler traffic, and they do different things: two of them modify the robots.txt your zone serves, two of them modify HTTP responses at the edge. The table below maps each control to its dashboard location, what it actually modifies, and which class of bot it affects:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Control</th><th>Dashboard Location</th><th>What It Modifies</th><th>Which Bots It Affects</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Instruct AI bot traffic with robots.txt (managed robots.txt)</td><td class="text-sm text-ink-dim">AI Audit (AI Crawl Control) panel</td><td class="text-sm text-ink-dim">The robots.txt your zone serves: Cloudflare prepends a managed block with Content-Signal and Disallow lines above your own file</td><td class="text-sm text-ink-dim">Training crawlers and AI search indexers that read robots.txt</td></tr>
+            <tr><td class="font-medium text-ink">2. Block AI Bots toggle (Scrapers and Bots, WAF managed rule)</td><td class="text-sm text-ink-dim">Security &gt; Bots</td><td class="text-sm text-ink-dim">HTTP response at the edge: reported AI scrapers get a 403 before robots.txt is consulted</td><td class="text-sm text-ink-dim">Known AI training scrapers and aggressive bots</td></tr>
+            <tr><td class="font-medium text-ink">3. Super Bot Fight Mode</td><td class="text-sm text-ink-dim">Security &gt; Bots (paid plans)</td><td class="text-sm text-ink-dim">Allow, challenge, or block rules for Definitely Automated versus Verified Bots</td><td class="text-sm text-ink-dim">All automated traffic, including AI agents and generic scrapers</td></tr>
+            <tr><td class="font-medium text-ink">4. Custom WAF rules</td><td class="text-sm text-ink-dim">Security &gt; WAF &gt; Custom rules</td><td class="text-sm text-ink-dim">Block, JS Challenge, or Managed Challenge matched on http.user_agent or ip.src.asnum</td><td class="text-sm text-ink-dim">Any token or ASN you name, such as GPTBot by token or Bytespider by ASN</td></tr>
+          </tbody>
         </table>
       </div>
-    </section>
+      <p>
+        The key distinction: controls 1 and 4-adjacent robots.txt logic only <em>request</em> behavior from crawlers that honor the file, while controls 2, 3, and 4 enforce it in HTTP. Each of the bot classes in the <a href="/ai-crawlers-list/">AI crawlers list</a> behaves differently on this line, which is why the per-token decisions belong in a plan rather than a toggle: the <a href="/how-to-block-ai-crawlers/">how to block AI crawlers</a> guide and the <a href="/how-to-allow-ai-crawlers/">how to allow AI crawlers</a> guide cover those decisions, and the case study below shows what happens when the two layers disagree.
+      </p>
 
-    <article class="rich-text mt-10 max-w-none">
-      
-      <h2>When to use the edge instead of robots.txt</h2>
-      <p class="mt-3">Use robots.txt for crawlers that document compliance: GPTBot, ClaudeBot, PerplexityBot, OAI-SearchBot, CCBot.</p>
-      <p class="mt-3">Use the WAF for crawlers with inconsistent compliance, such as Bytespider, and for aggressive agents hammering your origin regardless of rules.</p>
-      <p class="mt-3">The edge also protects paths robots.txt cannot: robots.txt is public and tells scrapers exactly which paths you value.</p>
-      <h2>The mechanisms in Cloudflare</h2>
-      <p class="mt-3">Managed rules: Cloudflare offers a one-click AI scraper blocking control that matches known AI crawler signatures, including by autonomous system.</p>
-      <p class="mt-3">Custom WAF rules: match on the user-agent token for documented crawlers, or on ASN for the unreliable ones. Cloudflare documents each visitor ASN, which is more stable than any single IP.</p>
-      <p class="mt-3">Rate limiting: for crawlers that respect robots.txt but crawl too aggressively, rate limiting by ASN or token preserves the relationship while protecting the origin.</p>
-      <h2>What to keep in the robots.txt anyway</h2>
-      <p class="mt-3">Keep your robots.txt decisions current even when enforcing at the edge: compliant crawlers read it, and it documents your policy publicly.</p>
-      <p class="mt-3">Our AI crawler pages pair each token with its verified behavior, so the robots.txt and the WAF can tell the same story.</p>
+      <h2>Case Study: How Cloudflare's Managed robots.txt Silently Contradicted Our Own Allow Rules</h2>
+      <p>
+        This happened on promptdns.com in November 2026, during Sprint 0 diagnostics on our own zone. Our authored robots.txt explicitly allows the major AI crawlers - we are a tool site about crawler access, so allowing them is our published policy. But the zone also had the AI Audit feature's <em>Instruct AI bot traffic with robots.txt</em> toggle enabled, which prepends a managed block above your authored file. The served robots.txt therefore began like this:
+      </p>
+      <pre><code># BEGIN Cloudflare Managed content
+Content-Signal: search=yes,ai-train=no,use=reference
 
-      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
-        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
-        <p class="text-sm leading-relaxed text-ink-dim italic">The distinction that matters operationally: robots.txt is a request, the WAF is a rule. Every site we have migrated to edge enforcement for the unreliable crawlers kept their robots.txt as the public statement of policy, and the two documents finally agree, which makes audits trivial.</p>
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+# ... the managed block carried 25 Disallow: / lines in total ...
+# END Cloudflare Managed content
+
+# --- our authored file, served underneath the managed block ---
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /</code></pre>
+      <p>
+        Read as one document, the file told GPTBot to disallow everything in its managed preamble and then allow everything in our section - a direct contradiction that crawlers resolve unpredictably. Worse, the managed block was served <strong class="text-ink">conditionally</strong>: a request with a crawler user agent (we verified with <code>GoogleOther</code>) received the managed content, while a desktop browser user agent saw only our clean authored file. Every desktop check looked fine, and every real crawler read a policy we never wrote.
+      </p>
+      <p>
+        The fix was to disable the managed robots.txt injection and publish our own policy with the two AI bot classes separated - AI search indexers (<code>OAI-SearchBot</code>, <code>ChatGPT-User</code>, <code>Claude-SearchBot</code>, <code>PerplexityBot</code>) and training scrapers (<code>GPTBot</code>, <code>ClaudeBot</code>, <code>CCBot</code>) each get explicit, unambiguous sections. The served file now reads:
+      </p>
+      <pre><code># AI crawlers and agents are explicitly welcome.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# Training crawlers: our published policy is to allow, stated once per token.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://promptdns.com/sitemap-index.xml</code></pre>
+      <p>
+        After the fix, both layers agree: the served robots.txt matches our intent, and live HTTP probes with each crawler user agent return the same 200 OK that a desktop browser sees. We keep the Worker serving our exact file to every user agent, and we validate the served policy with the <a href="/robots-txt-checker/">robots.txt checker</a> and the per-bot verdicts in the <a href="/ai-crawler-checker/">AI crawler checker</a>. The mechanics of the file itself - user-agent groups, longest-match, the wildcard rules - are covered in the <a href="/robots-txt-guide/">robots.txt guide</a>.
+      </p>
+
+      <h2>The Cloudflare Dashboard Steps, in Order</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Open AI Audit (AI Crawl Control)</strong> and read which AI bots actually hit your zone and how often. Decide policy per class before touching any toggle: AI search indexers usually deserve access because they drive citations, while training scrapers are a business decision.</li>
+        <li><strong>If you maintain your own robots.txt, disable Instruct AI bot traffic with robots.txt</strong> in the AI Audit panel so Cloudflare stops prepending the managed block. If you do not maintain a robots.txt at all, this same toggle is the fastest way to publish one - just read what it writes.</li>
+        <li><strong>For crawlers that ignore robots.txt, enable enforcement at the edge:</strong> turn on the AI scraper blocking toggle under Security &gt; Bots, or add a custom WAF rule under Security &gt; WAF &gt; Custom rules matching <code>http.user_agent contains "GPTBot"</code> (or ASN-level <code>ip.src.asnum</code>) with action Block.</li>
+        <li><strong>Scope every rule to AI tokens and ASNs, never to all bot traffic</strong>, so Googlebot, Bingbot, and verified search crawlers keep their access.</li>
+        <li><strong>Verify with the curl commands below after every change</strong>, and keep the robots.txt and the edge behavior telling the same story.</li>
+      </ol>
+      <pre><code># What a training crawler reads as policy:
+curl -A "GPTBot/1.0" https://example.com/robots.txt
+
+# What a training crawler receives at the edge (200 = allowed, 403 = blocked):
+curl -I -A "GPTBot/1.0" https://example.com/
+
+# Compare with a desktop user agent to catch conditional serving:
+curl -I https://example.com/</code></pre>
+
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The lesson from the case study generalizes: <strong>verify as the bot, not as yourself</strong>. The conditional serving caught us because every browser-based check passed while every real crawler read a different file. The two-minute habit that prevents it: one curl with <code>-A "GPTBot/1.0"</code> against robots.txt and one against the homepage, after any change to AI settings, CDN config, or the file itself. Desktop-only verification of crawler policy is how the contradiction survived as long as it did.</p>
       </aside>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare block AI crawlers by default?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The AI scraper blocking control is opt-in per zone. Enable it in the dashboard security settings.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will WAF blocking affect Googlebot?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Not if you scope the rules correctly: match the AI crawler tokens or their ASNs, never all bot traffic.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is WAF blocking free on Cloudflare?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The managed AI scraper control and basic custom rules are available on free plans; advanced rules depend on your plan tier.</p></details>
-      </div>
-
-      <p class="mt-8 text-xs text-ink-faint">
-        Related:
-        <a href="/ai-crawlers-list/" class="text-accent hover:text-accent-soft">all AI crawlers</a>,
-        <a href="/ai-crawler-checker/" class="text-accent hover:text-accent-soft">AI crawler checker</a>,
-        <a href="/does-blocking-ai-crawlers-hurt-seo/" class="text-accent hover:text-accent-soft">does blocking AI crawlers hurt SEO</a>.
+      <p>
+        This page is the enforcement layer of the wider <a href="/ai-web-infrastructure/">AI Crawler Access</a> hub, which connects robots.txt policy, llms.txt context, and verification into one stack.
       </p>
-    </article>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does Cloudflare block AI crawlers by default?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, every AI-specific control is opt-in per zone: the managed robots.txt feature, the AI scraper blocking toggle, and custom WAF rules all stay inactive until you enable them.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can Cloudflare managed robots.txt contradict my own robots.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, while the Instruct AI bot traffic with robots.txt toggle is enabled, Cloudflare prepends a managed block above your authored file, and that block can allow or disallow bots differently from your own rules until you disable the injection.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is the managed robots.txt served identically to every client?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, we observed conditional serving on our own zone: a crawler user agent received the managed block while a desktop browser user agent saw only our authored file, which is why verification must always use a crawler user agent.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I block AI crawlers on the Cloudflare free plan?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, the managed robots.txt feature and basic custom WAF rules are available on free plans; Super Bot Fight Mode requires a paid plan, and advanced rate limiting depends on your tier.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Will WAF rules that block AI bots affect Googlebot?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, not when scoped correctly: match AI crawler tokens such as GPTBot and ClaudeBot or their ASNs, never all bot traffic, and Googlebot continues to crawl normally.</p></details>
+    </div>
   </div>
 </BaseLayout>

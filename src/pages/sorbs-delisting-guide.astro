@@ -1,69 +1,149 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    {'@type': 'Question', 'name': "What is SORBS?", "acceptedAnswer": { '@type': 'Answer', "text": "The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily." } },
-    {'@type': 'Question', 'name': "How long does SORBS delisting take?", "acceptedAnswer": { '@type': 'Answer', "text": "Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus." } },
-    {'@type': 'Question', 'name': "Why was I listed without sending spam?", "acceptedAnswer": { '@type': 'Answer', "text": "Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one." } }
+    { '@type': 'Question', 'name': 'Is SORBS still active?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, SORBS is permanently shut down: Proofpoint decommissioned every dnsbl.sorbs.net sub-zone and the sorbs.net delisting portal in June 2024, and the zones now return no DNS data at all.' } },
+    { '@type': 'Question', 'name': 'Can you still request delisting from SORBS?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, delisting requests are no longer possible: the SORBS web portal, lookup tools, and escalation process were all retired together with the zones in June 2024.' } },
+    { '@type': 'Question', 'name': 'Can a SORBS entry still cause 550 rejections today?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, in one narrow case: a legacy on-premises mail server that still queries dnsbl.sorbs.net can time out or false-reject senders, which is why recipient admins should remove the retired zone from their RBL configuration.' } },
+    { '@type': 'Question', 'name': 'Should I remove dnsbl.sorbs.net from my own mail server configuration?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes, any reference to a SORBS zone in Postfix, Exim, or Exchange settings should be removed: queries to the retired zone add DNS latency and can produce false results, while active lists such as Spamhaus ZEN and Barracuda provide real signal.' } },
+    { '@type': 'Question', 'name': 'Was SORBS the same blocklist as Spamhaus?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, they were separate organizations with different zones: SORBS combined around seventeen sub-zones covering dynamic ranges, open relays, and proxies, while Spamhaus operates the actively maintained SBL, XBL, PBL, and DBL lists that receivers enforce today.' } },
   ],
 };
-import BaseLayout from '../layouts/BaseLayout.astro';
-
 ---
-<BaseLayout title="How to Get Delisted from SORBS" description="SORBS delisting guide: how SORBS listings work, the escalation timer, and the request process that actually works."  
- breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["Email Deliverability", "/email-deliverability/"], ["SORBS Delisting"]]}>
+<BaseLayout title="SORBS Blocklist Shutdown & Delisting Guide: What to Do in 2026 | PromptDNS" description="SORBS was shut down by Proofpoint in June 2024. Why you still see SORBS warnings and 550 rejections, what the legacy 127.0.0.x return codes meant, and the 4 steps to clean your sending IP today."
+ breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["SORBS Delisting Guide"]]}>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
        <span aria-hidden="true">/</span>
-      <a href="/email-deliverability/" class="hover:text-accent">Email Deliverability</a>
-       <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">SORBS Delisting</span>
+      <span class="text-ink-dim">SORBS Delisting Guide</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">How to Get Delisted from SORBS</h1>
-    <div class="pd-answer" data-vs="answer">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SORBS Delisting Guide: What the SORBS Shutdown Means for Your IP and Domain</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      SORBS (Spam and Open-Relay Blocking System) lists IPs for spam-sending behavior, open relays,
-      and related abuse. It is best known for one policy quirk: new IPs and some listings carry an
-      automatic timeout, but requesting removal incorrectly can extend the wait.
-    </p>
+        The Spam and Open Relay Blocking System (SORBS) is <strong class="text-ink">a retired DNS-based email blocklist (dnsbl.sorbs.net) that Proofpoint officially decommissioned and shut down in June 2024</strong>. The legacy SORBS delisting portal no longer exists, and active mail servers no longer query SORBS zones. Senders seeing a SORBS flag must audit active blocklists and fix underlying rDNS or authentication issues.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">SORBS zones</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Zone</th><th>Fix</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">spam</td><td class="text-sm text-ink-dim">Prove closure</td></tr><tr><td class="font-medium text-ink">dul</td><td class="text-sm text-ink-dim">Static relay</td></tr><tr><td class="font-medium text-ink">http</td><td class="text-sm text-ink-dim">Close proxies</td></tr></tbody>
+    <nav class="pd-toc mt-6" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#sorbs-still-active">Is SORBS Still Active? Why Proofpoint Shut Down dnsbl.sorbs.net</a></li>
+        <li><a href="#sorbs-warning-or-550">Why Am I Still Seeing a SORBS Blocklist Warning or 550 Bounce?</a></li>
+        <li><a href="#resolve-legacy-sorbs-steps">4 Steps to Resolve Legacy SORBS Rejections and Clean Your Sending IP</a></li>
+        <li><a href="#active-dnsbl-alternatives">Active DNSBL Alternatives That Replaced SORBS</a></li>
+        <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="sorbs-still-active">Is SORBS Still Active? Why Proofpoint Shut Down dnsbl.sorbs.net</h2>
+      <p>
+        SORBS is not active. Proofpoint, which operated the Spam and Open Relay Blocking System, <strong class="text-ink">retired every SORBS DNSBL zone and the sorbs.net delisting portal in June 2024</strong>, ending more than two decades of service. More than 15 sub-zones went down together: the aggregate <code>dnsbl.sorbs.net</code> zone that most mail servers queried, the dynamic-range <code>dul.dnsbl.sorbs.net</code> zone, the spam family (<code>spam</code> and <code>new.spam</code>), the proxy and relay zones, and the <code>safe.dnsbl.sorbs.net</code> allow-list. Independent monitoring mirrors flagged the zones as defunct through June 2024, and the <code>sorbs.net</code> domain itself no longer resolves - we verified that by direct DNS query, where both <code>dnsbl.sorbs.net</code> and its parent return NXDOMAIN with no nameservers left to answer.
+      </p>
+      <p>
+        Two failure modes survive the shutdown. Third-party multi-DNSBL scanner websites that hardcoded <code>dnsbl.sorbs.net</code> either hang on DNS timeouts or display stale cached status captured before June 2024, presenting a listing that can no longer be true. And mail logs from before the shutdown still contain SORBS 550 rejection lines that admins find years later. The table below is the legacy reference: what each sub-zone listed and which <code>127.0.0.x</code> return code it answered with, so postmasters reading old logs and old configurations can decode exactly what SORBS meant when it flagged an address.
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Legacy SORBS Zone</th><th>Return Code (A Record)</th><th>What It Listed</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">dnsbl.sorbs.net</td><td class="text-sm text-ink-dim">127.0.0.2 to 127.0.0.15 (combined)</td><td class="text-sm text-ink-dim">The aggregate zone: all sub-zones below answered together, one A record per matching list</td></tr>
+            <tr><td class="font-mono text-xs text-ink">http.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.2</td><td class="text-sm text-ink-dim">Open and misconfigured HTTP proxies</td></tr>
+            <tr><td class="font-mono text-xs text-ink">socks.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.3</td><td class="text-sm text-ink-dim">Open SOCKS proxies</td></tr>
+            <tr><td class="font-mono text-xs text-ink">misc.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.4</td><td class="text-sm text-ink-dim">Miscellaneous nuisance hosts, including bogus MX records</td></tr>
+            <tr><td class="font-mono text-xs text-ink">smtp.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.5</td><td class="text-sm text-ink-dim">Open SMTP relays</td></tr>
+            <tr><td class="font-mono text-xs text-ink">spam.dnsbl.sorbs.net (with new.spam, escalations)</td><td class="font-mono text-xs text-ink">127.0.0.6</td><td class="text-sm text-ink-dim">Confirmed spam sources and escalated serial offenders</td></tr>
+            <tr><td class="font-mono text-xs text-ink">web.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.7</td><td class="text-sm text-ink-dim">Web-hosted spam and hijacked web servers</td></tr>
+            <tr><td class="font-mono text-xs text-ink">block.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.8</td><td class="text-sm text-ink-dim">Ranges the SORBS operators blocked by choice rather than by evidence</td></tr>
+            <tr><td class="font-mono text-xs text-ink">zombie.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.9</td><td class="text-sm text-ink-dim">Hijacked netblocks (zombie space) sending spam</td></tr>
+            <tr><td class="font-mono text-xs text-ink">dul.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.10</td><td class="text-sm text-ink-dim">Dynamic, residential, and otherwise non-static IP ranges</td></tr>
+            <tr><td class="font-mono text-xs text-ink">badconf.rhsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.11</td><td class="text-sm text-ink-dim">Domains whose A or AAAA records pointed at bad or mismatched hosts (domain-based, rhsbl)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">nomail.rhsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.12</td><td class="text-sm text-ink-dim">Domains that publish a no-mail policy (domain-based, rhsbl)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">noserver.dnsbl.sorbs.net</td><td class="font-mono text-xs text-ink">127.0.0.14</td><td class="text-sm text-ink-dim">IP addresses with no SMTP server listening at all</td></tr>
+            <tr><td class="font-mono text-xs text-ink">safe.dnsbl.sorbs.net</td><td class="text-sm text-ink-dim">n/a (allow-list)</td><td class="text-sm text-ink-dim">Whitelisted hosts exempted from SORBS listing tests</td></tr>
+          </tbody>
         </table>
       </div>
-    </section>
-    <div class="rich-text mt-8">
-      <h2>How SORBS listings behave</h2>
-      <ul>
-        <li>Many zones auto-expire (typically 48 hours to days) if the trigger stops.</li>
-        <li>Open-relay and exploit listings require proof of fix, not just time.</li>
-        <li>Requests from IPs that are still sending spam extend or re-list.</li>
-      </ul>
-      <h2>The working procedure</h2>
-      <ol class="list-decimal space-y-1.5 pl-5">
-        <li><strong>Confirm the listing and zone</strong> via the <a href="/blacklist-checker/">blacklist checker</a> or SORBS's own lookup (public-resolver queries may be refused).</li>
-        <li><strong>Stop the trigger</strong>: compromised account, open relay/proxy, spam run, or abused web form.</li>
-        <li><strong>Fix the posture</strong>: <a href="/spf-record-checker/">SPF</a>, <a href="/dkim-record-checker/">DKIM</a>, <a href="/dmarc-record-checker/">DMARC</a>, correct PTR, no direct sending from dynamic space.</li>
-        <li><strong>Submit one delisting request</strong> through the SORBS interface with a real explanation and the fix description.</li>
-        <li><strong>Respect the timer.</strong> If the listing carries an automatic expiry inside your window, waiting is often faster than requesting.</li>
+      <p>
+        The aggregate zone advertised the full 127.0.0.2 through 127.0.0.15 range, with 127.0.0.13 and 127.0.0.15 unused in the public documentation. Codes combined: an IP that was both an open relay and a spam source received one A record per matching zone, so a single lookup could return several 127.0.0.x values at once. Every entry in this table is now historical - a query to any of these names returns NXDOMAIN, so any tool still reporting a SORBS listing is showing data captured before June 2024.
+      </p>
+
+      <h2 id="sorbs-warning-or-550">Why Am I Still Seeing a SORBS Blocklist Warning or 550 Bounce?</h2>
+      <p>
+        A SORBS alert in 2026 always traces back to one of 3 causes. None of them mean SORBS listed you - it cannot - but each points at a different thing to fix:
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>An outdated third-party blacklist-check website.</strong> Some scanner sites still query the dead <code>sorbs.net</code> zones on every check. The query either times out and shows an error, or the site serves a stale cached result captured before the shutdown, which reads as a listing that no longer exists.</li>
+        <li><strong>A legacy on-premises recipient server still querying the dead zone.</strong> A Postfix, Exim, or Exchange server configured years ago may still list <code>dnsbl.sorbs.net</code> in its <code>reject_rbl_client</code> or <code>dnslists</code> settings. Every inbound connection triggers a query that now returns NXDOMAIN; depending on the RBL client, that adds DNS latency per message or produces false rejections that look exactly like a SORBS listing in the bounce message.</li>
+        <li><strong>Your sending IP is listed on an active blocklist for the same underlying reason.</strong> The root causes SORBS tracked did not retire with it: missing PTR or failed FCrDNS, an open relay or proxy, a compromised account sending spam, or mail sent directly from dynamic IP space. If SORBS flagged you historically, an <strong>active</strong> list such as Spamhaus ZEN or Barracuda may now flag the same problem, and those are the listings that actually matter.</li>
       </ol>
-      
-<h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is SORBS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The Spam and Open Relay Blocking System, a blocklist family covering spam sources, dynamic IPs, and exploited hosts. Some mail admins weight it heavily.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does SORBS delisting take?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Requests are processed manually and can take days. SORBS also asks for a donation consideration on some listing classes, unlike Spamhaus.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why was I listed without sending spam?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Dynamic IP ranges and shared hosts get listed because of other tenants or a past assignment. The fix is proving a static, clean source or moving to one.</p></details></div>
-      <h2>Related</h2>
-      <ul>
-        <li><a href="/remove-from-spamhaus-blocklist/">Spamhaus removal</a> and <a href="/get-off-barracuda-blocklist/">Barracuda removal</a></li>
-        <li><a href="/why-emails-go-to-spam/">Why emails go to spam</a></li>
-      </ul>
+
+      <h2 id="resolve-legacy-sorbs-steps">4 Steps to Resolve Legacy SORBS Rejections and Clean Your Sending IP</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Verify what actually lists your IP today.</strong> Scan your sending IP against the live lists with the <a href="/blacklist-checker/">blacklist checker</a>, then run the wider reputation pass with the <a href="/ip-reputation-checker/">IP reputation checker</a>. Treat only active-list results as real; ignore anything that claims a SORBS listing.</li>
+        <li><strong>Configure clean sending infrastructure.</strong> Set a PTR hostname that forward-confirms to your sending IP - the <a href="/reverse-ip-lookup/">reverse IP lookup</a> checks both directions and the <a href="/ptr-record/">PTR record guide</a> explains the record itself. Publish or repair SPF, DKIM, and DMARC, and never send directly from dynamic or residential IP space.</li>
+        <li><strong>Delist from the active lists.</strong> If step 1 found a real listing, use its own removal process: the <a href="/remove-from-spamhaus-blocklist/">Spamhaus removal guide</a> covers the most common enforcement list, and the <a href="/get-off-barracuda-blocklist/">Barracuda removal guide</a> covers the other. Fix the root cause first or the listing returns.</li>
+        <li><strong>Contact the recipient postmaster.</strong> If a 550 bounce still names SORBS, email <code>postmaster@</code> the recipient domain with your sending IP, the exact rejection line, and a one-paragraph summary of your fix. Ask them to remove the retired zone from their mail server configuration, and attach this copyable snippet so the change is a two-minute edit:</li>
+      </ol>
+      <pre><code># Postfix main.cf - remove the retired zone, keep active lists:
+smtpd_recipient_restrictions =
+    permit_mynetworks
+    permit_sasl_authenticated
+    reject_rbl_client zen.spamhaus.org
+    reject_rbl_client b.barracudacentral.org
+    # DELETE: reject_rbl_client dnsbl.sorbs.net   (zone retired June 2024)
+
+# Exim acl_check_rcpt - remove the retired list, keep active ones:
+deny
+    !authenticated = *
+    dnslists = zen.spamhaus.org
+# DELETE the block using: dnslists = dnsbl.sorbs.net</code></pre>
+
+      <h2 id="active-dnsbl-alternatives">Active DNSBL Alternatives That Replaced SORBS</h2>
+      <p>
+        No single list replaced SORBS one-for-one, but the active blocklists that mailbox providers and gateways enforce today cover every ground SORBS did. The table below maps each legacy SORBS function to the list that now carries it:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Retired SORBS Zone</th><th>Active Replacement</th><th>What the Active List Covers</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">spam.dnsbl.sorbs.net (127.0.0.6)</td><td class="text-sm text-ink-dim">Spamhaus SBL</td><td class="text-sm text-ink-dim">Confirmed spam sources and spam-run infrastructure</td></tr>
+            <tr><td class="font-mono text-xs text-ink">zombie.dnsbl.sorbs.net (127.0.0.9)</td><td class="text-sm text-ink-dim">Spamhaus XBL</td><td class="text-sm text-ink-dim">Hijacked, botnet, and exploited hosts</td></tr>
+            <tr><td class="font-mono text-xs text-ink">dul.dnsbl.sorbs.net (127.0.0.10)</td><td class="text-sm text-ink-dim">Spamhaus PBL</td><td class="text-sm text-ink-dim">Dynamic, residential, and non-mail IP ranges that should not send directly</td></tr>
+            <tr><td class="font-mono text-xs text-ink">badconf and nomail.rhsbl (127.0.0.11 / .12)</td><td class="text-sm text-ink-dim">Spamhaus DBL</td><td class="text-sm text-ink-dim">Domain-level reputation for spam and phishing domains</td></tr>
+            <tr><td class="font-mono text-xs text-ink">smtp.dnsbl.sorbs.net (127.0.0.5)</td><td class="text-sm text-ink-dim">Barracuda BRBL (b.barracudacentral.org)</td><td class="text-sm text-ink-dim">Sending-IP reputation for mail infrastructure</td></tr>
+            <tr><td class="font-mono text-xs text-ink">new.spam and escalations (127.0.0.6)</td><td class="text-sm text-ink-dim">SpamCop bl.spamcop.net</td><td class="text-sm text-ink-dim">Fast, spamtrap-driven listings for fresh spam runs</td></tr>
+            <tr><td class="font-mono text-xs text-ink">http and socks proxies (127.0.0.2 / .3)</td><td class="text-sm text-ink-dim">Invaluement ivmSIP</td><td class="text-sm text-ink-dim">Proxy and abusive-IP intelligence with tuned false-positive rates</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The pattern in the mapping: Spamhaus absorbed the evidence-based zones (spam sources, exploits, dynamic ranges, domains), Barracuda and SpamCop cover reputation and fast-turnaround listings, and Invaluement handles the proxy intelligence SORBS tracked. All of them accept delisting requests and answer queries reliably - two things SORBS no longer does.
+      </p>
+
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The SORBS shutdown is a quiet trap for inherited infrastructure. Mail servers configured years ago carry <code>dnsbl.sorbs.net</code> in their RBL lists, and because the dead zone answers NXDOMAIN instead of timing out, nothing visibly breaks - the checks just silently stop doing anything. If you inherit a mail server, grep its configuration for "sorbs" and remove the dead references: you reclaim the DNS lookup budget on every message, and you stop mistaking a permanently-clear dead list for evidence that your IP reputation is good.</p>
+      </aside>
+
+      <p>
+        Blocklists are one input among many in whether mail lands. For the full picture - authentication, reputation, content signals, and receiver policy - work through the guides in the <a href="/email-deliverability/">email deliverability</a> hub, which connect this cleanup to the rest of your sending stack.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is SORBS still active?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, SORBS is permanently shut down: Proofpoint decommissioned every dnsbl.sorbs.net sub-zone and the sorbs.net delisting portal in June 2024, and the zones now return no DNS data at all.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can you still request delisting from SORBS?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, delisting requests are no longer possible: the SORBS web portal, lookup tools, and escalation process were all retired together with the zones in June 2024.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a SORBS entry still cause 550 rejections today?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, in one narrow case: a legacy on-premises mail server that still queries dnsbl.sorbs.net can time out or false-reject senders, which is why recipient admins should remove the retired zone from their RBL configuration.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I remove dnsbl.sorbs.net from my own mail server configuration?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, any reference to a SORBS zone in Postfix, Exim, or Exchange settings should be removed: queries to the retired zone add DNS latency and can produce false results, while active lists such as Spamhaus ZEN and Barracuda provide real signal.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Was SORBS the same blocklist as Spamhaus?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, they were separate organizations with different zones: SORBS combined around seventeen sub-zones covering dynamic ranges, open relays, and proxies, while Spamhaus operates the actively maintained SBL, XBL, PBL, and DBL lists that receivers enforce today.</p></details>
     </div>
   </div>
 </BaseLayout>

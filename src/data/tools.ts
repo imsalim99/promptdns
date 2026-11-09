@@ -6,7 +6,7 @@ export interface NavColumn { heading: string; groups: NavGroup[] }
 
 export const TOOL_CATEGORIES: ToolCategory[] = [
   {
-    id: 'dns', cat: 'DNS Tools', note: 'Lookups, propagation, diagnostics, and resolver benchmarks',
+    id: 'dns', cat: 'DNS Records, Lookups & Diagnostics', note: 'Every record type, propagation, delegation, resolver speed, and DNSSEC',
     tools: [
       { name: 'DNS Propagation Checker', href: '/dns-propagation-checker/', desc: 'Check DNS records across Cloudflare, Google, and AliDNS resolvers' },
       { name: 'DNS Record Lookup', href: '/dns-record-lookup/', desc: 'Query 10 core DNS record types for a domain in one pass' },
@@ -34,7 +34,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ],
   },
   {
-    id: 'ai', cat: 'AI & Web Infrastructure', note: 'The layer AI systems read',
+    id: 'ai', cat: 'AI Crawler Access & Web Infrastructure', note: 'robots.txt, llms.txt, AI crawler verdicts, and machine readability',
     tools: [
       { name: 'AI Crawler Checker', href: '/ai-crawler-checker/', desc: 'Audit your robots.txt against 12 AI crawlers, GPTBot to PerplexityBot, and see exactly who\u2019s allowed or blocked.' },
       { name: 'robots.txt Checker', href: '/robots-txt-checker/', desc: 'Validate robots.txt line by line: syntax errors, unknown directives, and AI-bot verdicts.' },
@@ -46,7 +46,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ],
   },
   {
-    id: 'email', cat: 'Email Authentication', note: 'SPF, DKIM, DMARC, blocklists, and deliverability',
+    id: 'email', cat: 'Email Authentication & Deliverability', note: 'SPF, DKIM, DMARC, blocklists, headers, and the mail plumbing that gets you delivered',
     tools: [
       { name: 'SPF Record Checker', href: '/spf-record-checker/', desc: 'Validate your SPF term by term: syntax errors, the all qualifier, and exactly how many of your 10 DNS lookups you\u2019re spending.' },
       { name: 'SPF Flattener', href: '/spf-flattener/', desc: 'Resolve every include: down to raw IPs and generate a flattened SPF that stays under the 10-lookup permerror limit.' },
@@ -67,7 +67,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ],
   },
   {
-    id: 'domain-ip', cat: 'Domain & IP', note: 'Your address, and everyone else\u2019s',
+    id: 'domain-ip', cat: 'Domains, IP & ASN Network Identity', note: 'Your address, their address, and the networks behind both',
     tools: [
       { name: 'What Is My IP', href: '/my-ip/', desc: 'Your public IP with reverse DNS, ASN, ISP, and approximate location, resolved as the page loads.' },
       { name: 'IP Lookup', href: '/ip-lookup/', desc: 'Any IPv4 or IPv6 address: geolocation, network owner, ASN, and reverse DNS via our own DoH engine.' },

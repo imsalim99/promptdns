@@ -5,7 +5,7 @@ import { TOOL_CATEGORIES, TOTAL_TOOLS } from '../data/tools';
 
 const faqs = [
   [
-    'Are all 56 DNS and email tools really free with no signup?',
+    'Are all 57 DNS and email tools really free with no signup?',
     'Yes, every lookup, checker, generator, and validator on PromptDNS runs in your browser at no cost, with no account wall, no daily query cap, and no blurred results. Paid plans apply only when teams enable continuous background monitoring, scheduled alerts, or hosted SPF and DMARC management.',
   ],
   [
@@ -235,7 +235,28 @@ const ticker = [
           </div>
         ))}
       </div>
-      <figure class="mt-12">
+      
+      <div class="mx-auto mt-16 max-w-4xl" data-vs="scan-checks">
+        <h2 class="font-display text-center text-2xl font-bold tracking-tight text-ink">What the 7-Check Domain Security Audit Inspects</h2>
+        <p class="mt-2 text-center text-sm text-ink-dim">The free scanner runs 7 weighted checks totalling 100 points. This is exactly what each one inspects and what a pass requires:</p>
+        <div class="mt-6 overflow-x-auto rounded-2xl border border-line bg-panel/60">
+          <table class="pdns-table" style="width:100%">
+            <thead><tr><th>Check</th><th>Points</th><th>DNS Record Inspected</th><th>What a Pass Requires</th></tr></thead>
+            <tbody>
+              <tr><td class="font-medium text-ink">1. DMARC Policy &amp; Reporting</td><td class="font-mono text-xs text-accent">25 pts</td><td class="text-sm text-ink-dim">TXT at _dmarc.domain</td><td class="text-sm text-ink-dim">A v=dmarc1 policy is published and set to quarantine or reject</td></tr>
+              <tr><td class="font-medium text-ink">2. SPF Syntax &amp; 10-Lookup Cap</td><td class="font-mono text-xs text-accent">20 pts</td><td class="text-sm text-ink-dim">TXT at the domain root (v=spf1)</td><td class="text-sm text-ink-dim">Valid syntax within the 10-DNS-lookup limit</td></tr>
+              <tr><td class="font-medium text-ink">3. Website DNS A/AAAA Resolution</td><td class="font-mono text-xs text-accent">15 pts</td><td class="text-sm text-ink-dim">A and AAAA at the domain root</td><td class="text-sm text-ink-dim">An A record exists, so the site resolves over IPv4, with IPv6 noted</td></tr>
+              <tr><td class="font-medium text-ink">4. DKIM Selector &amp; Key Strength</td><td class="font-mono text-xs text-accent">15 pts</td><td class="text-sm text-ink-dim">TXT at selector._domainkey</td><td class="text-sm text-ink-dim">A DKIM public key exists on a common selector name</td></tr>
+              <tr><td class="font-medium text-ink">5. MX Mail Server Redundancy</td><td class="font-mono text-xs text-accent">10 pts</td><td class="text-sm text-ink-dim">MX at the domain root</td><td class="text-sm text-ink-dim">MX records exist, so the domain can receive mail</td></tr>
+              <tr><td class="font-medium text-ink">6. DNSSEC Chain of Trust</td><td class="font-mono text-xs text-accent">10 pts</td><td class="text-sm text-ink-dim">DS at the parent zone</td><td class="text-sm text-ink-dim">The parent zone publishes DS records, so answers are signed</td></tr>
+              <tr><td class="font-medium text-ink">7. Nameserver Redundancy &amp; Diversity</td><td class="font-mono text-xs text-accent">5 pts</td><td class="text-sm text-ink-dim">NS at the domain root</td><td class="text-sm text-ink-dim">Two or more nameservers answer for the zone</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-4 text-center text-sm text-ink-dim">The weights mirror how mailbox providers and resolvers weigh the same signals: enforcement policy outranks syntax, and delegation health matters but carries the least weight. Run the scanner above with your own domain to see all 7 verdicts in one pass.</p>
+      </div>
+
+<figure class="mt-12">
         <img src="/screenshots/overview.png" alt="The PromptDNS monitoring dashboard: live security scores for each monitored domain, open alerts, and the next recommended step" loading="lazy" width="1440" height="820"
           class="w-full rounded-xl border border-line shadow-[0_10px_40px_rgba(0,0,0,.4)]" />
         <figcaption class="mt-3 text-center text-xs text-ink-faint">The monitoring dashboard - scores, alerts, and the next recommended step on one screen.</figcaption>
