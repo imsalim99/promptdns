@@ -33,7 +33,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <h2 id="why-selectors-exist">Why selectors exist</h2>
       <p>
         One domain usually sends through several systems: Google Workspace, an ESP, a billing
-        service. Each publishes its own key, and selectors keep them from colliding:
+        service. Each sending service publishes its own DKIM selector, and the
+        <a href="/esp-dns-settings/" class="text-accent hover:text-accent-soft">ESP DNS Settings Matrix</a>
+        lists the default selector and record type for all 44 platforms covered here. Selectors keep keys from colliding:
         <code>google._domainkey</code> for Workspace, <code>s1._domainkey</code> for Zoho,
         <code>k1._domainkey</code> for Mailchimp. The message's DKIM-Signature header carries the
         selector, so the receiver knows exactly where to look. Multiple selectors also enable

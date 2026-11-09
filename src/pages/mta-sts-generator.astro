@@ -1,0 +1,347 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', 'name': 'What is MTA-STS and why do I need both a DNS TXT record and an HTTPS file?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The _mta-sts DNS TXT record is the discovery mechanism: it tells sending servers that your domain supports MTA-STS and carries an id= that changes whenever the policy changes. The actual rules (mode, allowed MX hosts, max_age) live in the mta-sts.txt file served over HTTPS on the mta-sts.<domain> hostname. The split keeps the DNS record tiny while the policy file can carry as many mx: lines as your infrastructure needs.' } },
+    { '@type': 'Question', 'name': 'Which MTA-STS mode should I start with: testing or enforce?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Start with testing. In testing mode, sending servers that fail the TLS or MX checks still deliver the mail but report the failure through TLS-RPT, so you can confirm every legitimate MX path passes before anything is dropped. Move to enforce only after the reports show a clean period.' } },
+    { '@type': 'Question', 'name': 'Why must I change the id= value in _mta-sts TXT whenever I edit mta-sts.txt?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sending servers cache the policy file until the id= changes or max_age expires. If you edit mta-sts.txt without changing id=, cached senders keep enforcing the old policy, so new MX hosts stay unauthorized and enforcement can bounce legitimate mail.' } },
+    { '@type': 'Question', 'name': 'Can the https://mta-sts.example.com/.well-known/mta-sts.txt URL use a 301 redirect?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, RFC 8461 section 3.3 forbids redirects: the policy must be served directly with HTTPS and a valid certificate on the mta-sts.<domain> hostname. A 301 or 302 to another URL causes sending servers to treat the policy as absent.' } },
+    { '@type': 'Question', 'name': 'How do wildcard mx: rules work in an mta-sts.txt policy file?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'An mx: line may use a leftmost wildcard, such as *.mail.protection.outlook.com, which authorizes any hostname matching that pattern. The wildcard covers only one label at the leftmost position: mail.protection.outlook.com itself must be listed separately if your MX records point at the bare host.' } },
+  ],
+};
+---
+<BaseLayout
+  title="MTA-STS Generator: Build _mta-sts DNS TXT Record & Policy File (RFC 8461) | PromptDNS"
+  description="MTA-STS generator: auto-detect your MX servers over DoH and build the RFC 8461 mta-sts.txt policy file, the _mta-sts TXT record, and the companion RFC 8460 _smtp._tls TLS-RPT record."
+  schema={[faqSchema]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/tools/" class="hover:text-accent">Tools</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">MTA-STS Generator</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MTA-STS Record &amp; Policy Generator: Build RFC 8461 TXT and mta-sts.txt Files</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Generate a standards-compliant _mta-sts DNS TXT record, a /.well-known/mta-sts.txt HTTPS policy file (RFC 8461), and a companion _smtp._tls TLS-RPT reporting record (RFC 8460) by auto-detecting your domain's live MX servers over DNS-over-HTTPS.</p>
+
+    <ToolPanel>
+      <form id="sts-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="sts-domain">Domain</label>
+        <input id="sts-domain" data-preset-target="domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Auto-Fetch MX &amp; Generate Policy</button>
+      </form>
+      <div class="mt-2 flex flex-wrap gap-2 text-xs text-ink-faint">
+        <span>Try:</span>
+        <button type="button" class="sts-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="cloudflare.com">cloudflare.com</button>
+        <button type="button" class="sts-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="github.com">github.com</button>
+        <button type="button" class="sts-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="stripe.com">stripe.com</button>
+      </div>
+
+      <div id="sts-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+
+      <div id="sts-config" class="mt-4 hidden grid gap-3">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label for="sts-mode" class="mb-1 block text-xs text-ink-faint">Policy mode</label>
+            <select id="sts-mode" class="w-full rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none">
+              <option value="testing" selected>testing (recommended rollout: report, do not drop)</option>
+              <option value="enforce">enforce (strict TLS 1.2/1.3 required)</option>
+              <option value="none">none (decommission the policy)</option>
+            </select>
+          </div>
+          <div>
+            <label for="sts-maxage" class="mb-1 block text-xs text-ink-faint">max_age (seconds)</label>
+            <select id="sts-maxage" class="w-full rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink focus:border-accent focus:outline-none">
+              <option value="86400" selected>86400 - 1 day (testing)</option>
+              <option value="604800">604800 - 7 days (initial enforce)</option>
+              <option value="2419200">2419200 - 28 days</option>
+              <option value="31557600">31557600 - 1 year (RFC 8461 maximum)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="sts-mx" class="mb-1 block text-xs text-ink-faint">MX host patterns (one per line, leftmost wildcards like *.mail.protection.outlook.com allowed per RFC 8461 section 3.2)</label>
+          <textarea id="sts-mx" rows="4" spellcheck="false" class="w-full rounded-md border border-line bg-transparent px-3 py-2 font-mono text-xs text-ink focus:border-accent focus:outline-none"></textarea>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <div>
+            <label for="sts-rua" class="mb-1 block text-xs text-ink-faint">TLS-RPT reporting address (rua=, optional: mailto:tlsrpt@example.com)</label>
+            <input id="sts-rua" type="text" autocomplete="off" spellcheck="false" placeholder="mailto:tlsrpt@example.com"
+              class="w-full rounded-md border border-line bg-transparent px-3 py-2 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          </div>
+          <button type="button" id="sts-regen" class="self-end rounded-md border border-accent/40 px-4 py-2 text-xs font-medium text-accent hover:bg-accent/10">Regenerate id=</button>
+        </div>
+      </div>
+
+      <p id="sts-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Enter a domain above to fetch its live MX records and build the three artifacts.
+      </p>
+
+      <div id="sts-output" class="mt-4 hidden grid gap-3">
+        <div class="rounded-lg border border-line bg-panel/60 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-sm font-semibold text-ink">File 1 - mta-sts.txt policy file</p>
+            <div class="flex gap-2">
+              <button type="button" id="sts-copy-file" class="rounded-md border border-line bg-panel-2 px-3 py-1 text-xs text-ink hover:border-accent/40">Copy</button>
+              <button type="button" id="sts-download" class="rounded-md border border-accent/40 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/10">Download mta-sts.txt</button>
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-ink-faint">Serve at https://mta-sts.<span id="sts-host1">yourdomain</span>/.well-known/mta-sts.txt with Content-Type: text/plain, no redirects (RFC 8461 section 3.3).</p>
+          <pre id="sts-file" class="mt-2 overflow-x-auto rounded-md border border-line bg-panel-2 p-3 font-mono text-xs leading-relaxed text-accent-soft whitespace-pre-wrap"></pre>
+        </div>
+        <div class="rounded-lg border border-line bg-panel/60 p-4">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm font-semibold text-ink">Record 2 - _mta-sts.<span id="sts-host2">yourdomain</span> DNS TXT</p>
+            <button type="button" id="sts-copy-txt" class="rounded-md border border-line bg-panel-2 px-3 py-1 text-xs text-ink hover:border-accent/40">Copy</button>
+          </div>
+          <pre id="sts-txt" class="mt-2 overflow-x-auto rounded-md border border-line bg-panel-2 p-3 font-mono text-xs leading-relaxed text-accent-soft whitespace-pre-wrap"></pre>
+        </div>
+        <div class="rounded-lg border border-line bg-panel/60 p-4">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm font-semibold text-ink">Record 3 - _smtp._tls.<span id="sts-host3">yourdomain</span> DNS TXT (RFC 8460 TLS-RPT)</p>
+            <button type="button" id="sts-copy-tls" class="rounded-md border border-line bg-panel-2 px-3 py-1 text-xs text-ink hover:border-accent/40">Copy</button>
+          </div>
+          <pre id="sts-tls" class="mt-2 overflow-x-auto rounded-md border border-line bg-panel-2 p-3 font-mono text-xs leading-relaxed text-accent-soft whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+      <ResultCard tool="mta-sts-generator" />
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What This Result Means: 3 MTA-STS Policy Modes and Deployment Requirements</h2>
+      <p>Every generated policy resolves into one of the deployment states below, plus the cache rule that governs when senders re-fetch it:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>State</th><th>Observed Condition</th><th>What Sending Servers Do</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. testing Mode (Safe Initial Rollout with TLS-RPT)</td><td class="text-sm text-ink-dim">mode: testing with a working _smtp._tls reporting record</td><td class="text-sm text-ink-dim">Senders apply the policy for reporting only: TLS/MX failures are reported via TLS-RPT but mail is still delivered</td><td class="text-sm text-ink-dim">The correct first state: you see every violation before anything is dropped.</td></tr>
+            <tr><td class="font-medium text-ink">2. enforce Mode (Mandatory TLS 1.2/1.3 &amp; Valid X.509 Certificate)</td><td class="text-sm text-ink-dim">mode: enforce after a clean reporting period</td><td class="text-sm text-ink-dim">Senders refuse delivery over unauthenticated channels: the MX must present a valid certificate and match an mx: line</td><td class="text-sm text-ink-dim">Full downgrade protection: active attackers cannot strip STARTTLS on your inbound mail.</td></tr>
+            <tr><td class="font-medium text-ink">3. none Mode (Policy Decommissioning)</td><td class="text-sm text-ink-dim">mode: none published while retiring MTA-STS</td><td class="text-sm text-ink-dim">Senders stop enforcing immediately but keep the discovery record until max_age expires</td><td class="text-sm text-ink-dim">The safe off switch: never just delete the records, publish none first.</td></tr>
+            <tr><td class="font-medium text-ink">4. Policy ID (id=) Cache Invalidation Rule</td><td class="text-sm text-ink-dim">The _mta-sts TXT id= value versus the cached policy copy</td><td class="text-sm text-ink-dim">Senders re-fetch the HTTPS policy only when the DNS id= changes or their cached copy exceeds max_age</td><td class="text-sm text-ink-dim">Every policy edit needs a new id=, or cached senders enforce the stale version.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to Deploy MTA-STS and TLS-RPT in 4 Steps</h2>
+      <p>The generator produces the artifacts; deployment is a 4-step sequence:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Host.</strong> Host the generated file at https://mta-sts.<span class="font-mono text-sm">yourdomain</span>/.well-known/mta-sts.txt with a valid TLS certificate and no redirects: a subdomain on Cloudflare Pages/Workers, an Nginx server block, or an S3 bucket behind CloudFront all work, as long as the response is 200 with Content-Type: text/plain (RFC 8461 section 3.3 forbids following 301/302 redirects).</li>
+        <li><strong>Verify.</strong> Verify every MX server in the policy presents a TLS 1.2 or 1.3 certificate whose SAN matches the MX hostname: senders check the certificate against the MX name they connect to, not against your domain.</li>
+        <li><strong>Publish.</strong> Publish both DNS records from the generator: the _mta-sts TXT discovery record and the companion _smtp._tls TLS-RPT record with your rua= mailbox.</li>
+        <li><strong>Advance.</strong> Advance from testing to enforce only after your TLS-RPT reports show a clean period: switch the mode, bump the id=, redeploy the policy file, and keep both records in sync.</li>
+      </ol>
+
+      <h2>Verify Your Generated MTA-STS Policy From the Command Line (dig and curl)</h2>
+      <pre><code># The discovery record (id= must change whenever the policy changes):
+dig TXT _mta-sts.example.com +short
+
+# The TLS-RPT companion record:
+dig TXT _smtp._tls.example.com +short
+
+# The policy file: expect HTTP 200, text/plain, and no redirect:
+curl -sI https://mta-sts.example.com/.well-known/mta-sts.txt
+curl -s https://mta-sts.example.com/.well-known/mta-sts.txt</code></pre>
+
+      <h2>Reference Table: MTA-STS Policy Keys, DNS Tags, and Provider MX Patterns (RFC 8461)</h2>
+      <p>Two references in one: the keys each artifact can carry, and the standard mx: lines for the major mailbox platforms:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Key / Tag</th><th>Artifact</th><th>Values</th><th>Meaning (RFC 8461 / RFC 8460)</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">version: STSv1</td><td class="text-sm text-ink-dim">mta-sts.txt</td><td class="text-sm text-ink-dim">STSv1 (fixed)</td><td class="text-sm text-ink-dim">Policy format version; required first key.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">mode:</td><td class="text-sm text-ink-dim">mta-sts.txt</td><td class="text-sm text-ink-dim">testing, enforce, none</td><td class="text-sm text-ink-dim">Enforcement level applied by sending servers.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">mx:</td><td class="text-sm text-ink-dim">mta-sts.txt</td><td class="text-sm text-ink-dim">Hostname or leftmost wildcard, one per line</td><td class="text-sm text-ink-dim">The only MX hostnames senders may deliver to in enforce mode.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">max_age:</td><td class="text-sm text-ink-dim">mta-sts.txt</td><td class="text-sm text-ink-dim">Seconds (86400 to 31557600)</td><td class="text-sm text-ink-dim">How long senders may cache the policy; 31557600 is the maximum.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">v=STSv1</td><td class="text-sm text-ink-dim">_mta-sts TXT</td><td class="text-sm text-ink-dim">STSv1 (fixed)</td><td class="text-sm text-ink-dim">Discovery record version.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">id=</td><td class="text-sm text-ink-dim">_mta-sts TXT</td><td class="text-sm text-ink-dim">Up to 32 alphanumeric ASCII characters</td><td class="text-sm text-ink-dim">Policy version tag: change it on every policy edit to invalidate caches.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">v=TLSRPTv1</td><td class="text-sm text-ink-dim">_smtp._tls TXT</td><td class="text-sm text-ink-dim">TLSRPTv1 (fixed)</td><td class="text-sm text-ink-dim">TLS reporting discovery record version (RFC 8460).</td></tr>
+            <tr><td class="font-mono text-xs text-ink">rua=</td><td class="text-sm text-ink-dim">_smtp._tls TXT</td><td class="text-sm text-ink-dim">mailto: or https: URI</td><td class="text-sm text-ink-dim">Where TLS failure reports are delivered.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Provider</th><th>Standard mx: policy lines</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Google Workspace</td><td class="font-mono text-xs text-ink-dim">aspmx.l.google.com<br />*.aspmx.l.google.com<br />*.googlemail.com</td></tr>
+            <tr><td class="font-medium text-ink">Microsoft 365</td><td class="font-mono text-xs text-ink-dim">*.mail.protection.outlook.com</td></tr>
+            <tr><td class="font-medium text-ink">Proton Mail</td><td class="font-mono text-xs text-ink-dim">mail.protonmail.ch<br />mailsec.protonmail.ch</td></tr>
+            <tr><td class="font-medium text-ink">Zoho Mail</td><td class="font-mono text-xs text-ink-dim">mx.zoho.com<br />mx2.zoho.com<br />mx3.zoho.com</td></tr>
+            <tr><td class="font-medium text-ink">Fastmail</td><td class="font-mono text-xs text-ink-dim">in1-smtp.messagingengine.com<br />in2-smtp.messagingengine.com</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>What This Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Generating the artifacts does not host them: the https://mta-sts.<span class="font-mono text-sm">yourdomain</span>/.well-known/mta-sts.txt file must be deployed on your own web infrastructure with a valid certificate.</li>
+        <li>RFC 8461 section 3.3 forbids redirects: a 301/302 on the policy URL (a common side effect of www-redirect rules or HTTP-to-HTTPS hops on the wrong hostname) makes senders treat the policy as absent, and this generator cannot see your web server config.</li>
+        <li>Every mx: server must present a valid X.509 TLS 1.2 or 1.3 certificate matching the MX hostname: the generator writes the lines, but certificate validation happens when senders connect.</li>
+        <li>Live validation of a deployed policy is a different check: run the MTA-STS checker after hosting the file and publishing the records.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The id= is the whole deployment model: senders cache the policy file until the DNS id= changes or max_age expires, so editing mta-sts.txt on the web server without bumping id= does nothing for anyone who already cached the old copy - new MX hosts stay unauthorized and enforce-mode senders keep refusing them. The generator's Regenerate id= button exists for exactly this: policy change, new id=, redeploy the file, in that order. The id= timestamp format (YYYYMMDDHHMMSS) makes the version visible at a glance in dig output.</p>
+      </aside>
+
+      <h2>What We See Across Domains</h2>
+      <p>
+        The dominant real-world MTA-STS failure is not the policy content but the hosting: the mta-sts.<span class="font-mono text-sm">yourdomain</span> subdomain sits behind an HTTP-to-HTTPS or www redirect rule inherited from the apex web server, and RFC 8461 parsers reject the redirect as a missing policy. The second pattern is Microsoft 365 domains adopting the wildcard *.mail.protection.outlook.com mx: line, which is exactly what the leftmost-wildcard rule exists for: tenant MX hostnames change per datacenter, and the wildcard covers every variant.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is MTA-STS and why do I need both a DNS TXT record and an HTTPS file?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The _mta-sts DNS TXT record is the discovery mechanism: it tells sending servers that your domain supports MTA-STS and carries an id= that changes whenever the policy changes. The actual rules (mode, allowed MX hosts, max_age) live in the mta-sts.txt file served over HTTPS on the mta-sts.<domain> hostname. The split keeps the DNS record tiny while the policy file can carry as many mx: lines as your infrastructure needs.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which MTA-STS mode should I start with: testing or enforce?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Start with testing. In testing mode, sending servers that fail the TLS or MX checks still deliver the mail but report the failure through TLS-RPT, so you can confirm every legitimate MX path passes before anything is dropped. Move to enforce only after the reports show a clean period.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why must I change the id= value in _mta-sts TXT whenever I edit mta-sts.txt?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Sending servers cache the policy file until the id= changes or max_age expires. If you edit mta-sts.txt without changing id=, cached senders keep enforcing the old policy, so new MX hosts stay unauthorized and enforcement can bounce legitimate mail.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can the https://mta-sts.example.com/.well-known/mta-sts.txt URL use a 301 redirect?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, RFC 8461 section 3.3 forbids redirects: the policy must be served directly with HTTPS and a valid certificate on the mta-sts.<domain> hostname. A 301 or 302 to another URL causes sending servers to treat the policy as absent.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do wildcard mx: rules work in an mta-sts.txt policy file?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">An mx: line may use a leftmost wildcard, such as *.mail.protection.outlook.com, which authorizes any hostname matching that pattern. The wildcard covers only one label at the leftmost position: mail.protection.outlook.com itself must be listed separately if your MX records point at the bare host.</p></details>
+      </div>
+
+      <h2>Next Checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Validate a deployed policy with the <a href="/mta-sts-checker/">MTA-STS checker</a>.</li>
+        <li>Read the protocol in the <a href="/mta-sts/">MTA-STS</a> guide and the record format in the <a href="/mta-sts-record/">MTA-STS record</a> guide.</li>
+        <li>Watch the failure reports with the <a href="/tls-rpt-checker/">TLS-RPT checker</a>, the <a href="/tls-rpt/">TLS-RPT</a> guide, and the <a href="/tls-rpt-record/">TLS-RPT record</a> guide.</li>
+        <li>Trace the mail paths the policy protects with the <a href="/mx-record-lookup/">MX record lookup</a>.</li>
+        <li>Run the full sending-stack preflight in the <a href="/smtp-tester/">SMTP preflight</a>.</li>
+      </ul>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
+  const form = document.getElementById('sts-form') as HTMLFormElement;
+  const input = document.getElementById('sts-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('sts-status')!;
+  const configEl = document.getElementById('sts-config')!;
+  const outputEl = document.getElementById('sts-output')!;
+  const modeSel = document.getElementById('sts-mode') as HTMLSelectElement;
+  const maxageSel = document.getElementById('sts-maxage') as HTMLSelectElement;
+  const mxTa = document.getElementById('sts-mx') as HTMLTextAreaElement;
+  const ruaInput = document.getElementById('sts-rua') as HTMLInputElement;
+  const regenBtn = document.getElementById('sts-regen') as HTMLButtonElement;
+  const filePre = document.getElementById('sts-file')!;
+  const txtPre = document.getElementById('sts-txt')!;
+  const tlsPre = document.getElementById('sts-tls')!;
+  const TOOL = 'mta-sts-generator';
+
+  let domain = '';
+  let id = '';
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[]) => {
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail: { tool: TOOL, domain, verdict, verdictLine, findings, related: [{ label: 'MTA-STS checker', href: '/mta-sts-checker/' }, { label: 'TLS-RPT checker', href: '/tls-rpt-checker/' }] } as PdnsResult }));
+  };
+
+  function newId() {
+    id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  }
+
+  function render() {
+    if (!domain) return;
+    const mode = modeSel.value;
+    const maxAge = maxageSel.value;
+    const mxLines = mxTa.value.split('\n').map((l) => l.trim().replace(/\.$/, '')).filter(Boolean);
+    const rua = ruaInput.value.trim();
+
+    const fileLines = ['version: STSv1', `mode: ${mode}`];
+    for (const m of mxLines) fileLines.push(`mx: ${m}`);
+    if (mode !== 'none') fileLines.push(`max_age: ${maxAge}`);
+    filePre.textContent = fileLines.join('\n');
+    txtPre.textContent = `v=STSv1; id=${id};`;
+    tlsPre.textContent = rua ? `v=TLSRPTv1; rua=${rua}` : 'v=TLSRPTv1; rua=mailto:tlsrpt@' + domain + '  (add your rua= mailbox above, then republish)';
+    for (const el of [document.getElementById('sts-host1')!, document.getElementById('sts-host2')!, document.getElementById('sts-host3')!]) el.textContent = domain;
+  }
+
+  for (const el of [modeSel, maxageSel, mxTa, ruaInput]) el.addEventListener('input', render);
+  regenBtn.addEventListener('click', () => { newId(); render(); });
+
+  function download() {
+    const blob = new Blob([filePre.textContent + '\n'], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mta-sts.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  document.getElementById('sts-download')!.addEventListener('click', download);
+  for (const [btnId, pre] of [['sts-copy-file', filePre], ['sts-copy-txt', txtPre], ['sts-copy-tls', tlsPre]] as const) {
+    document.getElementById(btnId)!.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(pre.textContent ?? ''); } catch { /* clipboard unavailable */ }
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Fetching MX records and existing MTA-STS state for ${domain}...`);
+    outputEl.classList.add('hidden');
+    document.getElementById('sts-sample-note')?.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+
+    try {
+      const [mx, existing, existingTls] = await Promise.all([
+        lookup(domain, 'MX', RESOLVERS[0]),
+        lookup(`_mta-sts.${domain}`, 'TXT', RESOLVERS[0]),
+        lookup(`_smtp._tls.${domain}`, 'TXT', RESOLVERS[0]),
+      ]);
+      const hosts = [...new Set(mx.answers.filter((x) => x.type === 15).map((x) => x.data.replace(/^\d+\s+/, '').replace(/\.$/, '')))].sort();
+      const existingSts = txtRecords(existing.answers).find((t) => t.startsWith('v=STSv1'));
+      const existingTlsRpt = txtRecords(existingTls.answers).find((t) => t.startsWith('v=TLSRPTv1'));
+
+      configEl.classList.remove('hidden');
+      outputEl.classList.remove('hidden');
+      mxTa.value = hosts.join('\n');
+      if (existingTlsRpt) {
+        const m = existingTlsRpt.match(/rua=([^;]+)/i);
+        if (m) ruaInput.value = m[1].trim();
+      }
+      newId();
+      render();
+
+      if (!hosts.length) {
+        setStatus('warn', `No MX records found for ${domain}: the policy form is empty. Enter mx: hostnames manually, or publish MX records first. This is an inconclusive result, not a pass or fail.`);
+        emit('warn', `No MX records for ${domain}: policy generated from an empty host list.`, [{ code: 'LOOKUP_NONE' }]);
+        return;
+      }
+
+      const already = existingSts ? `Existing policy found: ${existingSts.slice(0, 60)}${existingSts.length > 60 ? '...' : ''}. ` : '';
+      setStatus('pass', `${already}Fetched ${hosts.length} MX host(s) and built the 3 artifacts for ${domain}. Review the mode and mx: lines before deploying.`);
+      emit('pass', `MTA-STS artifacts for ${domain}: ${hosts.length} MX host(s), mode ${modeSel.value}, id ${id}.`, [{ code: 'LOOKUP_FOUND', detail: `MX: ${hosts.join(', ')}` }]);
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolver. This is an inconclusive result, not a pass or fail.');
+      emit('warn', 'DNS query did not complete.', [{ code: 'DNS_QUERY_FAILED' }]);
+    }
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.sts-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.q || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>

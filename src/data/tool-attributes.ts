@@ -179,6 +179,7 @@ export const TOOL_PRESETS: Record<string, string[]> = {
   'cidr-calculator': ['192.168.1.0/24', '10.0.0.1', '2001:db8::/32'],
   'ipv4-to-ipv6-converter': ['8.8.8.8', '192.168.1.1', '2606:4700:4700::1111'],
   'punycode-converter': ['münchen.de', 'bücher.de', 'пример.рф'],
+  'ptr-record-lookup': ['8.8.8.8', '2001:4860:4860::8888', 'gmail.com', 'cloudflare.com'],
   // pages with their own richer preset pills: hide the default row
   'asn-lookup': [],
   'ip-lookup': [],

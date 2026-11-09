@@ -1,0 +1,226 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { ESP_SETTINGS, ESP_CATEGORIES } from '../data/esp-settings';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', 'name': 'What SPF include value do I add for my email platform?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Look the platform up in the matrix above: each row carries the exact include: mechanism documented in that provider\u2019s setup guide. Some platforms never need a root include because they authenticate SPF through a delegated Return-Path CNAME, and several assign the include string from their dashboard rather than publishing a fixed value.' } },
+    { '@type': 'Question', 'name': 'Why do some providers give CNAME records instead of TXT records for DKIM?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A CNAME delegates the selector to the provider\u2019s own zone, so the provider rotates keys and updates sending infrastructure without touching your DNS again. A direct TXT record publishes the key on your zone and stays fixed until you replace it by hand. Delegation is the lower-maintenance choice wherever a provider offers it.' } },
+    { '@type': 'Question', 'name': 'How do I find the DKIM selector my provider actually uses?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Send a real message from the platform, open the raw headers, and read the s= field of the DKIM-Signature header: that value is the selector. The matrix above lists the defaults for the major platforms, and the DKIM checker can auto-discover common selectors for your domain when you leave the selector field empty.' } },
+    { '@type': 'Question', 'name': 'Do I still need the root SPF include if I already published the provider\u2019s CNAME records?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Usually no. When a provider delegates SPF with a custom Return-Path CNAME, the include: mechanism on your root record is redundant: it spends one of your 10 lookups to authorize a path that the CNAME already authenticates. Add the include only when the provider documents it for your configuration, such as SendGrid with Automated Security turned off.' } },
+    { '@type': 'Question', 'name': 'Does every ESP pass DMARC alignment by default?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No. Platforms with a custom Return-Path align both SPF and DKIM with your domain, but platforms whose envelope sender stays on an ESP domain align DKIM only by default. DKIM alignment is enough for DMARC, provided the d= domain matches your visible From: domain and the policy is enforced.' } },
+  ],
+};
+---
+<BaseLayout
+  title="ESP DNS Settings Matrix: SPF Includes, DKIM Selectors & DMARC Alignment for 44 Platforms | PromptDNS"
+  description="The complete cross-platform DNS matrix: exact SPF include values, default DKIM selectors, Return-Path behavior, and DMARC alignment for 44 email platforms, with live selector testing."
+  schema={[faqSchema]}
+  breadcrumb={[["Home", "/"], ["Email Authentication", "/email-authentication/"], ["ESP DNS Settings Matrix"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
+    <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/email-authentication/" class="hover:text-accent">Email Authentication</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">ESP DNS Settings Matrix</span>
+    </nav>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ESP DNS Settings Matrix: SPF, DKIM Selectors, Return-Path &amp; DMARC Alignment</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        <strong class="text-ink">Every email platform publishes authentication differently: root SPF include, delegated Return-Path CNAMEs, or dashboard-assigned DKIM selectors</strong> - and the shape decides your SPF lookup spend. The matrix lists all 44 covered platforms with exact SPF mechanisms, selectors, and alignment. Enter your domain once to test any provider's selectors live.
+      </p>
+    </div>
+
+    <nav class="pd-toc mt-6" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#matrix">Master ESP DNS Configuration Matrix: All 44 Email Platforms Compared</a></li>
+        <li><a href="#architecture">Why Some ESPs Use Root SPF Includes While Others Use Custom Return-Path CNAMEs</a></li>
+        <li><a href="#audit-and-rotate">How to Audit Unknown ESP Senders and Rotate DKIM Selectors Safely</a></li>
+        <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <!-- Interactive bar: search, category filter, domain + live DKIM testing -->
+    <div class="glass mt-8 rounded-2xl border border-accent/25 bg-panel/80 p-5" data-vs="centerpiece">
+      <div class="mb-5 flex flex-wrap items-center gap-2 border-b border-line/60 pb-3.5" aria-label="Dataset attributes" data-vs="attributes">
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+          <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+          100% Free · No Sign Up
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">44 Platforms Covered</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">Sourced From the Shipped Setup Guides</span>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <input id="esp-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search 44 platforms, selectors, or include: strings..."
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <input id="esp-domain" data-preset-target="domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="yourdomain.com (for live DKIM tests)"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+      </div>
+      <div id="esp-cats" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter by category"></div>
+      <div id="esp-test-result" class="mt-3 hidden rounded-md border border-line bg-panel-2 px-4 py-3 font-mono text-xs leading-relaxed text-ink-dim"></div>
+      <p class="mt-2 text-xs text-ink-faint">Category buttons filter the matrix. Type your domain and use a row's Test DKIM button to probe that platform's selectors against it live over DNS-over-HTTPS. Rows marked Dashboard-assigned need the selector name from the setup guide.</p>
+    </div>
+
+    <div class="rich-text mt-10">
+      <h2 id="matrix">Master ESP DNS Configuration Matrix: All 44 Email Platforms Compared</h2>
+      <p>The table below carries the 7 configuration attributes for every platform: its category, the exact SPF mechanism your root domain uses, the DKIM selectors with their record type, the Return-Path behavior that decides SPF alignment, and the setup guide with the click-by-click steps:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table" id="esp-table">
+          <thead><tr><th>Platform</th><th>SPF Include / Mechanism</th><th>DKIM Selector(s) &amp; Record Type</th><th>Return-Path &amp; DMARC Alignment</th><th>Setup Guide</th></tr></thead>
+          <tbody id="esp-tbody">
+            {ESP_SETTINGS.map((e) => (
+              <tr id={e.slug} data-name={e.name.toLowerCase()} data-cat={e.category} data-search={`${e.name} ${e.slug} ${e.spfValue} ${e.dkimSelectors.join(' ')}`.toLowerCase()}>
+                <td class="font-medium text-ink">{e.name}<span class="block text-xs font-normal text-ink-faint">{e.category}</span></td>
+                <td class="font-mono text-xs text-ink-dim">{e.spfValue}</td>
+                <td class="text-sm text-ink-dim">
+                  <span class="font-mono text-xs text-accent">{e.dkimSelectors.join(', ')}</span>
+                  <span class="block text-xs">{e.dkimRecordType} - {e.keyType}</span>
+                  <button type="button" class="esp-test mt-1 rounded border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/10" data-slug={e.slug} data-name={e.name}>Test DKIM</button>
+                </td>
+                <td class="text-sm text-ink-dim">{e.returnPathBehavior}<span class="block text-xs font-medium">{e.dmarcAlignment}</span><span class="block text-xs text-ink-faint">{e.uiLocation}</span></td>
+                <td><a href={`/spf-dkim-dmarc-${e.slug}/`} class="text-accent hover:text-accent-soft">{e.name} setup guide</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>After you identify your platform's records, validate the assembled policy with the <a href="/spf-record-checker/">SPF record checker</a>, probe the published keys with the <a href="/dkim-record-checker/">DKIM record checker</a>, and grade the enforcement layer with the <a href="/dmarc-record-checker/">DMARC record checker</a>.</p>
+
+      <h2 id="architecture">Why Some ESPs Use Root SPF Includes While Others Use Custom Return-Path CNAMEs</h2>
+      <p>
+        Two architectures exist, and the difference is invisible until your SPF record hits the 10-lookup wall. <strong class="text-ink">Root SPF include platforms</strong> ask you to authorize their sending IPs inside your own policy: the include costs 1 of your 10 lookups, and their mail still leaves with an ESP envelope domain unless you also configure a custom Return-Path. <strong class="text-ink">Custom Return-Path CNAME platforms</strong> flip the model: a CNAME on your zone (an emXXXX bounce subdomain, a pm-bounces host, a MAIL FROM subdomain) lets the provider answer SPF for your domain on their infrastructure, costing your root record nothing and aligning the envelope automatically. The table below contrasts the two models on real platforms:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Platform</th><th>SPF Model</th><th>What Your Root Domain Carries</th><th>Lookup Cost on Root</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Google Workspace</td><td class="text-sm text-ink-dim">Root SPF include</td><td class="text-sm text-ink-dim">include:_spf.google.com in your v=spf1 record</td><td class="text-sm text-ink-dim">1 of 10</td></tr>
+            <tr><td class="font-medium text-ink">Microsoft 365</td><td class="text-sm text-ink-dim">Root SPF include</td><td class="text-sm text-ink-dim">include:spf.protection.outlook.com in your v=spf1 record</td><td class="text-sm text-ink-dim">1 of 10</td></tr>
+            <tr><td class="font-medium text-ink">SendGrid (Automated Security)</td><td class="text-sm text-ink-dim">Delegated Return-Path CNAME</td><td class="text-sm text-ink-dim">emXXXX, s1._domainkey, s2._domainkey CNAMEs; no root include needed</td><td class="text-sm text-ink-dim">0 of 10</td></tr>
+            <tr><td class="font-medium text-ink">Postmark</td><td class="text-sm text-ink-dim">Delegated Return-Path CNAME</td><td class="text-sm text-ink-dim">pm-bounces.<domain> CNAME plus the DKIM TXT/CNAME</td><td class="text-sm text-ink-dim">0 of 10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Adding an unnecessary root include is the quiet way domains lose their SPF budget: each redundant mechanism spends one of 10 lookups (RFC 7208 section 4.6.4) to authorize a path the CNAME already authenticates, and at the eleventh lookup every receiver returns permerror. Check the matrix before you paste an include string - the delegated platforms do not want one.
+      </p>
+
+      <h2 id="audit-and-rotate">How to Audit Unknown ESP Senders and Rotate DKIM Selectors Safely</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Inspect.</strong> Read the DKIM-Signature header (the d= and s= fields) on a real message from any sender you cannot identify: the d= names the organization that signed it and s= names the selector, which maps straight back to a platform in the matrix above.</li>
+        <li><strong>Match.</strong> Match every discovered selector to a row in the matrix, then confirm the DNS record type (CNAME delegation or direct TXT) agrees with what the row and the setup guide describe before changing anything.</li>
+        <li><strong>Delegate.</strong> Where the provider offers CNAME delegation, prefer it: the provider rotates 2048-bit keys and updates IP pools on its side, and your zone keeps a stable pointer that never goes stale.</li>
+        <li><strong>Prune.</strong> When a platform is retired, remove its include from the root SPF and revoke its selector with an empty p= tag; both steps keep the lookup budget lean and the selector inventory honest.</li>
+      </ol>
+      <p>Assemble the merged policy with the <a href="/spf-record-generator/">SPF record generator</a>, decode the selector naming rules in the <a href="/dkim-selector/">DKIM selector</a> guide, and confirm the identity layer holds together in the <a href="/dmarc-alignment/">DMARC alignment</a> guide.</p>
+
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The matrix exists because the same question - "what do I put in DNS for this vendor?" - has four different correct answers depending on the platform's architecture. The expensive mistake is treating all 44 the same: pasting an include for a delegated platform wastes lookup budget, and pasting a fixed selector for a dashboard-assigned platform publishes a key that never signs anything. When a row says Dashboard-assigned, the provider's panel is the source of truth, not any tutorial - vendors rotate infrastructure, and the dashboard value is always current.</p>
+      </aside>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What SPF include value do I add for my email platform?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Look the platform up in the matrix above: each row carries the exact include: mechanism documented in that provider's setup guide. Some platforms never need a root include because they authenticate SPF through a delegated Return-Path CNAME, and several assign the include string from their dashboard rather than publishing a fixed value.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why do some providers give CNAME records instead of TXT records for DKIM?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A CNAME delegates the selector to the provider's own zone, so the provider rotates keys and updates sending infrastructure without touching your DNS again. A direct TXT record publishes the key on your zone and stays fixed until you replace it by hand. Delegation is the lower-maintenance choice wherever a provider offers it.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find the DKIM selector my provider actually uses?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send a real message from the platform, open the raw headers, and read the s= field of the DKIM-Signature header: that value is the selector. The matrix above lists the defaults for the major platforms, and the DKIM checker can auto-discover common selectors for your domain when you leave the selector field empty.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I still need the root SPF include if I already published the provider's CNAME records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Usually no. When a provider delegates SPF with a custom Return-Path CNAME, the include: mechanism on your root record is redundant: it spends one of your 10 lookups to authorize a path that the CNAME already authenticates. Add the include only when the provider documents it for your configuration, such as SendGrid with Automated Security turned off.</p></details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does every ESP pass DMARC alignment by default?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Platforms with a custom Return-Path align both SPF and DKIM with your domain, but platforms whose envelope sender stays on an ESP domain align DKIM only by default. DKIM alignment is enough for DMARC, provided the d= domain matches your visible From: domain and the policy is enforced.</p></details>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { txtRecords } from '../lib/spf';
+  import { ESP_SETTINGS } from '../data/esp-settings';
+
+  const searchInput = document.getElementById('esp-search') as HTMLInputElement;
+  const domainInput = document.getElementById('esp-domain') as HTMLInputElement;
+  const catsEl = document.getElementById('esp-cats')!;
+  const tbody = document.getElementById('esp-tbody')!;
+  const resultEl = document.getElementById('esp-test-result')!;
+  const rows = Array.from(tbody.querySelectorAll('tr')) as HTMLTableRowElement[];
+
+  // Category filter pills
+  let activeCat = 'all';
+  for (const c of ESP_CATEGORIES) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = c.label;
+    b.dataset.cat = c.id;
+    b.className = 'esp-cat rounded-full border px-3 py-1 font-mono text-[11px] transition-colors ' +
+      (c.id === 'all' ? 'border-accent/50 bg-accent/10 text-accent' : 'border-line bg-panel-2 text-ink-dim hover:border-accent/40 hover:text-accent');
+    b.addEventListener('click', () => {
+      activeCat = c.id;
+      for (const btn of catsEl.querySelectorAll('button')) {
+        const on = (btn as HTMLElement).dataset.cat === activeCat;
+        btn.className = 'esp-cat rounded-full border px-3 py-1 font-mono text-[11px] transition-colors ' +
+          (on ? 'border-accent/50 bg-accent/10 text-accent' : 'border-line bg-panel-2 text-ink-dim hover:border-accent/40 hover:text-accent');
+      }
+      applyFilter();
+    });
+    catsEl.appendChild(b);
+  }
+
+  function applyFilter() {
+    const q = (searchInput.value || '').trim().toLowerCase();
+    for (const row of rows) {
+      const matchCat = activeCat === 'all' || row.dataset.cat === activeCat;
+      const matchText = !q || (row.dataset.search ?? '').includes(q) || (row.dataset.name ?? '').includes(q);
+      row.classList.toggle('hidden', !(matchCat && matchText));
+    }
+  }
+  searchInput.addEventListener('input', applyFilter);
+
+  // Live DKIM test per row
+  resultEl.textContent = '';
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('.esp-test') as HTMLElement | null;
+    if (!btn) return;
+    const slug = btn.dataset.slug!;
+    const esp = ESP_SETTINGS.find((x) => x.slug === slug);
+    if (!esp) return;
+    const domain = normalizeDomain(domainInput.value);
+    resultEl.classList.remove('hidden');
+    if (!domain.includes('.')) {
+      resultEl.textContent = 'Enter your domain in the bar above first, then test ' + esp.name + '\u2019s selectors against it.';
+      return;
+    }
+    if (esp.dkimSelectors[0].startsWith('Dashboard-assigned') || esp.dkimSelectors[0].startsWith('3 dashboard') || esp.dkimSelectors[0].startsWith('date-style') || esp.dkimSelectors[0].startsWith('3 SES')) {
+      resultEl.textContent = esp.name + ': the selector is assigned in the provider dashboard - open the ' + esp.name + ' setup guide for the exact name, then check it in the DKIM record checker.';
+      return;
+    }
+    if (esp.dkimSelectors[0].startsWith('None')) {
+      resultEl.textContent = esp.name + ' sends through your own mailbox platform: test the google selector of your Workspace domain instead.';
+      return;
+    }
+    resultEl.textContent = 'Probing ' + esp.name + ' selector(s) ' + esp.dkimSelectors.join(', ') + ' against ' + domain + '...';
+    const lines: string[] = [];
+    for (const sel of esp.dkimSelectors.slice(0, 4)) {
+      const fqdn = `${sel}._domainkey.${domain}`;
+      try {
+        const r = await lookup(fqdn, 'TXT', RESOLVERS[0]);
+        const key = txtRecords(r.answers).find((t) => t.includes('p='));
+        if (!key) {
+          lines.push(`${fqdn}: not published (NXDOMAIN or no key)`);
+          continue;
+        }
+        if (/p=;|p=$/.test(key) || /p=\s*(;|$)/.test(key)) { lines.push(`${fqdn}: REVOKED (empty p=)`); continue; }
+        const k = key.match(/k=([a-z0-9]+)/i)?.[1] ?? 'rsa';
+        const p = key.match(/p=([^;]+)/)?.[1] ?? '';
+        const bits = k === 'ed25519' ? 256 : Math.max(0, (Math.floor((p.replace(/=+$/, '').length * 3) / 4) - 24) * 8);
+        lines.push(`${fqdn}: FOUND - ${k.toUpperCase()}, ~${bits} bits${bits >= 2048 || k === 'ed25519' ? ' (strong)' : bits >= 1024 ? ' (weak: rotate to 2048-bit)' : ' (prohibited by RFC 8301)'}`);
+      } catch {
+        lines.push(`${fqdn}: lookup failed (network error)`);
+      }
+    }
+    resultEl.textContent = esp.name + ' @ ' + domain + '\n' + lines.join('\n');
+  });
+</script>

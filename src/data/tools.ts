@@ -63,6 +63,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
       { name: 'BIMI Checker', href: '/bimi-record-checker/', desc: 'Verify your BIMI record: version, logo URL, and VMC certificate reference.' },
       { name: 'MTA-STS Checker', href: '/mta-sts-checker/', desc: 'Verify the _mta-sts TXT record and fetch the policy file to check mode and MX hosts.' },
       { name: 'TLS-RPT Checker', href: '/tls-rpt-checker/', desc: 'Check where providers send your TLS failure reports via the _smtp._tls record.' },
+      { name: 'MTA-STS Generator', href: '/mta-sts-generator/', desc: 'Auto-fetch your MX hosts and build the RFC 8461 mta-sts.txt policy, _mta-sts TXT, and _smtp._tls TLS-RPT record.' },
       { name: 'Autodiscover Checker', href: '/autodiscover-checker/', desc: 'Check the DNS records mail clients probe for automatic account setup.' },
     ],
   },

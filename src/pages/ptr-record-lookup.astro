@@ -1,31 +1,359 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import RecordLookupTool from '../components/RecordLookupTool.astro';
+import ToolPanel from '../components/ToolPanel.astro';
+import ResultCard from '../components/ResultCard.astro';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', 'name': 'What is a PTR record in DNS and what does it do?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'A PTR (Pointer, Type 12) record is the reverse of an A record: it maps an IP address back to a hostname inside the .in-addr.arpa (IPv4) or .ip6.arpa (IPv6) reverse zones. Receiving mail servers use it to verify that the connecting IP belongs to a properly configured network, and Forward-Confirmed Reverse DNS (FCrDNS) confirms the hostname resolves back to the same IP.' } },
+    { '@type': 'Question', 'name': 'How do I check a PTR record for my mail server IP?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Enter the outbound IP in this tool, or run dig -x <IP> +short from any terminal. Then confirm the returned hostname resolves back to the same IP: that forward match is the FCrDNS check receivers perform before trusting your mail.' } },
+    { '@type': 'Question', 'name': 'Why is my PTR record change in Cloudflare or GoDaddy not working?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'PTR records for consumer, VPS, and cloud IPs are controlled by the network owner (the ISP, VPS provider, or cloud platform), not by your DNS registrar or Cloudflare zone. A PTR change at Cloudflare or GoDaddy does nothing for a mail IP: request the change from the IP holder, and allow time for the reverse zone TTL to expire.' } },
+    { '@type': 'Question', 'name': 'Does every domain or website need a PTR record?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'No, web servers and CDNs do not need custom PTR records: browsers never check them, and shared hosting IPs routinely carry generic hostnames. Outbound SMTP mail server IPs are the strict exception: Gmail, Yahoo, and Microsoft expect a resolvable PTR with forward confirmation, and Gmail rejects IPv6 mail without one with SMTP 550-5.7.25.' } },
+    { '@type': 'Question', 'name': 'What is the difference between this PTR Record Lookup and the Reverse IP Lookup tool?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'This tool is the mail-server and infrastructure audit: Type 12 PTR syntax, the .in-addr.arpa and .ip6.arpa zones, per-IP FCrDNS forward confirmation, and SMTP 550-5.7.25 compliance for your domain\u2019s MX servers in one pass. The reverse IP lookup is the network reconnaissance view: bulk multi-IP lookups with ASN holder mapping for investigating neighbors on shared ranges.' } },
+  ],
+};
 ---
-<BaseLayout title="PTR Record Lookup (Reverse DNS)" description="PTR record lookup: resolve an IP address back to its hostname via reverse DNS.">
+<BaseLayout
+  title="PTR Record Lookup & Checker: Verify Reverse DNS & Mail Server FCrDNS | PromptDNS"
+  description="PTR record lookup: query Type 12 reverse DNS in .in-addr.arpa and .ip6.arpa across 3 resolvers, verify FCrDNS forward confirmation, and audit your domain's MX mail servers against Gmail's 550-5.7.25 requirement."
+  schema={[faqSchema]}
+>
   <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
       <a href="/tools/" class="hover:text-accent">Tools</a>
        <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">PTR Record Lookup (Reverse DNS)</span>
+      <span class="text-ink-dim">PTR Record Lookup</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">PTR Record Lookup: Reverse DNS for Any IP Address</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free PTR lookup: resolve IP to hostname via reverse DNS for mail server checks.</p>
-    <div class="mt-8"><RecordLookupTool type="PTR" label="PTR Record Lookup (Reverse DNS)" hint="Lookups run in your browser via public DNS-over-HTTPS. Nothing is logged." /></div>
-    <article class="rich-text mt-12 max-w-none">
-      <h2>How to read the results</h2>
-      <p>PTR answers map an IP back to a hostname via the in-addr.arpa reverse zone. Mail servers check these aggressively: a sending IP without a matching PTR scores as spam.</p>
-      <p>After reading the answer, verify forward confirmation: the hostname should resolve back to the same IP. The IP Lookup tool does both steps in one pass.</p>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="grid gap-2"><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">How often should I check this record?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">After any change to it, after provider switches, and whenever symptoms point this direction. Records do not drift on their own.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Do these lookups work for subdomains?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Yes: enter any hostname. Subdomains carry their own records for many types.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Why do results differ from my DNS panel?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">Panels show the authoritative zone; this shows what resolvers actually serve, which can be a cached earlier answer within TTL.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-4 py-3 open:border-accent/40"><summary class="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">Is this lookup cached on my side?<span class="float-right text-accent">+</span></summary><p class="mt-2 text-sm leading-relaxed text-ink-dim">The query runs fresh in your browser; any caching is the resolver's own, exactly as the wider internet experiences it.</p></details></div>
-      
-      <h2>Related</h2>
-      <ul>
-        <li><a href="/ptr-record/">PTR records explained (guide)</a></li>
-        <li><a href="/dns-record-lookup/">All-in-one record lookup</a> and <a href="/dns-propagation-checker/">propagation checker</a></li>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">PTR Record Lookup: Check Reverse DNS and Mail Server FCrDNS Alignment</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Query the DNS PTR (Pointer, Type 12) record in .in-addr.arpa (IPv4) or .ip6.arpa (IPv6) for any IP address or domain's MX mail servers over DNS-over-HTTPS, and verify Forward-Confirmed Reverse DNS (FCrDNS) for SMTP deliverability.</p>
+
+    <ToolPanel>
+      <form id="ptr-form" class="flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="ptr-input">IP address or domain</label>
+        <input id="ptr-input" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="8.8.8.8, 2001:4860:4860::8888, or gmail.com"
+          class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+        <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Look Up PTR</button>
+      </form>
+      <div class="mt-2 flex flex-wrap gap-2 text-xs text-ink-faint">
+        <span>Try:</span>
+        <button type="button" class="ptr-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="8.8.8.8">8.8.8.8 (IP)</button>
+        <button type="button" class="ptr-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="2001:4860:4860::8888">2001:4860:4860::8888 (IPv6)</button>
+        <button type="button" class="ptr-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="gmail.com">gmail.com (MX audit)</button>
+        <button type="button" class="ptr-preset rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="cloudflare.com">cloudflare.com (MX audit)</button>
+      </div>
+
+      <div id="ptr-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+      <p id="ptr-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
+        Enter an IP address for the direct PTR check, or a domain to audit its MX mail servers' reverse DNS in one pass.
+      </p>
+
+      <div id="ptr-cards" class="mt-6 hidden grid gap-3 sm:grid-cols-2"></div>
+
+      <div id="ptr-results" class="pd-results mt-6 hidden overflow-x-auto rounded-lg border border-line/60">
+        <p class="px-4 pt-3 text-xs font-semibold text-ink">PTR &amp; FCrDNS audit</p>
+        <table class="pdns-table">
+          <thead><tr><th>Source Host / MX</th><th>IP Address</th><th>Reverse Zone (.arpa)</th><th>PTR Hostname</th><th>Forward Match (A/AAAA)</th><th>TTL &amp; Consensus</th><th>Verdict</th></tr></thead>
+          <tbody id="ptr-tbody"></tbody>
+        </table>
+      </div>
+      <ResultCard tool="ptr-record-lookup" />
+    </ToolPanel>
+
+    <article class="rich-text mt-14 max-w-none">
+      <h2>What This Result Means: 5 PTR Record and Mail Server FCrDNS States</h2>
+      <p>Every checked IP lands in one of the reverse-DNS states below. The table is the verdict matrix this tool applies, with the SMTP consequence for each:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>State</th><th>Observed Condition</th><th>What Receiving Mail Servers Do</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Valid Single PTR With Matching FCrDNS (SMTP Ready)</td><td class="text-sm text-ink-dim">One PTR hostname, and it resolves back to the same IP (forward confirmation passes)</td><td class="text-sm text-ink-dim">The IP passes the reverse-DNS gate; the HELO/EHLO alignment check can succeed</td><td class="text-sm text-ink-dim">SMTP ready: this is the state Gmail, Yahoo, and Microsoft expect from bulk senders.</td></tr>
+            <tr><td class="font-medium text-ink">2. Generic ISP / Cloud Pool PTR (Warn for Dedicated Mail Servers)</td><td class="text-sm text-ink-dim">PTR exists but reads as a dynamic or pool name (dhcp, pool, dynamic, broadband tokens)</td><td class="text-sm text-ink-dim">Mail from pool-named IPs scores as residential: often filtered or rejected for bulk senders</td><td class="text-sm text-ink-dim">Fine for consumer connections; for a dedicated mail server, request a custom PTR from the network owner.</td></tr>
+            <tr><td class="font-medium text-ink">3. Forward Confirmation Mismatch (PTR Hostname Does Not Resolve Back to IP)</td><td class="text-sm text-ink-dim">PTR exists, but resolving the hostname yields a different IP or no answer at all</td><td class="text-sm text-ink-dim">FCrDNS fails: many receivers treat the IP as unverified regardless of the PTR existing</td><td class="text-sm text-ink-dim">Fix the A/AAAA record for the PTR hostname, or the PTR itself, until both directions agree (RFC 1912 section 2.1).</td></tr>
+            <tr><td class="font-medium text-ink">4. Multiple PTR Records on One IP (Round-Robin FCrDNS Risk per RFC 1912 section 2.1)</td><td class="text-sm text-ink-dim">The reverse zone returns two or more PTR hostnames for the same IP</td><td class="text-sm text-ink-dim">Receivers see different hostnames per query: HELO matching and FCrDNS become unpredictable</td><td class="text-sm text-ink-dim">RFC 1912 advises a single PTR per IP: pick one canonical hostname and remove the rest.</td></tr>
+            <tr><td class="font-medium text-ink">5. Missing PTR Record (NXDOMAIN - Triggers Gmail SMTP 550-5.7.25 Rejection)</td><td class="text-sm text-ink-dim">The reverse zone returns NXDOMAIN for the IP</td><td class="text-sm text-ink-dim">Gmail rejects IPv6 mail without PTR with 550-5.7.25; IPv4 mail faces spam-folder or rejection penalties</td><td class="text-sm text-ink-dim">Request a PTR from the IP holder before sending production mail from this address.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to Configure a PTR Record for an Outbound Email Server</h2>
+      <p>Setting up reverse DNS is not a DNS-panel edit: the record lives with whoever owns the IP. The working sequence has 4 steps:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish.</strong> Publish the matching forward record first: the hostname you plan to use (mail.example.com) must have an A record pointing at the sending IP, because FCrDNS needs both directions to agree.</li>
+        <li><strong>Request.</strong> Request the PTR from whoever controls the IP: the VPS or cloud provider's network panel (AWS EC2, Hetzner, OVH, DigitalOcean all have self-service PTR fields), or an ISP support ticket for business lines. PTR changes at your DNS registrar do nothing for a sending IP.</li>
+        <li><strong>Match.</strong> Match the hostname to your SMTP banner: the PTR hostname, the HELO/EHLO name your server announces, and the certificate name should all agree, and the envelope domain should align under DMARC (RFC 5321, RFC 1912 section 2.1).</li>
+        <li><strong>Test.</strong> Re-run this lookup until the verdict reads SMTP Ready, then send a real message to a Gmail inbox and check the Authentication-Results and received headers for the resolved hostname.</li>
+      </ol>
+      <p>The <a href="/ptr-record/">PTR record</a> guide explains the record type itself, and the <a href="/email-deliverability/">email deliverability</a> hub shows where reverse DNS sits among the sender requirements.</p>
+
+      <h2>Check PTR Records and Reverse Zones From the Command Line (dig and nslookup)</h2>
+      <pre><code># The standard reverse lookup:
+dig -x 8.8.8.8 +noall +answer
+
+# The same query with the explicit .in-addr.arpa name (reversed octets):
+dig 8.8.8.8.in-addr.arpa PTR +short
+
+# IPv6 uses 32 reversed hex nibbles under .ip6.arpa:
+dig -x 2001:4860:4860::8888 +short
+
+# Windows PowerShell equivalent:
+nslookup -type=ptr 8.8.8.8</code></pre>
+
+      <h2>Reference Table: PTR Record Syntax, .in-addr.arpa / .ip6.arpa Zones, and RFC Rules</h2>
+      <p>The table below is the EAV reference for the record type, the two reverse zones, and the rules that make PTR matter for mail:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Attribute</th><th>Value / Zone</th><th>Governing Standard</th><th>Operational Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">IANA Type Code</td><td class="text-sm text-ink-dim">Type 12 (PTR, Pointer)</td><td class="text-sm text-ink-dim">RFC 1035</td><td class="text-sm text-ink-dim">The record type that maps an address back to a name.</td></tr>
+            <tr><td class="font-medium text-ink">IPv4 Reverse Zone</td><td class="font-mono text-xs text-ink-dim">.in-addr.arpa (reversed octets: 8.8.8.8 -&gt; 8.8.8.8.in-addr.arpa)</td><td class="text-sm text-ink-dim">RFC 1035</td><td class="text-sm text-ink-dim">Each octet reverses under in-addr.arpa; the holder of the netblock serves the zone.</td></tr>
+            <tr><td class="font-medium text-ink">IPv6 Reverse Zone</td><td class="font-mono text-xs text-ink-dim">.ip6.arpa (32 reversed hex nibbles)</td><td class="text-sm text-ink-dim">RFC 3596</td><td class="text-sm text-ink-dim">2001:4860:4860::8888 expands to 32 nibbles reversed under ip6.arpa; separate from the IPv4 zone.</td></tr>
+            <tr><td class="font-medium text-ink">Sub-/24 Classless Delegation</td><td class="text-sm text-ink-dim">CNAME records into per-host reverse names (e.g. 0-31.8.8.8.in-addr.arpa)</td><td class="text-sm text-ink-dim">RFC 2317</td><td class="text-sm text-ink-dim">How holders of smaller-than-/24 blocks delegate reverse zones without a whole octet.</td></tr>
+            <tr><td class="font-medium text-ink">FCrDNS &amp; SMTP Alignment</td><td class="text-sm text-ink-dim">PTR hostname resolves back to the connecting IP; HELO/EHLO matches the hostname</td><td class="text-sm text-ink-dim">RFC 1912 section 2.1, RFC 5321</td><td class="text-sm text-ink-dim">The two-direction check receivers run before trusting a sending IP.</td></tr>
+            <tr><td class="font-medium text-ink">Bulk-Sender PTR Requirement</td><td class="text-sm text-ink-dim">Resolvable PTR with forward confirmation on every sending IP</td><td class="text-sm text-ink-dim">Gmail / Yahoo / Microsoft sender guidelines (SMTP 550-5.7.25)</td><td class="text-sm text-ink-dim">Missing or unconfirmed PTR triggers SMTP 550-5.7.25 rejections at Gmail.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For the network-view of the same data, the <a href="/reverse-ip-lookup/">reverse IP lookup</a> covers bulk multi-IP recon with ASN holder mapping; the forward direction of each queried hostname lives in the <a href="/a-record/">A record</a> and <a href="/aaaa-record/">AAAA record</a> lookups.</p>
+
+      <h2>What This Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>This tool queries recursive DoH resolvers, not the authoritative reverse zone: answers may be cached copies within their TTL, so a just-changed PTR can lag here exactly as it lags for receivers.</li>
+        <li>It verifies forward confirmation for the PTR hostname only: it does not check that your SMTP HELO/EHLO banner matches the hostname, which requires observing a live SMTP session.</li>
+        <li>It does not evaluate sender reputation, blocklists, or SPF/DKIM/DMARC for the domain: reverse DNS is one input among many in deliverability, not the whole gate.</li>
+        <li>Shared ESP sending platforms rotate IPs: the audit reflects the MX hosts resolved at check time, and platform-side IP pools can change between runs.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The dual-stack trap: a VPS with a perfect IPv4 setup - valid A record, custom PTR requested from the provider, everything green - starts rejecting to Gmail anyway, because the kernel prefers IPv6 and Gmail enforces the same PTR rule on the v6 path. The outbound IPv6 address needs its own .ip6.arpa PTR (and matching AAAA forward record), or the server should simply not announce SMTP over IPv6 until it does. The 550-5.7.25 bounce names the IPv6 address explicitly, which is the fastest way to recognize this exact misconfiguration in a mail log.</p>
+      </aside>
+
+      <h2>What We See Across Domains</h2>
+      <p>
+        Two patterns dominate real PTR audits. Dual-stack mail servers fail on the IPv6 leg far more often than the IPv4 leg: administrators request the IPv4 PTR from the provider and never notice the server also announces an IPv6 address with no .ip6.arpa record at all. And on the platform side, shared ESP sending IPs carry provider-managed generic PTRs that pass FCrDNS but are shared across thousands of senders, which is why dedicated IPs with a custom PTR remain the standard advice for high-volume senders even though shared pools authenticate fine at the SPF and DKIM layer.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3">
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a PTR record in DNS and what does it do?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A PTR (Pointer, Type 12) record is the reverse of an A record: it maps an IP address back to a hostname inside the .in-addr.arpa (IPv4) or .ip6.arpa (IPv6) reverse zones. Receiving mail servers use it to verify that the connecting IP belongs to a properly configured network, and Forward-Confirmed Reverse DNS (FCrDNS) confirms the hostname resolves back to the same IP.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check a PTR record for my mail server IP?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Enter the outbound IP in this tool, or run dig -x &lt;IP&gt; +short from any terminal. Then confirm the returned hostname resolves back to the same IP: that forward match is the FCrDNS check receivers perform before trusting your mail.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is my PTR record change in Cloudflare or GoDaddy not working?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">PTR records for consumer, VPS, and cloud IPs are controlled by the network owner (the ISP, VPS provider, or cloud platform), not by your DNS registrar or Cloudflare zone. A PTR change at Cloudflare or GoDaddy does nothing for a mail IP: request the change from the IP holder, and allow time for the reverse zone TTL to expire.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does every domain or website need a PTR record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No, web servers and CDNs do not need custom PTR records: browsers never check them, and shared hosting IPs routinely carry generic hostnames. Outbound SMTP mail server IPs are the strict exception: Gmail, Yahoo, and Microsoft expect a resolvable PTR with forward confirmation, and Gmail rejects IPv6 mail without one with SMTP 550-5.7.25.</p></details>
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the difference between this PTR Record Lookup and the Reverse IP Lookup tool?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">This tool is the mail-server and infrastructure audit: Type 12 PTR syntax, the .in-addr.arpa and .ip6.arpa zones, per-IP FCrDNS forward confirmation, and SMTP 550-5.7.25 compliance for your domain's MX servers in one pass. The reverse IP lookup is the network reconnaissance view: bulk multi-IP lookups with ASN holder mapping for investigating neighbors on shared ranges.</p></details>
+      </div>
+
+      <h2>Next Checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Resolve the mail paths themselves with the <a href="/mx-record-lookup/">MX record lookup</a>.</li>
+        <li>Run the full sending-stack preflight in the <a href="/smtp-tester/">SMTP preflight</a>.</li>
+        <li>Check the IP's reputation with the <a href="/blacklist-checker/">blacklist checker</a>.</li>
+        <li>Identify the network behind the IP with the <a href="/asn-lookup/">ASN lookup</a>.</li>
       </ul>
     </article>
   </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+  import { reverseIp } from '../lib/dnsbl';
+  import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
+
+  const form = document.getElementById('ptr-form') as HTMLFormElement;
+  const input = document.getElementById('ptr-input') as HTMLInputElement;
+  const statusEl = document.getElementById('ptr-status')!;
+  const cardsEl = document.getElementById('ptr-cards')!;
+  const resultsEl = document.getElementById('ptr-results')!;
+  const tbody = document.getElementById('ptr-tbody')!;
+  const TOOL = 'ptr-record-lookup';
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-4 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-4 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-4 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-4 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string, related: { label: string; href: string }[]) => {
+    window.dispatchEvent(new CustomEvent('pdns:result', { detail: { tool: TOOL, domain, verdict, verdictLine, findings, related } as PdnsResult }));
+  };
+
+  const isV4 = (s: string) => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split('.').every((o) => Number(o) <= 255);
+  const isIpLike = (s: string) => isV4(s) || (s.includes(':') && s.replace(/[0-9a-fA-F:]/g, '') === '');
+
+  interface RowResult {
+    source: string;
+    ip: string;
+    zone: string;
+    ptrs: string[];
+    consensus: string;
+    forward: 'match' | 'mismatch' | 'none' | 'n/a';
+    verdict: 'ready' | 'generic' | 'mismatch' | 'multi-ptr' | 'missing' | 'error';
+  }
+
+  async function ptrAudit(ip: string, source: string): Promise<RowResult> {
+    const zone = reverseIp(ip);
+    const results = await Promise.all(RESOLVERS.map((r) => lookup(zone, 'PTR', r).catch(() => null)));
+    const okResults = results.filter((r): r is NonNullable<typeof r> => r !== null && r.status !== -1);
+    const ptrSets = okResults.map((r) => r.answers.filter((x) => x.type === 12).map((x) => x.data.replace(/\.$/, '')).sort());
+    const ttls = okResults.flatMap((r) => r.answers.filter((x) => x.type === 12).map((x) => x.TTL));
+    const nonEmpty = ptrSets.filter((p) => p.length > 0);
+    let consensus = okResults.length ? `${okResults.length}/3 resolvers answered` : 'no resolver answered';
+    let ptrs: string[] = [];
+    if (nonEmpty.length) {
+      const counts = new Map<string, number>();
+      for (const set of nonEmpty) { const k = set.join(','); counts.set(k, (counts.get(k) ?? 0) + 1); }
+      const [bestKey, bestCount] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+      ptrs = bestKey.split(',');
+      consensus = `${bestCount}/${okResults.length || 3} resolvers agree · TTL ${ttls.length ? Math.min(...ttls) + 's' : 'n/a'}`;
+    }
+    const multi = ptrs.length > 1 || new Set(nonEmpty.map((s) => s.join(','))).size > 1;
+    let forward: RowResult['forward'] = 'n/a';
+    if (ptrs.length === 1) {
+      const isV6 = ip.includes(':');
+      const fwd = await lookup(ptrs[0], isV6 ? 'AAAA' : 'A', RESOLVERS[0]).catch(() => null);
+      if (fwd) {
+        const wantType = isV6 ? 28 : 1;
+        const addrs = fwd.answers.filter((x) => x.type === wantType).map((x) => x.data.replace(/\.$/, ''));
+        forward = addrs.includes(ip) ? 'match' : addrs.length ? 'mismatch' : 'none';
+      }
+    }
+    const generic = ptrs.length === 1 && /dhcp|pool|dynamic|dyn-|broadband|ppp|cable|adsl|residential|ip\d+-/.test(ptrs[0].toLowerCase());
+    let verdict: RowResult['verdict'];
+    if (!okResults.length) verdict = 'error';
+    else if (ptrs.length === 0) verdict = 'missing';
+    else if (multi) verdict = 'multi-ptr';
+    else if (forward === 'match') verdict = generic ? 'generic' : 'ready';
+    else verdict = 'mismatch';
+    return { source, ip, zone, ptrs, consensus, forward, verdict };
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const raw = input.value.trim();
+    if (!raw) { setStatus('fail', 'Enter an IP address or a domain name.'); return; }
+    const domain = normalizeDomain(raw);
+    const isIp = isIpLike(raw);
+    setStatus('loading', isIp ? `Querying PTR for ${raw} across 3 resolvers...` : `Auditing MX mail servers of ${domain}...`);
+    cardsEl.classList.add('hidden'); cardsEl.textContent = '';
+    resultsEl.classList.add('hidden');
+    tbody.textContent = '';
+    document.getElementById('ptr-sample-note')?.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
+
+    try {
+      const rowsOut: RowResult[] = [];
+      let mode = 'Direct IP';
+      let primaryIp = raw;
+
+      if (isIp) {
+        rowsOut.push(await ptrAudit(raw, raw));
+      } else {
+        if (!domain.includes('.')) { setStatus('fail', 'Enter a valid IP address or domain name.'); return; }
+        mode = 'Domain MX audit';
+        const mx = await lookup(domain, 'MX', RESOLVERS[0]);
+        const hosts = mx.answers.filter((x) => x.type === 15).map((x) => x.data.replace(/^\d+\s+/, '').replace(/\.$/, '')).slice(0, 3);
+        const targets: { source: string; ip: string }[] = [];
+        const a = await lookup(domain, 'A', RESOLVERS[0]);
+        const apexIp = a.answers.find((x) => x.type === 1)?.data?.replace(/\.$/, '');
+        if (apexIp) targets.push({ source: domain + ' (apex A)', ip: apexIp });
+        for (const h of hosts) {
+          const r = await lookup(h, 'A', RESOLVERS[0]);
+          const ip = r.answers.find((x) => x.type === 1)?.data?.replace(/\.$/, '');
+          if (ip) targets.push({ source: h + ' (MX)', ip });
+        }
+        if (!targets.length) {
+          setStatus('warn', `No A record or MX mail servers resolved for ${domain}: nothing to audit. This is an inconclusive result, not a pass or fail.`);
+          emit('warn', `No resolvable A/MX targets for ${domain}.`, [{ code: 'LOOKUP_NONE' }], domain, []);
+          return;
+        }
+        for (const t of targets) rowsOut.push(await ptrAudit(t.ip, t.source));
+        primaryIp = targets[0].ip;
+      }
+
+      // Controlling ASN via the shared endpoint (first audited IP)
+      let asn = '';
+      try {
+        const r = await fetch('/api/check/asn?q=' + encodeURIComponent(primaryIp));
+        const d = await r.json();
+        if (d.ok && d.asn) asn = `AS${d.asn} - ${d.holder ?? 'unknown holder'}`;
+      } catch { /* ASN unavailable: non-fatal */ }
+
+      const overall: Severity = rowsOut.some((r) => r.verdict === 'ready') && rowsOut.every((r) => ['ready', 'generic'].includes(r.verdict))
+        ? (rowsOut.every((r) => r.verdict === 'ready') ? 'pass' : 'warn')
+        : rowsOut.every((r) => r.verdict === 'missing') ? 'fail' : 'warn';
+
+      const card = (title: string, value: string, cls: string, note: string) => {
+        const box = document.createElement('div');
+        box.className = 'rounded-lg border border-line bg-panel/60 p-4';
+        const t = document.createElement('div'); t.className = 'text-xs font-medium text-ink-faint'; t.textContent = title;
+        const v = document.createElement('div'); v.className = `font-display text-base font-bold mt-0.5 break-words ${cls}`; v.textContent = value;
+        const n = document.createElement('div'); n.className = 'mt-1 text-xs text-ink-faint'; n.textContent = note;
+        box.append(t, v, n);
+        return box;
+      };
+      cardsEl.textContent = '';
+      cardsEl.append(
+        card('1. Queried target & mode', raw + (isIp ? '' : ' (' + domain + ')'), 'text-accent', `${mode}${asn ? ' · controlling network: ' + asn : ''}`),
+        card('2. PTR record(s) published', rowsOut.map((r) => r.ptrs[0] ?? 'none').join(', '), rowsOut.every((r) => r.ptrs.length > 0) ? 'text-pass' : 'text-fail', rowsOut.map((r) => r.ptrs.length > 1 ? `${r.ptrs.length} PTRs on ${r.ip}` : r.ptrs[0] ? r.zone : 'NXDOMAIN').join(' | ')),
+        card('3. FCrDNS forward confirmation (RFC 1912 2.1)', rowsOut.every((r) => r.forward === 'match') ? 'Confirmed' : rowsOut.some((r) => r.forward === 'match') ? 'Partial' : 'Failed', rowsOut.every((r) => r.forward === 'match') ? 'text-pass' : 'text-warn', rowsOut.map((r) => `${r.ip}: ${r.forward}`).join(' | ')),
+        card('4. SMTP deliverability readiness (Gmail 550-5.7.25)', overall === 'pass' ? 'Ready' : overall === 'warn' ? 'At risk' : 'Not ready', overall === 'pass' ? 'text-pass' : overall === 'warn' ? 'text-warn' : 'text-fail', overall === 'pass' ? 'PTR present and forward-confirmed on every audited IP' : 'Missing, mismatched, or generic PTR on at least one audited IP'),
+      );
+      cardsEl.classList.remove('hidden');
+
+      const verdictText: Record<RowResult['verdict'], string> = {
+        ready: 'SMTP Ready', generic: 'Generic pool PTR', mismatch: 'FCrDNS mismatch', 'multi-ptr': 'Multiple PTRs', missing: 'Missing PTR', error: 'Lookup error',
+      };
+      const verdictCls: Record<RowResult['verdict'], string> = {
+        ready: 'text-pass', generic: 'text-warn', mismatch: 'text-fail', 'multi-ptr': 'text-warn', missing: 'text-fail', error: 'text-warn',
+      };
+      for (const r of rowsOut) {
+        const tr = document.createElement('tr');
+        const mk = (txt: string, cls = 'text-sm text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+        tr.append(
+          mk(r.source, 'font-medium text-ink text-sm'),
+          mk(r.ip, 'font-mono text-xs text-ink'),
+          mk(r.zone, 'font-mono text-xs text-ink-faint'),
+          mk(r.ptrs.join(', ') || 'none', 'font-mono text-xs text-accent'),
+          mk(r.forward === 'match' ? 'Confirms back to IP' : r.forward === 'mismatch' ? 'Different IP returned' : r.forward === 'none' ? 'No A/AAAA answer' : 'n/a (no PTR)', 'text-sm text-ink-dim'),
+          mk(r.consensus, 'text-xs text-ink-faint'),
+          mk(verdictText[r.verdict], `text-sm font-semibold ${verdictCls[r.verdict]}`),
+        );
+        tbody.appendChild(tr);
+      }
+      resultsEl.classList.remove('hidden');
+
+      setStatus(overall === 'pass' ? 'pass' : overall === 'warn' ? 'warn' : 'fail',
+        overall === 'pass' ? `PTR and FCrDNS audit complete for ${raw}: SMTP ready.`
+        : overall === 'warn' ? `PTR audit complete for ${raw}: fixable issues found (see the table).`
+        : `PTR audit complete for ${raw}: sending from these IPs is not deliverability-ready.`);
+
+      const findings: PdnsFinding[] = [];
+      if (rowsOut.every((r) => r.verdict === 'missing')) findings.push({ code: 'LOOKUP_NXDOMAIN', detail: 'No PTR records exist for the audited IP(s)' });
+      else if (overall === 'pass') findings.push({ code: 'LOOKUP_FOUND', detail: 'PTR present with FCrDNS forward confirmation' });
+      else findings.push({ code: 'LOOKUP_FOUND', detail: 'PTR found with issues: ' + rowsOut.filter((r) => r.verdict !== 'ready').map((r) => `${r.ip} (${verdictText[r.verdict]})`).join(', ') });
+
+      const related = [
+        { label: 'MX record lookup', href: '/mx-record-lookup/' },
+        { label: 'SMTP preflight', href: '/smtp-tester/' },
+      ];
+      emit(overall, `PTR & FCrDNS audit for ${raw}: ${rowsOut.map((r) => verdictText[r.verdict]).join(', ')}.`, findings, isIp ? raw : domain, related);
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolvers. This is an inconclusive result, not a pass or fail.');
+      emit('warn', 'DNS query did not complete. Nothing is known about this target.', [{ code: 'DNS_QUERY_FAILED' }], raw, []);
+    }
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.ptr-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.q || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>
