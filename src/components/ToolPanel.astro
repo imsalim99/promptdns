@@ -58,13 +58,16 @@ const presets = presetProp ?? TOOL_PRESETS[slug] ?? DEFAULT_PRESETS;
 </section>
 
 <script>
-  // 1-click preset: find the first text input in the tool panel, fill it, submit the form.
+  // 1-click preset: fill the input marked data-preset-target="domain" when one
+  // exists (multi-field panels, e.g. DKIM selector + domain), else the first
+  // text input, then submit the form.
   document.addEventListener('click', (e) => {
     const pill = (e.target as HTMLElement).closest('[data-preset-domain]');
     if (!pill) return;
     const panel = pill.closest('.glass');
     if (!panel) return;
-    const input = panel.querySelector<HTMLInputElement>('input[type="text"], input[type="url"], input:not([type])');
+    const input = panel.querySelector<HTMLInputElement>('[data-preset-target="domain"]')
+      ?? panel.querySelector<HTMLInputElement>('input[type="text"], input[type="url"], input:not([type])');
     if (!input) return;
     input.value = pill.getAttribute('data-preset-domain') ?? '';
     const form = input.closest('form');
