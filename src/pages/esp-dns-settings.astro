@@ -45,7 +45,7 @@ const faqSchema = {
       </ul>
     </nav>
 
-    <!-- Interactive bar: search, category filter, domain + live DKIM testing -->
+    <!-- Live inline ESP setup verifier + matrix filters -->
     <div class="glass mt-8 rounded-2xl border border-accent/25 bg-panel/80 p-5" data-vs="centerpiece">
       <div class="mb-5 flex flex-wrap items-center gap-2 border-b border-line/60 pb-3.5" aria-label="Dataset attributes" data-vs="attributes">
         <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
@@ -56,14 +56,35 @@ const faqSchema = {
         <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">Sourced From the Shipped Setup Guides</span>
       </div>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <input id="esp-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search 44 platforms, selectors, or include: strings..."
+        <input id="esp-domain" data-preset-target="domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com"
           class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-        <input id="esp-domain" data-preset-target="domain" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="yourdomain.com (for live DKIM tests)"
+        <select id="esp-select" aria-label="ESP to verify"
+          class="rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink focus:border-accent focus:outline-none">
+          <option value="auto">Auto-Detect ESP</option>
+          {ESP_SETTINGS.map((e) => <option value={e.slug}>{e.name}</option>)}
+        </select>
+        <button type="button" id="esp-verify" class="btn-cta btn-shimmer px-5 py-2.5 text-sm">Verify ESP DNS Setup</button>
+      </div>
+      <div class="mt-2 flex flex-wrap gap-2 text-xs text-ink-faint">
+        <span>Quick domains:</span>
+        <button type="button" class="esp-quick rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="cloudflare.com">cloudflare.com</button>
+        <button type="button" class="esp-quick rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="google.com">google.com</button>
+        <button type="button" class="esp-quick rounded-md border border-line px-2 py-1 font-mono text-xs text-accent hover:border-accent/50" data-q="github.com">github.com</button>
+      </div>
+      <div id="esp-verify-result" class="mt-4 hidden rounded-lg border border-line bg-panel-2 px-4 py-3">
+        <p class="text-sm font-semibold text-ink" id="esp-vr-title"></p>
+        <div class="mt-2 grid gap-1 font-mono text-xs leading-relaxed text-ink-dim">
+          <p id="esp-vr-spf"></p>
+          <div id="esp-vr-dkim" class="grid gap-1"></div>
+          <p id="esp-vr-dmarc"></p>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+        <input id="esp-search" type="search" autocomplete="off" spellcheck="false" placeholder="Filter the 44-row matrix by platform, selector, or include: string..."
           class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
       </div>
       <div id="esp-cats" class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter by category"></div>
-      <div id="esp-test-result" class="mt-3 hidden rounded-md border border-line bg-panel-2 px-4 py-3 font-mono text-xs leading-relaxed text-ink-dim"></div>
-      <p class="mt-2 text-xs text-ink-faint">Category buttons filter the matrix. Type your domain and use a row's Test DKIM button to probe that platform's selectors against it live over DNS-over-HTTPS. Rows marked Dashboard-assigned need the selector name from the setup guide.</p>
+      <p class="mt-2 text-xs text-ink-faint">Verify ESP DNS Setup runs the SPF, DKIM, and DMARC checks for the picked platform against your domain, right on this page. Each matrix row also has a Test Live button that runs the same check. Rows marked Dashboard-assigned need the selector name from the setup guide.</p>
     </div>
 
     <div class="rich-text mt-10">
@@ -80,7 +101,7 @@ const faqSchema = {
                 <td class="text-sm text-ink-dim">
                   <span class="font-mono text-xs text-accent">{e.dkimSelectors.join(', ')}</span>
                   <span class="block text-xs">{e.dkimRecordType} - {e.keyType}</span>
-                  <button type="button" class="esp-test mt-1 rounded border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/10" data-slug={e.slug} data-name={e.name}>Test DKIM</button>
+                  <button type="button" class="esp-test-btn mt-1 rounded border border-accent/40 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/10" data-esp-slug={e.slug}>Test Live</button>
                 </td>
                 <td class="text-sm text-ink-dim">{e.returnPathBehavior}<span class="block text-xs font-medium">{e.dmarcAlignment}</span><span class="block text-xs text-ink-faint">{e.uiLocation}</span></td>
                 <td><a href={`/spf-dkim-dmarc-${e.slug}/`} class="text-accent hover:text-accent-soft">{e.name} setup guide</a></td>
@@ -141,16 +162,38 @@ const faqSchema = {
   import { txtRecords } from '../lib/spf';
   import { ESP_SETTINGS } from '../data/esp-settings';
 
-  const searchInput = document.getElementById('esp-search') as HTMLInputElement;
   const domainInput = document.getElementById('esp-domain') as HTMLInputElement;
+  const selectEl = document.getElementById('esp-select') as HTMLSelectElement;
+  const verifyBtn = document.getElementById('esp-verify') as HTMLButtonElement;
+  const searchInput = document.getElementById('esp-search') as HTMLInputElement;
   const catsEl = document.getElementById('esp-cats')!;
   const tbody = document.getElementById('esp-tbody')!;
-  const resultEl = document.getElementById('esp-test-result')!;
+  const panel = document.getElementById('esp-verify-result')!;
+  const vrTitle = document.getElementById('esp-vr-title')!;
+  const vrSpf = document.getElementById('esp-vr-spf')!;
+  const vrDkim = document.getElementById('esp-vr-dkim')!;
+  const vrDmarc = document.getElementById('esp-vr-dmarc')!;
   const rows = Array.from(tbody.querySelectorAll('tr')) as HTMLTableRowElement[];
 
-  // Category filter pills
+  function line(text: string, cls = 'text-ink-dim'): HTMLElement {
+    const el = document.createElement('p');
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
+  // ---- Matrix filters (search + category) ----
   let activeCat = 'all';
-  for (const c of ESP_CATEGORIES) {
+  const CATS: { id: string; label: string }[] = [
+    { id: 'all', label: 'All 44 Platforms' },
+    { id: 'Cloud Mailbox Suite', label: 'Cloud Suites' },
+    { id: 'Marketing ESP', label: 'Marketing ESPs' },
+    { id: 'Transactional / API', label: 'Transactional APIs' },
+    { id: 'CRM / Helpdesk', label: 'CRM & Helpdesk' },
+    { id: 'Cold Outbound', label: 'Cold Email' },
+    { id: 'E-Commerce', label: 'E-Commerce' },
+  ];
+  for (const c of CATS) {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = c.label;
@@ -168,7 +211,6 @@ const faqSchema = {
     });
     catsEl.appendChild(b);
   }
-
   function applyFilter() {
     const q = (searchInput.value || '').trim().toLowerCase();
     for (const row of rows) {
@@ -179,48 +221,176 @@ const faqSchema = {
   }
   searchInput.addEventListener('input', applyFilter);
 
-  // Live DKIM test per row
-  resultEl.textContent = '';
-  document.addEventListener('click', async (e) => {
-    const btn = (e.target as HTMLElement).closest('.esp-test') as HTMLElement | null;
-    if (!btn) return;
-    const slug = btn.dataset.slug!;
-    const esp = ESP_SETTINGS.find((x) => x.slug === slug);
-    if (!esp) return;
-    const domain = normalizeDomain(domainInput.value);
-    resultEl.classList.remove('hidden');
-    if (!domain.includes('.')) {
-      resultEl.textContent = 'Enter your domain in the bar above first, then test ' + esp.name + '\u2019s selectors against it.';
-      return;
+  // ---- Live inline verifier ----
+  const isDelegated = (esp: (typeof ESP_SETTINGS)[number]) => esp.spfValue.startsWith('Delegated');
+  const isNone = (esp: (typeof ESP_SETTINGS)[number]) => esp.spfValue.startsWith('None required');
+  const isDashboardSelectors = (esp: (typeof ESP_SETTINGS)[number]) => /ashboard-assigned|hash selectors|date-style/.test(esp.dkimSelectors.join(' '));
+
+  async function verify(domain: string, esp: (typeof ESP_SETTINGS)[number]) {
+    panel.classList.remove('hidden');
+    vrTitle.textContent = 'Verifying ' + esp.name + ' on ' + domain + '...';
+    vrSpf.textContent = '';
+    vrDkim.textContent = '';
+    vrDmarc.textContent = '';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // 1. SPF check for the selected ESP
+    try {
+      const res = await lookup(domain, 'TXT', RESOLVERS[0]);
+      const txts = txtRecords(res.answers);
+      const spfRecord = txts.find((t) => /^v=spf1(\s|$)/i.test(t.trim())) ?? '';
+      const spfCount = txts.filter((t) => /^v=spf1(\s|$)/i.test(t.trim())).length;
+      if (spfCount > 1) {
+        vrSpf.textContent = 'SPF: MULTIPLE v=spf1 records on the domain - evaluation returns permerror until merged.';
+      } else if (isNone(esp)) {
+        vrSpf.textContent = spfRecord
+          ? 'SPF: ' + esp.name + ' sends through your own mailbox platform - no ESP include is needed; your existing record covers it.'
+          : 'SPF: no v=spf1 record found - for ' + esp.name + ' none is required (mail goes through your mailbox platform).';
+      } else if (isDelegated(esp)) {
+        vrSpf.textContent = spfRecord
+          ? 'SPF: ' + esp.name + ' uses a custom Return-Path CNAME instead of a root include, so your root record does not need its mechanism. Verify the CNAME records from the setup guide are published.'
+          : 'SPF: no root v=spf1 record found - acceptable for ' + esp.name + ' because SPF is delegated via the custom Return-Path CNAME. Publish the CNAME records from the setup guide.';
+      } else {
+        const inc = esp.spfValue.replace(/^include:/, '');
+        const match = spfRecord.toLowerCase().includes(inc.toLowerCase());
+        vrSpf.textContent = spfRecord
+          ? (match
+            ? 'SPF: your v=spf1 contains ' + esp.spfValue + ' - authorized.'
+            : 'SPF: your v=spf1 does NOT contain ' + esp.spfValue + ' - mail from ' + esp.name + ' is not authorized by SPF yet.')
+          : 'SPF: no v=spf1 record found on the domain - publish one containing ' + esp.spfValue + '.';
+      }
+    } catch {
+      vrSpf.textContent = 'SPF: lookup failed (network error) - inconclusive.';
     }
-    if (esp.dkimSelectors[0].startsWith('Dashboard-assigned') || esp.dkimSelectors[0].startsWith('3 dashboard') || esp.dkimSelectors[0].startsWith('date-style') || esp.dkimSelectors[0].startsWith('3 SES')) {
-      resultEl.textContent = esp.name + ': the selector is assigned in the provider dashboard - open the ' + esp.name + ' setup guide for the exact name, then check it in the DKIM record checker.';
-      return;
-    }
-    if (esp.dkimSelectors[0].startsWith('None')) {
-      resultEl.textContent = esp.name + ' sends through your own mailbox platform: test the google selector of your Workspace domain instead.';
-      return;
-    }
-    resultEl.textContent = 'Probing ' + esp.name + ' selector(s) ' + esp.dkimSelectors.join(', ') + ' against ' + domain + '...';
-    const lines: string[] = [];
-    for (const sel of esp.dkimSelectors.slice(0, 4)) {
-      const fqdn = `${sel}._domainkey.${domain}`;
-      try {
-        const r = await lookup(fqdn, 'TXT', RESOLVERS[0]);
-        const key = txtRecords(r.answers).find((t) => t.includes('p='));
-        if (!key) {
-          lines.push(`${fqdn}: not published (NXDOMAIN or no key)`);
-          continue;
+
+    // 2. DKIM selector check (live DoH per selector)
+    if (isDashboardSelectors(esp)) {
+      vrDkim.appendChild(line('DKIM: ' + esp.name + ' assigns selector names in its dashboard - open the setup guide for the exact name, then probe it in the DKIM record checker.'));
+    } else {
+      for (const sel of esp.dkimSelectors.slice(0, 3)) {
+        const fqdn = sel + '._domainkey.' + domain;
+        try {
+          const r = await lookup(fqdn, 'TXT', RESOLVERS[0]);
+          const cname = r.answers.find((x) => x.type === 5);
+          const key = txtRecords(r.answers).find((t) => t.includes('p='));
+          if (cname) {
+            vrDkim.appendChild(line('DKIM: Found CNAME -> ' + cname.data.replace(/\.$/, '') + ' (' + fqdn + ')'));
+          } else if (key) {
+            const k = key.match(/k=([a-z0-9]+)/i)?.[1] ?? 'rsa';
+            const p = key.match(/p=([^;]+)/)?.[1] ?? '';
+            const revoked = p === '';
+            const bits = k === 'ed25519' ? 256 : Math.max(0, (Math.floor((p.replace(/=+$/, '').length * 3) / 4) - 24) * 8);
+            vrDkim.appendChild(line('DKIM: Found TXT key at ' + fqdn + ' - ' + k.toUpperCase() + (revoked ? ', REVOKED (empty p=)' : ', ~' + bits + ' bits' + (bits >= 2048 || k === 'ed25519' ? ' (strong)' : bits >= 1024 ? ' (weak: rotate to 2048-bit)' : ' (prohibited by RFC 8301)')), revoked ? 'text-warn' : 'text-ink-dim'));
+          } else {
+            vrDkim.appendChild(line('DKIM: Not Found on ' + fqdn + (r.status === 3 ? ' (NXDOMAIN)' : ''), 'text-warn'));
+          }
+        } catch {
+          vrDkim.appendChild(line('DKIM: lookup failed for ' + fqdn + ' (network error)', 'text-warn'));
         }
-        if (/p=;|p=$/.test(key) || /p=\s*(;|$)/.test(key)) { lines.push(`${fqdn}: REVOKED (empty p=)`); continue; }
-        const k = key.match(/k=([a-z0-9]+)/i)?.[1] ?? 'rsa';
-        const p = key.match(/p=([^;]+)/)?.[1] ?? '';
-        const bits = k === 'ed25519' ? 256 : Math.max(0, (Math.floor((p.replace(/=+$/, '').length * 3) / 4) - 24) * 8);
-        lines.push(`${fqdn}: FOUND - ${k.toUpperCase()}, ~${bits} bits${bits >= 2048 || k === 'ed25519' ? ' (strong)' : bits >= 1024 ? ' (weak: rotate to 2048-bit)' : ' (prohibited by RFC 8301)'}`);
-      } catch {
-        lines.push(`${fqdn}: lookup failed (network error)`);
       }
     }
-    resultEl.textContent = esp.name + ' @ ' + domain + '\n' + lines.join('\n');
+
+    // 3. DMARC policy check + alignment note for the ESP
+    try {
+      const r = await lookup('_dmarc.' + domain, 'TXT', RESOLVERS[0]);
+      const rec = txtRecords(r.answers).find((t) => /^v=dmarc1/i.test(t.trim()));
+      if (!rec) {
+        vrDmarc.textContent = 'DMARC: no _dmarc record found - publish p=none with a rua= mailbox first (fails the Gmail/Yahoo/Microsoft bulk-sender requirements).';
+      } else {
+        const pol = rec.match(/\bp=(none|quarantine|reject)/i)?.[1]?.toLowerCase() ?? 'unknown';
+        const alignNote = esp.dmarcAlignment === 'SPF + DKIM Aligned (with custom Return-Path)'
+          ? esp.name + ' aligns both SPF and DKIM when the Return-Path CNAMEs are published.'
+          : esp.name + ' aligns DKIM only by default: confirm the d= domain matches your visible From: domain.';
+        vrDmarc.textContent = 'DMARC: p=' + pol + ' found. ' + (pol === 'none'
+          ? 'Monitoring only - spoofed mail is still delivered. ' + alignNote
+          : alignNote);
+      }
+    } catch {
+      vrDmarc.textContent = 'DMARC: lookup failed (network error) - inconclusive.';
+    }
+
+    vrTitle.textContent = 'ESP setup verification: ' + esp.name + ' on ' + domain;
+  }
+
+  async function autoDetect(domain: string) {
+    vrTitle.textContent = 'Auto-detecting the ESP for ' + domain + '...';
+    vrSpf.textContent = '';
+    vrDkim.textContent = '';
+    vrDmarc.textContent = '';
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    let spfRecord = '';
+    try {
+      const res = await lookup(domain, 'TXT', RESOLVERS[0]);
+      spfRecord = txtRecords(res.answers).find((t) => /^v=spf1(\s|$)/i.test(t.trim())) ?? '';
+    } catch {
+      vrSpf.textContent = 'SPF: lookup failed (network error) - inconclusive.';
+      return;
+    }
+    if (!spfRecord) {
+      vrSpf.textContent = 'Auto-detect: no v=spf1 record on ' + domain + ', so no root-include ESP can be detected. Pick a platform from the dropdown to verify its delegated or dashboard-assigned setup directly.';
+      return;
+    }
+    const tokens = spfRecord.toLowerCase().split(/\s+/);
+    const detected = ESP_SETTINGS.filter((e) => {
+      const inc = e.spfValue.replace(/^include:/, '').toLowerCase();
+      return inc.includes('.') && tokens.some((t) => t === 'include:' + inc || t === 'include:' + inc + '.');
+    });
+    if (!detected.length) {
+      vrSpf.textContent = 'Auto-detect: your SPF record (' + spfRecord.slice(0, 90) + (spfRecord.length > 90 ? '...' : '') + ') contains no include matching one of the 44 covered platforms. Pick a platform from the dropdown to verify it directly.';
+      return;
+    }
+    vrSpf.textContent = 'Auto-detect: matched ' + detected.map((e) => e.name).join(', ') + ' from your SPF include: chain. Verifying the first match:';
+    await verify(domain, detected[0]);
+  }
+
+  async function run() {
+    const domain = normalizeDomain(domainInput.value);
+    if (!domain.includes('.')) {
+      panel.classList.remove('hidden');
+      vrTitle.textContent = 'Enter a domain first (e.g. example.com), then Verify ESP DNS Setup.';
+      vrSpf.textContent = '';
+      vrDkim.textContent = '';
+      vrDmarc.textContent = '';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    const slug = selectEl.value;
+    if (slug === 'auto') await autoDetect(domain);
+    else {
+      const esp = ESP_SETTINGS.find((x) => x.slug === slug);
+      if (esp) await verify(domain, esp);
+    }
+  }
+
+  verifyBtn.addEventListener('click', run);
+
+  // Quick domain pills fill the input and run the verifier immediately
+  document.querySelectorAll('.esp-quick').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      domainInput.value = (btn as HTMLElement).dataset.q ?? '';
+      run();
+    });
+  });
+
+  // Row Test Live buttons: pick the ESP in the dropdown and run the verifier
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.esp-test-btn') as HTMLElement | null;
+    if (!btn) return;
+    const slug = btn.dataset.espSlug!;
+    const esp = ESP_SETTINGS.find((x) => x.slug === slug);
+    if (!esp) return;
+    selectEl.value = slug;
+    const domain = normalizeDomain(domainInput.value);
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!domain.includes('.')) {
+      vrTitle.textContent = 'Enter a domain in the bar above first, then Test Live on ' + esp.name + '.';
+      vrSpf.textContent = '';
+      vrDkim.textContent = '';
+      vrDmarc.textContent = '';
+      return;
+    }
+    verify(domain, esp);
   });
 </script>
