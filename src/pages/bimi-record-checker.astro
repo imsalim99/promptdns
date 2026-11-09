@@ -40,16 +40,6 @@ const faqSchema = {
 </ToolPanel>
     </div>
     <article class="rich-text mt-12 max-w-none">
-      
-      <h2>Verify from the command line</h2>
-      <p>Query the BIMI record from the terminal, trying your selector name:</p>
-      <pre><code># BIMI records live under <selector>._bimi (default is the common choice)
-dig TXT default._bimi.example.com +short
-
-# Confirm the logo URL inside the record resolves over HTTPS
-curl -I https://example.com/logo.svg</code></pre>
-      <p>How BIMI fits alongside SPF, DKIM, and DMARC at the command line is covered in the <a href="/check-spf-dkim-dmarc-dig/">SPF, DKIM, and DMARC dig guide</a>.</p>
-
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Do I need a VMC certificate for BIMI?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, for Gmail and Apple Mail you need a Verified Mark Certificate (VMC) issued by a certificate authority like DigiCert or Entrust. Some providers accept Common Mark Certificates (CMC) which are cheaper.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does BIMI work without DMARC?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. BIMI requires your domain to have DMARC enforced at p=quarantine or p=reject. p=none is not sufficient. This is why DMARC enforcement is a prerequisite for BIMI deployment.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Which email providers support BIMI?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Gmail, Apple Mail (iOS 16+), and Yahoo Mail support BIMI. Microsoft Outlook does not currently support the BIMI standard.</p></details></div>
 <h2>Related</h2><ul><li><a href="/bimi/">BIMI explained</a> · <a href="/dmarc-record-checker/">DMARC checker (prerequisite)</a></li></ul></article>

@@ -95,11 +95,7 @@ const personas = [
   ['Agencies & email teams', 'Multi-domain monitoring, white-label reports, and the deliverability stack that keeps client mail out of spam.'],
 ];
 
-// R61 (1 link per target inside main): the 7 scan-control tools are linked by
-// the "What the scan checks" attribute table under the scanner, so they are
-// excluded from the browse grid below. The complete directory lives on /tools/.
-const SCAN_TOOL_HREFS = new Set(['/a-record-lookup/', '/nameserver-lookup/', '/mx-record-lookup/', '/spf-record-checker/', '/dkim-record-checker/', '/dmarc-record-checker/', '/ds-record-lookup/']);
-const toolDir = TOOL_CATEGORIES.map(({ cat, note, tools }) => ({ cat, note, tools: tools.filter((t) => !SCAN_TOOL_HREFS.has(t.href)).map((t) => [t.name, t.href, t.desc]) }));
+const toolDir = TOOL_CATEGORIES.map(({ cat, note, tools }) => ({ cat, note, tools: tools.map((t) => [t.name, t.href, t.desc]) }));
 const ticker = [
   'DNS Propagation', 'SPF · DKIM · DMARC', 'DNSSEC', 'MX Records', 'llms.txt', 'AI Crawlers',
   'PTR / Reverse DNS', 'CAA Records', 'Email Blacklists', 'TTL Optimization', 'AI Readiness', 'Nameservers',
@@ -170,28 +166,6 @@ const ticker = [
 
       <div class="reveal reveal-4 mt-10">
         <DomainScanner />
-      </div>
-
-      <!-- What the scan checks: one attribute row per control, each linking its deep-dive tool -->
-      <div class="reveal reveal-4 mx-auto mt-14 max-w-4xl" data-vs="scan-checks">
-        <h2 class="font-display text-center text-2xl font-bold tracking-tight text-ink">What the scan checks</h2>
-        <p class="mt-2 text-center text-sm text-ink-dim">
-          Seven weighted controls, 100 points, one score. Each control links the dedicated tool that inspects it in full depth.
-        </p>
-        <div class="mt-6 overflow-x-auto rounded-2xl border border-line bg-panel/60">
-          <table class="pdns-table" style="width:100%">
-            <thead><tr><th>Scan Control</th><th>Weight</th><th>What a Pass Means</th><th>Deep-Dive Tool</th></tr></thead>
-            <tbody>
-              <tr><td class="font-medium text-ink">Website DNS (A/AAAA)</td><td class="font-mono text-xs text-accent">15 pts</td><td class="text-sm text-ink-dim">The domain resolves to a live website over IPv4, with IPv6 checked alongside.</td><td><a href="/a-record-lookup/" class="font-medium text-accent hover:text-accent-soft">A Record Lookup</a></td></tr>
-              <tr><td class="font-medium text-ink">Nameservers</td><td class="font-mono text-xs text-accent">5 pts</td><td class="text-sm text-ink-dim">Delegation answers with two or more authoritative nameservers.</td><td><a href="/nameserver-lookup/" class="font-medium text-accent hover:text-accent-soft">Nameserver Lookup</a></td></tr>
-              <tr><td class="font-medium text-ink">Mail Routing (MX)</td><td class="font-mono text-xs text-accent">10 pts</td><td class="text-sm text-ink-dim">MX records exist, so the domain can receive mail.</td><td><a href="/mx-record-lookup/" class="font-medium text-accent hover:text-accent-soft">MX Record Lookup</a></td></tr>
-              <tr><td class="font-medium text-ink">SPF</td><td class="font-mono text-xs text-accent">20 pts</td><td class="text-sm text-ink-dim">A valid v=spf1 record exists and stays within the 10-DNS-lookup limit.</td><td><a href="/spf-record-checker/" class="font-medium text-accent hover:text-accent-soft">SPF Record Checker</a></td></tr>
-              <tr><td class="font-medium text-ink">DKIM</td><td class="font-mono text-xs text-accent">15 pts</td><td class="text-sm text-ink-dim">A public key is published on the common selector names.</td><td><a href="/dkim-record-checker/" class="font-medium text-accent hover:text-accent-soft">DKIM Record Checker</a></td></tr>
-              <tr><td class="font-medium text-ink">DMARC</td><td class="font-mono text-xs text-accent">25 pts</td><td class="text-sm text-ink-dim">A v=dmarc1 policy is published and set to quarantine or reject.</td><td><a href="/dmarc-record-checker/" class="font-medium text-accent hover:text-accent-soft">DMARC Record Checker</a></td></tr>
-              <tr><td class="font-medium text-ink">DNSSEC</td><td class="font-mono text-xs text-accent">10 pts</td><td class="text-sm text-ink-dim">The parent zone publishes DS records, so answers are signed.</td><td><a href="/ds-record-lookup/" class="font-medium text-accent hover:text-accent-soft">DS Record Lookup</a></td></tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <!-- Stats -->

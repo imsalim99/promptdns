@@ -66,17 +66,6 @@ const faqSchema = {
         <table class="pdns-table"><tbody><tr><td class="text-sm font-medium text-ink">Lookups</td><td class="text-sm text-ink-dim">Reduced to 0</td></tr><tr><td class="text-sm font-medium text-ink">Maintenance</td><td class="text-sm text-ink-dim">Re-run after adding senders</td></tr><tr><td class="text-sm font-medium text-ink">Risk</td><td class="text-sm text-ink-dim">Stale IPs if upstream changes</td></tr></tbody></table>
     </div>
 
-      
-      <h2>Verify from the command line</h2>
-      <p>Pull the same raw inputs the flattener resolves, directly from dig:</p>
-      <pre><code># The current SPF record
-dig TXT example.com +short
-
-# Resolve each include: to the provider's SPF policy
-dig TXT _spf.google.com +short
-dig TXT _spf.sender.net +short</code></pre>
-      <p>The <a href="/check-spf-dkim-dmarc-dig/">SPF, DKIM, and DMARC dig guide</a> covers the full lookup-chain workflow step by step, including how include resolution compounds toward the 10-lookup limit.</p>
-
       <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
       <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is SPF flattening safe for my email delivery?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It can be, if monitored. Flattening replaces include: mechanisms with direct IP addresses, which stay under the 10-lookup limit. But if a provider changes their IPs, your flattened record becomes stale and legitimate mail breaks.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How often should I re-flatten my SPF record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Whenever your email providers change their sending infrastructure. Automated monitoring catches these changes; manual flattening requires you to check provider documentation regularly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is the alternative to SPF flattening?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Move sending streams to dedicated subdomains so each gets its own 10-lookup quota. This is more resilient than flattening but requires DNS and provider changes.</p></details></div>
       <h2>Related tools</h2>

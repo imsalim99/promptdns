@@ -29,9 +29,7 @@ export const IP_LISTS: DnsblList[] = [
   { name: 'Spamhaus ZEN', zone: 'zen.spamhaus.org', scope: 'ip', note: 'SBL+XBL+PBL composite' },
   { name: 'Barracuda BBRB', zone: 'b.barracudacentral.org', scope: 'ip', note: 'Barracuda reputation' },
   { name: 'SpamCop', zone: 'bl.spamcop.net', scope: 'ip', note: 'Spamtrap-driven' },
-  // SORBS (dnsbl.sorbs.net) removed: Proofpoint decommissioned the blocklist
-  // on 2024-06-05 and the zone answers NXDOMAIN (verified 2026-11-09). Queries
-  // to it would report a misleading permanent "not listed".
+  { name: 'SORBS Spam', zone: 'dnsbl.sorbs.net', scope: 'ip', note: 'SORBS composite' },
   { name: 'Spamrat Dyna', zone: 'dyna.spamrats.com', scope: 'ip', note: 'Dynamic IP space' },
   { name: 'PSBL', zone: 'psbl.surriel.com', scope: 'ip', note: 'Passive spam blocklist' },
 ];
