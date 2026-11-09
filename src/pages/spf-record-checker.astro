@@ -7,18 +7,18 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-    {'@type': 'Question', 'name': "What does 'too many DNS lookups' mean in SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=). Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain. See the permerror guide ." } },
+    {'@type': 'Question', 'name': "What does 'too many DNS lookups' mean in SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=) counted across the whole policy, including the records pulled in by include: chains. Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain." } },
     {'@type': 'Question', 'name': "Can a domain have two SPF records?", "acceptedAnswer": { '@type': 'Answer', "text": "No. RFC 7208 requires exactly one v=spf1 record per domain; multiple records cause evaluation to end in permerror regardless of what they say. Merge all senders into a single record." } },
     {'@type': 'Question', 'name': "Should SPF end in ~all or -all?", "acceptedAnswer": { '@type': 'Answer', "text": "With DMARC enforcing policy, ~all (softfail) is the common safe default. Move to -all (hard fail) only once every legitimate sender is listed, or unlisted senders get rejected." } },
     {'@type': 'Question', 'name': "Why does SPF pass here but fail in Gmail headers?", "acceptedAnswer": { '@type': 'Answer', "text": "This checker inspects the published record only. Real evaluation depends on the sending server's IP, envelope-from alignment, and forwarding hops. Send a test message and read its Authentication-Results header for the verdict that matters." } },
     {'@type': 'Question', 'name': "How do I fix an SPF record over the lookup limit?", "acceptedAnswer": { '@type': 'Answer', "text": "Remove include: entries for services you no longer use and re-check. Avoid automatic flattening unless you monitor the result: flattened IP lists go stale when providers change infrastructure." } },
-    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+    {'@type': 'Question', 'name': "What is a void lookup in SPF?", "acceptedAnswer": { '@type': 'Answer', "text": "A DNS-querying term whose target returns NXDOMAIN or no answers, usually a dead include or a typo. RFC 7208 caps void lookups at 2: at the third one, receivers may return permerror and stop evaluating the record." } }
   ]
 }
 ---
 <BaseLayout
   title="SPF Record Checker, Validate Your SPF"
-  description="Free SPF record checker: validate syntax, count DNS lookups against the 10-lookup limit, and find errors that break email deliverability."
+  description="Free SPF record checker: validate syntax, count DNS lookups recursively across include: chains against the 10-lookup limit, detect void lookups, and find the permerrors that break deliverability."
   schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -29,8 +29,8 @@ const faqSchema = {
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">SPF Record Checker</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Checker: Validate SPF Syntax and Count DNS Lookups</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free SPF checker: validate SPF syntax, count DNS lookups, find permerrors. No sign up.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">SPF Record Checker: Validate Syntax, Count DNS Lookups, and Trace include: Chains</h1>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Free SPF checker: parse every mechanism and modifier, follow include: and redirect= chains recursively the way a receiver would, and count total and void DNS lookups against the RFC 7208 limits. No sign up.</p>
 
     <ToolPanel>
       <form id="spf-form" class="flex flex-col gap-3 sm:flex-row">
@@ -42,15 +42,30 @@ const faqSchema = {
 
       <div id="spf-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
 
-      <div id="spf-lookup" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
-        <div class="flex items-baseline justify-between">
-          <span class="text-sm text-ink-dim">Top-level DNS lookup terms</span>
-          <span id="spf-lookup-val" class="font-display text-3xl font-bold text-accent"></span>
+      <div id="spf-meters" class="mt-4 hidden grid gap-3 sm:grid-cols-2">
+        <div class="rounded-lg border border-line bg-panel/60 p-4">
+          <div class="flex items-baseline justify-between">
+            <span class="text-sm text-ink-dim">Total recursive DNS lookups (RFC 7208 4.6.4)</span>
+            <span id="spf-lookup-val" class="font-display text-3xl font-bold text-accent"></span>
+          </div>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
+            <div id="spf-lookup-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700"></div>
+          </div>
         </div>
-        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
-          <div id="spf-lookup-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700"></div>
+        <div class="rounded-lg border border-line bg-panel/60 p-4">
+          <div class="flex items-baseline justify-between">
+            <span class="text-sm text-ink-dim">Void lookups (limit 2)</span>
+            <span id="spf-void-val" class="font-display text-3xl font-bold text-accent"></span>
+          </div>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-panel-2">
+            <div id="spf-void-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-all duration-700"></div>
+          </div>
         </div>
-        <p class="mt-2 text-xs text-ink-faint">SPF allows a maximum of 10 DNS lookup terms in evaluation. This count reflects the terms in this record only; nested <code>include:</code> domains may consume additional lookups during actual mail evaluation.</p>
+      </div>
+
+      <div id="spf-tree" class="mt-4 hidden rounded-lg border border-line bg-panel/60 p-4">
+        <p class="text-xs font-semibold text-ink">SPF lookup tree (every include: and redirect= followed, up to depth 3 and 15 queries)</p>
+        <pre id="spf-tree-pre" class="mt-2 overflow-x-auto whitespace-pre font-mono text-xs leading-relaxed text-ink-dim"></pre>
       </div>
 
       <p id="spf-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
@@ -58,19 +73,19 @@ const faqSchema = {
       </p>
       <div id="spf-results" class="pd-results mt-2 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
         <table class="pdns-table">
-          <thead><tr><th>Term</th><th>Type</th><th>Explanation</th></tr></thead>
+          <thead><tr><th>Term</th><th>Type</th><th>Record</th><th>Explanation</th></tr></thead>
           <tbody id="spf-tbody">
-            <tr><td class="font-mono text-xs text-accent-soft">v=spf1</td><td>version</td><td class="text-sm text-ink-dim">Declares this TXT record as an SPF policy (RFC 7208)</td></tr>
-            <tr><td class="font-mono text-xs text-accent-soft">include:_spf.example.com</td><td>include</td><td class="text-sm text-ink-dim">Delegates authorization to the SPF record at _spf.example.com (1 lookup)</td></tr>
-            <tr><td class="font-mono text-xs text-accent-soft">ip4:93.184.216.0/24</td><td>ip4</td><td class="text-sm text-ink-dim">Authorizes that IPv4 range to send mail for the domain</td></tr>
-            <tr><td class="font-mono text-xs text-accent-soft">~all</td><td>all (softfail)</td><td class="text-sm text-ink-dim">Unauthorized senders are marked but not rejected</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">v=spf1</td><td>version</td><td class="text-xs text-ink-faint">example.com</td><td class="text-sm text-ink-dim">Declares this TXT record as an SPF policy (RFC 7208)</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">include:_spf.example.com</td><td>include</td><td class="text-xs text-ink-faint">example.com</td><td class="text-sm text-ink-dim">Delegates authorization to the SPF record at _spf.example.com (1 lookup)</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">ip4:93.184.216.0/24</td><td>ip4</td><td class="text-xs text-ink-faint">example.com</td><td class="text-sm text-ink-dim">Authorizes that IPv4 range to send mail for the domain</td></tr>
+            <tr><td class="font-mono text-xs text-accent-soft">~all</td><td>all (softfail)</td><td class="text-xs text-ink-faint">example.com</td><td class="text-sm text-ink-dim">Unauthorized senders are marked but not rejected</td></tr>
           </tbody>
         </table>
     </div>
 
       <div id="spf-scope" class="mt-4 hidden rounded-lg border border-line bg-panel/40 px-4 py-3">
         <p class="text-xs leading-relaxed text-ink-faint">
-          <strong class="text-ink-dim">Scope:</strong> This checker inspects the published SPF record's syntax and counts its top-level DNS lookup terms. It does not send mail, evaluate a specific sender IP, or recursively follow include chains. A "valid" result means the record's syntax is well-formed and within the top-level term count, not that every sender will pass. For sender-level verification, send a test message and inspect the <code>Authentication-Results</code> header.
+          <strong class="text-ink-dim">Scope:</strong> This checker follows include: and redirect= chains up to 3 levels and 15 DNS queries per run, counting every DNS-querying term across all records in the chain against the shared 10-lookup evaluation limit. deeper chains beyond the budget are marked rather than counted, so a total under 10 with a budget notice means the true count is unknown. It does not send mail or evaluate a specific sender IP: for sender-level verification, send a test message and inspect the <code>Authentication-Results</code> header.
         </p>
       </div>
 
@@ -78,45 +93,109 @@ const faqSchema = {
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
-      <h2>What this SPF checker validates</h2>
-      <p>It fetches your domain's TXT records over DNS-over-HTTPS and parses the <code>v=spf1</code> record term by term: every <code>include:</code>, <code>a</code>, <code>mx</code>, and <code>redirect=</code> counts toward the 10-DNS-lookup limit, the single most common way SPF breaks.</p>
-      <h2>Common problems it finds</h2>
-      <ul>
-        <li>More than 10 DNS lookups (permerror, receivers ignore your SPF)</li>
-        <li>Missing or weak <code>all</code> qualifier (<code>~all</code> vs <code>-all</code>)</li>
-        <li>Deprecated <code>ptr</code> mechanisms and unknown syntax</li>
-      </ul>
-      
-      <p>Prefer the terminal? The step-by-step guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> walks through the exact commands, flags, and expected output for all three records.</p>
+      <h2>What This Result Means: 7 SPF Evaluation States and Lookup Limits</h2>
+      <p>Every SPF record resolves into one of the evaluation states below once the include: chains are followed and the lookup arithmetic is done. The table is the verdict matrix this tool applies:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>State</th><th>Observed Condition</th><th>What the Receiver Does</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Valid SPF Record Under 10 Lookups (-all or ~all)</td><td class="text-sm text-ink-dim">One record, every mechanism resolves, total lookups at 10 or fewer, all qualifier is -all or ~all</td><td class="text-sm text-ink-dim">Evaluation completes: listed senders pass, unlisted senders fail or softfail</td><td class="text-sm text-ink-dim">Best practice: the policy protects the domain and stays fully evaluable.</td></tr>
+            <tr><td class="font-medium text-ink">2. Near Lookup Ceiling (8 to 10 DNS Lookups)</td><td class="text-sm text-ink-dim">Total lookups between 8 and 10 after recursion</td><td class="text-sm text-ink-dim">Evaluation succeeds today, with nothing left in the budget</td><td class="text-sm text-ink-dim">Fragile: the next vendor include pushes the record into permerror. Plan a trim now.</td></tr>
+            <tr><td class="font-medium text-ink">3. SPF PermError: Exceeds 10-DNS-Lookup Limit (RFC 7208 section 4.6.4)</td><td class="text-sm text-ink-dim">Total lookups above 10 across the include: chain</td><td class="text-sm text-ink-dim">The receiver stops evaluating at the 10th lookup and returns permerror</td><td class="text-sm text-ink-dim">Critical: the record protects nothing. Prune or flatten until the total is 10 or fewer.</td></tr>
+            <tr><td class="font-medium text-ink">4. SPF PermError: Multiple v=spf1 TXT Records (RFC 7208 section 3.2)</td><td class="text-sm text-ink-dim">Two or more TXT records on the same name begin with v=spf1</td><td class="text-sm text-ink-dim">Evaluation aborts with permerror regardless of what the records say</td><td class="text-sm text-ink-dim">Merge the records into one. Duplicates usually appear when a tool appended instead of replaced.</td></tr>
+            <tr><td class="font-medium text-ink">5. SPF PermError: More Than 2 Void Lookups or Syntax Error</td><td class="text-sm text-ink-dim">3 or more DNS-querying terms return NXDOMAIN or zero answers, or unknown terms exist</td><td class="text-sm text-ink-dim">Receivers may return permerror; unknown terms abort evaluation outright</td><td class="text-sm text-ink-dim">Remove dead includes and fix the malformed terms shown in the result table.</td></tr>
+            <tr><td class="font-medium text-ink">6. Dangerous +all or ?all Qualifier</td><td class="text-sm text-ink-dim">The record ends in +all or contains ?all where a decision is expected</td><td class="text-sm text-ink-dim">+all passes every sender on the internet; ?all asserts nothing</td><td class="text-sm text-ink-dim">Open spoofing: replace +all with -all (or ~all during rollout) immediately.</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-<div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does 'too many DNS lookups' mean in SPF?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=). Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain. <a href="/spf-permerror/" class="text-accent">See the permerror guide</a>.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have two SPF records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. RFC 7208 requires exactly one v=spf1 record per domain; multiple records cause evaluation to end in permerror regardless of what they say. Merge all senders into a single record.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should SPF end in ~all or -all?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">With DMARC enforcing policy, ~all (softfail) is the common safe default. Move to -all (hard fail) only once every legitimate sender is listed, or unlisted senders get rejected.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does SPF pass here but fail in Gmail headers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">This checker inspects the published record only. Real evaluation depends on the sending server's IP, envelope-from alignment, and forwarding hops. Send a test message and read its Authentication-Results header for the verdict that matters.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I fix an SPF record over the lookup limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Remove include: entries for services you no longer use and re-check. Avoid automatic flattening unless you monitor the result: flattened IP lists go stale when providers change infrastructure.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
-      <h2>Related tools</h2>
-      <ul>
-        <li><a href="/spf-flattener/">SPF Flattener</a>, fix the 10-lookup limit automatically</li>
-        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a></li>
-        <li><a href="/dkim-record-checker/">DKIM Record Checker</a></li>
-        <li><a href="/spf-record/">SPF records explained</a> (guide)</li>
-        <li><a href="/spf-permerror/">SPF permerror: causes and fixes</a> (guide)</li>
-        <li><a href="/spf-mechanisms-explained/">SPF mechanisms explained: include, a, mx, ip4 and more</a> (guide)</li>
-        <li><a href="/how-to-create-spf-record/">How to create an SPF record</a> (guide)</li>
-        <li><a href="/spf-softfail-vs-hardfail/">Softfail vs hardfail: ~all vs -all</a> (guide)</li>
+      <h2>How to Fix SPF PermErrors and Reduce DNS Lookups</h2>
+      <p>Fixing an over-limit or erroring record comes down to 4 moves, applied in this order:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Merge.</strong> If the tool flagged multiple v=spf1 records, combine them into the single TXT record at the apex: duplicate policies always permerror, no matter how correct each half is.</li>
+        <li><strong>Prune.</strong> Delete every include: for a service that no longer sends as your domain, and drop deprecated ptr mechanisms. This is free budget: most domains accumulate dead ESPs for years.</li>
+        <li><strong>Split.</strong> Move bulk marketing or transactional sending to a dedicated subdomain (news.example.com, mail.example.com) with its own SPF record. Each subdomain gets its own full 10-lookup budget, and the envelope sender moves with it.</li>
+        <li><strong>Harden.</strong> With the budget healthy, tighten the all qualifier from ?all to ~all, then to -all once aggregate DMARC reports confirm every legitimate sender passes.</li>
+      </ol>
+      <p>The <a href="/spf-lookup-limit/">SPF 10-lookup limit</a> guide explains the counting rules in depth, and the <a href="/spf-flattener/">SPF flattener</a> can generate a flattened record automatically when pruning alone cannot get under the limit.</p>
+
+      <h2>Verify SPF Records and Lookup Counts From the Command Line (dig)</h2>
+      <pre><code># Fetch the published policy (Linux, macOS, Windows WSL):
+dig example.com TXT +short | grep "v=spf1"
+
+# Follow an include: chain manually, one level at a time:
+dig _spf.google.com TXT +short
+
+# Windows PowerShell equivalent:
+nslookup -type=txt example.com</code></pre>
+      <p>For the full term-by-term workflow with every flag explained, the guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> walks through SPF, DKIM, and DMARC in one pass.</p>
+
+      <h2>Reference Table: SPF Mechanisms, Qualifiers, and Lookup Costs (RFC 7208)</h2>
+      <p>The table below is the complete EAV reference for every term an SPF record can carry, with what it matches and what it costs against the 10-lookup evaluation limit:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Term</th><th>What It Matches</th><th>DNS Lookup Cost</th><th>Notes (RFC 7208)</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">v=spf1</td><td class="text-sm text-ink-dim">Version tag; declares the record as SPF</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Required first term. Exactly one such record per name (section 3.2).</td></tr>
+            <tr><td class="font-mono text-xs text-ink">ip4:/ip6:</td><td class="text-sm text-ink-dim">Literal IPv4/IPv6 addresses or CIDR ranges</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">Cheapest mechanism: evaluated without any DNS query.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">include:</td><td class="text-sm text-ink-dim">The named domain's SPF policy, evaluated recursively</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Nested records share the same 10-lookup budget; a target with no SPF record is a permerror condition.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">a</td><td class="text-sm text-ink-dim">The current (or named) domain's A and AAAA records</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Optional CIDR suffix (a/24) limits the match range.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">mx</td><td class="text-sm text-ink-dim">The MX hosts of the current (or named) domain, then their A/AAAA records</td><td class="text-sm text-ink-dim">1 (+ up to 10 MX A/AAAA sub-lookups, section 4.6.4)</td><td class="text-sm text-ink-dim">Each MX term evaluates at most 10 MX names.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">ptr</td><td class="text-sm text-ink-dim">Reverse DNS of the connecting IP, then forward confirmation</td><td class="text-sm text-ink-dim">1 (deprecated)</td><td class="text-sm text-ink-dim">Deprecated and slow; remove it. Most receivers skip or discourage it.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">exists:</td><td class="text-sm text-ink-dim">The constructed domain name resolves to any address</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Usually combined with macros (exists:%&#123;i&#125;.) for per-IP allowlists.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">redirect=</td><td class="text-sm text-ink-dim">Replaces evaluation with the named domain's policy</td><td class="text-sm text-ink-dim">1</td><td class="text-sm text-ink-dim">Modifier form of include; ignored if an all mechanism is present.</td></tr>
+            <tr><td class="font-mono text-xs text-ink">all (-all, ~all, ?all, +all)</td><td class="text-sm text-ink-dim">Everything that reached it without matching</td><td class="text-sm text-ink-dim">0</td><td class="text-sm text-ink-dim">-all hard fail, ~all softfail, ?all neutral, +all pass (never publish +all).</td></tr>
+            <tr><td class="font-mono text-xs text-ink">exp=</td><td class="text-sm text-ink-dim">Explanation TXT fetched on failure</td><td class="text-sm text-ink-dim">0 (only on failure paths)</td><td class="text-sm text-ink-dim">Rarely used; receivers seldom surface the explanation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For the record structure in plain language, start with the <a href="/spf-record/">SPF record</a> guide; the <a href="/spf-record-syntax/">SPF record syntax</a> guide covers term grammar, and the <a href="/spf-permerror/">SPF permerror</a> guide lists every condition that makes receivers abort evaluation.</p>
+
+      <h2>What This Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>SPF validates the SMTP envelope sender (RFC5321.MailFrom, the Return-Path) and the HELO/EHLO domain, not the RFC5322.From header displayed in email clients: protecting the visible From: header requires DMARC alignment.</li>
+        <li>Standard SPF breaks when a recipient auto-forwards an email, unless the forwarder rewrites the Return-Path (SRS) or the message is also DKIM-signed.</li>
+        <li>Conditional exists:%&#123;i&#125; macro mechanisms need the live connecting sender IP at SMTP time to evaluate, so this checker can only report their syntax and lookup cost, never their match result.</li>
+        <li>Publishing a valid SPF record at the apex does not protect unconfigured subdomains: each subdomain needs its own SPF record, or a DMARC sp=reject policy to inherit enforcement.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">When a domain hits 11+ lookups, the reflex is static IP flattening: resolve every include to ip4: lists and publish the result. Resist it as a first move. Flattened lists go stale the day a provider re-IPs their senders, and nobody notices until mail bounces. Moving the noisy ESPs to dedicated subdomains (mail.example.com for the product, news.example.com for marketing) gives each stack its own 10-lookup budget, keeps the provider-maintained includes alive, and makes every future vendor change a one-record edit instead of a flattening rerun.</p>
+      </aside>
+
+      <h2>What We See Across Domains</h2>
+      <p>
+        The dominant failure pattern in real SPF audits is SaaS include: bloat: a domain accumulates Google Workspace, Microsoft 365, SendGrid, HubSpot, and Zendesk includes over the years, each added when a team adopted a tool and none removed when it was retired, until the recursive count crosses 10 and every receiver starts returning permerror. The second most common find is duplicate v=spf1 records left behind when a record was edited by appending a second TXT entry instead of replacing the first. Both failures are structural, not sender problems, and both are invisible in mail logs.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does 'too many DNS lookups' mean in SPF?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF evaluation is capped at 10 DNS lookup terms (include:, a, mx, ptr, exists:, redirect=) counted across the whole policy, including the records pulled in by include: chains. Beyond the cap the receiver stops evaluating and returns permerror, so the record stops protecting the domain.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have two SPF records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. RFC 7208 requires exactly one v=spf1 record per domain; multiple records cause evaluation to end in permerror regardless of what they say. Merge all senders into a single record.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should SPF end in ~all or -all?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">With DMARC enforcing policy, ~all (softfail) is the common safe default. Move to -all (hard fail) only once every legitimate sender is listed, or unlisted senders get rejected.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does SPF pass here but fail in Gmail headers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">This checker inspects the published record only. Real evaluation depends on the sending server's IP, envelope-from alignment, and forwarding hops. Send a test message and read its Authentication-Results header for the verdict that matters.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I fix an SPF record over the lookup limit?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Remove include: entries for services you no longer use and re-check. Avoid automatic flattening unless you monitor the result: flattened IP lists go stale when providers change infrastructure.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a void lookup in SPF?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A DNS-querying term whose target returns NXDOMAIN or no answers, usually a dead include or a typo. RFC 7208 caps void lookups at 2: at the third one, receivers may return permerror and stop evaluating the record.</p></details></div>
+
+      <h2>Next Checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Build a fresh policy with the <a href="/spf-record-generator/">SPF record generator</a> when the trimmed record needs rewriting.</li>
+        <li>Check the enforcement layer with the <a href="/dmarc-record-checker/">DMARC record checker</a>.</li>
+        <li>Verify the signing layer with the <a href="/dkim-record-checker/">DKIM record checker</a>.</li>
       </ul>
     </article>
   </div>
 </BaseLayout>
 
 <script>
-  import { fetchSpf, parseSpf } from '../lib/spf';
   import { normalizeDomain } from '../lib/doh';
+  import { resolveSpfRecord } from '../lib/spf';
   import type { PdnsResult, PdnsFinding, Severity } from '../data/findings';
 
   const form = document.getElementById('spf-form') as HTMLFormElement;
   const input = document.getElementById('spf-domain') as HTMLInputElement;
   const statusEl = document.getElementById('spf-status')!;
-  const lookupBox = document.getElementById('spf-lookup')!;
+  const metersEl = document.getElementById('spf-meters')!;
   const lookupVal = document.getElementById('spf-lookup-val')!;
   const lookupBar = document.getElementById('spf-lookup-bar')!;
+  const voidVal = document.getElementById('spf-void-val')!;
+  const voidBar = document.getElementById('spf-void-bar')!;
+  const treeEl = document.getElementById('spf-tree')!;
+  const treePre = document.getElementById('spf-tree-pre')!;
   const resultsEl = document.getElementById('spf-results')!;
   const tbody = document.getElementById('spf-tbody')!;
   const scopeEl = document.getElementById('spf-scope')!;
@@ -127,15 +206,17 @@ const faqSchema = {
   };
 
   const TOOL = 'spf-record-checker';
+  // Related links must never duplicate a static link inside main (R61):
+  // /spf-lookup-limit/, /spf-flattener/, /check-spf-dkim-dmarc-dig/, /spf-record/,
+  // /spf-record-syntax/, /spf-permerror/, /spf-record-generator/, /dmarc-record-checker/,
+  // /dkim-record-checker/ are all static, so the card points at guides that are not.
   const RELATED_OK = [
-    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
-    { label: 'Check DKIM', href: '/dkim-record-checker/' },
-    { label: 'SPF records explained', href: '/spf-record/' },
+    { label: 'SPF mechanisms explained', href: '/spf-mechanisms-explained/' },
+    { label: 'Softfail vs hardfail', href: '/spf-softfail-vs-hardfail/' },
   ];
   const RELATED_FAIL = [
-    { label: 'SPF permerror: causes and fixes', href: '/spf-permerror/' },
-    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
-    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+    { label: 'How to create an SPF record', href: '/how-to-create-spf-record/' },
+    { label: 'SPF mechanisms explained', href: '/spf-mechanisms-explained/' },
   ];
 
   const emit = (verdict: Severity, verdictLine: string, findings: PdnsFinding[], domain: string, related = RELATED_OK) => {
@@ -147,15 +228,16 @@ const faqSchema = {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
-    setStatus('bg-panel-2 text-accent border border-line', `Fetching TXT records for ${domain}…`);
-    [lookupBox, resultsEl, scopeEl].forEach((el) => el.classList.add('hidden'));
+    setStatus('bg-panel-2 text-accent border border-line', `Resolving the SPF policy of ${domain}, including nested include: chains...`);
+    [metersEl, treeEl, resultsEl, scopeEl].forEach((el) => el.classList.add('hidden'));
     document.getElementById('spf-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
+    tbody.textContent = '';
+    treePre.textContent = '';
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    let fetchResult: { found: boolean; record: string; txtCount: number };
+    let r;
     try {
-      fetchResult = await fetchSpf(domain);
+      r = await resolveSpfRecord(domain);
     } catch {
       setStatus('bg-warn/10 text-warn border border-warn/30',
         `Could not reach the DNS resolver for ${domain}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
@@ -163,10 +245,12 @@ const faqSchema = {
       return;
     }
 
-    const { found, record, txtCount } = fetchResult;
+    const root = r.tree[0];
+    const record = root?.record ?? null;
+    const txtCount = r.multipleRecordsDomains.includes(domain) ? 2 : record ? 1 : 0;
 
-    if (!found) {
-      if (txtCount === 0) {
+    if (!record) {
+      if ((root?.txtRecordCount ?? 0) === 0 && !domain) {
         setStatus('bg-warn/10 text-warn border border-warn/30',
           `No TXT records returned for ${domain}. This is inconclusive: the domain may not publish SPF, or the DNS query may not have completed.`);
         emit('info', `No TXT records returned for ${domain}. This is inconclusive, not a fail.`, [{ code: 'SPF_NO_TXT' }], domain);
@@ -178,84 +262,107 @@ const faqSchema = {
       return;
     }
 
-    const parse = parseSpf(record);
-
-    // State-aware status
-    const overLimit = parse.lookupCount > 10;
-    const nearLimit = parse.lookupCount > 8 && parse.lookupCount <= 10;
-    const hasErrors = parse.errors.length > 0;
-    const plusAll = parse.allQualifier === '+';
-    const hasWarn = parse.warnings.some((w) => !w.includes('/10 DNS lookups used')) || nearLimit || plusAll;
-    const verdict: Severity = (hasErrors || overLimit || txtCount > 1 || plusAll) ? 'fail' : hasWarn ? 'warn' : 'pass';
+    const overLimit = r.totalLookups > 10;
+    const nearLimit = r.totalLookups > 8 && r.totalLookups <= 10;
+    const voidPermerror = r.voidLookups > 2;
+    const voidAny = r.voidLookups > 0;
+    const plusAll = /(^|\s)\+all(\s|$)/i.test(record);
+    const multiple = r.multipleRecordsDomains.length > 0;
+    const noPolicy = r.noPolicyIncludes.length > 0;
+    const unknownTerms = r.terms.filter((t) => t.note === 'unrecognized term');
+    const hasWarn = nearLimit || voidAny || noPolicy || unknownTerms.length > 0;
+    const verdict: Severity = (overLimit || voidPermerror || multiple || plusAll) ? 'fail' : hasWarn ? 'warn' : 'pass';
 
     if (verdict === 'fail') {
       setStatus('bg-fail/10 text-fail border border-fail/30',
-        overLimit
-          ? `SPF record has ${parse.lookupCount} top-level DNS lookup terms (evaluation limit is 10). This exceeds the limit before counting nested includes - receivers will stop evaluating the policy at the 10th lookup term.`
-          : 'SPF record found - with errors that must be fixed.');
+        overLimit ? `SPF evaluation uses ${r.totalLookups} DNS lookups across the include: chain (limit 10, RFC 7208 4.6.4): receivers will stop evaluating at the 10th and return permerror.`
+        : multiple ? `Multiple v=spf1 records found: ${r.multipleRecordsDomains.join(', ')}. Evaluation returns permerror (RFC 7208 3.2).`
+        : voidPermerror ? `${r.voidLookups} void lookups found: above the RFC 7208 cap of 2, receivers may return permerror.`
+        : 'SPF record found - with errors that must be fixed.');
     } else if (verdict === 'warn') {
       setStatus('bg-warn/10 text-warn border border-warn/30',
-        nearLimit
-          ? `SPF record is syntactically valid but uses ${parse.lookupCount}/10 top-level lookup terms - close to the limit.`
-          : 'SPF record is syntactically valid, with warnings.');
+        nearLimit ? `SPF record resolves, but ${r.totalLookups}/10 recursive lookups are used - close to the limit.`
+        : voidAny ? `SPF record resolves, but ${r.voidLookups} void lookup(s) found - dead includes waste evaluation budget.`
+        : 'SPF record resolves, with warnings.');
     } else {
       setStatus('bg-pass/10 text-pass border border-pass/30',
-        'SPF record found and syntactically valid.');
+        `SPF record found and fully evaluable: ${r.totalLookups}/10 recursive lookups, ${r.voidLookups} void.`);
     }
 
-    // Lookup meter
-    lookupBox.classList.remove('hidden');
-    lookupVal.textContent = `${parse.lookupCount}/10`;
-    lookupBar.style.width = `${Math.min(100, parse.lookupCount * 10)}%`;
+    // Meters
+    metersEl.classList.remove('hidden');
+    lookupVal.textContent = `${r.totalLookups}/10`;
+    lookupBar.style.width = `${Math.min(100, r.totalLookups * 10)}%`;
     lookupBar.className = `h-full rounded-full transition-all duration-700 ${overLimit ? 'bg-fail' : nearLimit ? 'bg-warn' : 'bg-gradient-to-r from-accent to-violet'}`;
+    voidVal.textContent = `${r.voidLookups}/2`;
+    voidBar.style.width = `${Math.min(100, r.voidLookups * 50)}%`;
+    voidBar.className = `h-full rounded-full transition-all duration-700 ${voidPermerror ? 'bg-fail' : voidAny ? 'bg-warn' : 'bg-gradient-to-r from-accent to-violet'}`;
 
-    // Term table (escaped)
-    tbody.innerHTML = `<tr><td colspan="3"><code>${record.replace(/</g, '&lt;')}</code></td></tr>`;
-    for (const t of parse.terms) {
-      const td = document.createElement('td');
-      td.className = 'font-mono text-xs ' + (t.countsLookup ? 'text-warn' : 'text-accent');
-      td.textContent = t.term;
+    // Lookup tree
+    treeEl.classList.remove('hidden');
+    const lines: string[] = [];
+    for (const n of r.tree) {
+      const indent = '  '.repeat(Math.min(n.depth, 4));
+      const branch = n.depth === 0 ? '' : '└─ ';
+      const viaTxt = n.via ? n.via + ' ' : '';
+      const idxTxt = n.lookupIndex ? ` [${n.lookupIndex}]` : '';
+      const cnt = n.record ? '' : ' - ' + (n.note ?? 'no record');
+      lines.push(`${indent}${branch}${viaTxt}${n.domain}${idxTxt}${cnt}`);
+    }
+    if (r.budgetExhausted) lines.push(`(query budget of ${r.maxQueries} reached: deeper chains exist but were not counted)`);
+    treePre.textContent = lines.join('\n');
+
+    // Term table
+    const tr0 = document.createElement('tr');
+    const td0 = document.createElement('td');
+    td0.colSpan = 4;
+    const code0 = document.createElement('code');
+    code0.textContent = record;
+    td0.appendChild(code0);
+    tr0.appendChild(td0);
+    tbody.appendChild(tr0);
+    for (const t of r.terms) {
       const tr = document.createElement('tr');
-      tr.appendChild(td);
-      const td2 = document.createElement('td');
-      td2.className = 'text-ink-dim';
-      td2.textContent = t.kind;
-      tr.appendChild(td2);
-      const td3 = document.createElement('td');
-      td3.className = 'text-ink-dim';
-      td3.textContent = t.note;
-      tr.appendChild(td3);
+      const tdT = document.createElement('td');
+      tdT.className = 'font-mono text-xs ' + (t.void ? 'text-fail' : t.countsLookup ? 'text-warn' : 'text-accent');
+      tdT.textContent = t.lookupIndex ? `[${t.lookupIndex}] ${t.term}` : t.term;
+      const tdK = document.createElement('td');
+      tdK.className = 'text-ink-dim';
+      tdK.textContent = t.kind;
+      const tdD = document.createElement('td');
+      tdD.className = 'text-xs text-ink-faint';
+      tdD.textContent = t.depth === 0 ? t.domain : `${t.domain} (depth ${t.depth})`;
+      const tdN = document.createElement('td');
+      tdN.className = 'text-ink-dim';
+      tdN.textContent = t.note;
+      tr.append(tdT, tdK, tdD, tdN);
       tbody.appendChild(tr);
     }
     resultsEl.classList.remove('hidden');
-
-    // Scope note
     scopeEl.classList.remove('hidden');
 
-    // Findings for the ResultCard
+    // Findings
     const findings: PdnsFinding[] = [];
-    if (txtCount > 1) findings.push({ code: 'SPF_MULTIPLE_RECORDS', detail: `${txtCount} v=spf1 records found on this domain` });
-    if (parse.errors.length) findings.push({ code: 'SPF_SYNTAX_ERROR', detail: parse.errors.join('; ') });
-    if (overLimit) findings.push({ code: 'SPF_LOOKUP_OVER_LIMIT', detail: `${parse.lookupCount} top-level lookup terms; the evaluation limit is 10` });
-    else if (nearLimit) findings.push({ code: 'SPF_LOOKUP_NEAR_LIMIT', detail: `${parse.lookupCount} of 10 lookup terms used` });
+    if (multiple) findings.push({ code: 'SPF_MULTIPLE_RECORDS', detail: `${txtCount} v=spf1 records found` });
+    if (unknownTerms.length) findings.push({ code: 'SPF_SYNTAX_ERROR', detail: unknownTerms.map((t) => `Unrecognized term: ${t.term}`).join('; ') });
+    if (overLimit) findings.push({ code: 'SPF_LOOKUP_OVER_LIMIT', detail: `${r.totalLookups} recursive lookup terms across the include: chain; the evaluation limit is 10` });
+    else if (nearLimit) findings.push({ code: 'SPF_LOOKUP_NEAR_LIMIT', detail: `${r.totalLookups} of 10 recursive lookup terms used` });
+    if (voidPermerror) findings.push({ code: 'SPF_VOID_LOOKUPS', detail: `${r.voidLookups} void lookups, above the RFC 7208 cap of 2` });
+    else if (voidAny) findings.push({ code: 'SPF_VOID_LOOKUPS', detail: `${r.voidLookups} void lookup(s): dead includes or typos` });
+    if (noPolicy) findings.push({ code: 'SPF_INCLUDE_NO_POLICY', detail: `Include target(s) with no v=spf1 record: ${r.noPolicyIncludes.join(', ')}` });
     if (plusAll) findings.push({ code: 'SPF_PLUS_ALL' });
-    for (const w of parse.warnings) {
-      if (w.startsWith('ptr')) findings.push({ code: 'SPF_PTR_DEPRECATED' });
-      else if (w.startsWith('No "all"')) findings.push({ code: 'SPF_NO_ALL' });
-      // the near-limit parser warning is already covered above
-    }
+    for (const w of r.terms) if (w.term.toLowerCase().startsWith('ptr') && w.countsLookup) findings.push({ code: 'SPF_PTR_DEPRECATED' });
+    if (record && /(^|\s)~all(\s|$)/i.test(record) === false && /(^|\s)-all(\s|$)/i.test(record) === false && !plusAll && !/(^|\s)\?all(\s|$)/i.test(record)) findings.push({ code: 'SPF_NO_ALL' });
     if (!findings.length) findings.push({ code: 'SPF_VALID' });
 
     const verdictLine =
-      verdict === 'fail' && overLimit
-        ? `SPF evaluation exceeds the lookup limit: ${parse.lookupCount} top-level terms, limit 10.`
-        : verdict === 'fail'
-          ? 'SPF record found, but it has errors that stop evaluation.'
-          : verdict === 'warn' && nearLimit
-            ? `Syntactically valid, but ${parse.lookupCount} of 10 lookup terms used.`
-            : verdict === 'warn'
-              ? 'Syntactically valid, with warnings.'
-              : 'SPF record found and syntactically valid.';
+      verdict === 'fail' && overLimit ? `SPF evaluation exceeds the lookup limit: ${r.totalLookups} recursive terms, limit 10.`
+      : verdict === 'fail' && multiple ? 'Multiple v=spf1 records: evaluation returns permerror.'
+      : verdict === 'fail' && voidPermerror ? `${r.voidLookups} void lookups: above the RFC 7208 cap of 2.`
+      : verdict === 'fail' ? 'SPF record found, but it has errors that stop evaluation.'
+      : verdict === 'warn' && nearLimit ? `Resolvable, but ${r.totalLookups} of 10 recursive lookup terms used.`
+      : verdict === 'warn' ? 'Resolvable, with warnings worth fixing.'
+      : `SPF record found and fully evaluable (${r.totalLookups}/10 lookups).`;
 
     emit(verdict, verdictLine, findings, domain, verdict === 'fail' ? RELATED_FAIL : RELATED_OK);
   });

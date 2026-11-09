@@ -162,6 +162,59 @@ export const FINDINGS: Record<string, FindingDef> = {
 
   /* ---------------- DMARC Record Checker ---------------- */
 
+  SPF_VOID_LOOKUPS: {
+    severity: 'warn',
+    title: 'Void DNS lookups in the SPF record',
+    why: 'A void lookup is a DNS-querying term (include:, a, mx, exists:) whose target returns NXDOMAIN or no answers. RFC 7208 caps void lookups at 2: beyond that, receivers may return permerror and stop evaluating the record.',
+    fix: [
+      'Find the dead terms in the result table above: they show NXDOMAIN or zero answers.',
+      'Remove includes for services that no longer send mail for the domain, or fix the target domain name.',
+      'Re-run the check until the void count is 0.',
+    ],
+  },
+
+  SPF_INCLUDE_NO_POLICY: {
+    severity: 'warn',
+    title: 'include: target has no SPF record',
+    why: 'An include: points at a domain that publishes TXT records but no v=spf1 policy. RFC 7208 treats an include with no SPF record as a permerror condition, so evaluation of the whole record can fail.',
+    fix: [
+      'Confirm the include target is spelled correctly and is the domain your provider documents.',
+      'Ask the provider whether SPF alignment still uses that hostname, or remove the include if the service is retired.',
+    ],
+  },
+
+  DKIM_REVOKED: {
+    severity: 'warn',
+    title: 'DKIM key is revoked (empty p=)',
+    why: 'The DKIM record publishes an empty p= tag, which RFC 6376 section 3.6.1 defines as revocation: the selector explicitly states that no valid public key exists for it. Receivers treat signatures under this selector as unusable.',
+    fix: [
+      'If the selector is still in use by a sending service, republish the correct public key at this selector.',
+      'If the selector is retired on purpose, no action is needed: revocation is the correct end state for unused selectors.',
+      'Check which selectors your providers actually sign with before removing anything.',
+    ],
+  },
+
+  DMARC_EXTERNAL_RUA_UNAUTHORIZED: {
+    severity: 'warn',
+    title: 'External report destination is not authorized',
+    why: 'The rua= or ruf= address points to a domain other than the one being checked. RFC 7489 section 7.1 requires the receiving domain to publish a <from-domain>._report._dmarc.<external-host> TXT record authorizing those reports. Without it, mailbox providers silently drop the reports.',
+    fix: [
+      'Ask the external report provider to publish a TXT record at <your-domain>._report._dmarc.<their-host> containing v=DMARC1.',
+      'Alternatively, change rua= to a mailbox on your own domain.',
+      'Re-run this check after the record is published: the authorization row should flip to verified.',
+    ],
+    guide: { label: 'DMARC report analyzer', href: '/dmarc-report-analyzer/' },
+  },
+
+  DMARC_EXTERNAL_RUA_AUTHORIZED: {
+    severity: 'pass',
+    title: 'External report destination is authorized',
+    why: 'The external report destination publishes the required <from-domain>._report._dmarc.<external-host> TXT record with v=DMARC1, so mailbox providers will deliver your aggregate and forensic reports to it.',
+    fix: [
+      'Keep the authorization record in place as long as the rua= or ruf= address stays on the external domain.',
+    ],
+  },
+
   DMARC_NOT_PUBLISHED: {
     severity: 'fail',
     title: 'No DMARC record',

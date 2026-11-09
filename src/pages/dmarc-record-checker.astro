@@ -10,15 +10,15 @@ const faqSchema = {
     {'@type': 'Question', 'name': "What is a good DMARC grade?", "acceptedAnswer": { '@type': 'Answer', "text": "Grade A (p=reject with rua reporting) is the goal, but C (p=none with rua) is the correct starting point. Advance none to quarantine to reject as aggregate reports confirm every legitimate sender passes." } },
     {'@type': 'Question', 'name': "What does p=none actually do?", "acceptedAnswer": { '@type': 'Answer', "text": "It monitors only: receivers send aggregate reports but still deliver failing mail. Spoofed mail keeps reaching inboxes until the policy moves to quarantine or reject." } },
     {'@type': 'Question', 'name': "Why does the record need a rua address?", "acceptedAnswer": { '@type': 'Answer', "text": "Without rua= no aggregate reports are sent, so you cannot see who sends as your domain or confirm legitimate mail passes. A policy without reports cannot be tuned safely." } },
-    {'@type': 'Question', 'name': "Can subdomains have a different DMARC policy?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy." } },
-    {'@type': 'Question', 'name': "What is DMARC alignment?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. The alignment guide explains relaxed versus strict matching with examples." } },
+    {'@type': 'Question', 'name': "Can subdomains have a different DMARC policy?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy. RFC 9989 adds np= for non-existent subdomains and psd= for public-suffix domains." } },
+    {'@type': 'Question', 'name': "What is DMARC alignment?", "acceptedAnswer": { '@type': 'Answer', "text": "SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. Relaxed matching compares organizational domains; strict matching requires an exact hostname match." } },
     {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
   ]
 }
 ---
 <BaseLayout
   title="DMARC Record Checker, Check Your DMARC Policy"
-  description="Free DMARC record checker: validate your DMARC policy tags, alignment, and reporting configuration with a clear grade."
+  description="Free DMARC record checker: validate every policy tag, grade your record, and verify external rua= report authorization under RFC 7489 section 7.1."
   schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -30,7 +30,7 @@ const faqSchema = {
       <span class="text-ink-dim">DMARC Record Checker</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DMARC Record Checker: Validate Policy, Reporting and Alignment</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free DMARC checker: validate p= policy, rua reporting, alignment, subdomain sp=. No sign up.</p>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Free DMARC checker: parse every tag from p= to psd=, grade your policy, and verify that external rua= destinations are actually authorized to receive your reports. No sign up.</p>
 
     <ToolPanel>
       <form id="dmarc-form" class="flex flex-col gap-3 sm:flex-row">
@@ -62,26 +62,98 @@ const faqSchema = {
             <tr><td class="font-mono text-xs text-accent-soft">rua</td><td class="font-mono text-xs">mailto:dmarc@example.com</td><td class="text-sm text-ink-dim">Daily aggregate reports are sent to this address</td></tr>
           </tbody>
         </table>
-    </div>
+      </div>
 
       <ResultCard tool="dmarc-record-checker" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
-      <h2>How DMARC is graded here</h2>
-      <p><strong>A</strong>, enforcement (p=reject) with reporting. <strong>B</strong>, quarantine with reporting. <strong>C</strong>, monitoring (p=none) with reports. <strong>D/F</strong>, missing pieces. Enforcement without rua, or no record at all, leaves you blind or spoofable.</p>
-      
-      <p>Prefer the terminal? The step-by-step guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> walks through the exact commands, flags, and expected output for all three records.</p>
+      <h2>What This Result Means: 5 DMARC Policy and Compliance States</h2>
+      <p>Every checked domain lands in one of the policy states below. The table is the verdict matrix this tool applies:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>State</th><th>Observed Condition</th><th>What Receivers Do</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Full Enforcement (p=reject or p=quarantine with pct=100 and Valid RUA)</td><td class="text-sm text-ink-dim">Enforcement policy published, 100 percent rollout, reports flowing to an authorized destination</td><td class="text-sm text-ink-dim">Failing mail is rejected or quarantined; you can see every sender in the aggregate reports</td><td class="text-sm text-ink-dim">Best practice: the domain is protected and observable. Keep monitoring reports for new senders.</td></tr>
+            <tr><td class="font-medium text-ink">2. Monitoring Mode Only (p=none with Valid RUA - Zero Spoofing Protection)</td><td class="text-sm text-ink-dim">p=none with a working rua= destination</td><td class="text-sm text-ink-dim">Receivers deliver failing mail normally and copy you the aggregate reports</td><td class="text-sm text-ink-dim">Correct starting point with zero protection: spoofed mail still lands. Use the reports to advance.</td></tr>
+            <tr><td class="font-medium text-ink">3. Policy Without Reporting (Missing rua= or Unauthorized External _report._dmarc)</td><td class="text-sm text-ink-dim">No rua= tag, or every rua= destination fails the external authorization check</td><td class="text-sm text-ink-dim">Receivers apply the policy but send you no reports</td><td class="text-sm text-ink-dim">Flying blind: you cannot distinguish legitimate new senders from spoofing, so the policy cannot be tuned or advanced safely.</td></tr>
+            <tr><td class="font-medium text-ink">4. Missing DMARC Record (NXDOMAIN on _dmarc.domain - Fails Gmail/Yahoo/Microsoft Bulk Mandates)</td><td class="text-sm text-ink-dim">No v=DMARC1 TXT at _dmarc.domain</td><td class="text-sm text-ink-dim">Receivers have no policy from you and treat the domain as unauthenticated for DMARC purposes</td><td class="text-sm text-ink-dim">Fails the 2024 Gmail, Yahoo, and Microsoft bulk-sender requirements: publish p=none with rua= as the first step.</td></tr>
+            <tr><td class="font-medium text-ink">5. Syntax Error or Duplicate _dmarc TXT Records (Policy Ignored per RFC 7489 section 6.6.3)</td><td class="text-sm text-ink-dim">Malformed tags, or two or more v=DMARC1 TXT records on the same name</td><td class="text-sm text-ink-dim">Receivers abort DMARC evaluation entirely: the policy is ignored</td><td class="text-sm text-ink-dim">Fix the syntax or merge the duplicates: right now the record does nothing.</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-<div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a good DMARC grade?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Grade A (p=reject with rua reporting) is the goal, but C (p=none with rua) is the correct starting point. Advance none to quarantine to reject as aggregate reports confirm every legitimate sender passes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does p=none actually do?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It monitors only: receivers send aggregate reports but still deliver failing mail. Spoofed mail keeps reaching inboxes until the policy moves to quarantine or reject.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does the record need a rua address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Without rua= no aggregate reports are sent, so you cannot see who sends as your domain or confirm legitimate mail passes. A policy without reports cannot be tuned safely.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can subdomains have a different DMARC policy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is DMARC alignment?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. <a href="/dmarc-alignment/" class="text-accent">The alignment guide</a> explains relaxed versus strict matching with examples.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
-<h2>Related tools</h2>
-      <ul>
-        <li><a href="/dmarc-record-generator/">DMARC Record Generator</a>, build a correct record</li>
-        <li><a href="/spf-record-checker/">SPF Record Checker</a> and <a href="/dkim-record-checker/">DKIM Record Checker</a></li>
-        <li><a href="/dmarc/">DMARC explained</a> (guide)</li>
-        <li><a href="/dmarc-record-syntax/">DMARC record syntax: every tag explained</a> (guide)</li>
-        <li><a href="/dmarc-enforcement-roadmap/">DMARC enforcement roadmap: p=none to p=reject</a> (guide)</li>
+      <h2>How to Fix DMARC Errors and Advance Safely from p=none to p=reject</h2>
+      <p>The safe path from nothing to enforcement is 4 steps, each one staying until the reports confirm the last:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish.</strong> Put a v=DMARC1 record at _dmarc with p=none and a rua= mailbox you actually read. This satisfies the bulk-sender baseline and starts the data flow.</li>
+        <li><strong>Authorize.</strong> Make sure every report destination is authorized: destinations on your own domain need nothing extra, but external destinations need a <your-domain>._report._dmarc.<external-host> TXT record (this tool checks it for you).</li>
+        <li><strong>Align.</strong> Read the aggregate reports until every legitimate sending service passes with an aligned SPF or DKIM identity, and fix or retire the services that fail. This is the step that takes weeks, not minutes.</li>
+        <li><strong>Enforce.</strong> Move p= to quarantine (start pct= low if you prefer a gradual rollout), verify nothing legitimate is caught, then move to p=reject with pct=100.</li>
+      </ol>
+      <p>The <a href="/dmarc-enforcement-roadmap/">DMARC enforcement roadmap</a> turns these steps into a week-by-week plan, and the <a href="/dmarc-report-analyzer/">DMARC report analyzer</a> parses the raw XML aggregate reports the alignment step depends on.</p>
+
+      <h2>Check DMARC Records and External RUA Authorization From the Command Line (dig)</h2>
+      <pre><code># The published policy:
+dig TXT _dmarc.example.com +short
+
+# External report authorization (required when rua= points at another domain):
+dig TXT example.com._report._dmarc.rep.dmarcanalyzer.com +short
+# A v=DMARC1 answer authorizes reports; no answer means they are dropped.
+
+# Windows PowerShell equivalent:
+nslookup -type=txt _dmarc.example.com</code></pre>
+      <p>For the complete terminal workflow with every flag explained, the guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> covers SPF, DKIM, and DMARC in one pass.</p>
+
+      <h2>Reference Table: Every DMARC Tag, Default Value, and RFC 7489 / RFC 9989 Rule</h2>
+      <p>The table below covers every tag a DMARC record can carry, including the two added by RFC 9989 (DMARCbis):</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Tag</th><th>Purpose</th><th>Values</th><th>Default When Omitted</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">v=</td><td class="text-sm text-ink-dim">Protocol version</td><td class="text-sm text-ink-dim">DMARC1</td><td class="text-sm text-ink-dim">Required, must be first</td></tr>
+            <tr><td class="font-mono text-xs text-ink">p=</td><td class="text-sm text-ink-dim">Policy for the domain's own mail</td><td class="text-sm text-ink-dim">none, quarantine, reject</td><td class="text-sm text-ink-dim">Required (no default)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">sp=</td><td class="text-sm text-ink-dim">Policy for subdomains</td><td class="text-sm text-ink-dim">none, quarantine, reject</td><td class="text-sm text-ink-dim">Inherits p=</td></tr>
+            <tr><td class="font-mono text-xs text-ink">np=</td><td class="text-sm text-ink-dim">Policy for non-existent subdomains (RFC 9989 DMARCbis)</td><td class="text-sm text-ink-dim">none, quarantine, reject</td><td class="text-sm text-ink-dim">Inherits sp=, then p=</td></tr>
+            <tr><td class="font-mono text-xs text-ink">psd=</td><td class="text-sm text-ink-dim">Public Suffix Domain declaration (RFC 9989 DMARCbis)</td><td class="text-sm text-ink-dim">y (is a PSD), n (not), na (not applicable)</td><td class="text-sm text-ink-dim">na</td></tr>
+            <tr><td class="font-mono text-xs text-ink">rua=</td><td class="text-sm text-ink-dim">Aggregate report destinations (comma-separated URIs)</td><td class="text-sm text-ink-dim">mailto: addresses; size and interval limits allowed</td><td class="text-sm text-ink-dim">No aggregate reports</td></tr>
+            <tr><td class="font-mono text-xs text-ink">ruf=</td><td class="text-sm text-ink-dim">Forensic (failure) report destinations</td><td class="text-sm text-ink-dim">mailto: addresses</td><td class="text-sm text-ink-dim">No forensic reports</td></tr>
+            <tr><td class="font-mono text-xs text-ink">adkim=</td><td class="text-sm text-ink-dim">DKIM alignment mode</td><td class="text-sm text-ink-dim">r (relaxed), s (strict)</td><td class="text-sm text-ink-dim">r</td></tr>
+            <tr><td class="font-mono text-xs text-ink">aspf=</td><td class="text-sm text-ink-dim">SPF alignment mode</td><td class="text-sm text-ink-dim">r (relaxed), s (strict)</td><td class="text-sm text-ink-dim">r</td></tr>
+            <tr><td class="font-mono text-xs text-ink">pct=</td><td class="text-sm text-ink-dim">Percent of failing mail the policy applies to</td><td class="text-sm text-ink-dim">0 to 100</td><td class="text-sm text-ink-dim">100</td></tr>
+            <tr><td class="font-mono text-xs text-ink">fo=</td><td class="text-sm text-ink-dim">Forensic report trigger conditions</td><td class="text-sm text-ink-dim">0, 1, d, s (combinable)</td><td class="text-sm text-ink-dim">0</td></tr>
+            <tr><td class="font-mono text-xs text-ink">ri=</td><td class="text-sm text-ink-dim">Aggregate report interval</td><td class="text-sm text-ink-dim">Seconds (86400 = daily)</td><td class="text-sm text-ink-dim">86400</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For the protocol in depth, start with the <a href="/dmarc/">DMARC</a> guide and the <a href="/dmarc-record/">DMARC record</a> structure guide; the <a href="/dmarc-record-syntax/">DMARC record syntax</a> guide expands every tag with examples, and the <a href="/dmarc-alignment/">DMARC alignment</a> guide covers relaxed versus strict matching.</p>
+
+      <h2>What This Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>A valid _dmarc record defines your receiver policy, but DMARC only passes on real emails if at least one underlying mechanism (SPF or DKIM) both passes authentication AND aligns with the visible RFC5322.From domain.</li>
+        <li>Publishing p=none satisfies the minimum baseline of the 2024 Gmail and Yahoo bulk-sender mandate, but provides zero protection against direct domain spoofing and does not qualify for BIMI inbox logos (which require p=quarantine with pct=100 or p=reject).</li>
+        <li>If your rua= address points to an external domain without a matching <domain>._report._dmarc.<external-host> TXT record, mailbox providers silently drop your aggregate reports (RFC 7489 section 7.1).</li>
+        <li>Under RFC 7489 section 6.6.3, if two _dmarc TXT records exist on the same hostname, receivers abort DMARC evaluation completely: this tool flags the duplicate, but removing it is a DNS edit on your side.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The external _report._dmarc silent drop is the most common "DMARC is broken" support ticket that is not actually broken. An admin sets rua=mailto:dmarc@their-other-domain.com, sees zero XML reports arrive from Google or Microsoft for weeks, and concludes DMARC does not work. Nothing is wrong except the authorization: the other domain must publish <first-domain>._report._dmarc.<second-domain> with v=DMARC1 before receivers hand reports across organizational boundaries. Publish the authorization record, and the reports that silently piled up start arriving the next day.</p>
+      </aside>
+
+      <h2>What We See Across Domains</h2>
+      <p>
+        Two opposite failure modes dominate. The first is domains stuck permanently at p=none with no rua= address at all: they collect zero visibility into who sends as them while leaving the domain open to spoofing, which is the worst of both halves of the protocol. The second, healthier pattern is strict subdomain lockdown: publishing sp=reject (and np=reject under RFC 9989) so that no subdomain anyone has not explicitly configured can send mail as the organization, even while the main domain stays at quarantine during rollout.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a good DMARC grade?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Grade A (p=reject with rua reporting) is the goal, but C (p=none with rua) is the correct starting point. Advance none to quarantine to reject as aggregate reports confirm every legitimate sender passes.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does p=none actually do?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It monitors only: receivers send aggregate reports but still deliver failing mail. Spoofed mail keeps reaching inboxes until the policy moves to quarantine or reject.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does the record need a rua address?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Without rua= no aggregate reports are sent, so you cannot see who sends as your domain or confirm legitimate mail passes. A policy without reports cannot be tuned safely.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can subdomains have a different DMARC policy?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, with the sp= tag. Without it, subdomains inherit the root domain's p= policy. RFC 9989 adds np= for non-existent subdomains and psd= for public-suffix domains.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is DMARC alignment?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">SPF or DKIM must pass AND the authenticated domain must match the visible From: domain. Relaxed matching compares organizational domains; strict matching requires an exact hostname match.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
+
+      <h2>Next Checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Build a correct record with the <a href="/dmarc-record-generator/">DMARC record generator</a>.</li>
+        <li>Validate the envelope layer with the <a href="/spf-record-checker/">SPF record checker</a>.</li>
+        <li>Verify the signing layer with the <a href="/dkim-record-checker/">DKIM record checker</a>.</li>
+        <li>Check the BIMI eligibility that enforcement unlocks with the <a href="/bimi-record-checker/">BIMI checker</a>.</li>
       </ul>
     </article>
   </div>
@@ -112,15 +184,16 @@ const faqSchema = {
   };
 
   const TOOL = 'dmarc-record-checker';
+  // Static links inside main (R61-unique): /dmarc-enforcement-roadmap/, /dmarc-report-analyzer/,
+  // /check-spf-dkim-dmarc-dig/, /dmarc/, /dmarc-record/, /dmarc-record-syntax/, /dmarc-alignment/,
+  // /dmarc-record-generator/, /spf-record-checker/, /dkim-record-checker/, /bimi-record-checker/.
   const RELATED_OK = [
-    { label: 'Check SPF', href: '/spf-record-checker/' },
-    { label: 'Check DKIM', href: '/dkim-record-checker/' },
-    { label: 'DMARC explained', href: '/dmarc/' },
+    { label: 'Inspect a real message', href: '/email-header-analyzer/' },
+    { label: 'SPF record generator', href: '/spf-record-generator/' },
   ];
   const RELATED_FAIL = [
-    { label: 'Build a DMARC record', href: '/dmarc-record-generator/' },
-    { label: 'Check SPF', href: '/spf-record-checker/' },
-    { label: 'Check DKIM', href: '/dkim-record-checker/' },
+    { label: 'Inspect a real message', href: '/email-header-analyzer/' },
+    { label: 'DKIM record checker guide links', href: '/how-dkim-works/' },
   ];
 
   const setStatus = (cls: string, text: string) => {
@@ -133,13 +206,26 @@ const faqSchema = {
     window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
   };
 
+  /** Extract unique external hostnames from rua=/ruf= mailto URIs (RFC 7489 section 7.1). */
+  function externalReportHosts(record: string, domain: string): string[] {
+    const hosts = new Set<string>();
+    for (const m of record.matchAll(/\b(rua|ruf)=([^;]+)/gi)) {
+      for (const u of m[2].matchAll(/mailto:[^@>]+@([^>,\s]+)/gi)) {
+        const host = u[1].trim().toLowerCase().replace(/\.$/, '');
+        if (host && host !== domain.toLowerCase()) hosts.add(host);
+      }
+    }
+    return [...hosts];
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const domain = normalizeDomain(input.value);
     if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     [gradeBox, resultsEl].forEach((el) => el.classList.add('hidden'));
     document.getElementById('dmarc-sample-note')?.classList.add('hidden');
-    setStatus('bg-panel-2 text-accent border border-line', `Looking up _dmarc.${domain}…`);
+    setStatus('bg-panel-2 text-accent border border-line', `Looking up _dmarc.${domain}...`);
+    tbody.textContent = '';
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
     let res;
@@ -152,17 +238,37 @@ const faqSchema = {
       return;
     }
 
-    const record = txtRecords(res.answers).find((t) => t.toLowerCase().startsWith('v=dmarc1'));
+    const records = txtRecords(res.answers).filter((t) => t.toLowerCase().startsWith('v=dmarc1'));
+    const record = records[0];
     if (!record) {
-      setStatus('bg-fail/10 text-fail border border-fail/30', `No DMARC record on ${domain}. Anyone can spoof this domain.`);
+      setStatus('bg-fail/10 text-fail border border-fail/30', `No DMARC record on ${domain}. Anyone can spoof this domain, and the bulk-sender mandates are not met.`);
       emit('fail', `No DMARC record on ${domain}. Receivers have no policy from you.`, [{ code: 'DMARC_NOT_PUBLISHED' }], domain, RELATED_FAIL);
       return;
     }
     const parse = parseDmarc(record);
-    setStatus(parse.errors.length ? 'bg-fail/10 text-fail border border-fail/30'
+    const duplicate = records.length > 1;
+
+    // External report destination authorization (RFC 7489 section 7.1)
+    const extHosts = externalReportHosts(record, domain);
+    type ExtAuth = { host: string; status: 'authorized' | 'unauthorized' | 'unverified'; recordName: string };
+    const extAuths: ExtAuth[] = [];
+    for (const host of extHosts.slice(0, 3)) {
+      const recordName = `${domain}._report._dmarc.${host}`;
+      try {
+        const r = await lookup(recordName, 'TXT', RESOLVERS[0]);
+        const authorized = txtRecords(r.answers).some((t) => /^v=dmarc1/i.test(t.trim()));
+        extAuths.push({ host, status: authorized ? 'authorized' : 'unauthorized', recordName });
+      } catch {
+        extAuths.push({ host, status: 'unverified', recordName });
+      }
+    }
+
+    setStatus((parse.errors.length || duplicate) ? 'bg-fail/10 text-fail border border-fail/30'
       : parse.warnings.length ? 'bg-warn/10 text-warn border border-warn/30'
       : 'bg-pass/10 text-pass border border-pass/30',
-      parse.errors.length ? 'DMARC record found, with errors.' : parse.warnings.length ? 'DMARC record found, with warnings.' : 'DMARC record found and healthy.');
+      (parse.errors.length || duplicate) ? 'DMARC record found, with errors that break evaluation.'
+      : parse.warnings.length ? 'DMARC record found, with warnings.'
+      : 'DMARC record found and healthy.');
 
     const [t, d] = gradeMeta[parse.grade];
     gradeLetter.textContent = parse.grade;
@@ -170,19 +276,44 @@ const faqSchema = {
     gradeDesc.textContent = d;
     gradeBox.classList.remove('hidden');
 
-    tbody.innerHTML = `<tr><td colspan="3"><code>${record.replace(/</g, '&lt;')}</code></td></tr>`;
-    for (const tag of parse.tags) {
-      tbody.insertAdjacentHTML('beforeend', `<tr>
-        <td class="font-mono text-xs text-accent">${tag.tag}=</td>
-        <td class="font-mono text-xs text-ink">${tag.value.replace(/</g, '&lt;')}</td>
-        <td class="text-ink-dim">${tag.meaning}</td>
-      </tr>`);
+    tbody.textContent = '';
+    const addRow = (tag: string, value: string, meaning: string) => {
+      const tr = document.createElement('tr');
+      const td1 = document.createElement('td');
+      td1.className = 'font-mono text-xs text-accent';
+      td1.textContent = tag;
+      const td2 = document.createElement('td');
+      td2.className = 'font-mono text-xs text-ink break-all';
+      td2.textContent = value;
+      const td3 = document.createElement('td');
+      td3.className = 'text-ink-dim';
+      td3.textContent = meaning;
+      tr.append(td1, td2, td3);
+      tbody.appendChild(tr);
+    };
+    addRow('record', record, 'The published DMARC policy');
+    if (duplicate) addRow('duplicate', `${records.length} v=DMARC1 TXT records`, 'RFC 7489 section 6.6.3: receivers abort evaluation when two records exist - merge them');
+    for (const tag of parse.tags) addRow(tag.tag + '=', tag.value, tag.meaning);
+    for (const ea of extAuths) {
+      addRow(
+        ea.host === extHosts[0] ? 'External RUA authorization' : 'External report authorization',
+        ea.status === 'authorized' ? `Authorized: External RUA Authorized (_report._dmarc verified) - ${ea.recordName}` :
+        ea.status === 'unauthorized' ? `Unauthorized: Missing ${ea.recordName} TXT - reports will be dropped (RFC 7489 section 7.1)` :
+        `Could not verify ${ea.recordName} (DNS error) - reports may be dropped`,
+        ea.status === 'authorized' ? 'The external destination published v=DMARC1 authorization for your domain'
+        : ea.status === 'unauthorized' ? 'Ask the provider to publish the authorization record, or move the address to your own domain'
+        : 'The authorization lookup failed; re-run the check');
     }
     resultsEl.classList.remove('hidden');
 
     // Findings for the ResultCard
     const findings: PdnsFinding[] = [];
+    if (duplicate) findings.push({ code: 'DMARC_SYNTAX_ERROR', detail: `${records.length} v=DMARC1 TXT records on _dmarc.${domain}: receivers abort evaluation` });
     if (parse.errors.length) findings.push({ code: 'DMARC_SYNTAX_ERROR', detail: parse.errors.join('; ') });
+    for (const ea of extAuths) {
+      if (ea.status === 'unauthorized') findings.push({ code: 'DMARC_EXTERNAL_RUA_UNAUTHORIZED', detail: `Reports to ${ea.host} are dropped: no ${ea.recordName} TXT record` });
+    }
+    if (extAuths.length && extAuths.every((ea) => ea.status === 'authorized')) findings.push({ code: 'DMARC_EXTERNAL_RUA_AUTHORIZED', detail: `External destination(s) verified: ${extAuths.map((ea) => ea.host).join(', ')}` });
     for (const w of parse.warnings) {
       if (w.startsWith('p=none')) findings.push({ code: 'DMARC_P_NONE' });
       else if (w.startsWith('No rua=')) findings.push({ code: 'DMARC_NO_RUA', detail: 'No rua= tag: aggregate reports are not being sent anywhere' });
@@ -190,20 +321,23 @@ const faqSchema = {
       else if (w.startsWith('pct=100')) findings.push({ code: 'DMARC_FULL_ENFORCEMENT' });
       else if (w.startsWith('Unknown tag')) findings.push({ code: 'DMARC_UNKNOWN_TAG', detail: w });
     }
+    const unauthorized = extAuths.some((ea) => ea.status === 'unauthorized');
     const verdict: Severity = findings.some((f) => f.code === 'DMARC_SYNTAX_ERROR')
       ? 'fail'
-      : findings.some((f) => f.code === 'DMARC_NO_RUA' || f.code === 'DMARC_P_NONE' || f.code === 'DMARC_UNKNOWN_TAG')
+      : findings.some((f) => f.code === 'DMARC_NO_RUA' || f.code === 'DMARC_P_NONE' || f.code === 'DMARC_UNKNOWN_TAG') || unauthorized
         ? 'warn'
         : 'pass';
-    if (!findings.some((f) => f.code === 'DMARC_FULL_ENFORCEMENT')) {
+    if (!findings.some((f) => f.code === 'DMARC_FULL_ENFORCEMENT') && !findings.some((f) => f.code === 'DMARC_EXTERNAL_RUA_AUTHORIZED')) {
       if (verdict === 'pass') findings.push({ code: 'DMARC_HEALTHY', detail: `Grade ${parse.grade}: ${t}` });
     }
 
     const verdictLine = verdict === 'fail'
       ? 'DMARC record found, but it has errors that can break the policy.'
-      : verdict === 'warn'
-        ? `Grade ${parse.grade} (${t}).`
-        : `Grade ${parse.grade}: ${t}.`;
+      : unauthorized
+        ? `Grade ${parse.grade}, but ${extAuths.filter((ea) => ea.status === 'unauthorized').length} external report destination(s) are not authorized: reports are being dropped.`
+        : verdict === 'warn'
+          ? `Grade ${parse.grade} (${t}).`
+          : `Grade ${parse.grade}: ${t}.`;
 
     emit(verdict, verdictLine, findings, domain, verdict === 'fail' ? RELATED_FAIL : RELATED_OK);
   });

@@ -1,7 +1,7 @@
 /**
  * SPF parsing + flattening engine (client-side, DNS via DoH).
  */
-import { lookup, RESOLVERS, type DohAnswer } from './doh';
+import { lookup, RESOLVERS, type DohAnswer, type LookupResult } from './doh';
 
 export interface SpfTerm {
   term: string;
@@ -96,6 +96,182 @@ export function parseSpf(record: string): SpfParse {
   else if (lookupCount > 8) warnings.push(`${lookupCount}/10 DNS lookups used, close to the limit. Consider flattening.`);
 
   return { found: true, record, allQualifier, lookupCount, terms, errors, warnings };
+}
+
+/* ---------------- Recursive evaluation tree (RFC 7208 section 4.6.4) ---------------- */
+
+export interface SpfResolvedTerm {
+  /** Domain whose record this term belongs to. */
+  domain: string;
+  depth: number;
+  term: string;
+  kind: string;
+  countsLookup: boolean;
+  /** Cumulative 1-based lookup index across all records, per RFC 7208 section 4.6.4. */
+  lookupIndex: number | null;
+  statusText: string | null;
+  answerCount: number | null;
+  /** NXDOMAIN or empty answer on a DNS-querying term (void lookup). */
+  void: boolean;
+  note: string;
+}
+
+export interface SpfTreeNode {
+  domain: string;
+  depth: number;
+  /** How this record was reached: null for the root, otherwise the include:/redirect= term. */
+  via: string | null;
+  /** Lookup index of the include:/redirect= term that pulled this record in. */
+  lookupIndex: number | null;
+  record: string | null;
+  txtRecordCount: number;
+  note?: string;
+}
+
+export interface SpfResolution {
+  tree: SpfTreeNode[];
+  terms: SpfResolvedTerm[];
+  totalLookups: number;
+  voidLookups: number;
+  /** Actual DoH queries spent (bounded by maxQueries). */
+  queries: number;
+  maxQueries: number;
+  maxDepth: number;
+  budgetExhausted: boolean;
+  /** Domains publishing 2+ v=spf1 records (permerror per RFC 7208 section 3.2). */
+  multipleRecordsDomains: string[];
+  /** Include targets that have TXT but no v=spf1 record (permerror at evaluation). */
+  noPolicyIncludes: string[];
+}
+
+/**
+ * Recursively resolve an SPF policy the way a receiver would: follow every
+ * include: and redirect= up to maxDepth levels, resolve a/mx/exists targets
+ * to detect void lookups, and count every DNS-querying term against the
+ * 10-lookup evaluation limit shared across all records in the chain.
+ */
+export async function resolveSpfRecord(rootDomain: string, maxDepth = 3, maxQueries = 15): Promise<SpfResolution> {
+  const tree: SpfTreeNode[] = [];
+  const terms: SpfResolvedTerm[] = [];
+  const multipleRecordsDomains: string[] = [];
+  const noPolicyIncludes: string[] = [];
+  const visited = new Set<string>();
+  let totalLookups = 0;
+  let voidLookups = 0;
+  let queries = 0;
+  let budgetExhausted = false;
+
+  const budgetLeft = () => queries < maxQueries;
+
+  async function query(name: string, type: 'TXT' | 'A' | 'AAAA' | 'MX'): Promise<LookupResult | null> {
+    if (!budgetLeft()) { budgetExhausted = true; return null; }
+    queries++;
+    return lookup(name, type, RESOLVERS[0]);
+  }
+
+  async function processRecord(domain: string, depth: number, via: string | null, viaIndex: number | null, pre?: LookupResult): Promise<void> {
+    const node: SpfTreeNode = { domain, depth, via, lookupIndex: viaIndex, record: null, txtRecordCount: 0 };
+    tree.push(node);
+    if (depth > maxDepth) { node.note = 'include depth limit reached, not resolved'; return; }
+    if (visited.has(domain)) { node.note = 'already evaluated (include loop)'; return; }
+    visited.add(domain);
+
+    let res = pre ?? null;
+    if (!res) {
+      res = await query(domain, 'TXT');
+      if (!res) { node.note = 'query budget exhausted, not resolved'; return; }
+    }
+    const txts = txtRecords(res.answers);
+    node.txtRecordCount = txts.length;
+    const spfs = txts.filter((t) => /^v=spf1(\s|$)/i.test(t.trim()));
+    if (spfs.length > 1) multipleRecordsDomains.push(domain);
+    const rec = spfs[0] ?? null;
+    node.record = rec;
+    if (spfs.length > 1) node.note = 'multiple v=spf1 records, permerror per RFC 7208 section 3.2';
+    if (!rec) {
+      if (via) { node.note = 'TXT exists but no v=spf1 record, include would permerror'; noPolicyIncludes.push(domain); }
+      else node.note = 'no v=spf1 record at this domain';
+      return;
+    }
+
+    for (const term of rec.trim().split(/\s+/).slice(1)) {
+      const t = term.toLowerCase();
+      let counts = false;
+      let target: { name: string; type: 'TXT' | 'A' | 'AAAA' | 'MX' } | null = null;
+      let note = '';
+      if (t.startsWith('include:')) {
+        counts = true; target = { name: term.slice(8), type: 'TXT' };
+        note = 'pulls in the SPF policy of ' + target.name;
+      } else if (t === 'a' || t.startsWith('a:') || t.startsWith('a/')) {
+        counts = true; target = { name: t.startsWith('a:') ? term.slice(2).split('/')[0] : domain, type: 'A' };
+        note = 'matches the A/AAAA records of ' + target.name;
+      } else if (t === 'mx' || t.startsWith('mx:') || t.startsWith('mx/')) {
+        counts = true; target = { name: t.startsWith('mx:') ? term.slice(3).split('/')[0] : domain, type: 'MX' };
+        note = 'matches the MX hosts of ' + target.name;
+      } else if (t.startsWith('exists:')) {
+        counts = true; target = { name: term.slice(7), type: 'A' };
+        note = 'matches if the name resolves (macro domains evaluate against the sender IP)';
+      } else if (t.startsWith('ptr')) {
+        counts = true;
+        note = 'deprecated (RFC 7208), reverse-DNS double lookup, resolution skipped';
+      } else if (t.startsWith('redirect=')) {
+        counts = true; target = { name: term.slice(9), type: 'TXT' };
+        note = 'replaces evaluation with the policy of ' + target.name;
+      } else if (t.startsWith('ip4:') || t.startsWith('ip6:')) {
+        note = 'literal IP range, no DNS lookup';
+      } else if (/^[-~+?]?all$/.test(t)) {
+        note = 'default qualifier for unmatched senders';
+      } else if (t.startsWith('exp=')) {
+        note = 'explanation modifier, no lookup';
+      } else {
+        note = 'unrecognized term';
+      }
+
+      let idx: number | null = null;
+      let st: string | null = null;
+      let ac: number | null = null;
+      let isVoid = false;
+      if (counts) {
+        totalLookups++;
+        idx = totalLookups;
+        if (target) {
+          const r = await query(target.name, target.type);
+          if (r) {
+            st = r.statusText;
+            ac = r.answers.length;
+            let extra: LookupResult | null = null;
+            if (target.type === 'A' && (r.status !== 0 || r.answers.length === 0) && budgetLeft()) {
+              extra = await query(target.name, 'AAAA');
+            }
+            const primaryEmpty = r.status === 3 || r.answers.length === 0;
+            const extraEmpty = !extra || extra.status === 3 || extra.answers.length === 0;
+            isVoid = primaryEmpty && extraEmpty;
+            if (isVoid) {
+              voidLookups++;
+              note += ' - VOID lookup: ' + (r.status === 3 ? 'NXDOMAIN' : 'no answers');
+            }
+            if (target.type === 'TXT' && !isVoid) {
+              const childTxts = txtRecords(r.answers);
+              const childSpfs = childTxts.filter((x) => /^v=spf1(\s|$)/i.test(x.trim()));
+              if (!childSpfs.length) {
+                noPolicyIncludes.push(target.name);
+                note += ' - target has TXT but no v=spf1 record, include would permerror';
+              } else {
+                await processRecord(target.name, depth + 1, t.startsWith('include:') ? 'include' : 'redirect', idx, r);
+              }
+            }
+          } else {
+            st = 'SKIPPED (query budget)';
+            note += ' - query budget exhausted, target not resolved';
+          }
+        }
+      }
+      terms.push({ domain, depth, term, kind: counts ? 'mechanism (DNS)' : 'term', countsLookup: counts, lookupIndex: idx, statusText: st, answerCount: ac, void: isVoid, note });
+    }
+  }
+
+  await processRecord(rootDomain, 0, null, null);
+  return { tree, terms, totalLookups, voidLookups, queries, maxQueries, maxDepth: maxDepth, budgetExhausted, multipleRecordsDomains, noPolicyIncludes };
 }
 
 /* ---------------- Flattening ---------------- */

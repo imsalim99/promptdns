@@ -21,6 +21,8 @@ const MEANINGS: Record<string, (v: string) => string> = {
   v: () => 'Protocol version, must be DMARC1.',
   p: (v) => `Policy for the domain: ${v === 'none' ? 'monitor only, no action on failures' : v === 'quarantine' ? 'failing mail goes to spam/quarantine' : 'failing mail is rejected'}.`,
   sp: (v) => `Policy for subdomains: ${v}.`,
+  np: (v) => `Policy for non-existent subdomains: ${v} (RFC 9989 DMARCbis).`,
+  psd: (v) => `Public Suffix Domain declaration: ${v === 'y' ? 'this domain is a public suffix' : 'not a public suffix'} (RFC 9989 DMARCbis).`,
   pct: (v) => `${v}% of failing mail receives the policy (roll-out knob).`,
   rua: (v) => `Aggregate reports are sent to ${v}.`,
   ruf: (v) => `Forensic (failure) reports are sent to ${v}.`,

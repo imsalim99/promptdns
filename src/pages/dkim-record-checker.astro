@@ -7,18 +7,18 @@ const faqSchema = {
  "@context": "https://schema.org",
  "@type": "FAQPage",
  "mainEntity": [
-    {'@type': 'Question', 'name': "What is a DKIM selector?", "acceptedAnswer": { '@type': 'Answer', "text": "The label that names a DKIM key: the public key lives at selector._domainkey.yourdomain.com, and each signed message carries its selector in the s= field of the DKIM-Signature header." } },
-    {'@type': 'Question', 'name': "Why does my provider's selector return nothing?", "acceptedAnswer": { '@type': 'Answer', "text": "A miss usually means the wrong selector name, not missing DKIM. Providers pick their own (google for Workspace, selector1/2 for Microsoft 365, k1 for Mailchimp). Find the real one in the s= field of a sent message's DKIM-Signature header." } },
-    {'@type': 'Question', 'name': "Is a 1024-bit DKIM key a problem?", "acceptedAnswer": { '@type': 'Answer', "text": "It is considered weak, and some receivers reject or distrust mail signed with it. 2048-bit is the current standard; rotate the key in your provider's DKIM settings." } },
-    {'@type': 'Question', 'name': "Does DKIM stop spoofing on its own?", "acceptedAnswer": { '@type': 'Answer', "text": "No. Receivers only act on DKIM failures through a DMARC policy. DKIM proves messages were not altered in transit and provides the identity DMARC aligns against." } },
-    {'@type': 'Question', 'name': "Can a domain have multiple DKIM records?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector." } },
-    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
+    {'@type': 'Question', 'name': "How do I check a DKIM record using dig?", "acceptedAnswer": { '@type': 'Answer', "text": "Run dig TXT google._domainkey.yourdomain.com +short, replacing google with your selector. A published key returns the tag list starting with v=DKIM1 and the long base64 p= value. If TXT returns nothing, also try dig CNAME selector1._domainkey.yourdomain.com +short, because many providers delegate the selector with a CNAME instead of publishing TXT directly." } },
+    {'@type': 'Question', 'name': "How do I find my DKIM selector?", "acceptedAnswer": { '@type': 'Answer', "text": "Send yourself an email from the domain, open the message's raw headers, and find the DKIM-Signature header: the s= field is the selector. Each sending service uses its own selector, so repeat per provider. Common defaults include google for Workspace, selector1 and selector2 for Microsoft 365, s1 and s2 for SendGrid, and k2 or k3 for Mailchimp." } },
+    {'@type': 'Question', 'name': "Why does my DKIM record show as revoked (empty p=)?", "acceptedAnswer": { '@type': 'Answer', "text": "An empty p= tag is a deliberate revocation per RFC 6376 section 3.6.1: the selector announces that no valid key exists. Receivers treat signatures under it as unusable. If the selector is retired, revocation is the correct end state; if a service still signs with it, republish the correct key." } },
+    {'@type': 'Question', 'name': "Is a 1024-bit DKIM key a problem?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes. RFC 8301 sets 1024-bit as the minimum verification floor and deprecates anything smaller, but 1024-bit RSA is considered weak against modern attackers, and some receivers reject or distrust mail signed with it. 2048-bit RSA is the current standard: rotate in your provider's DKIM settings." } },
+    {'@type': 'Question', 'name': "Can a domain have multiple DKIM records?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector, and each selector lives at its own selector._domainkey subdomain." } },
+    {'@type': 'Question', 'name': "Is my domain sent to a server when I use this checker?", "acceptedAnswer": { '@type': 'Answer', "text": "No. The lookups run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing." } }
   ]
 }
 ---
 <BaseLayout
   title="DKIM Record Checker, Verify Your DKIM Key"
-  description="Free DKIM record checker: look up any selector's DKIM public key, verify key type and length, and find weak 1024-bit keys."
+  description="Free DKIM record checker: auto-discover selectors across 22 major ESPs, verify key algorithm, bit length, and revocation status, and catch weak 1024-bit keys."
   schema={[faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -30,13 +30,13 @@ const faqSchema = {
       <span class="text-ink-dim">DKIM Record Checker</span>
     </nav>
     <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DKIM Record Checker: Verify Selector Keys and Signatures</h1>
-    <p class="mt-4 text-lg text-ink-dim">Free DKIM checker: find selectors, verify key type and size, catch weak 1024-bit keys.</p>
+    <p class="mt-4 text-lg leading-relaxed text-ink-dim">Free DKIM checker: auto-discover selectors across 22 major email providers, verify key algorithm, estimated bit length, revocation status, and delegation path. No sign up.</p>
 
     <ToolPanel>
       <form id="dkim-form" class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
         <div>
-          <label for="dkim-selector" class="mb-1 block text-xs text-ink-faint">Selector</label>
-          <input id="dkim-selector" type="text" autocomplete="off" spellcheck="false" value="google" placeholder="google, selector1, k1, s1…"
+          <label for="dkim-selector" class="mb-1 block text-xs text-ink-faint">Selector (leave empty to auto-discover)</label>
+          <input id="dkim-selector" type="text" autocomplete="off" spellcheck="false" value="" placeholder="google, selector1, k1, s1…"
             class="w-full rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
         </div>
         <div>
@@ -50,35 +50,126 @@ const faqSchema = {
       <div id="dkim-status" class="mt-4 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
 
       <p id="dkim-sample-note" data-vs="example" class="mt-6 text-xs text-ink-faint">
-        Sample diagnostic for <code>example.com</code>. Enter any domain above to read its real DKIM record.
+        Sample diagnostic for <code>example.com</code>. Enter a domain (and optionally a selector) above to read its real DKIM records.
       </p>
-<div id="dkim-results" class="pd-results mt-2 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
+
+      <div id="dkim-discovery" class="mt-4 hidden overflow-x-auto rounded-lg border border-line/60">
+        <p class="px-4 pt-3 text-xs font-semibold text-ink">Selectors discovered for this domain - click one to inspect the full key</p>
+        <table class="pdns-table">
+          <thead><tr><th>Selector</th><th>Known Provider</th><th>Query Name</th><th>Delegation</th></tr></thead>
+          <tbody id="dkim-disc-body"></tbody>
+        </table>
+      </div>
+
+      <div id="dkim-results" class="pd-results mt-2 overflow-x-auto rounded-lg border border-line/60" aria-live="polite">
         <table class="pdns-table">
           <thead><tr><th>Property</th><th>Value</th></tr></thead>
           <tbody id="dkim-tbody"><tr><td class="font-medium text-ink">v</td><td><code>DKIM1</code></td></tr><tr><td class="font-medium text-ink">k</td><td class="text-sm text-ink-dim">rsa (key type)</td></tr><tr><td class="font-medium text-ink">p</td><td class="text-sm text-ink-dim"><code>MIGfMA0GCSq...</code>, 2048-bit public key</td></tr></tbody>
         </table>
-    </div>
-
-      <p class="mt-4 text-xs text-ink-faint">Don't know your selector? Common ones: <span class="font-mono">google</span> (Workspace), <span class="font-mono">selector1/selector2</span> (Microsoft 365), <span class="font-mono">k1</span> (Mailchimp), <span class="font-mono">s1/s2</span> (Zoho), <span class="font-mono">mail</span>, <span class="font-mono">default</span>.</p>
+      </div>
 
       <ResultCard tool="dkim-record-checker" />
     </ToolPanel>
 
     <article class="rich-text mt-14 max-w-none">
-      <h2>What the DKIM checker looks for</h2>
-      <p>DKIM keys live at <code>selector._domainkey.yourdomain.com</code> as TXT records. This tool parses the key: version, key type (rsa/ed25519), and <strong>key length</strong>, 1024-bit keys are considered weak and are rejected by some receivers; 2048-bit is the current standard.</p>
-      
-      <p>Prefer the terminal? The step-by-step guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> walks through the exact commands, flags, and expected output for all three records.</p>
+      <h2>What This Result Means: 5 DKIM Public Key Verification States</h2>
+      <p>Every DKIM selector resolves into one of the verification states below. The table is the verdict matrix this tool applies:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>State</th><th>Observed Condition</th><th>What Receivers Do With Signatures Under It</th><th>What It Means for Your Domain</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">1. Valid 2048-Bit RSA or Ed25519 Key Published</td><td class="text-sm text-ink-dim">v=DKIM1 present, p= carries a full key, estimated 2048-bit RSA or 256-bit Ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">Signatures verify normally, subject to body-hash and header rules</td><td class="text-sm text-ink-dim">Best practice: keep the key and rotate on your provider's schedule.</td></tr>
+            <tr><td class="font-medium text-ink">2. Valid 1024-Bit RSA Key (Meets RFC 8301 Minimum; Rotate to 2048-Bit)</td><td class="text-sm text-ink-dim">Key parses, estimated 1024 to 2047 bits</td><td class="text-sm text-ink-dim">Signatures still verify on compliant receivers, but 1024-bit is the verification floor and increasingly distrusted</td><td class="text-sm text-ink-dim">Rotate to 2048-bit: stronger keys are free in every provider panel.</td></tr>
+            <tr><td class="font-medium text-ink">3. Weak Key (Under 1024-Bit RSA - Prohibited by RFC 8301)</td><td class="text-sm text-ink-dim">Estimated bit length below 1024</td><td class="text-sm text-ink-dim">Compliant receivers no longer verify signatures under keys this small (RFC 8301)</td><td class="text-sm text-ink-dim">Replace immediately: mail signed under it loses its authentication signal.</td></tr>
+            <tr><td class="font-medium text-ink">4. Revoked DKIM Key (Empty p= Tag per RFC 6376 section 3.6.1)</td><td class="text-sm text-ink-dim">The record exists but publishes p= with no key material</td><td class="text-sm text-ink-dim">Signatures under this selector are treated as unusable: the key is explicitly revoked</td><td class="text-sm text-ink-dim">Correct end state for retired selectors; a problem only if a service still signs with this selector.</td></tr>
+            <tr><td class="font-medium text-ink">5. Selector Not Found (NXDOMAIN on selector._domainkey)</td><td class="text-sm text-ink-dim">No TXT and no CNAME at the query name</td><td class="text-sm text-ink-dim">Receivers treat the signature as missing, not broken: DKIM cannot verify for that selector</td><td class="text-sm text-ink-dim">Usually a wrong selector name, not missing DKIM. Auto-discover, or read s= from a real message.</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-<div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What is a DKIM selector?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The label that names a DKIM key: the public key lives at selector._domainkey.yourdomain.com, and each signed message carries its selector in the s= field of the DKIM-Signature header.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my provider's selector return nothing?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">A miss usually means the wrong selector name, not missing DKIM. Providers pick their own (google for Workspace, selector1/2 for Microsoft 365, k1 for Mailchimp). Find the real one in the s= field of a sent message's DKIM-Signature header.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is a 1024-bit DKIM key a problem?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It is considered weak, and some receivers reject or distrust mail signed with it. 2048-bit is the current standard; rotate the key in your provider's DKIM settings.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does DKIM stop spoofing on its own?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. Receivers only act on DKIM failures through a DMARC policy. DKIM proves messages were not altered in transit and provides the identity DMARC aligns against.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have multiple DKIM records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The lookup runs in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
-<h2>Related tools</h2>
-      <ul>
-        <li><a href="/spf-record-checker/">SPF Record Checker</a></li>
-        <li><a href="/dmarc-record-checker/">DMARC Record Checker</a></li>
-        <li><a href="/dkim/">DKIM explained</a> (guide)</li>
-        <li><a href="/how-dkim-works/">How DKIM works: signing and verification</a> (guide)</li>
-        <li><a href="/dkim-key-length/">DKIM key length: 1024 vs 2048-bit</a> (guide)</li>
+      <h2>How to Find Your DKIM Selector and Fix Failing DKIM Keys</h2>
+      <p>Selector problems account for most failed DKIM checks, and they resolve in 4 moves:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Extract.</strong> Send a message from the domain to yourself, open the raw headers, and read the s= field of the DKIM-Signature header: that is the selector actually in use. The <a href="/email-header-analyzer/">email header analyzer</a> decodes the full header chain, and the <a href="/dkim-selector/">DKIM selector</a> guide lists provider defaults.</li>
+        <li><strong>Publish.</strong> If the selector has no record, publish the key your provider generated: a CNAME to the provider's key host when the provider manages rotation, or a TXT record with the key material directly.</li>
+        <li><strong>Split.</strong> TXT strings max out at 255 characters per quoted chunk: a 2048-bit RSA key needs two chunks. Split at exact chunk boundaries without inserting spaces or newlines inside the base64, or the key corrupts silently.</li>
+        <li><strong>Rotate.</strong> Publish the new 2048-bit key under a new selector, switch the provider to sign with it, then revoke the old selector with an empty p= once no traffic signs under it.</li>
+      </ol>
+
+      <h2>Check a DKIM Record Using dig and OpenSSL From the Command Line</h2>
+      <pre><code># The key itself (replace google with your selector):
+dig TXT google._domainkey.example.com +short
+
+# Many providers delegate the selector with a CNAME instead of TXT:
+dig CNAME selector1._domainkey.example.com +short
+
+# Inspect the key's real bit length from the base64 (Linux, macOS):
+echo "paste-p-value-here" | base64 -d | openssl rsa -pubin -inform DER -text -noout 2&gt;/dev/null | grep "Public-Key"
+
+# Windows PowerShell equivalent:
+nslookup -type=txt google._domainkey.example.com</code></pre>
+      <p>For the full workflow with expected output at every step, the guide <a href="/check-spf-dkim-dmarc-dig/">How to Check SPF, DKIM, and DMARC Using dig</a> covers all three records in one pass.</p>
+
+      <h2>Reference Table: DKIM Record Tags (RFC 6376) and Default Selectors by Email Provider</h2>
+      <p>Two references in one: first the tags a DKIM DNS record can carry, then the default selectors and record types of the 10 ESPs that sign most of the world's mail:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Tag</th><th>Purpose</th><th>Values</th><th>Default When Omitted</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs text-ink">v=</td><td class="text-sm text-ink-dim">Version tag, must be first</td><td class="text-sm text-ink-dim">DKIM1</td><td class="text-sm text-ink-dim">Required in DNS records (plain DKIM1)</td></tr>
+            <tr><td class="font-mono text-xs text-ink">k=</td><td class="text-sm text-ink-dim">Key algorithm</td><td class="text-sm text-ink-dim">rsa, ed25519 (RFC 8463)</td><td class="text-sm text-ink-dim">rsa</td></tr>
+            <tr><td class="font-mono text-xs text-ink">p=</td><td class="text-sm text-ink-dim">Public key material (base64)</td><td class="text-sm text-ink-dim">Full key, or empty to revoke the selector (RFC 6376 section 3.6.1)</td><td class="text-sm text-ink-dim">Required</td></tr>
+            <tr><td class="font-mono text-xs text-ink">h=</td><td class="text-sm text-ink-dim">Acceptable hash algorithms</td><td class="text-sm text-ink-dim">sha1, sha256 (sha1 deprecated by RFC 8301)</td><td class="text-sm text-ink-dim">Allowing all algorithms</td></tr>
+            <tr><td class="font-mono text-xs text-ink">t=</td><td class="text-sm text-ink-dim">Flags</td><td class="text-sm text-ink-dim">y (testing mode), s (strict subdomain matching)</td><td class="text-sm text-ink-dim">Neither flag set</td></tr>
+            <tr><td class="font-mono text-xs text-ink">s=</td><td class="text-sm text-ink-dim">Service type restriction</td><td class="text-sm text-ink-dim">email, * (any)</td><td class="text-sm text-ink-dim">*</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Email Provider</th><th>Default Selector(s)</th><th>Record Type</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Google Workspace</td><td class="font-mono text-xs text-ink">google</td><td class="text-sm text-ink-dim">TXT</td></tr>
+            <tr><td class="font-medium text-ink">Microsoft 365</td><td class="font-mono text-xs text-ink">selector1, selector2</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">SendGrid</td><td class="font-mono text-xs text-ink">s1, s2</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">Mailchimp</td><td class="font-mono text-xs text-ink">k2, k3 (legacy k1)</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">Amazon SES</td><td class="font-mono text-xs text-ink">3 x 32-character hash</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">Postmark</td><td class="font-mono text-xs text-ink">YYYYMMDD-style date selector + pm</td><td class="text-sm text-ink-dim">TXT</td></tr>
+            <tr><td class="font-medium text-ink">HubSpot</td><td class="font-mono text-xs text-ink">hs1-*, hs2-* (scoped per portal)</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">Klaviyo</td><td class="font-mono text-xs text-ink">klaviyo (prefix-scoped variants)</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+            <tr><td class="font-medium text-ink">Zoho Mail</td><td class="font-mono text-xs text-ink">zoho, zmail</td><td class="text-sm text-ink-dim">TXT</td></tr>
+            <tr><td class="font-medium text-ink">Zendesk</td><td class="font-mono text-xs text-ink">zendesk1, zendesk2</td><td class="text-sm text-ink-dim">CNAME</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For the signing and verification flow end to end, read the <a href="/dkim/">DKIM</a> guide and the <a href="/how-dkim-works/">how DKIM works</a> deep dive; the <a href="/dkim-key-length/">DKIM key length</a> guide covers the 1024 versus 2048-bit decision in detail.</p>
+
+      <h2>What This Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Public DNS cannot enumerate every _domainkey subdomain without knowing the selector name, so auto-discovery probes the 22 most common ESP selectors: custom selectors require entering the s= value from a sent email header.</li>
+        <li>A valid public key in DNS proves the key is published, but verifying that your outbound MTA actually signs messages with the matching private key - and that bh= body-hash verification passes - requires inspecting a live message, not DNS.</li>
+        <li>A record flagged t=y (testing mode) tells receivers to treat failed signatures as neutral rather than enforcing failure, so a failing test-mode selector looks harmless in logs while providing no protection.</li>
+        <li>Passing DKIM alone does not stop spoofing: receivers act on DKIM results through a DMARC policy that requires the d= domain to align with the visible From: domain.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The 255-character split is where good keys go to die. A 2048-bit RSA public key does not fit in one DNS TXT string, so panels ask you to paste it as two quoted chunks. Control panels and hands-on admins routinely corrupt the split: a space pasted inside the base64, a newline between the chunks, or quotes removed by the panel all produce a key that parses as present but fails verification everywhere. If a newly published key checks as "found but signatures fail", re-read the served TXT byte for byte before blaming the provider - and prefer CNAME delegation wherever the provider offers it, because then rotation never touches your zone file at all.</p>
+      </aside>
+
+      <h2>What We See Across Domains</h2>
+      <p>
+        The strongest pattern in DKIM audits is the divide between CNAME-delegated keys and hand-published TXT keys. Domains whose providers manage the selector (selector1/selector2 for Microsoft 365, s1/s2 for SendGrid, k2/k3 for Mailchimp) rotate keys on the provider's schedule and rarely appear with stale crypto. Domains that publish TXT keys by hand tend to accumulate ancient 1024-bit keys that nobody has rotated in years, because rotation meant a manual zone edit nobody owned. Where the choice exists, delegation wins: the provider keeps the crypto current and your DNS record stays a stable pointer.
+      </p>
+
+      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently Asked Questions</h2>
+      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I check a DKIM record using dig?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Run dig TXT google._domainkey.yourdomain.com +short, replacing google with your selector. A published key returns the tag list starting with v=DKIM1 and the long base64 p= value. If TXT returns nothing, also try dig CNAME selector1._domainkey.yourdomain.com +short, because many providers delegate the selector with a CNAME instead of publishing TXT directly.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I find my DKIM selector?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send yourself an email from the domain, open the message's raw headers, and find the DKIM-Signature header: the s= field is the selector. Each sending service uses its own selector, so repeat per provider. Common defaults include google for Workspace, selector1 and selector2 for Microsoft 365, s1 and s2 for SendGrid, and k2 or k3 for Mailchimp.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my DKIM record show as revoked (empty p=)?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">An empty p= tag is a deliberate revocation per RFC 6376 section 3.6.1: the selector announces that no valid key exists. Receivers treat signatures under it as unusable. If the selector is retired, revocation is the correct end state; if a service still signs with it, republish the correct key.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is a 1024-bit DKIM key a problem?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes. RFC 8301 sets 1024-bit as the minimum verification floor and deprecates anything smaller, but 1024-bit RSA is considered weak against modern attackers, and some receivers reject or distrust mail signed with it. 2048-bit RSA is the current standard: rotate in your provider's DKIM settings.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a domain have multiple DKIM records?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, one per selector, and that is normal when several services send mail for you. Each service signs with its own selector, and each selector lives at its own selector._domainkey subdomain.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is my domain sent to a server when I use this checker?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. The lookups run in your browser against public DNS-over-HTTPS resolvers. PromptDNS has no server in the lookup path and stores nothing.</p></details></div>
+
+      <h2>Next Checks</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li>Check the enforcement layer with the <a href="/dmarc-record-checker/">DMARC record checker</a>.</li>
+        <li>Generate a fresh strong key with the <a href="/dkim-record-generator/">DKIM record generator</a>.</li>
+        <li>Confirm the d= domain aligns with your From: header in the <a href="/dmarc-alignment/">DMARC alignment</a> guide.</li>
+        <li>See where authentication failures land in <a href="/why-emails-go-to-spam/">why emails go to spam</a>.</li>
       </ul>
     </article>
   </div>
@@ -93,19 +184,23 @@ const faqSchema = {
   const selInput = document.getElementById('dkim-selector') as HTMLInputElement;
   const domInput = document.getElementById('dkim-domain') as HTMLInputElement;
   const statusEl = document.getElementById('dkim-status')!;
+  const discEl = document.getElementById('dkim-discovery')!;
+  const discBody = document.getElementById('dkim-disc-body')!;
   const resultsEl = document.getElementById('dkim-results')!;
   const tbody = document.getElementById('dkim-tbody')!;
 
   const TOOL = 'dkim-record-checker';
+  // Static links inside main (R61-unique): /email-header-analyzer/, /dkim-selector/,
+  // /check-spf-dkim-dmarc-dig/, /dkim/, /how-dkim-works/, /dkim-key-length/,
+  // /dmarc-record-checker/, /dkim-record-generator/, /dmarc-alignment/,
+  // /why-emails-go-to-spam/. The card only points at pages that are not static here.
   const RELATED_OK = [
     { label: 'Check SPF', href: '/spf-record-checker/' },
-    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
-    { label: 'DKIM explained', href: '/dkim/' },
+    { label: 'DMARC report analyzer', href: '/dmarc-report-analyzer/' },
   ];
   const RELATED_NOTFOUND = [
-    { label: 'DKIM explained', href: '/dkim/' },
     { label: 'Check SPF', href: '/spf-record-checker/' },
-    { label: 'Check DMARC', href: '/dmarc-record-checker/' },
+    { label: 'DMARC report analyzer', href: '/dmarc-report-analyzer/' },
   ];
 
   const setStatus = (cls: string, text: string) => {
@@ -118,62 +213,166 @@ const faqSchema = {
     window.dispatchEvent(new CustomEvent('pdns:result', { detail }));
   };
 
+  // The 22 most common ESP selectors probed when no selector is given (Brief 5.15).
+  const SELECTORS: [string, string][] = [
+    ['google', 'Google Workspace'], ['selector1', 'Microsoft 365'], ['selector2', 'Microsoft 365'],
+    ['default', 'Generic'], ['k1', 'Mailchimp (legacy)'], ['k2', 'Mailchimp'], ['k3', 'Mailchimp'],
+    ['s1', 'SendGrid'], ['s2', 'SendGrid'], ['dkim', 'Generic'], ['mail', 'Generic'],
+    ['mandrill', 'Mandrill'], ['pm', 'Postmark'], ['20230601', 'Postmark (date style)'],
+    ['protonmail', 'Proton Mail'], ['zoho', 'Zoho Mail'], ['zendesk1', 'Zendesk'], ['zendesk2', 'Zendesk'],
+    ['hs1', 'HubSpot'], ['hs2', 'HubSpot'], ['klaviyo', 'Klaviyo'], ['amazonses', 'Amazon SES'],
+  ];
+
+  function cnameTarget(res: { answers: { type: number; data: string }[] }): string | null {
+    const c = res.answers.find((x) => x.type === 5);
+    return c ? c.data.replace(/\.$/, '') : null;
+  }
+
+  async function inspect(fqdn: string): Promise<{ res: Awaited<ReturnType<typeof lookup>>; key: string | null } | null> {
+    try {
+      const res = await lookup(fqdn, 'TXT', RESOLVERS[0]);
+      const key = txtRecords(res.answers).find((t) => t.includes('p='));
+      return { res, key: key ?? null };
+    } catch {
+      return null;
+    }
+  }
+
+  function parseKey(key: string) {
+    const v = key.match(/v=([A-Za-z0-9]+)/)?.[1];
+    const k = key.match(/k=([a-z0-9]+)/i)?.[1]?.toLowerCase() ?? 'rsa';
+    const pMatch = key.match(/p=([^;]*)/);
+    const p = pMatch ? pMatch[1].trim() : null;
+    const h = key.match(/h=([^;]+)/i)?.[1]?.trim();
+    const t = key.match(/t=([^;]+)/i)?.[1]?.trim();
+    const s = key.match(/s=([^;]+)/i)?.[1]?.trim();
+    const revoked = p !== null && p === '';
+    let bits = 0;
+    if (k === 'ed25519') bits = 256;
+    else if (p && p.length > 20) bits = Math.max(0, (Math.floor((p.replace(/=+$/, '').length * 3) / 4) - 24) * 8);
+    return { v, k, p: p ?? '', h, t, s, revoked, bits };
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const selector = selInput.value.trim().replace(/\._domainkey\.$/, '');
+    const rawSel = selInput.value.trim().replace(/\._domainkey\.?$/, '');
     const domain = normalizeDomain(domInput.value);
-    if (!selector || !domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter both a selector and a domain.'); return; }
-    const fqdn = `${selector}._domainkey.${domain}`;
-    setStatus('bg-panel-2 text-accent border border-line', `Looking up TXT at ${fqdn}…`);
+    if (!domain.includes('.')) { setStatus('bg-fail/10 text-fail border border-fail/30', 'Enter a valid domain, e.g. example.com'); return; }
     resultsEl.classList.add('hidden');
+    discEl.classList.add('hidden');
+    discBody.textContent = '';
+    tbody.textContent = '';
+    document.getElementById('dkim-sample-note')?.classList.add('hidden');
     window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: TOOL } }));
 
-    let res;
-    try {
-      res = await lookup(fqdn, 'TXT', RESOLVERS[0]);
-    } catch {
+    // Discovery mode: no selector given, probe the 22 common ESP selectors.
+    if (!rawSel) {
+      setStatus('bg-panel-2 text-accent border border-line', `Auto-discovering DKIM selectors for ${domain} across 22 common ESP selectors...`);
+      const found: { sel: string; esp: string; fqdn: string; res: Awaited<ReturnType<typeof lookup>>; key: string }[] = [];
+      for (let i = 0; i < SELECTORS.length; i += 5) {
+        const batch = SELECTORS.slice(i, i + 5);
+        setStatus('bg-panel-2 text-accent border border-line', `Auto-discovering DKIM selectors for ${domain}: probing ${batch.map((b) => b[0]).join(', ')}...`);
+        const results = await Promise.all(batch.map(async ([sel]) => ({ sel, r: await inspect(`${sel}._domainkey.${domain}`) })));
+        for (const { sel, r } of results) {
+          if (r && r.key) found.push({ sel, esp: SELECTORS.find((s) => s[0] === sel)?.[1] ?? 'Generic', fqdn: `${sel}._domainkey.${domain}`, res: r.res, key: r.key });
+        }
+      }
+      if (!found.length) {
+        setStatus('bg-warn/10 text-warn border border-warn/30',
+          `None of the 22 common selectors returned a DKIM key for ${domain}. If you use a custom selector, enter the s= value from a sent message's DKIM-Signature header.`);
+        emit('warn', `No DKIM key found on any of the 22 common selectors for ${domain}.`, [{ code: 'DKIM_NOT_FOUND', detail: 'Probed 22 common ESP selectors' }], domain, RELATED_NOTFOUND);
+        return;
+      }
+      // Discovery table
+      discEl.classList.remove('hidden');
+      for (const f of found) {
+        const parsed = parseKey(f.key);
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer hover:bg-panel-2/60';
+        const mk = (txt: string, cls: string) => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+        tr.append(mk(f.sel, 'font-mono text-xs text-accent'), mk(f.esp, 'text-sm text-ink-dim'), mk(f.fqdn, 'font-mono text-xs text-ink-dim'), mk(cnameTarget(f.res) ? 'CNAME -> ' + cnameTarget(f.res) : 'Direct TXT', 'text-xs text-ink-faint'));
+        tr.addEventListener('click', () => { selInput.value = f.sel; form.dispatchEvent(new Event('submit', { cancelable: true })); });
+        discBody.appendChild(tr);
+      }
+      setStatus('bg-pass/10 text-pass border border-pass/30',
+        `Found ${found.length} DKIM selector${found.length > 1 ? 's' : ''} for ${domain}. Click one below to inspect the full key.`);
+      emit('pass', `DKIM discovery for ${domain}: ${found.length} selector(s) found (${found.map((f) => f.sel).join(', ')}).`, [{ code: 'DKIM_VALID', detail: `Selectors: ${found.map((f) => f.sel).join(', ')}` }], domain);
+      return;
+    }
+
+    // Single-selector inspection
+    const selector = rawSel;
+    const fqdn = `${selector}._domainkey.${domain}`;
+    setStatus('bg-panel-2 text-accent border border-line', `Looking up ${fqdn}...`);
+    const hit = await inspect(fqdn);
+    if (!hit) {
       setStatus('bg-warn/10 text-warn border border-warn/30',
         `Could not reach the DNS resolver for ${fqdn}. This is an inconclusive result - not a pass or fail. Check your connection and retry.`);
       emit('info', 'DNS query did not complete. Nothing is known about this selector.', [{ code: 'DKIM_DNS_UNREACHABLE' }], domain);
       return;
     }
-
-    const key = txtRecords(res.answers).find((t) => t.includes('p='));
+    const { res, key } = hit;
     if (!key) {
-      setStatus('bg-warn/10 text-warn border border-warn/30', `No DKIM key found at ${fqdn}. Either the selector is wrong, or DKIM isn't set up.`);
+      setStatus('bg-warn/10 text-warn border border-warn/30', `No DKIM key found at ${fqdn}. Either the selector is wrong, or DKIM is not set up.`);
       emit('warn', `No DKIM key at ${fqdn}. This selector may simply not be the right one.`, [{ code: 'DKIM_NOT_FOUND', detail: `Nothing found at ${fqdn}` }], domain, RELATED_NOTFOUND);
       return;
     }
 
-    const v = key.match(/v=([A-Za-z0-9]+)/)?.[1];
-    const k = key.match(/k=([a-z0-9]+)/i)?.[1] ?? 'rsa';
-    const p = key.match(/p=([A-Za-z0-9+/=]+)/)?.[1] ?? '';
-    // base64 DER length ≈ bits: decoded bytes * 8 (rough, RSA modulus ≈ DER - ~24 bytes header)
-    const decodedLen = Math.floor((p.replace(/=+$/, '').length * 3) / 4);
-    const bits = Math.max(0, (decodedLen - 24) * 8);
-    const bitsLabel = k.toLowerCase() === 'ed25519' ? '256 (ed25519)' : `~${bits}`;
-    const weak = k.toLowerCase() !== 'ed25519' && bits > 0 && bits < 2048;
+    const parsed = parseKey(key);
+    const delegation = cnameTarget(res);
+    const isEd = parsed.k === 'ed25519';
+    const tooSmall = !isEd && parsed.bits > 0 && parsed.bits < 1024;
+    const weak = !isEd && parsed.bits >= 1024 && parsed.bits < 2048;
+    const bitsLabel = isEd ? '256 (Ed25519)' : parsed.bits > 0 ? `~${parsed.bits}` : 'unknown';
 
-    const rows: [string, string, string][] = [
-      ['Location', `<code>${fqdn}</code>`, ''],
-      ['Version', v ?? '(none)', ''],
-      ['Key type', k.toUpperCase(), ''],
-      ['Key size', bitsLabel, weak ? 'WEAK, upgrade to 2048-bit; some receivers reject 1024.' : 'Strong enough.'],
-      ['Public key', `<code class="break-all">${p.slice(0, 80)}${p.length > 80 ? '…' : ''}</code>`, `(${p.length} chars)`],
-    ];
     document.getElementById('dkim-sample-note')?.classList.add('hidden');
-    tbody.innerHTML = '';
-    for (const [a, b, c] of rows) {
-      tbody.insertAdjacentHTML('beforeend', `<tr><td class="text-ink-dim">${a}</td><td>${b} <span class="text-xs text-ink-faint">${c}</span></td></tr>`);
+    const rows: [string, string][] = [
+      ['Selector and query name', `${selector} at ${fqdn}`],
+      ['Delegation path', delegation ? `CNAME -> ${delegation} (provider-managed rotation)` : 'Direct TXT record'],
+      ['Version (v=)', parsed.v ?? '(missing: DKIM1 expected)'],
+      ['Key algorithm (k=)', parsed.k.toUpperCase() + (isEd ? ' (RFC 8463)' : '')],
+      ['Public key bit length', bitsLabel + (isEd ? '' : parsed.bits > 0 && parsed.bits < 1024 ? ' - prohibited by RFC 8301' : weak ? ' - meets the RFC 8301 minimum, rotate to 2048-bit' : parsed.bits >= 2048 ? ' - recommended strength' : '')],
+      ['Key status', parsed.revoked ? 'REVOKED: empty p= tag (RFC 6376 section 3.6.1)' : 'Active (key material present)'],
+      ['Hash algorithms (h=)', parsed.h ?? '(default: all allowed, sha1 deprecated by RFC 8301)'],
+      ['Flags (t=)', parsed.t ?? '(none set)' + (parsed.t?.includes('y') ? ' - testing mode: failures treated as neutral' : '')],
+      ['Service type (s=)', parsed.s ?? '* (any)'],
+      ['Public key (p=)', parsed.revoked ? '(empty: revocation)' : parsed.p.slice(0, 80) + (parsed.p.length > 80 ? '...' : '')],
+    ];
+    tbody.textContent = '';
+    for (const [a, b] of rows) {
+      const tr = document.createElement('tr');
+      const tdA = document.createElement('td');
+      tdA.className = 'font-medium text-ink';
+      tdA.textContent = a;
+      const tdB = document.createElement('td');
+      const code = document.createElement('code');
+      code.className = 'font-mono text-xs text-accent break-all';
+      code.textContent = b;
+      tdB.appendChild(code);
+      tr.append(tdA, tdB);
+      tbody.appendChild(tr);
     }
     resultsEl.classList.remove('hidden');
-    setStatus(weak ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30',
-      weak ? 'DKIM key found, but it is weak (under 2048-bit).' : 'DKIM key found and parsed.');
 
-    if (weak) {
-      emit('warn', `DKIM key found at ${fqdn}, estimated ${bitsLabel} bits.`, [{ code: 'DKIM_WEAK_KEY', detail: `Estimated key size: ${bitsLabel}` }], domain);
-    } else {
-      emit('pass', `DKIM key found at ${fqdn} (${k.toUpperCase()}, ${bitsLabel}).`, [{ code: 'DKIM_VALID', detail: `${k.toUpperCase()} key, ${bitsLabel}` }], domain);
-    }
+    let verdict: Severity = 'pass';
+    const findings: PdnsFinding[] = [];
+    if (parsed.revoked) { verdict = 'warn'; findings.push({ code: 'DKIM_REVOKED', detail: `Selector ${selector} publishes an empty p= tag` }); }
+    else if (tooSmall) { verdict = 'fail'; findings.push({ code: 'DKIM_WEAK_KEY', detail: `Estimated ${bitsLabel} RSA: below the RFC 8301 1024-bit floor` }); }
+    else if (weak) { verdict = 'warn'; findings.push({ code: 'DKIM_WEAK_KEY', detail: `Estimated ${bitsLabel} RSA: rotate to 2048-bit` }); }
+    else findings.push({ code: 'DKIM_VALID', detail: `${parsed.k.toUpperCase()} key, ${bitsLabel}` });
+
+    const statusLine = parsed.revoked
+      ? 'DKIM key found, but it is REVOKED (empty p=).'
+      : tooSmall ? 'DKIM key found, but the estimated strength is below the RFC 8301 floor.'
+      : weak ? 'DKIM key found, but it is weak (under 2048-bit).'
+      : 'DKIM key found and parsed.';
+    setStatus(verdict === 'fail' ? 'bg-fail/10 text-fail border border-fail/30' : verdict === 'warn' ? 'bg-warn/10 text-warn border border-warn/30' : 'bg-pass/10 text-pass border border-pass/30', statusLine);
+
+    emit(verdict, parsed.revoked
+      ? `DKIM key at ${fqdn} is revoked (empty p=).`
+      : tooSmall
+        ? `DKIM key at ${fqdn} is too weak (estimated ${bitsLabel}).`
+        : `DKIM key found at ${fqdn} (${parsed.k.toUpperCase()}, ${bitsLabel}${delegation ? ', CNAME-delegated' : ''}).`,
+      findings, domain, verdict === 'pass' ? RELATED_OK : RELATED_NOTFOUND);
   });
 </script>
