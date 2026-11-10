@@ -1,71 +1,380 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faqs: [string, string][] = [
+  ['What is the difference between ERR_NAME_NOT_RESOLVED and DNS_PROBE_FINISHED_NXDOMAIN?', 'ERR_NAME_NOT_RESOLVED (Chromium net_error -105) is the general browser error raised whenever a hostname cannot be translated into an IP address due to any failure (NXDOMAIN, SERVFAIL, REFUSED, blocked Secure DNS, or Winsock corruption), whereas DNS_PROBE_FINISHED_NXDOMAIN appears specifically when Chromium\u2019s diagnostic probe confirms the DNS lookup returned RCODE 3 (Non-Existent Domain).'],
+  ['How do I fix ERR_NAME_NOT_RESOLVED in Google Chrome and Microsoft Edge?', 'Clear the browser\u2019s internal HostResolver cache at chrome://net-internals/#dns (or edge://net-internals/#dns), flush open socket pools at chrome://net-internals/#sockets, and flush your operating system DNS cache via ipconfig /flushdns on Windows or sudo dscacheutil -flushcache on macOS. Switching Chrome\u2019s Secure DNS setting at chrome://settings/security to Cloudflare (1.1.1.1) or Google (Public DNS) resolves the error when your ISP resolver is failing.'],
+  ['How do I fix ERR_NAME_NOT_RESOLVED on an Android phone or tablet?', 'Open Android Settings > Network & Internet > Private DNS and switch the setting from a custom hostname to Automatic or enter dns.google or one.one.one.one, then clear the Chrome app cache and toggle Airplane Mode on and off for 10 seconds to flush the mobile interface cache.'],
+  ['Why does Chrome show ERR_NAME_NOT_RESOLVED when ping and nslookup work in the terminal?', 'Your network firewall, antivirus web shield, or ISP is blocking Chrome\u2019s built-in DNS-over-HTTPS (DoH) resolver when Chrome fails with ERR_NAME_NOT_RESOLVED while command-line nslookup succeeds over UDP port 53. Updating or disabling the custom Secure DNS provider at chrome://settings/security restores browser resolution immediately.'],
+  ['Does ERR_NAME_NOT_RESOLVED mean the website is down for everyone?', 'No, ERR_NAME_NOT_RESOLVED does not always mean the website is offline globally; the error frequently originates from a stale local Chrome HostResolver cache, a blocked Secure DNS template, or a corrupted operating system network stack while the website resolves normally for other visitors.'],
+];
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Is err_name_not_resolved a Chrome bug?", "acceptedAnswer": { '@type': 'Answer', "text": "No. It is Chromium accurately reporting that a DNS lookup failed. The fix is on the network or device side." } },
-    {'@type': 'Question', 'name': "Why does my phone show it but not my laptop?", "acceptedAnswer": { '@type': 'Answer', "text": "Different devices use different resolvers and caches. Android Private DNS or carrier filtering commonly diverges from your laptop." } },
-    {'@type': 'Question', 'name': "Does a VPN fix it or cause it?", "acceptedAnswer": { '@type': 'Answer', "text": "Both: a VPN can route around a broken ISP resolver, or its own DNS can fail. Test with the tunnel off and on." } }
-  ],
+  mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { isHeld } from '../data/publish-queue.js';
+const codeRows: [string, string, string, string][] = [
+  ['net::ERR_NAME_NOT_RESOLVED', '-105', 'HostResolver returned 0 IPs (NXDOMAIN, SERVFAIL, REFUSED, or blocked DoH)', 'Umbrella resolution failure code across Chromium'],
+  ['DNS_PROBE_FINISHED_NXDOMAIN', 'Probe result on -105', 'DnsProbe confirmed internet works, but target returned RCODE 3 (NXDOMAIN)', 'Specifically confirms Non-Existent Domain (RCODE 3)'],
+  ['DNS_PROBE_FINISHED_BAD_CONFIG', 'Probe result on -105', 'Invalid local DNS server IP syntax or unreachable custom DoH template', 'Points specifically to broken local resolver configuration'],
+  ['DNS_PROBE_FINISHED_NO_INTERNET', 'Probe result on -106', 'DnsProbe failed to reach connectivity test hosts as well', 'Indicates total loss of WAN internet connectivity'],
+  ['net::ERR_NAME_RESOLUTION_FAILED', '-137', 'OS or proxy host resolution subsystem crashed or rejected the request', 'Triggered by proxy PAC scripts or system resolver failure'],
+];
 
-const held = isHeld('/err-name-not-resolved/');
+const dnsRows: [string, string, string, string][] = [
+  ['Windows 10/11', 'Settings > Network & Internet > adapter > DNS server assignment > Edit', '1.1.1.1 / 8.8.8.8 (DoH: https://cloudflare-dns.com/dns-query or https://dns.google/dns-query)', '2606:4700:4700::1111 / 2001:4860:4860::8888'],
+  ['macOS (Ventura, Sonoma, Sequoia)', 'System Settings > Network > adapter > Details > DNS > + button', '1.1.1.1 / 8.8.8.8 (DoH via encrypted DNS profile)', '2606:4700:4700::1111 / 2001:4860:4860::8888'],
+  ['Linux (systemd-resolved / NetworkManager)', 'NetworkManager GUI > adapter > IPv4 Settings > DNS; or edit /etc/systemd/resolved.conf', '1.1.1.1 / 8.8.8.8 (DoT: one.one.one.one or dns.google on port 853)', '2606:4700:4700::1111 / 2001:4860:4860::8888'],
+  ['Android 9+ (Private DNS)', 'Settings > Network & Internet > Private DNS > Private DNS provider hostname', 'DoT hostname: one.one.one.one (Cloudflare)', 'DoT hostname: dns.google (Google Public DNS)'],
+  ['iOS / iPadOS', 'Settings > Wi-Fi > (i) icon > Configure DNS > Manual > Add Server', '1.1.1.1 / 8.8.8.8 (DoH via configuration profile)', '2606:4700:4700::1111 / 2001:4860:4860::8888'],
+];
 ---
 <BaseLayout
+  title="ERR_NAME_NOT_RESOLVED: What It Means & 9 Fixes (Chrome, Windows, Mac, Android) | PromptDNS"
+  description="ERR_NAME_NOT_RESOLVED (Chromium net_error -105) decoded: 7 probability-ranked causes, live 3-resolver DoH diagnosis, 9 client-side fixes for Chrome, Windows, macOS, Linux, and Android, plus the Chromium dual-resolution-path architecture explained."
   schema={[faqSchema]}
-  title="err_name_not_resolved: Meaning and Fixes for Chrome and Android | PromptDNS"
-  description="err_name_not_resolved explained: the Chrome and Android DNS resolution failure, its causes and fixes, from DNS cache and private DNS to resolver changes."
-  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["err_name_not_resolved"]]}
+  breadcrumb={[["Home", "/"], ["DNS", "/dns/"], ["ERR_NAME_NOT_RESOLVED"]]}
 >
-  <div class="mx-auto max-w-4xl px-4 py-12">
+  <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">err_name_not_resolved</span>
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">ERR_NAME_NOT_RESOLVED</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">err_name_not_resolved: What It Means and How to Fix It</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">err_name_not_resolved is the Chromium error for a failed DNS lookup: the browser asked for the domain's address and got no valid answer. It is the same failure Windows calls "DNS server not responding" or NXDOMAIN, seen from the browser side. The fixes mirror those cases: flush caches, check Android private DNS, then change the resolver. When the lookup fails with the domain-not-found answer specifically, the <a href="/dns-probe-finished-nxdomain/" class="text-accent hover:text-accent-soft">DNS_PROBE_FINISHED_NXDOMAIN</a> guide covers that error end to end.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">ERR_NAME_NOT_RESOLVED: What It Means and 9 Ways to Fix It</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        ERR_NAME_NOT_RESOLVED is <strong class="text-ink">a Chromium network error (net::ERR_NAME_NOT_RESOLVED, internal code -105) displayed when Google Chrome, Microsoft Edge, Brave, or Android WebView cannot resolve a domain hostname into an IPv4 or IPv6 address</strong>. Chromium's internal HostResolver aborts the HTTP navigation before opening a TCP socket or TLS handshake whenever the underlying DNS lookup returns zero usable IP addresses. The troubleshooting workflow spans live multi-resolver DoH testing, Chromium HostResolver and socket pool flushing, Secure DNS template verification, operating system DNS and Winsock resets, and authoritative zone repair.
+      </p>
     </div>
 
-    <section class="not-prose my-8" aria-label="Fix table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>A</th><th>c</th><th>t</th><th>i</th><th>o</th><th>n</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1. Confirm the domain resolves</td><td class="text-sm text-ink-dim">Look the domain up with a record lookup: if records exist everywhere, the problem is on your device or network.</td></tr><tr><td class="font-medium text-ink">2. Clear Chrome DNS cache and sockets</td><td class="text-sm text-ink-dim">chrome://net-internals/#dns and #sockets, then clear both and reload.</td></tr><tr><td class="font-medium text-ink">3. Check Android private DNS</td><td class="text-sm text-ink-dim">Android Private DNS (DNS over TLS) misconfigurations cause exactly this error. Set it to a working hostname or turn it off.</td></tr><tr><td class="font-medium text-ink">4. Switch resolver</td><td class="text-sm text-ink-dim">Set the device or router DNS to a known-good public resolver and retest on the same network.</td></tr><tr><td class="font-medium text-ink">5. Flush the OS cache</td><td class="text-sm text-ink-dim">Android: toggle airplane mode or reboot, which resets the DNS cache. Windows: ipconfig /flushdns.</td></tr><tr><td class="font-medium text-ink">6. Verify with fresh resolvers</td><td class="text-sm text-ink-dim">Use the propagation checker to confirm the domain resolves on independent resolvers before blaming your device.</td></tr></tbody>
+    <nav class="pd-toc mt-6" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-causes-err-name-not-resolved">What Is net::ERR_NAME_NOT_RESOLVED and What Causes It? (7 Ranked Causes)</a></li>
+        <li><a href="#site-vs-device">When Is ERR_NAME_NOT_RESOLVED the Website's DNS Fault vs Your Device?</a></li>
+        <li><a href="#client-fixes">How Do You Fix ERR_NAME_NOT_RESOLVED on Chrome, Windows, macOS, Linux, and Android? (9 Step-by-Step Fixes)</a></li>
+        <li><a href="#domain-fixes">How Do Website Administrators Fix Authoritative ERR_NAME_NOT_RESOLVED Failures? (4 Checks)</a></li>
+        <li><a href="#tool-scope">What the Live ERR_NAME_NOT_RESOLVED Triage Tool Does Not Check</a></li>
+        <li><a href="#observations">What We See Across Domains: Common ERR_NAME_NOT_RESOLVED Patterns</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-causes-err-name-not-resolved">What Is net::ERR_NAME_NOT_RESOLVED and What Causes It? (7 Ranked Causes)</h2>
+      <p>
+        Chromium's <code>net/base/net_error_list.h</code> defines code -105 (ERR_NAME_NOT_RESOLVED) as the umbrella failure code raised whenever the HostResolver returns zero usable IP addresses, regardless of whether the underlying cause is RCODE 3 (NXDOMAIN), RCODE 2 (SERVFAIL), RCODE 5 (REFUSED), a blocked DoH endpoint on port 443, an unreachable DNS-over-TLS server on port 853, or dead local stub sockets. This differs from DNS_PROBE_FINISHED_NXDOMAIN, which Chromium's diagnostic probe shows only after confirming that the specific failure is RCODE 3. Chromium's BuiltInDnsClient can fail independently of the OS stub resolver when Secure DNS is misconfigured, which is why the same domain may resolve in terminal nslookup yet fail in the browser.
+      </p>
+      <p>
+        The diagram below illustrates the two resolution paths Chromium uses and where net_error -105 is raised:
+      </p>
+      <Diagram name="chromium-dual-resolution" caption="Figure: Chromium's dual resolution paths. Path A (BuiltInDnsClient / Secure DNS DoH on port 443) and Path B (OS system stub resolver on UDP port 53) both feed the HostResolver; either path returning zero usable IPs raises net_error -105 (ERR_NAME_NOT_RESOLVED)." />
+      <p>The table below ranks the 7 causes by how often they produce ERR_NAME_NOT_RESOLVED in production:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Test</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Fails in Chrome/Edge, but ping/Safari works</td><td class="text-sm text-ink-dim">Stale Chrome HostResolver cache or broken Secure DNS DoH template</td><td class="text-sm text-ink-dim">Test in terminal with nslookup or another browser</td><td class="text-sm text-ink-dim">Clear chrome://net-internals/#dns, flush #sockets, and reset Secure DNS</td></tr>
+            <tr><td class="font-medium text-ink">Fails on all browsers on one PC, works on phone</td><td class="text-sm text-ink-dim">Corrupted OS DNS cache, Winsock catalog, or /etc/hosts override</td><td class="text-sm text-ink-dim">Compare PC vs mobile on same Wi-Fi</td><td class="text-sm text-ink-dim">Run ipconfig /flushdns, netsh winsock reset, and audit hosts file</td></tr>
+            <tr><td class="font-medium text-ink">Fails on all devices on home/office Wi-Fi, works on cellular</td><td class="text-sm text-ink-dim">ISP recursive resolver outage or frozen router DNS relay</td><td class="text-sm text-ink-dim">Test domain in the live 3-resolver DoH tool below</td><td class="text-sm text-ink-dim">Power-cycle router and switch DNS to 1.1.1.1 and 8.8.8.8</td></tr>
+            <tr><td class="font-medium text-ink">Fails on Android phone over Wi-Fi and cellular</td><td class="text-sm text-ink-dim">Unreachable Android Private DNS (DoT port 853) hostname or stale Chrome app cache</td><td class="text-sm text-ink-dim">Check Settings > Network & Internet > Private DNS</td><td class="text-sm text-ink-dim">Switch Private DNS to Automatic or dns.google / one.one.one.one</td></tr>
+            <tr><td class="font-medium text-ink">Fails after connecting or disconnecting a VPN</td><td class="text-sm text-ink-dim">VPN virtual adapter left unreachable DNS server IP on physical interface</td><td class="text-sm text-ink-dim">Inspect DNS servers in ipconfig /all or scutil --dns</td><td class="text-sm text-ink-dim">Disconnect VPN, reset adapter DNS to automatic or 1.1.1.1</td></tr>
+            <tr><td class="font-medium text-ink">Fails globally across all resolvers with SERVFAIL</td><td class="text-sm text-ink-dim">Broken DNSSEC DS/DNSKEY chain or lame nameserver delegation</td><td class="text-sm text-ink-dim">Live tool below shows SERVFAIL on 1.1.1.1 and 8.8.8.8</td><td class="text-sm text-ink-dim">Fix parent DS record or restore zone on delegated nameservers</td></tr>
+            <tr><td class="font-medium text-ink">Fails globally with NXDOMAIN or broken CNAME chain</td><td class="text-sm text-ink-dim">Missing @ or www A/AAAA/CNAME record or dangling CNAME target</td><td class="text-sm text-ink-dim">Live tool below shows 0 answers or NXDOMAIN</td><td class="text-sm text-ink-dim">Publish missing A/CNAME record at active DNS provider</td></tr>
+          </tbody>
         </table>
+      </div>
+      <p>
+        The first 5 causes are resolved client-side; the last 2 require domain-owner action at the registrar or DNS provider.
+      </p>
+      <p>Chromium surfaces several distinct DNS-related error codes that share the same resolution layer but carry different diagnostic meaning:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Chromium Error String</th><th>Internal net_error Code</th><th>Specific DNS / Network Trigger</th><th>How It Differs From ERR_NAME_NOT_RESOLVED</th></tr></thead>
+          <tbody>
+            {codeRows.map(([code, num, trigger, diff]) => (
+              <tr><td class="font-mono text-xs text-ink">{code}</td><td class="font-mono text-xs text-ink-dim">{num}</td><td class="text-sm text-ink-dim">{trigger}</td><td class="text-sm text-ink-dim">{diff}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="not-prose relative my-6" aria-label="Interactive DNS Tool" data-vs="centerpiece">
+      <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes" data-vs="attributes">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+              <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+              100% Free · No Sign Up
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">
+              Instant Live Query
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">
+              A · AAAA · CNAME · NS across 3 resolvers
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-ink-faint">
+            <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
+            <span class="font-mono text-[11px]">DNS-over-HTTPS</span>
+          </div>
+        </div>
+        <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Instant test domains">
+          <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+          <button type="button" data-preset-domain="cloudflare.com" class="enr-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
+          <button type="button" data-preset-domain="google.com" class="enr-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">google.com</button>
+          <button type="button" data-preset-domain="github.com" class="enr-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">github.com</button>
+        </div>
+        <form id="enr-diag-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="enr-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check 3 Resolvers</button>
+        </form>
+        <div id="enr-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="enr-verdict" class="mt-3 hidden rounded-lg border px-4 py-3 text-sm font-medium"></div>
+        <div id="enr-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table">
+            <thead><tr><th>Record</th><th>Cloudflare 1.1.1.1</th><th>Google 8.8.8.8</th><th>AliDNS 223.5.5.5</th><th>Verdict</th></tr></thead>
+            <tbody id="enr-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <article class="rich-text mt-10 max-w-none">
-      
-      <h2>One error, three platforms</h2>
-      <p class="mt-3">Chromium reports failed lookups as err_name_not_resolved on Chrome desktop, Chrome on Android, and Edge alike.</p>
-      <p class="mt-3">The underlying causes match the platform equivalents: stale caches, a failing resolver, or a DNS-over-TLS misconfiguration on Android.</p>
-      <p class="mt-3">Android private DNS is the special case worth checking first on phones: a typo in the TLS hostname produces this error for every site.</p>
-      <h2>Ruling out the domain itself</h2>
-      <p class="mt-3">Before fixing your device, confirm the domain resolves globally with fresh resolvers.</p>
-      <p class="mt-3">If every independent resolver returns NXDOMAIN, the domain has expired or its records were removed, and no device setting will fix it.</p>
+    <div class="rich-text">
+      <h2 id="site-vs-device">When Is ERR_NAME_NOT_RESOLVED the Website's DNS Fault vs Your Device?</h2>
+      <p>
+        The verdict banner above classifies the fault into 3 categories. When all 3 public resolvers return a valid IP address, the domain resolves globally and the error is a local browser, device, or ISP fault: your Chrome HostResolver cache, Secure DNS setting, or local OS stack is blocking resolution, and the 9 client fixes in Section 3 resolve it. When public resolvers return RCODE 2 (SERVFAIL), the domain's authoritative nameservers cannot be validated or reached, which Chrome surfaces as ERR_NAME_NOT_RESOLVED. When they return RCODE 3 (NXDOMAIN) or NOERROR with zero answers, the domain has no A, AAAA, or CNAME record published at its active DNS host. Cross-reference with the <a href="/dns-propagation-checker/">DNS propagation checker</a>, the <a href="/dns-error-messages/">DNS error messages and RCODEs</a> reference, the <a href="/dnssec-checker/">DNSSEC checker</a> for SERVFAIL isolation, and the <a href="/cname-record-lookup/">CNAME record lookup</a> for broken alias chains.
+      </p>
 
-      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
-        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
-        <p class="text-sm leading-relaxed text-ink-dim italic">On Android phones this error is dominated by Private DNS misconfigurations: users set a hostname like one.one.one.one and then switch providers, leaving a TLS hostname that no longer resolves. Checking that single setting fixes most mobile cases in under a minute.</p>
+      <h2 id="client-fixes">How Do You Fix ERR_NAME_NOT_RESOLVED on Chrome, Windows, macOS, Linux, and Android? (9 Step-by-Step Fixes)</h2>
+      <p>These 9 fixes resolve the error on the client side, ordered from fastest to most invasive:</p>
+      <ol class="list-decimal space-y-3 pl-5">
+        <li><strong>Clear Chrome's HostResolver Cache and Flush Socket Pools.</strong> Navigate to <code>chrome://net-internals/#dns</code> and click Clear host cache. Then navigate to <code>chrome://net-internals/#sockets</code> and click Flush socket pools. On Edge, use <code>edge://net-internals/#dns</code>; on Brave and Opera, the same Chromium paths apply.</li>
+        <li><strong>Check or Reset Chrome Secure DNS (DoH, RFC 8484) and Page Preloading Settings.</strong> Navigate to <code>chrome://settings/security</code>, find Use secure DNS, and switch a broken custom DoH URI to Cloudflare (1.1.1.1) or Google (Public DNS), or toggle off temporarily on restricted corporate firewalls. Then check <code>chrome://settings/performance</code> and verify Preload pages is not caching a stale DNS failure.</li>
+        <li><strong>Flush Operating System DNS Cache Across Windows, macOS, and All 4 Linux Daemons.</strong> Open a terminal and run:
+          <pre class="mt-2 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code># Windows (Command Prompt as Administrator):
+ipconfig /flushdns
+
+# macOS:
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+# Linux (systemd-resolved):
+sudo resolvectl flush-caches
+
+# Linux (nscd):
+sudo systemctl restart nscd
+
+# Linux (dnsmasq):
+sudo systemctl restart dnsmasq
+
+# Linux (BIND named):
+sudo rndc flush</code></pre>
+        </li>
+        <li><strong>Reset the Windows Winsock Catalog, TCP/IP Stack, and DHCP Lease.</strong> Run from an elevated Command Prompt, then reboot:
+          <pre class="mt-2 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code>ipconfig /release
+ipconfig /renew
+netsh int ip reset
+netsh winsock reset
+# Reboot required after netsh resets</code></pre>
+        </li>
+        <li><strong>Switch Your Network Adapter or Mobile Device to Public Anycast DNS (1.1.1.1 and 8.8.8.8).</strong> Use the platform table below to find the exact settings path and endpoints:
+          <div class="mt-3 overflow-x-auto rounded-xl border border-line bg-panel/60">
+            <table class="pdns-table">
+              <thead><tr><th>Platform</th><th>Navigation Path</th><th>Cloudflare DNS (IPv4 / DoH / DoT)</th><th>Google Public DNS (IPv4 / DoH / DoT)</th></tr></thead>
+              <tbody>
+                {dnsRows.map(([platform, path, cf, google]) => (
+                  <tr><td class="font-medium text-ink">{platform}</td><td class="text-sm text-ink-dim">{path}</td><td class="font-mono text-xs text-ink-dim">{cf}</td><td class="font-mono text-xs text-ink-dim">{google}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li><strong>Audit the Local hosts File for Stale Overrides.</strong> Open <code>C:\Windows\System32\drivers\etc\hosts</code> (Windows) or <code>/etc/hosts</code> (macOS/Linux) and remove any non-comment line containing the affected domain name. Malicious entries or leftover developer mappings force resolution to 0.0.0.0 or a dead IP.</li>
+        <li><strong>Reset Experimental Chromium Network Flags at chrome://flags (Reset all).</strong> Navigate to <code>chrome://flags</code>, click Reset all, and relaunch. Experimental DNS flags (Async DNS, DNS-over-HTTPS upgrades) can break resolution independently of the OS resolver.</li>
+        <li><strong>Disable VPN Split-Tunnel DNS Filters and Antivirus HTTPS/DNS Interception.</strong> Disconnect the VPN tunnel, disable the antivirus web shield (Avast Web Shield, Kaspersky Network Protection, Norton DNS), and retest. Both VPN split-tunnel configurations and antivirus HTTPS interception route DNS queries through a local proxy that may return NXDOMAIN for domains the policy does not recognise.</li>
+        <li><strong>Restart Your CPE Router to Clear Saturated NAT and DNS Forwarder Tables.</strong> Unplug the router for 30 seconds, reconnect, and retest. Consumer routers running dnsmasq or similar forwarders hold both NAT connection-tracking entries and DNS negative cache entries that survive client-side flushing.</li>
+      </ol>
+      <p>
+        After flushing caches and resetting the network stack, the <a href="/flush-dns-cache/">How to Flush DNS Cache</a> guide covers per-browser and per-OS instructions in more depth; when the browser shows <a href="/dns-probe-finished-nxdomain/">DNS_PROBE_FINISHED_NXDOMAIN</a> specifically (RCODE 3 confirmed), that guide takes over; and when the configured resolver itself stops answering entirely, the <a href="/dns-server-not-responding/">DNS Server Not Responding</a> guide covers the per-OS resolver repairs.
+      </p>
+
+      <h2 id="domain-fixes">How Do Website Administrators Fix Authoritative ERR_NAME_NOT_RESOLVED Failures? (4 Checks)</h2>
+      <p>When the 3-resolver check above shows failure across all public resolvers, the fault is authoritative and the domain administrator must run these 4 checks in order:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish</strong> both root @ and www A/AAAA/CNAME records at the active DNS provider: the most common cause is an apex A record published without a matching www alias, or vice versa.</li>
+        <li><strong>Verify</strong> that CNAME chains resolve all the way to a final A/AAAA IP address: a dangling CNAME target (pointing at a decommissioned SaaS instance) produces ERR_NAME_NOT_RESOLVED despite the CNAME record existing in the zone.</li>
+        <li><strong>Repair</strong> broken DNSSEC DS records or expired RRSIG signatures causing SERVFAIL under RFC 4035: when a domain migrates from a DNSSEC-signed host to an unsigned provider without removing the parent DS record, validating resolvers return SERVFAIL, which Chrome presents as ERR_NAME_NOT_RESOLVED.</li>
+        <li><strong>Confirm</strong> active nameserver delegation and domain registration status: the parent TLD registry must carry NS records matching the child DNS host, and the domain must not be in clientHold or redemptionPeriod status at the registrar.</li>
+      </ol>
+      <p>
+        When the fix lands and resolvers still fail, use the terminal commands below to isolate the RCODE and CNAME chain; for broader recovery paths, the <a href="/website-not-resolving/">Website Not Resolving</a> guide covers the general diagnosis tree, and the <a href="/what-is-dnssec/">What Is DNSSEC?</a> guide covers the DS record lifecycle that causes many SERVFAIL scenarios.
+      </p>
+      <pre><code># Compare your local stub resolver vs Cloudflare 1.1.1.1:
+nslookup example.com
+nslookup example.com 1.1.1.1
+
+# Inspect the exact DNS wire RCODE and CNAME chain:
+dig @1.1.1.1 www.example.com A +noall +answer +comments
+
+# Test whether broken DNSSEC is causing SERVFAIL (+cd disables Checking Disabled):
+dig @1.1.1.1 example.com A +cd
+
+# Check IPv6 AAAA resolution:
+dig @8.8.8.8 example.com AAAA +short</code></pre>
+
+      <h2 id="tool-scope">What the Live ERR_NAME_NOT_RESOLVED Triage Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li><strong>Browser-Internal HostResolver &amp; BuiltInDnsClient State:</strong> Because the live tool queries public DoH resolvers (1.1.1.1, 8.8.8.8, 223.5.5.5) over HTTPS, a NOERROR result proves the domain is healthy on the internet while confirming that your local Chrome chrome://net-internals/#dns cache, Secure DNS template, or OS Winsock stack is the culprit.</li>
+        <li><strong>Corporate Firewall &amp; Captive Portal Interception:</strong> Enterprise proxies, hotel captive portals, and school networks that block outbound TCP port 853 (DoT) or custom DoH endpoints cause Chrome and Android Private DNS to fail with ERR_NAME_NOT_RESOLVED until you authenticate to the portal or switch to standard DNS.</li>
+        <li><strong>Dangling Multi-Hop CNAME Chains:</strong> If www.example.com is a CNAME pointing to app.paas-provider.com, and that target hostname does not resolve, dig and our tool show the CNAME record exists while the final A lookup fails.</li>
+        <li><strong>Post-DNS TCP / TLS Connection Errors:</strong> Once ERR_NAME_NOT_RESOLVED is fixed and the domain resolves to an IP, any subsequent ERR_CONNECTION_TIMED_OUT or ERR_SSL_VERSION_OR_CIPHER_MISMATCH error occurs on the web server rather than in DNS.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin Field Notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin Field Notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Two real-world engineering traps produce ERR_NAME_NOT_RESOLVED that no amount of cache flushing fixes. First, the Chrome Secure DNS (DoH) custom template deadlock: when a user or group policy sets a custom DoH provider whose hostname itself must be resolved (or is blocked by a firewall), Chrome enters a deadlock where it cannot resolve the DoH server name to start DNS resolution, causing every lookup to fail with ERR_NAME_NOT_RESOLVED while terminal ping works fine over UDP port 53. The fix is navigating to chrome://settings/security and switching to a built-in provider or disabling Secure DNS entirely. Second, Android Private DNS (port 853) Wi-Fi blocks: hotel, corporate, and school networks that block outbound TCP port 853 cause every Android device with Private DNS configured to fail all resolution silently - switching Private DNS to Automatic (or entering dns.google) on those networks is a one-tap fix.</p>
       </aside>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is err_name_not_resolved a Chrome bug?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. It is Chromium accurately reporting that a DNS lookup failed. The fix is on the network or device side.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does my phone show it but not my laptop?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different devices use different resolvers and caches. Android Private DNS or carrier filtering commonly diverges from your laptop.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does a VPN fix it or cause it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Both: a VPN can route around a broken ISP resolver, or its own DNS can fail. Test with the tunnel off and on.</p></details>
-      </div>
-
-      <p class="mt-8 text-xs text-ink-faint">
-        Verify with our free tools:
-        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
-        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
-        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      <h2 id="observations">What We See Across Domains: Common ERR_NAME_NOT_RESOLVED Patterns</h2>
+      <p>
+        When domain owners migrate nameservers from a DNSSEC-signed registrar or host to an unsigned provider without removing the parent TLD DS record first, validating resolvers (1.1.1.1 and 8.8.8.8) return RCODE 2 (SERVFAIL), which Chrome and Edge present to end users as net::ERR_NAME_NOT_RESOLVED. The error looks identical to a local device failure, making it hard to diagnose without the 3-resolver tool above.
       </p>
-    </article>
+      <p>
+        Subdomains left pointing via CNAME to a decommissioned Shopify, Zendesk, Heroku, or Vercel instance return ERR_NAME_NOT_RESOLVED until the orphaned CNAME record is deleted. These dangling records also create a subdomain takeover risk: an attacker can claim the CNAME target on the SaaS platform and serve their own content on the domain's subdomain.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="faq">Frequently Asked Questions</h2>
+    <FaqAccordion faqs={faqs} />
   </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('enr-diag-form') as HTMLFormElement;
+  const input = document.getElementById('enr-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('enr-status')!;
+  const verdictEl = document.getElementById('enr-verdict')!;
+  const outEl = document.getElementById('enr-out')!;
+  const bodyEl = document.getElementById('enr-body')!;
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-3 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-3 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-3 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-3 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  const setVerdict = (kind: 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      pass: 'mt-3 rounded-lg border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-semibold text-pass',
+      warn: 'mt-3 rounded-lg border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-semibold text-warn',
+      fail: 'mt-3 rounded-lg border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-semibold text-fail',
+    };
+    verdictEl.className = cls[kind];
+    verdictEl.textContent = text;
+    verdictEl.classList.remove('hidden');
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Querying A, AAAA, CNAME, and NS for ${domain} across 3 resolvers...`);
+    outEl.classList.add('hidden');
+    verdictEl.classList.add('hidden');
+    bodyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: 'enr-triage' } }));
+
+    const cell = (txt: string, cls = 'text-xs text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+
+    try {
+      for (const type of ['A', 'AAAA', 'CNAME', 'NS'] as const) {
+        const code = type === 'A' ? 1 : type === 'AAAA' ? 28 : type === 'CNAME' ? 5 : 2;
+        const per = await Promise.all(RESOLVERS.map(async (r) => {
+          try {
+            const res = await lookup(domain, type, r);
+            if (res.status === 3) return 'NXDOMAIN';
+            if (res.status === 2) return 'SERVFAIL';
+            if (res.status === 5) return 'REFUSED';
+            if (res.status !== 0) return 'status ' + res.status;
+            const ans = res.answers.filter((x) => x.type === code).map((x) => x.data.replace(/\.$/, ''));
+            if (ans.length) return ans.slice(0, 1).join(', ');
+            if (type === 'CNAME') return '-';
+            return 'NODATA';
+          } catch { return 'network error'; }
+        }));
+        const allFail = per.every((v) => v.includes('NXDOMAIN') || v.includes('SERVFAIL') || v.includes('REFUSED'));
+        const allOk = per.every((v) => !v.includes('NXDOMAIN') && !v.includes('SERVFAIL') && v !== 'NODATA');
+        const tr = document.createElement('tr');
+        tr.append(
+          cell(type, 'font-mono text-xs text-accent font-semibold'),
+          cell(per[0]), cell(per[1]), cell(per[2]),
+          cell(allFail ? 'Failed' : allOk ? 'Resolves' : 'Mixed', allFail ? 'text-fail font-semibold' : allOk ? 'text-pass font-semibold' : 'text-warn font-semibold'),
+        );
+        bodyEl.appendChild(tr);
+      }
+      outEl.classList.remove('hidden');
+
+      const aPer: string[] = [];
+      const nsPer: string[] = [];
+      for (const r of RESOLVERS) {
+        try {
+          const a = await lookup(domain, 'A', r);
+          if (a.status === 3) aPer.push('NXDOMAIN');
+          else if (a.status === 2) aPer.push('SERVFAIL');
+          else if (a.status === 0 && a.answers.length) aPer.push('OK');
+          else if (a.status === 0) aPer.push('NODATA');
+          else aPer.push('status ' + a.status);
+          const ns = await lookup(domain, 'NS', r);
+          if (ns.status === 3) nsPer.push('NXDOMAIN');
+          else if (ns.status === 2) nsPer.push('SERVFAIL');
+          else if (ns.status === 0 && ns.answers.length) nsPer.push('OK');
+          else if (ns.status === 0) nsPer.push('NODATA');
+          else nsPer.push('status ' + ns.status);
+        } catch { aPer.push('error'); nsPer.push('error'); }
+      }
+      const aAllNx = aPer.every((v) => v === 'NXDOMAIN');
+      const aAllOk = aPer.every((v) => v === 'OK');
+      const anySf = aPer.some((v) => v === 'SERVFAIL') || nsPer.some((v) => v === 'SERVFAIL');
+      const nsAllNx = nsPer.every((v) => v === 'NXDOMAIN');
+      const nsAllOk = nsPer.some((v) => v === 'OK');
+
+      if (aAllOk) {
+        setVerdict('warn', 'Local Browser, Device, or ISP Fault: The domain resolves globally across Cloudflare, Google, and AliDNS. Your Chrome HostResolver cache, Secure DNS setting, or local OS stack is blocking resolution. Follow the 9 client fixes in Section 3.');
+        setStatus('warn', 'The domain resolves globally. The error is caused by your local browser, device, or ISP resolver.');
+      } else if (anySf) {
+        setVerdict('fail', 'Authoritative DNSSEC or Nameserver Failure (SERVFAIL): Public resolvers cannot validate or reach the domain\u2019s authoritative nameservers, which Chrome surfaces as ERR_NAME_NOT_RESOLVED. Follow Section 4.');
+        setStatus('fail', 'SERVFAIL on public resolvers: authoritative DNSSEC or nameserver failure.');
+      } else if (aAllNx || nsAllNx || (!nsAllOk && aPer.every((v) => v === 'NODATA' || v === 'NXDOMAIN'))) {
+        setVerdict('fail', 'Missing Authoritative Record or Unregistered Domain: The domain has no A, AAAA, or CNAME record published at its active DNS host. Follow Section 4.');
+        setStatus('fail', 'NXDOMAIN or NODATA on public resolvers: no authoritative record for this domain.');
+      } else {
+        setVerdict('warn', 'Mixed results across resolvers: some return errors while others resolve. This indicates propagation in flight or inconsistent authoritative data.');
+        setStatus('warn', 'Mixed results across resolvers: propagation in flight or inconsistent zone data.');
+      }
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolvers. This is an inconclusive result, not a pass or fail.');
+    }
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.enr-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.presetDomain || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>

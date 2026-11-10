@@ -409,6 +409,38 @@ const { name, caption } = Astro.props;
           <text x="360" y="130" text-anchor="middle" fill="#22d3ee" font-size="10">Browser reports DNS_PROBE_FINISHED_NXDOMAIN when the Chrome HostResolver probe exhausts all paths and receives RCODE 3</text>
         </g>
       )}
+      {name === 'chromium-dual-resolution' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <text x="360" y="22" text-anchor="middle" fill="#9dabc4" font-size="10">Chromium dual resolution paths: where net_error -105 (ERR_NAME_NOT_RESOLVED) is raised</text>
+          <text x="180" y="48" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Path A: BuiltInDnsClient (Secure DNS)</text>
+          <text x="540" y="48" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="600">Path B: OS System Stub Resolver</text>
+          <rect x="20" y="60" width="120" height="36" rx="8" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="80" y="78" text-anchor="middle" fill="#f1f5f9" font-size="10">Chrome HostResolver</text>
+          <rect x="20" y="110" width="120" height="36" rx="8" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="80" y="128" text-anchor="middle" fill="#f1f5f9" font-size="10">Secure DNS DoH</text>
+          <text x="80" y="140" text-anchor="middle" fill="#9dabc4" font-size="9">HTTPS port 443</text>
+          <rect x="20" y="160" width="120" height="36" rx="8" fill="#0b1222" stroke="#fbbf24"/>
+          <text x="80" y="178" text-anchor="middle" fill="#fbbf24" font-size="10">Custom DoH Template</text>
+          <text x="80" y="190" text-anchor="middle" fill="#9dabc4" font-size="9">may be blocked by firewall</text>
+          <rect x="400" y="60" width="120" height="36" rx="8" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="460" y="78" text-anchor="middle" fill="#f1f5f9" font-size="10">OS Stub Resolver</text>
+          <rect x="400" y="110" width="120" height="36" rx="8" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="460" y="128" text-anchor="middle" fill="#f1f5f9" font-size="10">/etc/hosts + Winsock</text>
+          <text x="460" y="140" text-anchor="middle" fill="#9dabc4" font-size="9">UDP port 53</text>
+          <rect x="400" y="160" width="120" height="36" rx="8" fill="#0b1222" stroke="#8b5cf6"/>
+          <text x="460" y="178" text-anchor="middle" fill="#8b5cf6" font-size="10">ISP Recursive</text>
+          <text x="460" y="190" text-anchor="middle" fill="#9dabc4" font-size="9">dnsmasq / BIND</text>
+          <line x1="140" y1="78" x2="395" y2="128" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="140" y1="128" x2="395" y2="128" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <line x1="140" y1="178" x2="395" y2="130" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="520" y1="128" x2="640" y2="128" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="640" y="106" width="70" height="44" rx="8" fill="#0b1222" stroke="#ef4444"/>
+          <text x="675" y="122" text-anchor="middle" fill="#ef4444" font-size="10">RCODE 3/2</text>
+          <text x="675" y="138" text-anchor="middle" fill="#9dabc4" font-size="9">or 0 IPs</text>
+          <line x1="640" y1="178" x2="640" y2="150" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <text x="360" y="212" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="600">Either path returning 0 usable IPs raises net_error -105 (ERR_NAME_NOT_RESOLVED)</text>
+        </g>
+      )}
     </svg>
   </div>
   <figcaption class="mt-2 text-center text-xs text-ink-faint">{caption}</figcaption>
