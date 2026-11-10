@@ -383,6 +383,32 @@ const { name, caption } = Astro.props;
           <text x="360" y="206" text-anchor="middle" fill="#9dabc4" font-size="9">a ROA covering a prefix with no announcement is normal · an Invalid verdict means a ROA exists and the UPDATE violates it</text>
         </g>
       )}
+      {name === 'nxdomain-resolution' && (
+        <g font-family="ui-monospace,monospace" font-size="12">
+          <text x="360" y="24" text-anchor="middle" fill="#9dabc4" font-size="10">5 checkpoints where RCODE 3 (NXDOMAIN) can originate during a DNS resolution</text>
+          <rect x="10" y="40" width="130" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="75" y="60" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="600">1. Browser</text>
+          <text x="75" y="74" text-anchor="middle" fill="#9dabc4" font-size="9">HostResolver + /etc/hosts</text>
+          <line x1="140" y1="60" x2="175" y2="60" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="180" y="40" width="130" height="40" rx="10" fill="#0b1222" stroke="#22d3ee"/>
+          <text x="245" y="60" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="600">2. OS Stub Cache</text>
+          <text x="245" y="74" text-anchor="middle" fill="#9dabc4" font-size="9">dnscache / mDNSResponder</text>
+          <line x1="310" y1="60" x2="345" y2="60" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="350" y="40" width="130" height="40" rx="10" fill="#0b1222" stroke="#fbbf24"/>
+          <text x="415" y="60" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">3. Recursive NegCache</text>
+          <text x="415" y="74" text-anchor="middle" fill="#9dabc4" font-size="9">RFC 2308 min(SOA TTL, MINIMUM)</text>
+          <line x1="480" y1="60" x2="515" y2="60" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="520" y="40" width="130" height="40" rx="10" fill="#0b1222" stroke="#ef4444"/>
+          <text x="585" y="60" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="600">4. TLD Registry NS</text>
+          <text x="585" y="74" text-anchor="middle" fill="#9dabc4" font-size="9">parent delegation / clientHold</text>
+          <line x1="650" y1="60" x2="660" y2="60" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#pdns-arr)"/>
+          <rect x="665" y="40" width="45" height="40" rx="10" fill="#0b1222" stroke="#ef4444"/>
+          <text x="687" y="60" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="600">5. Zone</text>
+          <text x="687" y="74" text-anchor="middle" fill="#9dabc4" font-size="9">SOA / RCODE 3</text>
+          <text x="360" y="110" text-anchor="middle" fill="#9dabc4" font-size="10">NXDOMAIN at checkpoint 1-2 = local fault · checkpoint 3 = negative cache · checkpoint 4-5 = authoritative fault</text>
+          <text x="360" y="130" text-anchor="middle" fill="#22d3ee" font-size="10">Browser reports DNS_PROBE_FINISHED_NXDOMAIN when the Chrome HostResolver probe exhausts all paths and receives RCODE 3</text>
+        </g>
+      )}
     </svg>
   </div>
   <figcaption class="mt-2 text-center text-xs text-ink-faint">{caption}</figcaption>

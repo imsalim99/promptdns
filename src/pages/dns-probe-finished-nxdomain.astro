@@ -1,71 +1,352 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+import Diagram from '../components/Diagram.astro';
+
+const faqs: [string, string][] = [
+  ['How do I fix DNS_PROBE_FINISHED_NXDOMAIN in Chrome?', 'Clear Chrome\u2019s internal host cache at chrome://net-internals/#dns, flush open socket pools at chrome://net-internals/#sockets, and flush your operating system DNS cache via ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (macOS) when the error occurs on your device. Switching your network adapter from your ISP\u2019s default DNS server to Cloudflare (1.1.1.1) or Google Public DNS (8.8.8.8) immediately bypasses stale ISP negative cache entries.'],
+  ['Is NXDOMAIN my fault or the website\u2019s?', 'No, a DNS_PROBE_FINISHED_NXDOMAIN error is not always caused by your device; the fault lies with your local network or browser cache when public DNS resolvers return a valid IP address, whereas the fault lies with the website owner when public resolvers also return RCODE 3 (NXDOMAIN).'],
+  ['What does NXDOMAIN mean in DNS?', 'NXDOMAIN stands for Non-Existent Domain (DNS Response Code 3 in IETF RFC 1035 Section 4.1.1) and means that the queried domain name or subdomain does not exist in the authoritative DNS zone file or has no active nameserver delegation at the parent TLD registry.'],
+  ['Why does a newly created subdomain show DNS_PROBE_FINISHED_NXDOMAIN?', 'Recursive resolvers cache negative NXDOMAIN responses for the minimum of the SOA record TTL and the SOA MINIMUM timer under RFC 2308 Section 3 when a user queries a new subdomain before its DNS record is saved. Flushing your local DNS cache or switching resolvers resolves the subdomain immediately once the authoritative record is published.'],
+  ['Does switching to 1.1.1.1 or 8.8.8.8 fix DNS_PROBE_FINISHED_NXDOMAIN?', 'Yes, switching your network adapter to Cloudflare (1.1.1.1) or Google Public DNS (8.8.8.8) resolves DNS_PROBE_FINISHED_NXDOMAIN when your ISP recursive resolver holds a stale negative cache entry, blocks the domain via DNS filtering, or fails to reach the authoritative nameservers.'],
+];
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Is NXDOMAIN the same as the site being down?", "acceptedAnswer": { '@type': 'Answer', "text": "No. A site can be down with valid DNS. NXDOMAIN means the name itself did not resolve to anything." } },
-    {'@type': 'Question', 'name': "Why does only Chrome show this error?", "acceptedAnswer": { '@type': 'Answer', "text": "The lookup failure affects every browser, but Chrome has its own DNS cache and error wording, so it is the place you notice it." } },
-    {'@type': 'Question', 'name': "Can a VPN cause NXDOMAIN?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: many VPN tunnels route DNS to a resolver that filters or fails for some domains. Disconnect and retest to confirm." } }
-  ],
+  mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { isHeld } from '../data/publish-queue.js';
-
-const held = isHeld('/dns-probe-finished-nxdomain/');
+const browserRows: [string, string, string][] = [
+  ['Google Chrome / Edge / Brave', 'DNS_PROBE_FINISHED_NXDOMAIN', 'Chromium DnsTransaction probe sequence exhausts all configured resolvers receiving RCODE 3'],
+  ['Microsoft Edge (legacy)', 'Hmm, this page can\u2019t be found', 'EdgeHTML engine maps RCODE 3 to its own HTTP-404-style rendering before Chromium adoption'],
+  ['Brave & Opera', 'DNS_PROBE_FINISHED_NXDOMAIN', 'Same Chromium DnsTransaction sequence, with Brave\u2019s own DoH relay possibly intercepting queries first'],
+  ['Mozilla Firefox', 'Hmm. We\u2019re having trouble finding that site', 'Gecko networking layer maps DNS RCODE 3 to its NS_ERROR_UNKNOWN_HOST string'],
+  ['Apple Safari (macOS & iOS)', 'Safari Can\u2019t Find the Server', 'libc getaddrinfo returns EAI_NONAME, which WebKit surfaces as a server-not-found page'],
+];
 ---
 <BaseLayout
+  title="DNS_PROBE_FINISHED_NXDOMAIN: What It Means & 9 Fixes (Chrome, Windows, Mac) | PromptDNS"
+  description="DNS_PROBE_FINISHED_NXDOMAIN explained: RCODE 3 causes, live 3-resolver diagnosis, 9 client-side fixes for Chrome, Windows, macOS, and Android, plus authoritative zone checks for domain owners."
   schema={[faqSchema]}
-  title="DNS Probe Finished NxDomain: Meaning and 6 Fixes for Chrome | PromptDNS"
-  description="DNS probe finished nxdomain explained: what NXDOMAIN means, why Chrome shows it, and 6 fixes in order, from DNS cache flushes to resolver changes."
-  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Probe Finished NxDomain"]]}
+  breadcrumb={[["Home", "/"], ["DNS", "/dns/"], ["DNS_PROBE_FINISHED_NXDOMAIN"]]}
 >
-  <div class="mx-auto max-w-4xl px-4 py-12">
+  <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-accent">Home</a> <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a> <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">DNS Probe Finished NxDomain</span>
+      <a href="/" class="hover:text-accent">Home</a>
+       <span aria-hidden="true">/</span>
+      <a href="/dns/" class="hover:text-accent">DNS</a>
+       <span aria-hidden="true">/</span>
+      <span class="text-ink-dim">DNS_PROBE_FINISHED_NXDOMAIN</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Probe Finished NxDomain: What It Means and How to Fix It</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">"DNS probe finished nxdomain" is Chrome reporting that a DNS lookup returned NXDOMAIN: the resolver answered correctly but said the domain does not exist. The causes are a mistyped or expired domain, a stale negative cache entry on your device, or a filtering resolver blocking the name. The fixes follow that order: verify the domain is real, flush your caches, then change the resolver you are using. When the error text is <a href="/err-name-not-resolved/" class="text-accent hover:text-accent-soft">ERR_NAME_NOT_RESOLVED</a> instead, the resolver gave no answer at all and that guide takes over.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS_PROBE_FINISHED_NXDOMAIN: What It Means and 9 Ways to Fix It</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        DNS_PROBE_FINISHED_NXDOMAIN is <strong class="text-ink">a Chromium browser error code indicating that a Domain Name System (DNS) lookup failed with Response Code 3 (NXDOMAIN, Non-Existent Domain) because the requested hostname could not be resolved to an IP address</strong>. Recursive resolvers return an NXDOMAIN packet when the authoritative nameserver confirms the queried domain name does not exist in its zone file or when the parent Top-Level Domain (TLD) registry has no active nameserver delegation for the domain. The remediation of a DNS_PROBE_FINISHED_NXDOMAIN error spans live multi-resolver verification, browser and operating system cache flushing, recursive DNS server reconfiguration, local hosts file auditing, and authoritative zone repair.
+      </p>
     </div>
 
-    <section class="not-prose my-8" aria-label="Fix table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>A</th><th>c</th><th>t</th><th>i</th><th>o</th><th>n</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">1. Confirm the domain exists</td><td class="text-sm text-ink-dim">Look the domain up with a record lookup: if it has an A record, the problem is local; if every resolver says NXDOMAIN, the domain is gone or mistyped.</td></tr><tr><td class="font-medium text-ink">2. Flush the DNS cache</td><td class="text-sm text-ink-dim">Chrome has its own cache: chrome://net-internals/#dns then Clear host cache. Flush the OS cache too.</td></tr><tr><td class="font-medium text-ink">3. Clear the sockets</td><td class="text-sm text-ink-dim">chrome://net-internals/#sockets, Flush socket pools: stale connections keep serving the failed lookup.</td></tr><tr><td class="font-medium text-ink">4. Switch resolver</td><td class="text-sm text-ink-dim">Move from a filtering resolver (ISP, corporate, or a VPN) to a neutral public resolver and retest.</td></tr><tr><td class="font-medium text-ink">5. Check the hosts file</td><td class="text-sm text-ink-dim">A leftover entry in the hosts file forces NXDOMAIN for real domains. Remove stale lines.</td></tr><tr><td class="font-medium text-ink">6. Verify worldwide</td><td class="text-sm text-ink-dim">If our propagation checker shows NXDOMAIN everywhere, the domain itself has a problem, not your device.</td></tr></tbody>
+    <nav class="pd-toc mt-6" aria-label="On this page">
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
+      <ul>
+        <li><a href="#what-causes-nxdomain">What Is DNS_PROBE_FINISHED_NXDOMAIN and What Causes It? (7 Ranked Causes)</a></li>
+        <li><a href="#device-vs-domain-test">When Is DNS_PROBE_FINISHED_NXDOMAIN Caused by the Site's DNS vs Your Device?</a></li>
+        <li><a href="#client-fixes">How Do You Fix DNS_PROBE_FINISHED_NXDOMAIN on Windows, macOS, Linux, Android, and iOS? (9 Step-by-Step Fixes)</a></li>
+        <li><a href="#domain-owner-fixes">How Do Website Owners Diagnose and Fix Authoritative NXDOMAIN Errors? (4 Checks)</a></li>
+        <li><a href="#tool-scope">What the Live NXDOMAIN Diagnostic Tool Does Not Check</a></li>
+        <li><a href="#observations">What We See Across Domains: Common NXDOMAIN Patterns</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <div class="rich-text mt-8">
+      <h2 id="what-causes-nxdomain">What Is DNS_PROBE_FINISHED_NXDOMAIN and What Causes It? (7 Ranked Causes)</h2>
+      <p>
+        IETF RFC 1035 Section 4.1.1 defines RCODE 3 (NXDOMAIN) as the authoritative answer confirming that the queried domain name does not exist in the zone, distinct from RCODE 0 (NOERROR) with zero answers, which RFC 2308 Section 2.2 defines as NODATA. Chromium's DnsTransaction probe sequence sends the hostname through each configured resolver in order and surfaces DNS_PROBE_FINISHED_NXDOMAIN when every resolver returns RCODE 3. RFC 2308 Section 3 adds negative caching: recursive resolvers store NXDOMAIN answers for min(SOA TTL, SOA.MINIMUM) seconds, so a domain that was just registered or fixed can still return the error from cache.
+      </p>
+      <p>
+        The diagram below shows the 5 resolution checkpoints where NXDOMAIN can originate, from the browser's own cache down to the authoritative zone file:
+      </p>
+      <Diagram name="nxdomain-resolution" caption="Figure: the 5 DNS resolution checkpoints where RCODE 3 (NXDOMAIN) originates, from browser HostResolver cache to the authoritative zone file. Checkpoints 1-2 indicate a local fault; checkpoint 3 a negative cache entry; checkpoints 4-5 an authoritative failure." />
+      <p>The table below ranks the 7 causes by how often they produce DNS_PROBE_FINISHED_NXDOMAIN in production:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Test</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Typo in URL or missing www CNAME record</td><td class="text-sm text-ink-dim">User typed a wrong hostname, or the zone publishes A for @ but omits the www alias</td><td class="text-sm text-ink-dim">Enter both example.com and www.example.com in the 3-resolver check below</td><td class="text-sm text-ink-dim">Correct the URL, or publish the missing www CNAME/A record in the zone</td></tr>
+            <tr><td class="font-medium text-ink">Stale local OS or Chrome negative cache (RFC 2308)</td><td class="text-sm text-ink-dim">The device cached NXDOMAIN for the domain during a prior outage or pre-publication query</td><td class="text-sm text-ink-dim">Flush Chrome and OS caches, then retest; other devices resolving fine confirms local cache</td><td class="text-sm text-ink-dim">Follow the 9 client-side fixes in Section 3 below</td></tr>
+            <tr><td class="font-medium text-ink">ISP recursive resolver outage or stale negative cache</td><td class="text-sm text-ink-dim">The ISP's resolver returns cached NXDOMAIN or is down entirely</td><td class="text-sm text-ink-dim">Switch to Cloudflare 1.1.1.1 or Google 8.8.8.8 and compare answers</td><td class="text-sm text-ink-dim">Change DNS servers per the platform table in Fix 3 below</td></tr>
+            <tr><td class="font-medium text-ink">VPN split-tunnel DNS hijack or antivirus web shield</td><td class="text-sm text-ink-dim">The VPN tunnel or security software intercepts DNS queries and returns NXDOMAIN for filtered or unroutable domains</td><td class="text-sm text-ink-dim">Disconnect the VPN or disable the web shield, then retest on the same device</td><td class="text-sm text-ink-dim">Whitelist the domain, or use a resolver outside the VPN tunnel</td></tr>
+            <tr><td class="font-medium text-ink">Corrupted local hosts file override</td><td class="text-sm text-ink-dim">A stale or malicious entry in /etc/hosts or C:\Windows\System32\drivers\etc\hosts maps the domain to NXDOMAIN</td><td class="text-sm text-ink-dim">Search the hosts file for the domain name and remove any non-comment line containing it</td><td class="text-sm text-ink-dim">Remove or comment out the stale entry and flush the OS cache</td></tr>
+            <tr><td class="font-medium text-ink">Unregistered, expired, or suspended domain (clientHold)</td><td class="text-sm text-ink-dim">The domain is not registered, has expired, or the registrar set clientHold (ICANN email verification lock or payment suspension)</td><td class="text-sm text-ink-dim">Run WHOIS/RDAP lookup and check the domain status codes</td><td class="text-sm text-ink-dim">Register the domain, renew it, or clear the clientHold status at the registrar</td></tr>
+            <tr><td class="font-medium text-ink">Lame delegation or wrong DNS provider edited</td><td class="text-sm text-ink-dim">The parent TLD registry points to nameservers that do not host the zone, or edits were made at the wrong DNS host</td><td class="text-sm text-ink-dim">Run dig +trace or the delegation checker to see where the NXDOMAIN originates</td><td class="text-sm text-ink-dim">Align registrar NS records with the active DNS provider and publish the zone there</td></tr>
+          </tbody>
         </table>
+      </div>
+      <p>
+        The first 4 causes account for most consumer-reported cases and are resolved client-side; the last 2 require domain-owner action at the registrar or DNS provider.
+      </p>
+      <p>The same NXDOMAIN manifests as different error strings depending on the browser engine:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Browser</th><th>Exact Error String Displayed</th><th>Resolution Engine &amp; Wire Trigger</th></tr></thead>
+          <tbody>
+            {browserRows.map(([b, msg, engine]) => (
+              <tr><td class="font-medium text-ink">{b}</td><td class="font-mono text-xs text-ink-dim">{msg}</td><td class="text-sm text-ink-dim">{engine}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="not-prose relative my-6" aria-label="Interactive DNS Tool" data-vs="centerpiece">
+      <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes" data-vs="attributes">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+              <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+              100% Free · No Sign Up
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">
+              Instant Live Query
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">
+              A · NS across 3 resolvers
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-ink-faint">
+            <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
+            <span class="font-mono text-[11px]">DNS-over-HTTPS</span>
+          </div>
+        </div>
+        <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Instant test domains">
+          <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+          <button type="button" data-preset-domain="cloudflare.com" class="nx-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
+          <button type="button" data-preset-domain="google.com" class="nx-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">google.com</button>
+          <button type="button" data-preset-domain="github.com" class="nx-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">github.com</button>
+        </div>
+        <form id="nx-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="nx-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check 3 Resolvers</button>
+        </form>
+        <div id="nx-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="nx-verdict" class="mt-3 hidden rounded-lg border px-4 py-3 text-sm font-medium"></div>
+        <div id="nx-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table">
+            <thead><tr><th>Record</th><th>Cloudflare 1.1.1.1</th><th>Google 8.8.8.8</th><th>AliDNS 223.5.5.5</th><th>Verdict</th></tr></thead>
+            <tbody id="nx-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <article class="rich-text mt-10 max-w-none">
-      
-      <h2>What NXDOMAIN means</h2>
-      <p class="mt-3">NXDOMAIN is a legitimate DNS answer code: the name you asked for does not exist in the eyes of the resolver that replied.</p>
-      <p class="mt-3">Chrome adds its own wording around it, which is why the error looks scarier than the underlying fact.</p>
-      <p class="mt-3">There are two flavors: the domain really is gone (expired, mistyped, or deleted), or your local environment is wrongly saying so because of caching or filtering.</p>
-      <h2>The negative-cache subtlety</h2>
-      <p class="mt-3">Resolvers cache negative answers too, for the TTL in the SOA record, so a domain that was just re-registered or fixed can still show NXDOMAIN locally.</p>
-      <p class="mt-3">That is why flushing the Chrome cache and the OS cache is step two, and why the propagation checker is the referee: it queries fresh, unfiltered resolvers.</p>
+    <div class="rich-text">
+      <h2 id="device-vs-domain-test">When Is DNS_PROBE_FINISHED_NXDOMAIN Caused by the Site's DNS vs Your Device?</h2>
+      <p>
+        The verdict banner above classifies the fault into 3 categories. When all 3 resolvers return a valid IP address, the domain resolves globally and the error is a local device or ISP fault: follow the 9 client-side fixes in Section 3 below. When NS records resolve but A records return NXDOMAIN, the domain is delegated properly but the zone lacks an A or CNAME record for the queried hostname. When both NS and A return NXDOMAIN on every resolver, the parent TLD registry has no delegation for the domain: check the registration status with the <a href="/whois-lookup/">WHOIS and RDAP lookup</a>, inspect the nameserver chain with the <a href="/nameserver-lookup/">nameserver lookup</a>, and cross-reference resolver answers with the <a href="/dns-propagation-checker/">DNS propagation checker</a> and the <a href="/delegation-checker/">delegation checker</a>.
+      </p>
 
-      <aside class="mt-8 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Practitioner field notes">
-        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Field notes</p>
-        <p class="text-sm leading-relaxed text-ink-dim italic">The most common real-world case I see is a filtering resolver: office networks and VPNs answer NXDOMAIN for domains they block, and Chrome relays it verbatim. Before touching anything, open the propagation checker: if other resolvers answer fine, your resolver is filtering you, and no amount of cache flushing will change a policy.</p>
+      <h2 id="client-fixes">How Do You Fix DNS_PROBE_FINISHED_NXDOMAIN on Windows, macOS, Linux, Android, and iOS? (9 Step-by-Step Fixes)</h2>
+      <p>These 9 fixes resolve the error on the client side, ordered from fastest to most invasive:</p>
+      <ol class="list-decimal space-y-3 pl-5">
+        <li><strong>Flush Operating System DNS Cache and Renew DHCP Lease (Windows, macOS, Linux).</strong> Open an elevated terminal and run the commands for your platform:
+          <pre class="mt-2 rounded-lg border border-line bg-panel-2 p-4 font-mono text-xs text-accent-soft"><code># Windows (Command Prompt as Administrator):
+ipconfig /flushdns
+ipconfig /release
+ipconfig /renew
+netsh int ip reset
+netsh winsock reset
+
+# macOS (Ventura, Sonoma, Sequoia):
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+# Linux (systemd-resolved):
+sudo resolvectl flush-caches</code></pre>
+        </li>
+        <li><strong>Clear Chrome's Internal HostResolver Cache and Flush Socket Pools.</strong> Navigate to <code>chrome://net-internals/#dns</code> and click Clear host cache, then navigate to <code>chrome://net-internals/#sockets</code> and click Flush socket pools. This applies to Chrome, Edge, and Brave, which share the Chromium networking stack.</li>
+        <li><strong>Switch Your DNS Servers to Cloudflare (1.1.1.1) or Google Public DNS (8.8.8.8) Across All Devices.</strong> Use the platform table below to find the exact settings path for your OS:
+          <div class="mt-3 overflow-x-auto rounded-xl border border-line bg-panel/60">
+            <table class="pdns-table">
+              <thead><tr><th>Platform</th><th>Settings Navigation Path</th><th>IPv4 Primary &amp; Secondary</th><th>IPv6 / Private DNS Hostname</th></tr></thead>
+              <tbody>
+                <tr><td class="font-medium text-ink">Windows 10 &amp; 11</td><td class="text-sm text-ink-dim">Settings &gt; Network &amp; Internet &gt; adapter &gt; DNS server assignment &gt; Edit</td><td class="font-mono text-xs text-ink-dim">1.1.1.1 / 8.8.8.8</td><td class="font-mono text-xs text-ink-dim">2606:4700:4700::1111 / 2001:4860:4860::8888</td></tr>
+                <tr><td class="font-medium text-ink">macOS (Ventura, Sonoma, Sequoia)</td><td class="text-sm text-ink-dim">System Settings &gt; Network &gt; adapter &gt; Details &gt; DNS &gt; + button</td><td class="font-mono text-xs text-ink-dim">1.1.1.1 / 8.8.8.8</td><td class="font-mono text-xs text-ink-dim">2606:4700:4700::1111 / 2001:4860:4860::8888</td></tr>
+                <tr><td class="font-medium text-ink">Linux (systemd-resolved / NetworkManager)</td><td class="text-sm text-ink-dim">NetworkManager GUI &gt; adapter &gt; IPv4 Settings &gt; DNS; or edit /etc/systemd/resolved.conf</td><td class="font-mono text-xs text-ink-dim">1.1.1.1 / 8.8.8.8</td><td class="font-mono text-xs text-ink-dim">2606:4700:4700::1111 / 2001:4860:4860::8888</td></tr>
+                <tr><td class="font-medium text-ink">Android 9+ (Private DNS)</td><td class="text-sm text-ink-dim">Settings &gt; Network &amp; Internet &gt; Private DNS &gt; Private DNS provider hostname</td><td class="text-sm text-ink-dim">N/A (DoT only)</td><td class="font-mono text-xs text-ink-dim">one.one.one.one (Cloudflare) or dns.google</td></tr>
+                <tr><td class="font-medium text-ink">iOS &amp; iPadOS</td><td class="text-sm text-ink-dim">Settings &gt; Wi-Fi &gt; (i) icon &gt; Configure DNS &gt; Manual &gt; Add Server</td><td class="font-mono text-xs text-ink-dim">1.1.1.1 / 8.8.8.8</td><td class="font-mono text-xs text-ink-dim">2606:4700:4700::1111 / 2001:4860:4860::8888</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li><strong>Restart the Windows DNS Client Service (dnscache) and Fix Disabled Registry State.</strong> Open <code>services.msc</code>, find DNS Client, and restart it. If Windows 10/11 blocks stopping the service, run <code>net stop dnscache &amp;&amp; net start dnscache</code> from an elevated prompt, or open Registry Editor at <code>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters</code> and set the <code>Start</code> DWORD to <code>2</code> to re-enable the service.</li>
+        <li><strong>Inspect and Clean the Local hosts File.</strong> Open <code>C:\Windows\System32\drivers\etc\hosts</code> (Windows) or <code>/etc/hosts</code> (macOS/Linux) and remove any non-comment line containing the affected domain name. A leftover entry mapping the domain to 0.0.0.0 or a stale IP forces NXDOMAIN on every browser restart.</li>
+        <li><strong>Verify Chrome Secure DNS (DoH) Settings and Reset Experimental Flags.</strong> Navigate to <code>chrome://settings/security</code>, scroll to Use secure DNS, and toggle it off (or select With: Cloudflare 1.1.1.1) to bypass a misconfigured DoH template. Then visit <code>chrome://flags</code>, search for dns, and reset any experimental DNS flags to Default.</li>
+        <li><strong>Disable VPN Split-Tunnel DNS Hijacking and Antivirus Web Shields.</strong> Disconnect the VPN tunnel, disable the antivirus web shield (Avast, Kaspersky, Norton), and retest. VPN split-tunnel configurations route DNS through the tunnel resolver even when web traffic exits locally, causing NXDOMAIN for domains the VPN resolver cannot reach.</li>
+        <li><strong>Power-Cycle Your Router to Clear Frozen dnsmasq Forwarder Tables.</strong> Unplug the router for 30 seconds, reconnect, and retest. Consumer routers running dnsmasq or similar forwarders hold negative cache entries that survive client-side flushing; a power cycle clears the router's internal table.</li>
+        <li><strong>Test on Mobile Cellular Data to Rule Out ISP DNS Filtering.</strong> Disable Wi-Fi, open the browser on cellular data, and load the domain. If the site resolves on cellular but not on Wi-Fi, the ISP's DNS resolver is the culprit: switch to Cloudflare or Google DNS on the Wi-Fi adapter permanently.</li>
+      </ol>
+      <p>
+        After flushing caches and switching resolvers, the <a href="/flush-dns-cache/">How to Flush DNS Cache</a> guide provides per-browser and per-OS instructions in more depth; when the browser shows <a href="/err-name-not-resolved/">ERR_NAME_NOT_RESOLVED</a> instead of the NXDOMAIN variant, the resolution failure is at the stub-resolver layer rather than the RCODE 3 layer; the <a href="/dns-error-messages/">DNS Error Messages and RCODEs</a> reference maps both errors to their root causes.
+      </p>
+
+      <h2 id="domain-owner-fixes">How Do Website Owners Diagnose and Fix Authoritative NXDOMAIN Errors? (4 Checks)</h2>
+      <p>When the 3-resolver check above shows NXDOMAIN on every resolver, the fault is authoritative and the domain owner must run these 4 checks in order:</p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Publish</strong> the missing @ (root apex) and www CNAME or A records in the DNS zone at the active provider: the most common cause is an apex A record published without a matching www alias.</li>
+        <li><strong>Align</strong> the parent TLD registrar nameserver records with the active child DNS host: if the registrar still points to ns1.oldhost.com while the zone lives on Cloudflare or Route 53, resolvers query the wrong nameserver and receive NXDOMAIN.</li>
+        <li><strong>Clear</strong> ICANN clientHold or redemptionPeriod suspension locks: after a registration or transfer, the registrant must verify the contact email within 15 days or the registrar sets clientHold, which suspends the parent TLD delegation and causes every resolver to return NXDOMAIN.</li>
+        <li><strong>Expire</strong> negative resolver caches under RFC 2308 section 3: after fixing the zone, the SOA record's TTL and MINIMUM field set how long resolvers cache the old NXDOMAIN; lower the SOA MINIMUM to 300 seconds, wait for the old negative cache to expire, and verify with dig.</li>
+      </ol>
+      <p>
+        When the fix lands and resolvers still return NXDOMAIN, use the terminal commands below to trace the delegation chain and inspect the negative cache timer; for broader recovery paths after a botched migration, the <a href="/website-not-resolving/">Website Not Resolving</a> guide covers the general diagnosis tree and the <a href="/site-down-after-dns-change/">Site Down After a DNS Change</a> guide covers the rollback versus fix-forward decision.
+      </p>
+      <pre><code># Confirm the RCODE and inspect the SOA negative cache timer (RFC 2308 section 3):
+dig @1.1.1.1 example.com A
+# HEADER shows: status: NXDOMAIN
+# AUTHORITY SECTION carries the SOA record whose TTL / MINIMUM sets the negative cache duration
+
+# Trace the delegation chain from the root to see where NXDOMAIN originates:
+dig +trace example.com A
+
+# Check the www alias (CNAME or A) independently:
+dig @8.8.8.8 www.example.com CNAME +noall +answer +authority
+
+# Windows / macOS:
+nslookup example.com 1.1.1.1</code></pre>
+
+      <h2 id="tool-scope">What the Live NXDOMAIN Diagnostic Tool Does Not Check</h2>
+      <ul class="list-disc space-y-1.5 pl-5">
+        <li><strong>Local OS &amp; Browser Cache State:</strong> The browser-based DoH triage tool queries Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) directly over HTTPS, so it cannot read your local /etc/hosts file, your Windows dnscache memory, or your router's 192.168.1.1 forwarder cache.</li>
+        <li><strong>Split-Horizon Internal Corporate Zones:</strong> Private intranet subdomains (such as jira.internal.corp) exist only on internal Active Directory or VPN DNS servers and intentionally return NXDOMAIN on public internet resolvers.</li>
+        <li><strong>HTTP Server or Firewall Errors After DNS Resolution:</strong> Once a domain resolves to an IP address (NOERROR), connection refusals (ERR_CONNECTION_REFUSED) or TLS errors (ERR_SSL_PROTOCOL_ERROR) happen at the TCP/HTTP layer rather than in DNS.</li>
+        <li><strong>Subdomain Enumeration:</strong> Checking example.com verifies the root apex (@); if a specific subdomain (app.example.com or www.example.com) triggers DNS_PROBE_FINISHED_NXDOMAIN, enter that exact full subdomain into the checker.</li>
+      </ul>
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin Field Notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin Field Notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The premature subdomain lookup trap (RFC 2308 section 3): a developer types app.newproject.com into Chrome 30 seconds before saving the DNS record, and their ISP resolver caches NXDOMAIN for min(SOA TTL, SOA.MINIMUM) - often 3600 seconds or more. Flushing the local cache is not enough because the ISP resolver still holds the negative answer. Switch to 1.1.1.1 or query from a different network to bypass the stale ISP negative cache. The split-tunnel VPN dnsmasq hijack is the second trap: corporate VPN clients route DNS through the tunnel resolver, which filters internal-only domains and returns NXDOMAIN for public ones the corporate policy does not recognise - disabling split-tunnel DNS (or using a full-tunnel configuration) restores normal resolution.</p>
       </aside>
 
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3">
-        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is NXDOMAIN the same as the site being down?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">No. A site can be down with valid DNS. NXDOMAIN means the name itself did not resolve to anything.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does only Chrome show this error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The lookup failure affects every browser, but Chrome has its own DNS cache and error wording, so it is the place you notice it.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a VPN cause NXDOMAIN?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: many VPN tunnels route DNS to a resolver that filters or fails for some domains. Disconnect and retest to confirm.</p></details>
-      </div>
-
-      <p class="mt-8 text-xs text-ink-faint">
-        Verify with our free tools:
-        <a href="/dns-record-lookup/" class="text-accent hover:text-accent-soft">DNS record lookup</a>,
-        <a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">propagation checker</a>,
-        <a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">flush DNS cache guide</a>.
+      <h2 id="observations">What We See Across Domains: Common NXDOMAIN Patterns</h2>
+      <p>
+        Across domain troubleshooting audits, a frequent cause of DNS_PROBE_FINISHED_NXDOMAIN on newly launched websites is configuring an A record for the root apex (@) while omitting the CNAME or A record for www (or vice versa), leaving visitors who type www.example.com with an authoritative RCODE 3 error while visitors who type example.com reach the site normally.
       </p>
-    </article>
+      <p>
+        After domain registrations or registrar transfers, ICANN's mandatory registrant email verification lock (clientHold) suspends the parent TLD NS delegation after 15 days if unconfirmed, causing every resolver worldwide to return NXDOMAIN even though the DNS zone at Cloudflare or Route 53 appears intact. Split-provider edits amplify the problem: the registrar NS records still point at the old host while the zone was re-created at the new provider, and neither host serves a complete answer.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="faq">Frequently Asked Questions</h2>
+    <FaqAccordion faqs={faqs} />
   </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('nx-form') as HTMLFormElement;
+  const input = document.getElementById('nx-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('nx-status')!;
+  const verdictEl = document.getElementById('nx-verdict')!;
+  const outEl = document.getElementById('nx-out')!;
+  const bodyEl = document.getElementById('nx-body')!;
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-3 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-3 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-3 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-3 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  const setVerdict = (kind: 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      pass: 'mt-3 rounded-lg border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-semibold text-pass',
+      warn: 'mt-3 rounded-lg border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-semibold text-warn',
+      fail: 'mt-3 rounded-lg border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-semibold text-fail',
+    };
+    verdictEl.className = cls[kind];
+    verdictEl.textContent = text;
+    verdictEl.classList.remove('hidden');
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Querying A and NS for ${domain} across 3 resolvers...`);
+    outEl.classList.add('hidden');
+    verdictEl.classList.add('hidden');
+    bodyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: 'nxdomain-triage' } }));
+
+    const cell = (txt: string, cls = 'text-xs text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+
+    try {
+      for (const type of ['A', 'NS'] as const) {
+        const code = type === 'A' ? 1 : 2;
+        const per = await Promise.all(RESOLVERS.map(async (r) => {
+          try {
+            const res = await lookup(domain, type, r);
+            if (res.status === 3) return 'NXDOMAIN';
+            if (res.status === 2) return 'SERVFAIL';
+            if (res.status !== 0) return 'status ' + res.status;
+            const ans = res.answers.filter((x) => x.type === code).map((x) => x.data.replace(/\.$/, ''));
+            return ans.length ? ans.slice(0, 1).join(', ') : 'NOERROR, 0 answers';
+          } catch { return 'network error'; }
+        }));
+        const allNx = per.every((v) => v.includes('NXDOMAIN'));
+        const allOk = per.every((v) => !v.includes('NXDOMAIN') && !v.includes('SERVFAIL') && !v.includes('NOERROR, 0'));
+        const tr = document.createElement('tr');
+        tr.append(
+          cell(type, 'font-mono text-xs text-accent font-semibold'),
+          cell(per[0]), cell(per[1]), cell(per[2]),
+          cell(allNx ? 'NXDOMAIN' : allOk ? 'Resolves' : 'Mixed', allNx ? 'text-fail font-semibold' : allOk ? 'text-pass font-semibold' : 'text-warn font-semibold'),
+        );
+        bodyEl.appendChild(tr);
+      }
+      outEl.classList.remove('hidden');
+
+      const aPer: string[] = [];
+      const nsPer: string[] = [];
+      for (const r of RESOLVERS) {
+        try {
+          const a = await lookup(domain, 'A', r);
+          aPer.push(a.status === 3 ? 'NXDOMAIN' : a.status === 0 && a.answers.length ? 'OK' : a.status === 0 ? 'NODATA' : 'status ' + a.status);
+          const ns = await lookup(domain, 'NS', r);
+          nsPer.push(ns.status === 3 ? 'NXDOMAIN' : ns.status === 0 && ns.answers.length ? 'OK' : ns.status === 0 ? 'NODATA' : 'status ' + ns.status);
+        } catch { aPer.push('error'); nsPer.push('error'); }
+      }
+      const aAllNx = aPer.every((v) => v === 'NXDOMAIN');
+      const aAllOk = aPer.every((v) => v === 'OK');
+      const nsAllOk = nsPer.every((v) => v === 'OK' || v === 'NODATA');
+      const nsAllNx = nsPer.every((v) => v === 'NXDOMAIN');
+
+      if (aAllOk) {
+        setVerdict('warn', 'Local Device or ISP Fault: The domain resolves globally across Cloudflare, Google, and AliDNS. Follow the 9 client-side fixes in Section 3 below.');
+        setStatus('warn', 'The domain resolves globally. The error is caused by your local device, browser cache, or ISP resolver.');
+      } else if (nsAllOk && !nsAllNx && aAllNx) {
+        setVerdict('fail', 'Authoritative Zone Record Missing: The domain is delegated properly, but its active DNS zone has no A or CNAME record for this hostname. Follow Section 4 below.');
+        setStatus('fail', 'NS resolves but A returns NXDOMAIN: the zone is delegated but missing the A record.');
+      } else if (aAllNx && nsAllNx) {
+        setVerdict('fail', 'Domain Unregistered, Expired, or Suspended (clientHold): The parent TLD registry has no delegation for this domain. Check registration status in WHOIS/RDAP.');
+        setStatus('fail', 'Both NS and A return NXDOMAIN on all 3 resolvers: the domain is unregistered, expired, or suspended.');
+      } else {
+        setVerdict('warn', 'Mixed results across resolvers: some return NXDOMAIN while others resolve. This indicates propagation in flight or inconsistent authoritative data.');
+        setStatus('warn', 'Mixed results across resolvers: propagation in flight or inconsistent zone data.');
+      }
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolvers. This is an inconclusive result, not a pass or fail.');
+    }
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.nx-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.presetDomain || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>
