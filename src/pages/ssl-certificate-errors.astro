@@ -39,6 +39,14 @@ const faq = {
     },
     {
       "@type": "Question",
+      "name": "Can a DNS record change cause an SSL certificate error in browsers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, changing an A, AAAA, or CNAME record to point to a new web host, CDN, or parking page before provisioning a matching TLS certificate on that destination server immediately triggers NET::ERR_CERT_COMMON_NAME_INVALID or Cloudflare Error 526, and a restrictive CAA record blocks automated Let's Encrypt or ACM certificate renewals until the new CA is authorized."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Is it safe to click \"Advanced -> Proceed to site (unsafe)\" on an SSL error?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -201,30 +209,53 @@ const faq = {
 
         <p>
           Investigating live A, AAAA, and CAA records in DNS represents the fastest first diagnostic step whenever an SSL error manifests following domain migration or CDN activation. Install a valid Let's Encrypt certificate or a 15-year Cloudflare Origin CA certificate on your origin web server when migrating to Cloudflare, because the encryption-mode change only terminates TLS correctly when the origin itself presents a certificate your zone trusts.
-
-        <div class="glass mt-6 rounded-2xl border border-accent/25 bg-panel/80 p-5" id="ssl-dns-triage" data-vs="centerpiece">
-          <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Triage attributes" data-vs="attributes">
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass"><span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>100% Free · No Sign Up</span>
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">DNS-for-SSL Triage</span>
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">A · AAAA · CNAME · CAA</span>
-          </div>
-          <form id="ssltriage-form" class="flex flex-col gap-3 sm:flex-row">
-            <input id="ssltriage-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="domain showing an SSL warning"
-              class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-            <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check DNS for SSL</button>
-          </form>
-          <div id="ssltriage-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
-          <div id="ssltriage-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
-            <table class="pdns-table">
-              <thead><tr><th>Check</th><th>Result</th><th>Flag</th></tr></thead>
-              <tbody id="ssltriage-body"></tbody>
-            </table>
-          </div>
-          <p class="mt-2 text-xs text-ink-faint">Queries A, AAAA, CNAME, and CAA across 1.1.1.1 and 8.8.8.8: detects Cloudflare-proxied IPs (check Full (Strict) vs Flexible for 525/526 and redirect loops), restrictive CAA policies blocking renewal, and CNAME aliases whose target may lack your domain SAN.</p>
-        </div>
         </p>
       </section>
+    </div>
 
+    <section class="not-prose relative my-6" aria-label="Interactive DNS Tool" data-vs="centerpiece">
+      <div class="glass relative overflow-hidden rounded-2xl border border-accent/25 bg-panel/80 p-5 shadow-[0_0_60px_-15px_rgba(34,211,238,0.2)] transition-shadow focus-within:shadow-[0_0_80px_-10px_rgba(34,211,238,0.35)] sm:p-7">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-2.5 border-b border-line/60 pb-3.5" aria-label="Tool attributes" data-vs="attributes">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass">
+              <span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>
+              100% Free · No Sign Up
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">
+              DNS-for-SSL Triage
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">
+              A · AAAA · CNAME · CAA
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-ink-faint">
+            <span class="inline-block h-2 w-2 rounded-full bg-accent/60"></span>
+            <span class="font-mono text-[11px]">DNS-over-HTTPS</span>
+          </div>
+        </div>
+        <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Instant test domains">
+          <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">Try instantly:</span>
+          <button type="button" data-preset-domain="cloudflare.com" class="ssl-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">cloudflare.com</button>
+          <button type="button" data-preset-domain="google.com" class="ssl-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">google.com</button>
+          <button type="button" data-preset-domain="letsencrypt.org" class="ssl-preset rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[11px] text-ink-dim transition-colors hover:border-accent/40 hover:text-accent">letsencrypt.org</button>
+        </div>
+        <form id="ssltriage-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="ssltriage-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="domain showing an SSL warning"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check SSL DNS</button>
+        </form>
+        <div id="ssltriage-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="ssltriage-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table">
+            <thead><tr><th>Check</th><th>Result</th><th>Flag</th></tr></thead>
+            <tbody id="ssltriage-body"></tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-xs text-ink-faint">Queries A, AAAA, CNAME, and CAA across 1.1.1.1 and 8.8.8.8: detects Cloudflare-proxied IPs (check Full (Strict) vs Flexible for 525/526 and redirect loops), restrictive CAA policies blocking renewal, and CNAME aliases whose target may lack your domain SAN.</p>
+      </div>
+    </section>
+
+    <div class="rich-text">
       <section>
         <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="how-to-diagnose-ssl-certificate-errors-from-the-terminal-openssl-and-curl">How to Diagnose SSL Certificate Errors from the Terminal (openssl and curl)</h2>
         <p>
@@ -328,9 +359,105 @@ const faq = {
         <p class="mt-3 text-sm leading-relaxed text-ink-dim">An invalid certificate error or redirect loop on a Cloudflare-proxied website usually stems from a mismatch between your Cloudflare SSL/TLS encryption mode and your origin web server configuration. Flexible mode fetches your pages over unencrypted port 80 and loops on origins that force HTTPS, while Full (Strict) mode against a self-signed or expired origin certificate raises Cloudflare Error 526. Install a valid origin certificate and set the zone to Full (Strict).</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can a DNS record change cause an SSL certificate error in browsers?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes, changing an A, AAAA, or CNAME record to point to a new web host, CDN, or parking page before provisioning a matching TLS certificate on that destination server immediately triggers NET::ERR_CERT_COMMON_NAME_INVALID or Cloudflare Error 526, and a restrictive CAA record blocks automated Let's Encrypt or ACM certificate renewals until the new CA is authorized.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
         <p class="mt-3 text-sm leading-relaxed text-ink-dim">No, bypassing an SSL warning is only safe on a server that you personally own when you understand the self-signed certificate source. Public websites and unencrypted Wi-Fi hotspots expose passwords and session tokens to man-in-the-middle interception whenever users click past certificate warnings. In practice, the most dangerous administrator habit is clicking past browser warnings on staging environments, which masks genuine certificate chain and trust store issues prior to production launch.</p>
       </details>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('ssltriage-form') as HTMLFormElement;
+  const input = document.getElementById('ssltriage-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('ssltriage-status')!;
+  const outEl = document.getElementById('ssltriage-out')!;
+  const bodyEl = document.getElementById('ssltriage-body')!;
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-3 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-3 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-3 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-3 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  function isCloudflareIp(ip: string): boolean {
+    const m = ip.match(/^(\d+)\.(\d+)\./);
+    if (!m) return false;
+    const a = Number(m[1]), b = Number(m[2]);
+    return (a === 104 && b >= 16 && b <= 27) || (a === 172 && b >= 64 && b <= 71) ||
+      (a === 131 && b >= 0 && b <= 75 && a === 131) || (a === 188 && b >= 114 && b <= 114) ||
+      (a === 162 && b >= 158 && b <= 159) || (a === 198 && b === 41 && true) ||
+      (a === 141 && b === 101) || (a === 108 && b === 162) || (a === 190 && b === 93);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Querying A, AAAA, CNAME, and CAA for ${domain} across 1.1.1.1 and 8.8.8.8...`);
+    outEl.classList.add('hidden');
+    bodyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: 'ssl-dns-triage' } }));
+
+    const cell = (txt: string, cls = 'text-sm text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+    const flags: string[] = [];
+
+    // A + AAAA + Cloudflare proxy detection
+    try {
+      const [a, aaaa] = await Promise.all([lookup(domain, 'A', RESOLVERS[0]), lookup(domain, 'AAAA', RESOLVERS[0])]);
+      const ips = [...a.answers.filter((x) => x.type === 1).map((x) => x.data), ...aaaa.answers.filter((x) => x.type === 28).map((x) => x.data)];
+      const cf = ips.find((ip) => isCloudflareIp(ip));
+      const tr1 = document.createElement('tr');
+      tr1.append(cell('A / AAAA', 'font-mono text-xs text-accent font-semibold'), cell(ips.length ? ips.slice(0, 3).join(', ') : 'No A or AAAA records found'), cell(ips.length ? 'OK' : 'Missing', ips.length ? 'text-pass' : 'text-fail'));
+      bodyEl.appendChild(tr1);
+      if (cf) {
+        flags.push('Cloudflare-proxied IP detected (' + cf + '): check Full (Strict) vs Flexible mode for Error 525/526 and redirect loops');
+      }
+    } catch { flags.push('A/AAAA lookup failed'); }
+
+    // CNAME
+    try {
+      const cn = await lookup(domain, 'CNAME', RESOLVERS[0]);
+      const cnames = cn.answers.filter((x) => x.type === 5).map((x) => x.data.replace(/\.$/, ''));
+      const tr2 = document.createElement('tr');
+      tr2.append(cell('CNAME', 'font-mono text-xs text-accent font-semibold'), cell(cnames.length ? cnames.join(', ') : 'No CNAME (apex or direct A)'), cell(cnames.length ? 'CNAME alias: the target\u2019s certificate must include your domain as SAN' : 'OK', cnames.length ? 'text-warn' : 'text-pass'));
+      bodyEl.appendChild(tr2);
+      if (cnames.length) flags.push('CNAME target mismatch: ' + cnames[0] + ' must serve a certificate with your domain in its SAN');
+    } catch { /* CNAME query failed: non-fatal */ }
+
+    // CAA
+    try {
+      const caa = await lookup(domain, 'CAA', RESOLVERS[0]);
+      const caaRecs = caa.answers.filter((x) => x.type === 257).map((x) => x.data);
+      const tr3 = document.createElement('tr');
+      const hasLe = caaRecs.some((r) => r.includes('letsencrypt.org'));
+      const hasIssue = caaRecs.some((r) => r.includes('issue'));
+      tr3.append(cell('CAA', 'font-mono text-xs text-accent font-semibold'), cell(caaRecs.length ? caaRecs.join('; ') : 'No CAA records (all CAs may issue)'), cell(caaRecs.length ? (hasLe || !hasIssue ? 'OK' : 'Restrictive') : 'Open', caaRecs.length && !hasLe && hasIssue ? 'text-warn' : 'text-pass'));
+      bodyEl.appendChild(tr3);
+      if (caaRecs.length && !hasLe && hasIssue) {
+        flags.push('Restrictive CAA: letsencrypt.org is not authorized, which blocks automated Let\u2019 Encrypt or ACM renewals');
+      }
+    } catch { flags.push('CAA lookup failed'); }
+
+    outEl.classList.remove('hidden');
+    if (flags.length) setStatus('warn', flags.join(' | '));
+    else setStatus('pass', 'DNS-for-SSL triage clean for ' + domain + ': no Cloudflare proxy, no restrictive CAA, no CNAME alias detected.');
+  });
+
+  for (const btn of Array.from(document.querySelectorAll('.ssl-preset'))) {
+    btn.addEventListener('click', () => {
+      input.value = (btn as HTMLElement).dataset.presetDomain || '';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+  }
+</script>
