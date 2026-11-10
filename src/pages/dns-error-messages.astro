@@ -1,56 +1,185 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs: [string, string][] = [
+  ['What is the difference between NXDOMAIN and NODATA?', 'NXDOMAIN (RCODE 3) means the queried domain name itself does not exist in the DNS namespace, while NODATA (NOERROR with zero answers, RFC 2308 section 2.2) means the name exists but carries no record of the requested type. A browser NXDOMAIN error follows the first, and a missing AAAA on an IPv4-only host is the classic second.'],
+  ['What causes DNS RCODE 2 (SERVFAIL)?', 'SERVFAIL means the resolver failed to complete the lookup, and the two dominant production causes are a broken DNSSEC chain (an orphaned or mismatched DS record at the parent, or expired RRSIG signatures) and every authoritative nameserver for the zone timing out or refusing.'],
+  ['What does EAI_AGAIN mean in Node.js and Docker?', 'EAI_AGAIN is the libc getaddrinfo retry-exhausted code: the resolver could not reach any upstream DNS server within the timeout, so the failure is network or resolver reachability rather than a negative answer. In Docker it usually points at a container with a broken or missing resolv.conf upstream.'],
+  ['Does RCODE 5 (REFUSED) mean my domain is blocked?', 'No, REFUSED is a server policy answer, not a block of your domain: the queried server refuses to answer for that zone, which most often means a lame delegation (the nameserver holds no zone for the domain), an ACL restriction, or rate limiting. Query a different resolver to separate policy refusals from real DNS failures.'],
+  ['What are RFC 8914 Extended DNS Errors (EDE)?', 'Extended DNS Errors attach a 16-bit information code to otherwise generic responses, so a bare SERVFAIL can carry a specific reason such as EDE 6 (DNSSEC Bogus), EDE 15 (Blocked), EDE 18 (Prohibited), or EDE 22 (No Reachable Authority). Major public resolvers now surface these codes in their JSON DoH responses and dashboards.'],
+];
+
 const faqSchema = {
- "@context": "https://schema.org",
- "@type": "FAQPage",
- "mainEntity": [
-    {'@type': 'Question', 'name': "What does SERVFAIL actually mean?", "acceptedAnswer": { '@type': 'Answer', "text": "The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken." } },
-    {'@type': 'Question', 'name': "Why does NXDOMAIN persist after I added a record?", "acceptedAnswer": { '@type': 'Answer', "text": "Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches." } },
-    {'@type': 'Question', 'name': "Can I fix DNS errors on the user's side?", "acceptedAnswer": { '@type': 'Answer', "text": "Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone." } },
-    {'@type': 'Question', 'name': "What's the difference between a DNS error and a connection error?", "acceptedAnswer": { '@type': 'Answer', "text": "DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond." } },
-    {'@type': 'Question', 'name': "Does clearing browser data fix DNS errors?", "acceptedAnswer": { '@type': 'Answer', "text": "It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough." } },
-    {'@type': 'Question', 'name': "Are DNS errors ever caused by malware?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects." } }
-  ]
-}
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+};
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'DNS Error Messages and Response Codes (RCODEs): Complete Troubleshooting Reference',
+  url: 'https://promptdns.com/dns-error-messages/',
+  description: 'Every IANA DNS RCODE, browser DNS error string, and email DNS failure mapped to its root cause and diagnostic tool.',
+};
+
+const browserRows: [string, string, string, string][] = [
+  ['DNS_PROBE_FINISHED_NXDOMAIN', 'Chromium / Chrome / Edge', 'RCODE 3 (NXDOMAIN) from every resolver, or a captive-portal DNS hijack returning it', 'The name genuinely does not resolve: check spelling, zone records, and domain expiry'],
+  ['net::ERR_NAME_NOT_RESOLVED (-105)', 'Chromium network stack', 'Resolution failed at the stub-resolver layer before any RCODE: no upstream reachable or local config broken', 'Resolver reachability and local DNS settings, not the zone itself'],
+  ['"DNS server isn\'t responding" (Windows diagnostics)', 'Windows network troubleshooter', 'The configured resolver (router or ISP DNS) times out on every query', 'Switch to a working public resolver, then retest the zone'],
+  ['DNS_PROBE_FINISHED_NO_INTERNET', 'Chromium / Chrome / Edge', 'No network path to any resolver: the DNS failure is a symptom of total connectivity loss', 'Physical/network layer first; DNS diagnostics only after connectivity returns'],
+  ['DNS_PROBE_FINISHED_BAD_CONFIG', 'Chromium / Chrome / Edge', 'The OS resolver configuration is invalid (bad nameserver entry, broken VPN adapter)', 'Reset the adapter DNS settings to DHCP or a valid resolver'],
+  ['getaddrinfo EAI_AGAIN / ENOTFOUND', 'Node.js and libc (containers, Docker)', 'EAI_AGAIN: resolver unreachable, retries exhausted; ENOTFOUND: resolver returned NXDOMAIN for the name', 'EAI_AGAIN is upstream reachability; ENOTFOUND maps to the zone-level NXDOMAIN'],
+];
+
+const guideCards: { href: string; title: string; desc: string }[] = [
+  { href: '/website-not-resolving/', title: 'Website Not Resolving? DNS Causes and Fixes', desc: 'The general diagnosis tree when a name refuses to resolve from anywhere.' },
+  { href: '/dns-probe-finished-nxdomain/', title: 'DNS_PROBE_FINISHED_NXDOMAIN: Causes and Fixes', desc: 'The browser NXDOMAIN error decoded, with the 6 fixes ordered by hit rate.' },
+  { href: '/err-name-not-resolved/', title: 'ERR_NAME_NOT_RESOLVED: 6 Fixes for Chrome & Edge', desc: 'The -105 resolution failure from the browser and OS side, fixed in order.' },
+  { href: '/dns-server-not-responding/', title: '"DNS Server Not Responding": 9 Fixes for Windows & macOS', desc: 'When the configured resolver itself stops answering, per-OS repairs.' },
+  { href: '/site-down-after-dns-change/', title: 'Site Down After a DNS Change? Recovery Guide', desc: 'Post-change outage triage: stale TTL, broken zones, orphaned DS, and rollback decisions.' },
+  { href: '/email-not-working-after-dns-change/', title: 'Email Stopped Working After DNS Change', desc: 'The MX, SPF, and propagation half of a migration gone wrong.' },
+  { href: '/mx-record-not-working/', title: 'MX Record Not Working? How to Fix Broken Mail Routing', desc: 'Missing MX sets, shadowed priorities, and local-exchanger misrouting.' },
+];
+
+const authCards: { href: string; title: string; desc: string }[] = [
+  { href: '/spf-permerror/', title: 'SPF PermError: Causes and Fixes', desc: 'The 10-lookup limit, multiple records, and void lookups that stop SPF evaluation.' },
+  { href: '/spf-temperror/', title: 'SPF TempError: Causes and Fixes', desc: 'Transient DNS failures during SPF evaluation and how receivers treat them.' },
+  { href: '/dkim-not-signing/', title: 'DKIM Failing? Diagnosis and Fixes', desc: 'Selector misses, key corruption, and signer misconfigurations diagnosed step by step.' },
+  { href: '/ssl-certificate-errors/', title: 'SSL Certificate Errors: Causes and Fixes', desc: 'Certificate warnings rooted in DNS misroutes, CAA blocks, and proxy modes.' },
+  { href: '/smtp-550-5-7-26/', title: 'SMTP 550 5.7.26: Unauthenticated Mail Rejected', desc: 'The Google authentication-required rejection and the SPF/DKIM/DMARC fix path.' },
+  { href: '/smtp-554-5-4-14/', title: 'SMTP 554 5.4.14: Hop Count Exceeded MX Loop', desc: 'MX loops that burn the hop counter and how to break the cycle.' },
+];
+
+const toolCards: { href: string; title: string; desc: string }[] = [
+  { href: '/dns-propagation-checker/', title: 'DNS Propagation Checker', desc: 'Compare answers across resolvers for any record type to spot stale caches.' },
+  { href: '/delegation-checker/', title: 'Delegation Checker', desc: 'Test every nameserver: does it resolve, answer, and agree with the set.' },
+  { href: '/dnssec-checker/', title: 'DNSSEC Checker', desc: 'Isolate the broken DS or RRSIG link behind a universal SERVFAIL.' },
+  { href: '/dns-resolver-tester/', title: 'DNS Resolver Tester', desc: 'Compare resolver answers side by side to catch filtering and hijacks.' },
+  { href: '/ttl-checker/', title: 'TTL Checker', desc: 'See every record\u2019s cache time at once before planning a change.' },
+  { href: '/flush-dns-cache/', title: 'Flush DNS Cache', desc: 'Clear Windows, macOS, Linux, and browser caches to retest cleanly.' },
+];
 ---
 <BaseLayout
-  title="DNS Error Messages: The Complete Reference"
-  description="Every DNS error message explained: SERVFAIL, NXDOMAIN, REFUSED, timeouts, and browser errors like DNS_PROBE_FINISHED_NXDOMAIN, with causes and fixes."
-  schema={[faqSchema]}
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["DNS Error Messages"]]}>
-  <div class="mx-auto max-w-3xl px-4 py-12">
+  title="DNS Error Messages & RCODEs: Complete Reference (NXDOMAIN, SERVFAIL, REFUSED) | PromptDNS"
+  description="Every DNS error decoded: the full IANA RCODE table (NOERROR, FORMERR, SERVFAIL, NXDOMAIN, NOTIMP, REFUSED), RFC 8914 Extended DNS Errors, Chromium and Windows error strings, and the email DNS failures, each mapped to its fix."
+  schema={[collectionSchema, faqSchema]}
+  breadcrumb={[["Home", "/"], ["DNS", "/dns/"], ["DNS Error Messages"]]}
+>
+  <div class="mx-auto max-w-4xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <a href="/dns/" class="hover:text-accent">DNS</a>
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">DNS Error Messages</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Error Messages: The Complete Reference</h1>
-    <div class="pd-answer" data-vs="answer">
-      <p class="text-lg leading-relaxed text-ink-dim">DNS errors are cryptic by design: they tell you what layer failed without telling you why. This reference decodes every common DNS error, from resolver status codes to browser-specific messages.</p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">DNS Error Messages and Response Codes (RCODEs): Complete Troubleshooting Reference</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
+      <p class="text-lg leading-relaxed text-ink-dim">
+        A DNS error message is <strong class="text-ink">a protocol response code (RCODE) or client network error string returned when a stub or recursive resolver cannot translate a hostname into a valid IP address</strong>. Authoritative nameservers and recursive resolvers set 4-bit header RCODEs (and 16-bit Extended DNS Error codes under RFC 8914) to report non-existent domains, cryptographic validation failures, or policy refusals. This reference maps every IANA DNS RCODE, Chromium browser error, and SMTP DNS failure to its root cause and diagnostic tool.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <nav class="pd-toc mt-6" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#resolver-status-codes">Resolver status codes</a></li>
-        <li><a href="#browser-specific-messages">Browser-specific messages</a></li>
-        <li><a href="#the-diagnostic-flow">The diagnostic flow</a></li>
-        <li><a href="#frequently-asked-questions">Frequently asked questions</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#rcode-table">Master Reference Table: All IANA DNS Response Codes (RCODEs 0 to 10) and NODATA</a></li>
+        <li><a href="#browser-os-errors">1. Browser, OS, and Runtime DNS Error Strings (Chromium, Windows, macOS, Node.js)</a></li>
+        <li><a href="#email-ssl-dns-errors">2. Email Authentication (SPF/DMARC) and SSL/TLS DNS Error Guides</a></li>
+        <li><a href="#diagnostic-tools">3. Live Browser-Based DNS Error Diagnostic Tools</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="resolver-status-codes">Resolver status codes</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">NOERROR (0)</td><td class="text-sm text-ink-dim">The query succeeded</td><td class="text-sm text-ink-dim">May still have zero answers for the requested type</td></tr><tr><td class="text-sm text-ink-dim">FORMERR (1)</td><td class="text-sm text-ink-dim">Malformed query</td><td class="text-sm text-ink-dim">A client or proxy bug, not a DNS issue</td></tr><tr><td class="text-sm text-ink-dim">SERVFAIL (2)</td><td class="text-sm text-ink-dim">The server failed to process</td><td class="text-sm text-ink-dim">DNSSEC failure, upstream timeout, or configuration error</td></tr><tr><td class="text-sm text-ink-dim">NXDOMAIN (3)</td><td class="text-sm text-ink-dim">Name does not exist</td><td class="text-sm text-ink-dim">Typo, deleted record, or negative-cached</td></tr><tr><td class="text-sm text-ink-dim">NOTIMP (4)</td><td class="text-sm text-ink-dim">Not implemented</td><td class="text-sm text-ink-dim">The server does not support the requested operation</td></tr><tr><td class="text-sm text-ink-dim">REFUSED (5)</td><td class="text-sm text-ink-dim">The server refuses to answer</td><td class="text-sm text-ink-dim">ACL blocking, AXFR denied, or policy</td></tr></tbody></table></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="browser-specific-messages">Browser-specific messages</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60"><table class="pdns-table"><tbody><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NXDOMAIN</td><td class="text-sm text-ink-dim">Name doesn’t exist</td><td class="text-sm text-ink-dim">Check spelling, verify the domain exists, flush local cache</td></tr><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_NO_INTERNET</td><td class="text-sm text-ink-dim">Network unreachable</td><td class="text-sm text-ink-dim">Check connection, then DNS server settings</td></tr><tr><td class="text-sm text-ink-dim">DNS_PROBE_FINISHED_BAD_CONFIG</td><td class="text-sm text-ink-dim">Invalid DNS configuration</td><td class="text-sm text-ink-dim">Reset DNS settings to automatic or use 1.1.1.1/8.8.8.8</td></tr><tr><td class="text-sm text-ink-dim">This site can’t be reached</td><td class="text-sm text-ink-dim">Generic: could be DNS, server, or network</td><td class="text-sm text-ink-dim">Run the propagation checker to narrow down</td></tr></tbody></table></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="the-diagnostic-flow">The diagnostic flow</h2>
-      <ul class="list-disc space-y-1.5 pl-5"><li class="leading-relaxed">Run the domain through the <a href="/dns-record-lookup/">record lookup</a>: if it returns answers, DNS is fine and the problem is the server or network.</li><li class="leading-relaxed">If the lookup fails with SERVFAIL, check DNSSEC (stale DS) and nameserver health.</li><li class="leading-relaxed">If NXDOMAIN, check spelling and whether the record was accidentally deleted.</li><li class="leading-relaxed">If one resolver works but another doesn’t, it’s a propagation or caching issue: use the <a href="/dns-propagation-checker/">propagation checker</a>.</li></ul>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What does SERVFAIL actually mean?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">The server tried to answer but failed: DNSSEC validation failed, the upstream authoritative server timed out, or internal configuration is broken.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why does NXDOMAIN persist after I added a record?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Negative caching: the resolver cached the NXDOMAIN answer for the SOA minimum TTL. Wait or flush local caches.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can I fix DNS errors on the user's side?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Only if the issue is local (cache, settings). Authoritative DNS errors must be fixed in the zone.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">What's the difference between a DNS error and a connection error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">DNS errors mean the name couldn't be resolved to an address. Connection errors mean the address was reached but the server didn't respond.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Does clearing browser data fix DNS errors?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It clears the browser's internal DNS cache, which helps for locally cached bad answers. System-level flush (ipconfig /flushdns) is more thorough.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Are DNS errors ever caused by malware?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: some malware changes DNS settings to redirect through a malicious resolver, causing selective failures and redirects.</p></details></div>
-      <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="related">Related</h2>
-      <ul class="mt-3 grid gap-2"><li><a href="/dns-propagation-checker/" class="text-accent hover:text-accent-soft">DNS propagation checker →</a></li><li><a href="/site-down-after-dns-change/" class="text-accent hover:text-accent-soft">Site down after DNS change →</a></li><li><a href="/flush-dns-cache/" class="text-accent hover:text-accent-soft">Flush DNS cache →</a></li></ul>
+      <h2 id="rcode-table">Master Reference Table: All IANA DNS Response Codes (RCODEs 0 to 10) and NODATA</h2>
+      <p>The table below defines every IANA-registered response code a resolver or nameserver can return, the wire semantics, and the production failure each one usually carries:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>RCODE &amp; Name</th><th>Decimal / Hex</th><th>Governing RFC</th><th>Wire Meaning</th><th>Most Common Production Cause</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">RCODE 0: NOERROR</td><td class="font-mono text-xs text-ink-dim">0 / 0x0</td><td class="text-sm text-ink-dim">RFC 1035 section 4.1.1</td><td class="text-sm text-ink-dim">Query succeeded</td><td class="text-sm text-ink-dim">Valid answer returned in the ANSWER section</td></tr>
+            <tr><td class="font-medium text-ink">Pseudo-Code: NODATA (NOERROR + 0 Answers)</td><td class="font-mono text-xs text-ink-dim">0 with ANCOUNT=0</td><td class="text-sm text-ink-dim">RFC 2308 section 2.2</td><td class="text-sm text-ink-dim">Name exists, requested RR type does not</td><td class="text-sm text-ink-dim">Querying AAAA or TXT on a host that only has an A record, or an Empty Non-Terminal</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 1: FORMERR (Format Error)</td><td class="font-mono text-xs text-ink-dim">1 / 0x1</td><td class="text-sm text-ink-dim">RFC 1035 section 4.1.1</td><td class="text-sm text-ink-dim">Server unable to interpret the query packet</td><td class="text-sm text-ink-dim">Malformed DNS header, unsupported EDNS option, or firewall packet mangling</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 2: SERVFAIL (Server Failure)</td><td class="font-mono text-xs text-ink-dim">2 / 0x2</td><td class="text-sm text-ink-dim">RFC 1035 &amp; RFC 4035</td><td class="text-sm text-ink-dim">Resolver failed to complete the lookup</td><td class="text-sm text-ink-dim">Broken DNSSEC chain (mismatched DS, expired RRSIG) or all authoritative NS timed out</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 3: NXDOMAIN (Non-Existent Domain)</td><td class="font-mono text-xs text-ink-dim">3 / 0x3</td><td class="text-sm text-ink-dim">RFC 1035 &amp; RFC 2308</td><td class="text-sm text-ink-dim">Queried domain name does not exist</td><td class="text-sm text-ink-dim">Typo, deleted subdomain, expired domain (clientHold), or a negative cache hit</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 4: NOTIMP (Not Implemented)</td><td class="font-mono text-xs text-ink-dim">4 / 0x4</td><td class="text-sm text-ink-dim">RFC 1035 section 4.1.1</td><td class="text-sm text-ink-dim">Server does not support the requested query kind</td><td class="text-sm text-ink-dim">Sending IQUERY (obsoleted by RFC 3425) or AXFR to a recursive resolver</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 5: REFUSED (Query Refused)</td><td class="font-mono text-xs text-ink-dim">5 / 0x5</td><td class="text-sm text-ink-dim">RFC 1035 section 4.1.1</td><td class="text-sm text-ink-dim">Server refuses to answer by policy</td><td class="text-sm text-ink-dim">Lame delegation (NS holds no zone for the domain), ACL block, or rate limiting</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 6-8: YXDOMAIN / YXRRSET / NXRRSET</td><td class="font-mono text-xs text-ink-dim">6, 7, 8</td><td class="text-sm text-ink-dim">RFC 2136</td><td class="text-sm text-ink-dim">Dynamic DNS update prerequisite failed</td><td class="text-sm text-ink-dim">Dynamic nsupdate prerequisite collision</td></tr>
+            <tr><td class="font-medium text-ink">RCODE 9: NOTAUTH (Not Authoritative)</td><td class="font-mono text-xs text-ink-dim">9 / 0x9</td><td class="text-sm text-ink-dim">RFC 2136 &amp; RFC 8945</td><td class="text-sm text-ink-dim">Server not authoritative for the zone, or TSIG failed</td><td class="text-sm text-ink-dim">Bad TSIG key on a zone transfer (AXFR) or an unconfigured secondary zone</td></tr>
+            <tr><td class="font-medium text-ink">EDNS0 Extended DNS Errors (EDE, Info-Codes 0-29)</td><td class="font-mono text-xs text-ink-dim">OPT Code 15</td><td class="text-sm text-ink-dim">RFC 8914</td><td class="text-sm text-ink-dim">Detailed sub-reason attached to SERVFAIL / NXDOMAIN / REFUSED</td><td class="text-sm text-ink-dim">EDE 6 (DNSSEC Bogus), EDE 15 (Blocked), EDE 18 (Prohibited), EDE 22 (No Reachable Authority)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The practical reading order starts with RFC 8914 Extended DNS Errors: both 1.1.1.1 and 8.8.8.8 attach EDE sub-codes to their JSON DoH responses, so a bare SERVFAIL that used to be a dead end now often arrives with a machine-readable reason (DNSSEC Bogus, Blocked, Prohibited, No Reachable Authority) that maps straight to the fix.
+      </p>
+
+      <h2 id="browser-os-errors">1. Browser, OS, and Runtime DNS Error Strings (Chromium, Windows, macOS, Node.js)</h2>
+      <p>Browsers and runtimes translate the wire-level RCODEs (or the absence of any answer) into their own user-facing strings. The table below maps each string back to the RCODE and layer it actually represents:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Error String</th><th>Where It Appears</th><th>Underlying DNS Cause</th><th>What It Actually Tells You</th></tr></thead>
+          <tbody>
+            {browserRows.map(([code, where, cause, tells]) => (
+              <tr>
+                <td class="font-mono text-xs text-ink">{code}</td>
+                <td class="text-sm text-ink-dim">{where}</td>
+                <td class="text-sm text-ink-dim">{cause}</td>
+                <td class="text-sm text-ink-dim">{tells}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>Each string has a dedicated recovery guide with the fixes ordered by hit rate:</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {guideCards.map((c) => (
+          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
+            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
+          </a>
+        ))}
+      </div>
+
+      <h2 id="email-ssl-dns-errors">2. Email Authentication (SPF/DMARC) and SSL/TLS DNS Error Guides</h2>
+      <p>Email failures carry their own DNS-derived error surface: SPF evaluation codes, signature failures, and SMTP rejections that name a DNS cause. The TLS layer fails on DNS too, because certificates bind to whatever hostname the records actually route to. These guides decode each one:</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {authCards.map((c) => (
+          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
+            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
+          </a>
+        ))}
+      </div>
+
+      <h2 id="diagnostic-tools">3. Live Browser-Based DNS Error Diagnostic Tools</h2>
+      <p>Every error above reduces to a question one of these tools answers in the browser: which resolvers disagree, whether the delegation chain holds, whether DNSSEC validates, and how long the failing caches persist. Run the one that matches your error string:</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {toolCards.map((c) => (
+          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
+            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
+          </a>
+        ))}
+      </div>
+      <p>
+        Read the RCODE first, confirm it with the matching tool, and the error message stops being a dead end: the code names the failing layer, and the tool shows the failing record.
+      </p>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="faq">Frequently Asked Questions</h2>
+    <div class="mt-3 grid gap-3">
+      {faqs.map(([q, a]) => (
+        <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+            {q}
+            <span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span>
+          </summary>
+          <p class="mt-3 text-sm leading-relaxed text-ink-dim">{a}</p>
+        </details>
+      ))}
     </div>
   </div>
 </BaseLayout>

@@ -31,6 +31,14 @@ const faq = {
     },
     {
       "@type": "Question",
+      "name": "An invalid certificate error appeared after I moved my site behind Cloudflare. What causes it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An invalid certificate error or redirect loop on a Cloudflare-proxied website usually stems from a mismatch between your Cloudflare SSL/TLS encryption mode and your origin web server configuration. Flexible mode fetches your pages over unencrypted port 80 and loops on origins that force HTTPS, while Full (Strict) mode against a self-signed or expired origin certificate raises Cloudflare Error 526. Install a valid origin certificate and set the zone to Full (Strict)."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Is it safe to click \"Advanced -> Proceed to site (unsafe)\" on an SSL error?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -181,7 +189,7 @@ const faq = {
             <strong class="text-ink">Mismatched A or AAAA IP Addresses:</strong> Updating an IPv4 A record while leaving an obsolete IPv6 AAAA record pointing to a legacy host routes IPv6 visitors to an unconfigured server. That legacy endpoint lacks matching certificates for the target domain and triggers common name invalid warnings. Confirming host IP alignment across both protocol families is accessible through the <a href="/a-record-lookup/">A Record Lookup</a> tool.
           </li>
           <li class="leading-relaxed">
-            <strong class="text-ink">Restrictive CAA Record Rules:</strong> A <a href="/caa-record/">CAA Record</a> designates authorized certificate issuers for a specific namespace. Specifying single commercial authorities forbids alternative automated providers from issuing certificates, causing automatic renewals to fail silently. Verifying authorized certificate issuers prevents issuance disruption, inspectable via the <a href="/caa-record-lookup/">CAA Record Lookup</a> utility.
+            <strong class="text-ink">Restrictive CAA Record Rules:</strong> A <a href="/caa-record/">CAA Record</a> designates authorized certificate issuers for a specific namespace. Specifying single commercial authorities forbids alternative automated providers from issuing certificates, causing automatic renewals to fail silently. Verifying authorized certificate issuers prevents issuance disruption, inspectable via the CAA Record Lookup utility.
           </li>
           <li class="leading-relaxed">
             <strong class="text-ink">Stale DNS Propagation During ACME Validation:</strong> Automated certificate issuing protocols rely on <abbr class="pd-term" data-tip="Automated Certificate Management Environment, an automated communications protocol for verifying domain control and issuing certificates.">ACME</abbr> HTTP-01 or DNS-01 challenges to confirm domain control. Running issuance tools before global nameservers synchronize prevents validation nodes from discovering challenge responses. Verifying worldwide nameserver updates precedes certificate requests via the <a href="/dns-propagation-checker/">DNS Propagation Checker</a>.
@@ -192,7 +200,28 @@ const faq = {
         </ol>
 
         <p>
-          Investigating live A, AAAA, and CAA records in DNS represents the fastest first diagnostic step whenever an SSL error manifests following domain migration or CDN activation.
+          Investigating live A, AAAA, and CAA records in DNS represents the fastest first diagnostic step whenever an SSL error manifests following domain migration or CDN activation. Install a valid Let's Encrypt certificate or a 15-year Cloudflare Origin CA certificate on your origin web server when migrating to Cloudflare, because the encryption-mode change only terminates TLS correctly when the origin itself presents a certificate your zone trusts.
+
+        <div class="glass mt-6 rounded-2xl border border-accent/25 bg-panel/80 p-5" id="ssl-dns-triage" data-vs="centerpiece">
+          <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Triage attributes" data-vs="attributes">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass"><span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>100% Free · No Sign Up</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">DNS-for-SSL Triage</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">A · AAAA · CNAME · CAA</span>
+          </div>
+          <form id="ssltriage-form" class="flex flex-col gap-3 sm:flex-row">
+            <input id="ssltriage-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="domain showing an SSL warning"
+              class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+            <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Check DNS for SSL</button>
+          </form>
+          <div id="ssltriage-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+          <div id="ssltriage-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+            <table class="pdns-table">
+              <thead><tr><th>Check</th><th>Result</th><th>Flag</th></tr></thead>
+              <tbody id="ssltriage-body"></tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-ink-faint">Queries A, AAAA, CNAME, and CAA across 1.1.1.1 and 8.8.8.8: detects Cloudflare-proxied IPs (check Full (Strict) vs Flexible for 525/526 and redirect loops), restrictive CAA policies blocking renewal, and CNAME aliases whose target may lack your domain SAN.</p>
+        </div>
         </p>
       </section>
 
@@ -270,10 +299,15 @@ const faq = {
         </p>
 
         <p>
-          Managing SSL certificate health combines accurate server provisioning with systematic DNS configuration. Monitoring domain records, establishing automated certificate renewal routines, and validating intermediate authority bundles prevents unexpected security warnings. Review broader encryption fundamentals across our resource hub on <a href="/ssl-tls/">SSL/TLS and Web Security Basics</a>.
+          Managing SSL certificate health combines accurate server provisioning with systematic DNS configuration. Monitoring domain records, establishing automated certificate renewal routines, and validating intermediate authority bundles prevents unexpected security warnings. Verify certificate issuer policy with the <a href="/caa-record-lookup/">CAA Record Lookup & Checker</a> before a renewal failure ever reaches your users.
         </p>
       </section>
     </div>
+
+    <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin Field Notes">
+      <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin Field Notes</p>
+      <p class="text-sm leading-relaxed text-ink-dim">NET::ERR_CERT_COMMON_NAME_INVALID on a freshly migrated domain is almost never the certificate itself. Two redirects masquerade as cert failures: a stale A record still pointing at the old shared-hosting IP, where the web host serves its default *.webhost.com certificate because your hostname matches no vhost on that box; and an ISP or corporate DNS filter answering the query with a block-page IP whose certificate does not match the requested hostname. Both produce the same browser warning, and both resolve without touching your certificate: run the DNS triage above, compare the returned IP against your hosting panel, and query from an off-network resolver before you reissue anything.</p>
+    </aside>
 
     <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="frequently-asked-questions">Frequently asked questions</h2>
     <div class="mt-3 grid gap-3">
@@ -288,6 +322,10 @@ const faq = {
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long does it take for a new SSL certificate to start working?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
         <p class="mt-3 text-sm leading-relaxed text-ink-dim">A new SSL certificate works immediately after issuance and installation on your web server (following an NGINX or Apache reload) because SSL certificates are served directly during the port 443 TLS handshake without DNS TTL caching. In production DevOps workflows, we recommend automating renewal hooks within certbot (such as --deploy-hook 'systemctl reload nginx') to eliminate web server reload oversights.</p>
+      </details>
+      <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">An invalid certificate error appeared after I moved my site behind Cloudflare. What causes it?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>
+        <p class="mt-3 text-sm leading-relaxed text-ink-dim">An invalid certificate error or redirect loop on a Cloudflare-proxied website usually stems from a mismatch between your Cloudflare SSL/TLS encryption mode and your origin web server configuration. Flexible mode fetches your pages over unencrypted port 80 and loops on origins that force HTTPS, while Full (Strict) mode against a self-signed or expired origin certificate raises Cloudflare Error 526. Install a valid origin certificate and set the zone to Full (Strict).</p>
       </details>
       <details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Is it safe to click "Advanced -> Proceed to site (unsafe)" on an SSL error?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary>

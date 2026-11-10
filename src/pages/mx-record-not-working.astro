@@ -1,91 +1,280 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+
+const faqs: [string, string][] = [
+  ['Why is my MX lookup empty?', 'Either no MX record exists at the name you checked, or the records were removed, and senders then fall back to the A record, which usually fails delivery. Publish the MX set from your mail provider, or a Null MX (0 .) deliberately if the domain receives no email.'],
+  ['Can MX point to a CNAME?', 'No, RFC 2181 section 10.3 prohibits MX targets that point at CNAME aliases, and some MTAs reject or misroute such mail. Point every MX record at a hostname with a direct A or AAAA record.'],
+  ['How do I test mail delivery after fixing MX?', 'Send a message from an external account and read the delivery headers end to end, or run an SMTP-level check that walks the MX priorities and tests STARTTLS on each hop. The 3-resolver check above must also show consistent MX answers before the test means anything.'],
+  ['Why does mail go to my old server after adding Google Workspace or Microsoft 365?', 'A leftover lower-numbered MX record shadows the new provider: RFC 5321 section 5.1 makes MTAs prefer the lowest integer, so a Priority 0 legacy record wins over Google\u2019s Priority 1. Delete the old MX rows, then verify the priority ordering in the triage widget above.'],
+  ['Does cPanel deliver my contact form email locally even with Google MX?', 'Yes, when Email Routing is set to Local Mail Exchanger, cPanel routes domain-internal mail (contact forms, PHP mail) to its own local mailboxes instead of following the public MX records to Google or Microsoft. Switch the domain to Remote Mail Exchanger so local sends traverse the real MX set.'],
+];
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "Why is my MX lookup empty?", "acceptedAnswer": { '@type': 'Answer', "text": "Either no MX record exists at the name you checked, or the records were removed. Mail falls back to the A record, which usually fails delivery." } },
-    {'@type': 'Question', 'name': "Can MX point to a CNAME?", "acceptedAnswer": { '@type': 'Answer', "text": "It should not: RFC 2181 section 10.3 prohibits MX targets pointing at CNAMEs. Point MX at an A or AAAA hostname." } },
-    {'@type': 'Question', 'name': "How do I test mail delivery after fixing MX?", "acceptedAnswer": { '@type': 'Answer', "text": "Send from an external account and read the delivery headers, or run an SMTP-level check that walks the MX priorities end to end." } }
-  ],
+  mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
-import BaseLayout from '../layouts/BaseLayout.astro';
-
 ---
-<BaseLayout title="MX Record Not Working? How to Diagnose and Fix" description="MX troubleshooting: no mail arriving, mail to the wrong server, and partial delivery, diagnosed step by step with live tools."  
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["MX Not Working"]]}>
+<BaseLayout
+  title="MX Record Not Working? How to Fix Broken or Misrouted MX Records | PromptDNS"
+  description="MX record troubleshooting: diagnose missing MX records, shadowed priorities, MX-to-CNAME violations, cPanel local-exchanger misrouting, and Null MX accidents with a live 3-resolver diagnostic."
+  schema={[faqSchema]}
+  breadcrumb={[["Home", "/"], ["MX Record", "/mx-record/"], ["MX Record Not Working"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
        <span aria-hidden="true">/</span>
-      <a href="/dns/" class="hover:text-accent">DNS Guide</a>
+      <a href="/mx-record/" class="hover:text-accent">MX Record</a>
        <span aria-hidden="true">/</span>
-      <span class="text-ink-dim">MX Not Working</span>
+      <span class="text-ink-dim">MX Record Not Working</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MX Record Not Working?</h1>
-    <div class="pd-answer" data-vs="answer">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">MX Record Not Working? How to Fix Broken or Misrouted MX Records</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      "Email is broken" almost always means one of four things in the MX layer. Work this list in
-      order; each step has a live check.
-    </p>
+        An MX record failure is <strong class="text-ink">a DNS mail-routing misconfiguration where inbound SMTP servers cannot locate, resolve, or deliver messages to a domain's designated mail exchange host</strong>. Sending Mail Transfer Agents (MTAs) bounce incoming messages with 550 or 451 errors or deliver mail to a stale server when MX records point to a CNAME alias, an unresolvable hostname, or a lower-priority legacy host. The diagnosis of a non-working MX record verifies target A and AAAA resolution, priority number ordering, local mail exchanger routing, and global propagation.
+      </p>
     </div>
-<nav class="pd-toc" aria-label="On this page">
+
+    <nav class="pd-toc mt-6" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#1-do-the-mx-records-exist-at-all">1. Do the MX records exist at all?</a></li>
-        <li><a href="#2-are-they-the-right-records">2. Are they the RIGHT records?</a></li>
-        <li><a href="#3-do-all-resolvers-see-the-same-thing">3. Do all resolvers see the same thing?</a></li>
-        <li><a href="#4-is-the-mail-server-itself-accepting">4. Is the mail server itself accepting?</a></li>
-        <li><a href="#quick-reference-bounce-error-to-meaning">Quick reference: bounce error to meaning</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#symptom-cause-table">Why Is Your MX Record Not Working? (7 Ranked Causes)</a></li>
+        <li><a href="#live-mx-triage">Test Your Domain's MX Records, Priority Order, and Target IPs Live</a></li>
+        <li><a href="#mx-pointing-to-wrong-server">How Do You Fix an MX Record Pointing to the Wrong Server? (Shadow Priorities &amp; Local Delivery)</a></li>
+        <li><a href="#cli-diagnostics">How Do You Diagnose Broken MX Records From the Command Line? (dig and nslookup)</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 id="1-do-the-mx-records-exist-at-all">1. Do the MX records exist at all?</h2>
-      <p>
-        Run the <a href="/dns-record-lookup/">record lookup</a> with MX. NXDOMAIN on your apex means
-        bigger problems; NOERROR with no answers means the domain exists but no MX: senders fall back
-        to your A record, and if nothing listens there, mail bounces.
-      </p>
-      <h2 id="2-are-they-the-right-records">2. Are they the RIGHT records?</h2>
-      <p>
-        Compare the answer against your mail provider's published values, character for character.
-        A typo'd hostname (<code>aspmx.l.googel.com</code>) produces silent, total failure. Verify the
-        target hostnames themselves resolve: MX chains break when the target's A record disappears.
-      </p>
-      <h2 id="3-do-all-resolvers-see-the-same-thing">3. Do all resolvers see the same thing?</h2>
-      <p>
-        After any change, cached old values cause partial delivery: some senders hit the old server.
-        The <a href="/dns-propagation-checker/">propagation checker</a> shows which resolvers still
-        serve the previous set; wait or fix the TTL mistake that caused the long cache.
-      </p>
-      <h2 id="4-is-the-mail-server-itself-accepting">4. Is the mail server itself accepting?</h2>
-      <p>
-        DNS correct but mail still bouncing means the problem is past DNS: the provider's outage, a
-        full mailbox, or greylisting. Bounce messages quote the SMTP error; read it, it names the
-        failing stage.
-      </p>
-      <h2 id="quick-reference-bounce-error-to-meaning">Quick reference: bounce error to meaning</h2>
-      <div class="overflow-x-auto rounded-xl border border-line bg-panel/60">
+      <h2 id="symptom-cause-table">Why Is Your MX Record Not Working? (7 Ranked Causes)</h2>
+      <p>The table below ranks the 7 causes by how often they appear in real inbound-mail failures, with the exact test and fix for each:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
         <table class="pdns-table">
-          <thead><tr><th>Bounce text</th><th>Meaning</th></tr></thead>
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Test</th><th>Fix</th></tr></thead>
           <tbody>
-            <tr><td class="font-mono text-xs text-accent">no MX records / host not found</td><td class="text-sm text-ink-dim">Missing or typo'd MX (steps 1-2)</td></tr>
-            <tr><td class="font-mono text-xs text-accent">connection timed out</td><td class="text-sm text-ink-dim">Mail host unreachable: wrong target, firewall, or outage</td></tr>
-            <tr><td class="font-mono text-xs text-accent">450 / try later</td><td class="text-sm text-ink-dim">Greylisting or temporary failure; retry, usually benign</td></tr>
-            <tr><td class="font-mono text-xs text-accent">mailbox full / quota</td><td class="text-sm text-ink-dim">Recipient-side, not DNS at all</td></tr>
+            <tr><td class="font-medium text-ink">550 "no MX record for domain" bounce</td><td class="text-sm text-ink-dim">MX records deleted or never published</td><td class="text-sm text-ink-dim">Run the MX triage widget below: an empty MX row confirms it</td><td class="text-sm text-ink-dim">Publish the provider's MX set, or a deliberate Null MX (0 .) if the domain receives no mail</td></tr>
+            <tr><td class="font-medium text-ink">Mail lands on the old server after a migration</td><td class="text-sm text-ink-dim">Shadowed priority: a legacy Priority 0 or 5 record outranks the new provider</td><td class="text-sm text-ink-dim">Read the priority order column in the widget (RFC 5321 section 5.1: lowest integer wins)</td><td class="text-sm text-ink-dim">Delete the legacy MX rows so only the provider's set remains</td></tr>
+            <tr><td class="font-medium text-ink">451 / 550 "host not found" on one hop</td><td class="text-sm text-ink-dim">MX target has no A or AAAA record (hostname removed or typo'd)</td><td class="text-sm text-ink-dim">The widget's target-resolution column flags unresolvable hosts</td><td class="text-sm text-ink-dim">Add the missing A/AAAA record for the mail host, or correct the MX target name</td></tr>
+            <tr><td class="font-medium text-ink">Website contact forms vanish; external mail reaches Google</td><td class="text-sm text-ink-dim">cPanel/Plesk Local Mail Exchanger hairpin: local sends never follow public MX</td><td class="text-sm text-ink-dim">Check Email Routing mode in cPanel against the public MX set</td><td class="text-sm text-ink-dim">Switch the domain from Local to Remote Mail Exchanger</td></tr>
+            <tr><td class="font-medium text-ink">Bounces addressed to user@mail.example.com</td><td class="text-sm text-ink-dim">MX published on the wrong Host field (mail instead of @), leaving the apex unrouted</td><td class="text-sm text-ink-dim">The widget shows which name actually carries the MX set</td><td class="text-sm text-ink-dim">Move the MX records to the @ (root) entry and delete the misplaced ones</td></tr>
+            <tr><td class="font-medium text-ink">Every sender bounces even though an A record exists</td><td class="text-sm text-ink-dim">Null MX accident: a 0 . record (RFC 7505) explicitly declares the domain non-receiving</td><td class="text-sm text-ink-dim">The widget flags a Null MX row instantly</td><td class="text-sm text-ink-dim">Delete the Null MX record or replace it with the real mail-exchange set</td></tr>
+            <tr><td class="font-medium text-ink">Some senders deliver, others fail</td><td class="text-sm text-ink-dim">Stale propagation or a mixed-provider MX set (both old and new servers listed)</td><td class="text-sm text-ink-dim">3-resolver comparison plus the provider-mixing flag in the widget</td><td class="text-sm text-ink-dim">Wait out the TTL with one consistent set published; remove mixed rows</td></tr>
           </tbody>
         </table>
       </div>
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/mx-record/">MX records explained</a></li>
-        <li><a href="/email-not-working-after-dns-change/">Email stopped after a DNS change</a> and <a href="/how-to-add-mx-record/">how to add them</a></li>
-        <li><a href="/mx-record/">MX records explained</a></li>
-        <li><a href="/email-not-working-after-dns-change/">Email stopped after a DNS change</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Why is my MX lookup empty?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Either no MX record exists at the name you checked, or the records were removed. Mail falls back to the A record, which usually fails delivery.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Can MX point to a CNAME?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">It should not: RFC 2181 section 10.3 prohibits MX targets pointing at CNAMEs. Point MX at an A or AAAA hostname.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How do I test mail delivery after fixing MX?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Send from an external account and read the delivery headers, or run an SMTP-level check that walks the MX priorities end to end.</p></details></div>
+      <p>
+        Rows 2 and 4 are the silent ones: both look like a provider problem while the DNS and the web host each hold half of the fault.
+      </p>
+
+      <h2 id="live-mx-triage">Test Your Domain's MX Records, Priority Order, and Target IPs Live</h2>
+      <p>
+        DNS-level mail routing has 3 layers that must all agree: the MX set itself, the resolution of every target hostname to an IP, and the consistency of both across resolvers. The widget below walks all 3 layers live over DNS-over-HTTPS and flags the failure patterns this page owns:
+      </p>
+      <div class="glass mt-4 rounded-2xl border border-accent/25 bg-panel/80 p-5" data-vs="centerpiece">
+        <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Triage attributes" data-vs="attributes">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass"><span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>100% Free · No Sign Up</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">MX + Target Resolution Audit</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">Flags CNAME · Null MX · Mixed Providers</span>
+        </div>
+        <form id="mxw-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="mxw-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Diagnose MX</button>
+        </form>
+        <div id="mxw-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="mxw-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table">
+            <thead><tr><th>Priority</th><th>MX Target</th><th>Target Resolution (A/AAAA/CNAME)</th><th>Flag</th></tr></thead>
+            <tbody id="mxw-body"></tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-xs text-ink-faint">Flags: an MX target resolving through a CNAME violates RFC 2181 section 10.3; a target with no A/AAAA record bounces every hop that reaches it; a 0 . row is a deliberate Null MX (RFC 7505); targets spread across unrelated domains mean a mixed provider set.</p>
       </div>
+      <p>
+        For the record-by-record view across more resolvers, open the <a href="/mx-record-lookup/">MX record lookup</a>; for SMTP-level reachability of each resolved host (port 25, STARTTLS, certificates), run the <a href="/smtp-tester/">SMTP preflight</a>; and when the widget shows resolvers disagreeing on the MX set, the <a href="/dns-propagation-checker/">DNS propagation checker</a> maps the stale caches.
+      </p>
+
+      <h2 id="mx-pointing-to-wrong-server">How Do You Fix an MX Record Pointing to the Wrong Server? (Shadow Priorities &amp; Local Delivery)</h2>
+      <p>
+        "Pointing at the wrong server" is never one bug: it takes 3 distinct forms, and each hides in a different place. The ordered fix list below covers all 3 scenarios in the order they usually surface:
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Shadowed priority numbers.</strong> RFC 5321 section 5.1 sends MTAs to the lowest MX preference integer first, so a leftover Priority 0 or Priority 5 record (the old cPanel or Exchange host) silently outranks a freshly added Google Workspace set at Priority 1, 5, 10 - or Microsoft 365's Priority 0. Open the DNS zone, sort every MX row by priority, and delete every row that does not belong to the active provider; the widget's priority column shows exactly which row is winning.</li>
+        <li><strong>The cPanel/Plesk Local Mail Exchanger hairpin.</strong> Even with perfect public MX records pointing at Google Workspace or Microsoft 365, a web server on the same domain treats its own name as local: contact forms and PHP mail() deliveries go to the server's own empty cPanel mailbox and never traverse the public MX set at all. In cPanel, open Email Routing for the domain and switch it from Local Mail Exchanger to Remote Mail Exchanger; in Plesk, the equivalent lives under Mail Settings. Test with a contact form immediately after the switch.</li>
+        <li><strong>The wrong Host field (mail vs @).</strong> MX records answering "which server receives mail for example.com" must live on the apex entry (@). Entering mail in the Host/Name column publishes the set on mail.example.com, so addresses like user@example.com route by the apex's old records (or nothing at all) while user@mail.example.com routes to the new host. Move the records to @, delete the misplaced set, and confirm with the widget that the apex now answers.</li>
+      </ol>
+      <p>
+        Fix the layers in this order and re-run the widget between each step: a priority fix without deleting the old rows, or a Host-field fix without switching the exchanger mode, leaves half the failure in place.
+      </p>
+
+      <h2 id="cli-diagnostics">How Do You Diagnose Broken MX Records From the Command Line? (dig and nslookup)</h2>
+      <pre><code># The MX set with priorities:
+dig example.com MX +noall +answer
+
+# Does each target actually resolve to an address (and not through a CNAME)?
+dig mail.example.com A CNAME +short
+
+# Windows PowerShell equivalent:
+nslookup -type=mx example.com</code></pre>
+      <p>
+        When the records check out and the failure turns out to be a publish-order problem instead, the <a href="/how-to-add-mx-record/">how to add MX records</a> guide walks the zone edit per provider; when the MX breakage arrived with a nameserver migration, the <a href="/email-not-working-after-dns-change/">email stopped working after a DNS change</a> guide covers the full recovery; and when mail delivers but lands in spam, the routing is fine and the <a href="/why-emails-go-to-spam/">why emails go to spam</a> guide takes over.
+      </p>
+
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">Two BIND/cPanel classics produce "MX not working" tickets that no provider can reproduce. First, the MX-to-CNAME trap: pointing an MX at a CNAME alias violates RFC 2181 section 10.3, and the failure is asymmetric - some MTAs resolve the chain anyway, others refuse - so the domain appears to work from Outlook and bounces from Gmail. Second, the missing trailing dot: writing 10 smtp.google.com without a trailing dot in a zone file makes BIND publish the target as smtp.google.com.example.com., a name nobody answers. Both failures hide from panel-based editors (which add the dot for you) and surface only in raw zone files and migrations.</p>
+      </aside>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="faq">Frequently Asked Questions</h2>
+    <FaqAccordion faqs={faqs} />
+  </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('mxw-form') as HTMLFormElement;
+  const input = document.getElementById('mxw-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('mxw-status')!;
+  const outEl = document.getElementById('mxw-out')!;
+  const bodyEl = document.getElementById('mxw-body')!;
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-3 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-3 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-3 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-3 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  function providerFamily(host: string): string {
+    const h = host.toLowerCase();
+    if (/(google|googlemail)\./.test(h)) return 'Google';
+    if (/protection\.outlook\.com|office365/.test(h)) return 'Microsoft 365';
+    if (/zoho/.test(h)) return 'Zoho';
+    if (/protonmail|proton\.me/.test(h)) return 'Proton';
+    if (/yandex/.test(h)) return 'Yandex';
+    if (/iq\.swift--x\./.test(h)) return 'Fastmail';
+    if (/messagingengine/.test(h)) return 'Fastmail';
+    if (/pphosted|proofpoint/.test(h)) return 'Proofpoint';
+    if (/mimecast/.test(h)) return 'Mimecast';
+    if (/(cpanel|hostgator|bluehost|namecheap|privateemail)/.test(h)) return 'cPanel/Host mail';
+    return h.split('.').slice(-2).join('.');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Querying MX for ${domain} and resolving every target...`);
+    outEl.classList.add('hidden');
+    bodyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: 'mx-triage' } }));
+
+    let mx;
+    try {
+      mx = await lookup(domain, 'MX', RESOLVERS[0]);
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolver. This is an inconclusive result, not a pass or fail.');
+      return;
+    }
+
+    const rows = mx.answers.filter((x) => x.type === 15)
+      .map((x) => { const m = x.data.match(/^(\d+)\s+(\S+)\.?$/); return m ? { prio: Number(m[1]), host: m[2].replace(/\.$/, ''), ttl: x.TTL } : null; })
+      .filter((v): v is { prio: number; host: string; ttl: number } => v !== null)
+      .sort((a, b) => a.prio - b.prio);
+
+    // Null MX (RFC 7505): priority 0 with target "." and nothing else
+    const isNullMx = rows.length === 1 && rows[0].host === '.' && rows[0].prio === 0;
+
+    const cell = (txt: string, cls = 'text-sm text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+
+    if (!rows.length) {
+      const a = await lookup(domain, 'A', RESOLVERS[0]).catch(() => null);
+      bodyEl.textContent = '';
+      const tr = document.createElement('tr');
+      tr.append(
+        cell('-', 'font-mono text-xs text-accent font-semibold'),
+        cell('No MX records published', 'font-medium text-ink'),
+        cell(a && a.answers.some((x) => x.type === 1) ? 'Senders will fall back to the A record: check whether anything listens on port 25 there' : 'No MX and no A fallback: the domain cannot receive mail', 'text-sm text-ink-dim'),
+        cell('Missing MX', 'text-sm font-semibold text-fail'),
+      );
+      bodyEl.appendChild(tr);
+      outEl.classList.remove('hidden');
+      setStatus('fail', 'No MX records published for ' + domain + '. Senders either bounce or fall back to the A record: publish the provider MX set, or a deliberate Null MX (0 .) if the domain never receives email.');
+      return;
+    }
+
+    if (isNullMx) {
+      bodyEl.textContent = '';
+      const tr = document.createElement('tr');
+      tr.append(
+        cell('0', 'font-mono text-xs text-accent font-semibold'),
+        cell('. (Null MX)', 'font-medium text-ink'),
+        cell('Deliberate non-receiver declaration per RFC 7505', 'text-sm text-ink-dim'),
+        cell('Null MX', 'text-sm font-semibold text-warn'),
+      );
+      bodyEl.appendChild(tr);
+      outEl.classList.remove('hidden');
+      setStatus('warn', 'A Null MX record (0 ., RFC 7505) declares ' + domain + ' as a non-receiver. If the domain is supposed to receive email, this record is the failure: replace it with the provider MX set.');
+      return;
+    }
+
+    const flags: string[] = [];
+    const families = new Set<string>();
+    let shadowWarn = false;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const tr = document.createElement('tr');
+      let flag = '';
+      try {
+        const tgt = await lookup(r.host, 'A', RESOLVERS[0]).catch(() => null);
+        const cnameRec = tgt?.answers.find((x) => x.type === 5);
+        const aRec = tgt?.answers.find((x) => x.type === 1);
+        const aaaa = await lookup(r.host, 'AAAA', RESOLVERS[0]).catch(() => null);
+        const a6 = aaaa?.answers.find((x) => x.type === 28);
+        if (cnameRec) {
+          flag = 'MX -> CNAME violation (RFC 2181 10.3): resolves via ' + cnameRec.data.replace(/\.$/, '');
+          flags.push('MX to CNAME: ' + r.host);
+        } else if (aRec || a6) {
+          flag = 'Resolves to ' + (aRec?.data.replace(/\.$/, '') ?? a6!.data.replace(/\.$/, ''));
+        } else {
+          flag = 'Target has NO A/AAAA record: hops reaching this MX bounce';
+          flags.push('Unresolvable MX target: ' + r.host);
+        }
+      } catch { flag = 'Target lookup failed (network error)'; }
+      if (i === 0 && rows.length > 1 && (r.host.includes('cpanel') || r.host.includes('mail.') && r.prio <= 5)) shadowWarn = true;
+      families.add(providerFamily(r.host));
+      tr.append(
+        cell(String(r.prio), 'font-mono text-xs text-accent font-semibold'),
+        cell(r.host, 'font-mono text-xs text-ink'),
+        cell(flag, 'text-sm text-ink-dim'),
+        cell(flag.startsWith('Resolves to') ? 'OK' : flag.startsWith('MX ->') ? 'Violation' : 'Broken', 'text-sm font-semibold ' + (flag.startsWith('Resolves to') ? 'text-pass' : 'text-fail')),
+      );
+      bodyEl.appendChild(tr);
+    }
+
+    if (families.size > 1) flags.push('Mixed provider set: ' + [...families].join(' + ') + ' (old and new rows coexist)');
+    if (rows.length > 1 && rows.some((r, i) => i > 0 && r.prio <= rows[0].prio)) shadowWarn = true;
+    // Shadow detection: duplicate-ish low-priority legacy host ahead of the new provider rows
+    if (rows.length > 1 && !flags.some((f) => f.startsWith('Mixed')) && providerFamily(rows[0].host) !== providerFamily(rows[rows.length - 1].host)) {
+      flags.push('Priority ' + rows[0].prio + ' (' + rows[0].host + ') wins delivery ahead of ' + rows[rows.length - 1].host + ' - a legacy row may be shadowing the new provider');
+    }
+
+    outEl.classList.remove('hidden');
+    if (flags.some((f) => f.startsWith('Unresolvable') || f.startsWith('MX to CNAME'))) {
+      setStatus('fail', 'MX set has broken targets: ' + flags.join(' | '));
+    } else if (flags.some((f) => f.startsWith('Mixed') || f.startsWith('Priority'))) {
+      setStatus('warn', 'MX set resolves but routes suspiciously: ' + flags.join(' | '));
+    } else {
+      setStatus('pass', 'MX set for ' + domain + ' resolves cleanly: ' + rows.map((r) => r.prio + ' ' + r.host).join(', ') + '. Lowest priority wins delivery.');
+    }
+  });
+</script>

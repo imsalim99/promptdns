@@ -1,18 +1,27 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FaqAccordion from '../components/FaqAccordion.astro';
+
+const faqs: [string, string][] = [
+  ['How long until my site works after a DNS change?', 'As long as the old TTL: records edited after a 300-second TTL recover in minutes, while a 3600-second TTL can hold stale answers for an hour, and nameserver changes inherit the TLD referral cache of 172,800 seconds (48 hours).'],
+  ['My site works on mobile but not desktop, why?', 'Different devices use different recursive resolvers with different caches, so a mid-propagation change shows old answers on one device and new answers on another. The 3-resolver check above shows exactly which resolvers still serve the stale value.'],
+  ['Should I lower TTL before the next change?', 'Yes, lowering the TTL to 300 seconds at least 24 hours before a planned change shortens the worst-case recovery window, and raising it back after verification restores caching efficiency. It is the single habit that prevents most migration incidents.'],
+  ['What causes SERVFAIL on every resolver after moving to a new DNS host?', 'An orphaned DS record at the parent zone is the usual cause: the old DNSSEC delegation signer no longer matches the new host, so validating resolvers return RCODE 2 (SERVFAIL) for every query until the stale DS is removed or the new host signs the zone.'],
+  ['Why did Cloudflare start redirect-looping my site after the change?', 'Cloudflare Flexible SSL mode causes redirect loops when the origin server redirects HTTP port 80 traffic to HTTPS: the proxy fetches over port 80, the origin redirects, and the cycle repeats. Switch the zone to Full (Strict) mode and install a valid origin certificate.'],
+];
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {'@type': 'Question', 'name': "How long until my site works after a DNS change?", "acceptedAnswer": { '@type': 'Answer', "text": "As long as the old TTL: records edited after a 300-second TTL recover in minutes, while a 3600-second TTL can hold stale answers for an hour, and NS changes up to 48 hours." } },
-    {'@type': 'Question', 'name': "My site works on mobile but not desktop, why?", "acceptedAnswer": { '@type': 'Answer', "text": "Different devices use different resolvers with different caches. The propagation checker shows which resolvers still serve the old answer." } },
-    {'@type': 'Question', 'name': "Should I lower TTL before the next change?", "acceptedAnswer": { '@type': 'Answer', "text": "Yes: lower to 300 seconds at least 24 hours ahead, make the change, verify, then raise it back. It is the single habit that prevents most migration incidents." } }
-  ],
+  mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
-import BaseLayout from '../layouts/BaseLayout.astro';
-
 ---
-<BaseLayout title="Site Down After a DNS Change? Here's What Happened" description="Site down after a DNS change: the five causes from cached old IPs to wrong records, and the recovery checklist in order."  
- breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Site Down After DNS Change"]]}>
+<BaseLayout
+  title="Site Down After a DNS Change? How to Diagnose and Fix It Fast | PromptDNS"
+  description="Site down after a DNS change: diagnose stale TTL caches, unprovisioned zones, orphaned DNSSEC DS records, and Cloudflare SSL loops with a live 3-resolver triage check, then roll back or fix forward safely."
+  schema={[faqSchema]}
+  breadcrumb={[["Home", "/"], ["DNS Guide", "/dns/"], ["Site Down After DNS Change"]]}
+>
   <div class="mx-auto max-w-3xl px-4 py-12">
     <nav class="mb-4 text-sm text-ink-faint" aria-label="Breadcrumb">
       <a href="/" class="hover:text-accent">Home</a>
@@ -21,83 +30,197 @@ import BaseLayout from '../layouts/BaseLayout.astro';
        <span aria-hidden="true">/</span>
       <span class="text-ink-dim">Site Down After DNS Change</span>
     </nav>
-    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Site Down After a DNS Change?</h1>
-    <div class="pd-answer" data-vs="answer">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Site Down After a DNS Change? How to Diagnose and Fix It Fast</h1>
+    <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-      You changed one record and the site vanished. Almost every time, it is one of five causes, and
-      the first two account for the majority. Diagnose in this order.
-    </p>
+        A website outage after a DNS change is <strong class="text-ink">an availability failure caused by stale recursive resolver caches, an unprovisioned zone at a new nameserver host, an orphaned DNSSEC DS record, or an origin TLS mismatch</strong>. Public DNS resolvers either return SERVFAIL and NXDOMAIN responses or route visitors to the wrong server IP while old Time to Live (TTL) timers expire. The recovery process of a broken DNS change isolates propagation cache lag from authoritative zone errors before executing a targeted fix or rollback.
+      </p>
     </div>
 
-    <h2 class="font-display mt-10 text-xl font-semibold text-ink">Post-change diagnosis matrix</h2>
-    <section class="not-prose my-4" aria-label="Reference table">
-      <div class="glass rounded-2xl p-5 shadow-lg sm:p-7 overflow-x-auto">
-        <table class="pdns-table" style="width:100%">
-          <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
-          <tbody><tr><td class="font-medium text-ink">Resolves on some resolvers only</td><td class="text-sm text-ink-dim">Normal propagation</td><td class="text-sm text-ink-dim">Wait out the old TTL</td></tr><tr><td class="font-medium text-ink">NXDOMAIN everywhere</td><td class="text-sm text-ink-dim">Name typo or deleted record</td><td class="text-sm text-ink-dim">Re-add the record</td></tr><tr><td class="font-medium text-ink">Resolves but site down</td><td class="text-sm text-ink-dim">DNS is fine; the hosting is not</td><td class="text-sm text-ink-dim">Check the web server, not DNS</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-    <p class="mt-4 text-base leading-relaxed text-ink-dim">When the browser itself reports the failure rather than the page loading wrong, the device is usually the one at fault: the <a href="/err-name-not-resolved/" class="text-accent hover:text-accent-soft">ERR_NAME_NOT_RESOLVED</a> guide walks that path.</p>
-<nav class="pd-toc" aria-label="On this page">
+    <nav class="pd-toc mt-6" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#1-cached-old-answers-the-innocent-one">1. Cached old answers (the innocent one)</a></li>
-        <li><a href="#2-the-record-points-at-the-wrong-place">2. The record points at the wrong place</a></li>
-        <li><a href="#3-the-target-is-down-dns-took-the-blame">3. The target is down (DNS took the blame)</a></li>
-        <li><a href="#4-delegation-broke">4. Delegation broke</a></li>
-        <li><a href="#5-the-old-server-was-turned-off-too-earl">5. The old server was turned off too early</a></li>
-        <li><a href="#the-10-minute-recovery-checklist">The 10-minute recovery checklist</a></li>
-        <li><a href="#related">Related</a></li>
+        <li><a href="#symptom-cause-table">Why Is Your Website Down After a DNS Change? (6 Ranked Causes)</a></li>
+        <li><a href="#live-triage">Is Your Site Down Globally or Only on Your Device? (Live 3-Resolver Check)</a></li>
+        <li><a href="#recovery-steps">How Do You Recover a Website That Went Down After a DNS Edit? (6 Ordered Steps)</a></li>
+        <li><a href="#rollback-decision">When Should You Roll Back a DNS Change vs Wait for Propagation?</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
+
     <div class="rich-text mt-8">
-      <h2 id="1-cached-old-answers-the-innocent-one">1. Cached old answers (the innocent one)</h2>
-      <p>
-        If <em>some</em> users see the site and others don't, propagation is still in flight: resolvers
-        hold the old value until its TTL expires. Check the
-        <a href="/dns-propagation-checker/">propagation checker</a>; when resolvers disagree, wait.
-        <a href="/flush-dns-cache/">Flush your own caches</a> to test cleanly.
-      </p>
-      <h2 id="2-the-record-points-at-the-wrong-place">2. The record points at the wrong place</h2>
-      <p>
-        A typo'd IP, a missing digit, an old server's address. The lookup shows exactly what the world
-        receives; compare it to what the new server should be. This is also where CDN setups bite:
-        pointing at origin instead of the CDN edge (or vice versa) serves errors from a healthy server.
-      </p>
-      <h2 id="3-the-target-is-down-dns-took-the-blame">3. The target is down (DNS took the blame)</h2>
-      <p>
-        DNS only points. If the lookup is correct and the site is still down, the server, its
-        firewall, or its TLS cert is the problem. Test the IP directly or check the host's status
-        page before touching DNS again.
-      </p>
-      <h2 id="4-delegation-broke">4. Delegation broke</h2>
-      <p>
-        If lookups return SERVFAIL everywhere, the nameserver chain is broken: a half-finished
-        provider switch, expired domain, or DNSSEC mismatch (a stale
-        <a href="/ds-record/">DS record</a> after key rotation SERVFAILs the whole domain). Verify
-        your <a href="/ns-record/">NS records</a> and registrar delegation match.
-      </p>
-      <h2 id="5-the-old-server-was-turned-off-too-earl">5. The old server was turned off too early</h2>
-      <p>
-        During migrations, cached traffic keeps arriving at the old server for one full TTL window.
-        Decommission it only after the propagation checker shows global agreement.
-      </p>
-      <h2 id="the-10-minute-recovery-checklist">The 10-minute recovery checklist</h2>
-      <ol class="list-decimal space-y-1.5 pl-5">
-        <li>Run the propagation checker: agreement everywhere? Then DNS is fine, look at the server.</li>
-        <li>Disagreement? Wait or re-check the record's correctness; never stack another change on top.</li>
-        <li>SERVFAIL everywhere? Check NS delegation and DNSSEC before anything else.</li>
-        <li>Recovering? Note the lesson for next time: lower TTL 24h before planned changes.</li>
-      </ol>
-      
-<h2 id="related">Related</h2>
-      <ul>
-        <li><a href="/dns-propagation/">DNS propagation explained</a></li>
-        <li><a href="/what-is-ttl-in-dns/">TTL explained</a></li>
-      </ul>
-    </div>
-  <h2 class="font-display mt-10 text-xl font-semibold text-ink">Frequently asked questions</h2>
-      <div class="mt-3 grid gap-3"><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">How long until my site works after a DNS change?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">As long as the old TTL: records edited after a 300-second TTL recover in minutes, while a 3600-second TTL can hold stale answers for an hour, and NS changes up to 48 hours.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">My site works on mobile but not desktop, why?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Different devices use different resolvers with different caches. The propagation checker shows which resolvers still serve the old answer.</p></details><details class="group rounded-xl border border-line bg-panel/60 px-5 py-4 open:border-accent/40"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">Should I lower TTL before the next change?<span class="text-accent transition-transform duration-200 group-open:rotate-45">+</span></summary><p class="mt-3 text-sm leading-relaxed text-ink-dim">Yes: lower to 300 seconds at least 24 hours ahead, make the change, verify, then raise it back. It is the single habit that prevents most migration incidents.</p></details></div>
+      <h2 id="symptom-cause-table">Why Is Your Website Down After a DNS Change? (6 Ranked Causes)</h2>
+      <p>The table below ranks the 6 causes by how often they appear in real post-change outages, with the exact test and fix for each:</p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Test</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">Some visitors see the site, others get errors</td><td class="text-sm text-ink-dim">Stale recursive cache: resolvers serve the old answer until the TTL expires</td><td class="text-sm text-ink-dim">Run the 3-resolver triage below and compare answers per resolver</td><td class="text-sm text-ink-dim">Wait out the old TTL; verify the record is correct on the authoritative host</td></tr>
+            <tr><td class="font-medium text-ink">NXDOMAIN from every resolver and device</td><td class="text-sm text-ink-dim">The record was deleted, the zone lost its file, or a typo broke the name</td><td class="text-sm text-ink-dim">Query the record directly on your DNS provider's nameserver</td><td class="text-sm text-ink-dim">Re-add the record with the correct name and value</td></tr>
+            <tr><td class="font-medium text-ink">SERVFAIL from every resolver</td><td class="text-sm text-ink-dim">Orphaned DNSSEC DS record at the parent, or every authoritative NS is unreachable</td><td class="text-sm text-ink-dim">Check the DS row in the triage widget and run the delegation checker</td><td class="text-sm text-ink-dim">Remove the stale DS at the registrar, or restore the nameserver set</td></tr>
+            <tr><td class="font-medium text-ink">Site loads on the old server, not the new one</td><td class="text-sm text-ink-dim">The record edit never reached the authoritative zone, or points at the wrong IP</td><td class="text-sm text-ink-dim">Compare the triage answers against the new server's intended IP</td><td class="text-sm text-ink-dim">Correct the record value on the authoritative DNS host</td></tr>
+            <tr><td class="font-medium text-ink">DNS answers correctly but the site is still down</td><td class="text-sm text-ink-dim">The origin web server, firewall, or TLS certificate failed: DNS took the blame</td><td class="text-sm text-ink-dim">Fetch the site directly by IP and hostname to bypass DNS entirely</td><td class="text-sm text-ink-dim">Fix the hosting problem; do not touch DNS again</td></tr>
+            <tr><td class="font-medium text-ink">ERR_TOO_MANY_REDIRECTS after moving to Cloudflare</td><td class="text-sm text-ink-dim">Flexible SSL mode with an origin that redirects HTTP port 80 to HTTPS</td><td class="text-sm text-ink-dim">Check the zone's SSL/TLS encryption mode against the origin behavior</td><td class="text-sm text-ink-dim">Set Full (Strict) mode and install a valid origin certificate</td></tr>
+          </tbody>
+        </table>
       </div>
+      <p>
+        Work the table top to bottom: the first two rows cover the majority of post-change outages, and rows 3 and 6 are the ones that look like propagation but never heal on their own.
+      </p>
+
+      <h2 id="live-triage">Is Your Site Down Globally or Only on Your Device? (Live 3-Resolver Check)</h2>
+      <p>
+        The distinction that decides the whole recovery path is global outage versus local staleness, and the fastest way to see it is the same comparison a propagation checker draws: query the same records across independent resolvers and read the disagreements. The widget below queries your domain's A, AAAA, NS, and DS records across 1.1.1.1, 8.8.8.8, and 223.5.5.5 and shows the raw answers side by side:
+      </p>
+      <div class="glass mt-4 rounded-2xl border border-accent/25 bg-panel/80 p-5" data-vs="centerpiece">
+        <div class="mb-4 flex flex-wrap items-center gap-2" aria-label="Triage attributes" data-vs="attributes">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-pass/30 bg-pass/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-pass"><span class="h-1.5 w-1.5 rounded-full bg-pass animate-pulse"></span>100% Free · No Sign Up</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-medium text-accent">Live 3-Resolver Comparison</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 font-mono text-[11px] text-ink-dim">A · AAAA · NS · DS</span>
+        </div>
+        <form id="triage-form" class="flex flex-col gap-3 sm:flex-row">
+          <input id="triage-domain" data-preset-target="domain" type="text" autocomplete="off" spellcheck="false" placeholder="example.com"
+            class="flex-1 rounded-md border border-line bg-transparent px-3 py-2.5 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+          <button type="submit" class="btn-cta btn-shimmer px-6 py-2.5 text-sm">Run 3-Resolver Triage</button>
+        </form>
+        <div id="triage-status" class="mt-3 hidden rounded-md px-4 py-3 text-sm font-medium"></div>
+        <div id="triage-out" class="mt-3 hidden overflow-x-auto rounded-lg border border-line/60">
+          <table class="pdns-table">
+            <thead><tr><th>Record</th><th>1.1.1.1 (Cloudflare)</th><th>8.8.8.8 (Google)</th><th>223.5.5.5 (AliDNS)</th><th>Reading</th></tr></thead>
+            <tbody id="triage-body"></tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-xs text-ink-faint">Interpretation: identical answers everywhere = DNS is consistent (look at the origin server). NXDOMAIN everywhere = the record or zone is broken authoritatively. SERVFAIL everywhere = DNSSEC or delegation failure. Disagreement = propagation in flight.</p>
+      </div>
+      <p>
+        For a deeper per-record view across more resolvers and record types, run the <a href="/dns-propagation-checker/">DNS propagation checker</a>; when the NS row disagrees or looks wrong, the <a href="/delegation-checker/">delegation checker</a> tests every nameserver individually; and when the DS row answers SERVFAIL, the <a href="/dnssec-checker/">DNSSEC checker</a> isolates the broken chain link.
+      </p>
+
+      <h2 id="recovery-steps">How Do You Recover a Website That Went Down After a DNS Edit? (6 Ordered Steps)</h2>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li><strong>Run the 3-resolver triage above</strong> and classify the failure: disagreement means propagation, universal NXDOMAIN means an authoritative record error, and universal SERVFAIL means DNSSEC or delegation.</li>
+        <li><strong>Verify the record on the authoritative host</strong> before touching anything else: the value, the name (apex vs subdomain), and the record type must match what the new server expects.</li>
+        <li><strong>Fix forward when the record is wrong:</strong> correct the value on the current DNS host rather than re-pointing nameservers, because a record fix propagates on the record's TTL while an NS rollback inherits the 48-hour referral cache.</li>
+        <li><strong>Remove the stale DS record</strong> at the registrar when the SERVFAIL diagnosis points at DNSSEC: publish DNSSEC on the new host first, then replace the DS, or delete the DS to run unsigned while you stabilize.</li>
+        <li><strong>Test from a clean device:</strong> flush your local resolver cache and retry, because your own machine may be the only one still holding the old answer. The <a href="/flush-dns-cache/">flush DNS cache</a> guide covers Windows, macOS, Linux, and browser caches step by step.</li>
+        <li><strong>Confirm the origin separately:</strong> when DNS agrees everywhere and the site is still down, stop editing DNS and diagnose the web server, its firewall, and the TLS certificate; the browser error strings map to their own guides (<a href="/err-name-not-resolved/">ERR_NAME_NOT_RESOLVED</a> for local resolution failures, <a href="/dns-probe-finished-nxdomain/">DNS_PROBE_FINISHED_NXDOMAIN</a> for the browser NXDOMAIN variant).</li>
+      </ol>
+      <p>
+        The order matters more than the individual steps: every minute spent editing DNS while the real fault sits at the origin extends the outage instead of shortening it.
+      </p>
+
+      <h2 id="rollback-decision">When Should You Roll Back a DNS Change vs Wait for Propagation?</h2>
+      <p>
+        Rolling back is a decision, not a reflex: the wrong rollback doubles the propagation delay instead of ending it. The table below sorts the 4 realistic scenarios:
+      </p>
+      <div class="mt-4 overflow-x-auto rounded-xl border border-line bg-panel/60">
+        <table class="pdns-table">
+          <thead><tr><th>Scenario</th><th>Roll Back or Fix Forward?</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium text-ink">A record value is wrong on the current DNS host</td><td class="text-sm text-ink-dim">Fix forward: correct the value now</td><td class="text-sm text-ink-dim">The old value is cached for at most one TTL; a correct publish starts healing immediately</td></tr>
+            <tr><td class="font-medium text-ink">Nameserver migration to a host with an unprovisioned zone</td><td class="text-sm text-ink-dim">Roll back NS at the registrar</td><td class="text-sm text-ink-dim">The old host still serves the working zone; reverting delegation restores service while the new zone is provisioned</td></tr>
+            <tr><td class="font-medium text-ink">DNSSEC DS orphaned after a host move</td><td class="text-sm text-ink-dim">Fix forward: delete or replace the DS</td><td class="text-sm text-ink-dim">Rolling back NS without fixing DNSSEC keeps the SERVFAIL, because the parent DS still fails validation</td></tr>
+            <tr><td class="font-medium text-ink">Only your own device shows the failure</td><td class="text-sm text-ink-dim">Do nothing: flush local cache and wait</td><td class="text-sm text-ink-dim">Global answers already agree, so any further change only restarts the propagation clock</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The sibling failures get their own recovery paths: the <a href="/website-not-resolving/">website not resolving</a> guide covers the general non-resolution diagnosis, the <a href="/email-not-working-after-dns-change/">email stopped working after a DNS change</a> guide covers the MX and SPF half of a migration, and the <a href="/change-dns-records-safely/">change DNS records safely</a> guide prevents the whole class of incident with pre-change TTL staging.
+      </p>
+
+      <aside class="mt-6 rounded-xl border-l-3 border-l-violet/50 bg-violet/5 p-5" aria-label="Sysadmin field notes">
+        <p class="font-mono text-[10px] uppercase tracking-[0.16em] text-violet mb-2">Sysadmin field notes</p>
+        <p class="text-sm leading-relaxed text-ink-dim">The most expensive panic move in post-change incidents is nameserver flapping: reverting NS at the registrar back to the old host, seeing no immediate recovery, and reverting again. Every referral switch poisons recursive caches with conflicting TLD referrals that carry a 172,800-second (48-hour) TTL, so each flap extends the worst-case inconsistency window instead of shortening it. Fixing the broken record forward on the current DNS host is almost always faster than rolling back delegation: a record edit heals on the record's own TTL (often 300 to 3600 seconds), while every NS flip re-opens the full 48-hour referral window for anyone who cached the intermediate state.</p>
+      </aside>
+    </div>
+
+    <h2 class="font-display mt-10 text-xl font-semibold text-ink" id="faq">Frequently Asked Questions</h2>
+    <FaqAccordion faqs={faqs} />
+  </div>
 </BaseLayout>
+
+<script>
+  import { lookup, RESOLVERS, normalizeDomain } from '../lib/doh';
+
+  const form = document.getElementById('triage-form') as HTMLFormElement;
+  const input = document.getElementById('triage-domain') as HTMLInputElement;
+  const statusEl = document.getElementById('triage-status')!;
+  const outEl = document.getElementById('triage-out')!;
+  const bodyEl = document.getElementById('triage-body')!;
+
+  const setStatus = (kind: 'loading' | 'pass' | 'warn' | 'fail', text: string) => {
+    const cls: Record<string, string> = {
+      loading: 'mt-3 rounded-md border border-line bg-panel-2 px-4 py-3 text-sm font-medium text-accent',
+      pass: 'mt-3 rounded-md border border-pass/30 bg-pass/10 px-4 py-3 text-sm font-medium text-pass',
+      warn: 'mt-3 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm font-medium text-warn',
+      fail: 'mt-3 rounded-md border border-fail/30 bg-fail/10 px-4 py-3 text-sm font-medium text-fail',
+    };
+    statusEl.className = cls[kind];
+    statusEl.textContent = text;
+  };
+
+  const TYPES: [string, 'A' | 'AAAA' | 'NS' | 'DS'][] = [['A', 'A'], ['AAAA', 'AAAA'], ['NS', 'NS'], ['DS', 'DS']];
+  const TYPE_CODE: Record<string, number> = { A: 1, AAAA: 28, NS: 2, DS: 43 };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = normalizeDomain(input.value);
+    if (!domain.includes('.')) { setStatus('fail', 'Enter a valid domain, e.g. example.com'); return; }
+    setStatus('loading', `Querying A, AAAA, NS, and DS for ${domain} across 1.1.1.1, 8.8.8.8, and 223.5.5.5...`);
+    outEl.classList.add('hidden');
+    bodyEl.textContent = '';
+    window.dispatchEvent(new CustomEvent('pdns:clear', { detail: { tool: 'site-down-triage' } }));
+
+    const answerSets: Record<string, string[]> = {};
+    try {
+      for (const [label, type] of TYPES) {
+        const per = await Promise.all(RESOLVERS.map(async (r) => {
+          try {
+            const res = await lookup(domain, type, r);
+            const ans = res.answers.filter((x) => x.type === TYPE_CODE[type]).map((x) => x.data.replace(/\.$/, ''));
+            if (ans.length) return ans.slice(0, 2).join(', ');
+            if (res.status === 0) return 'NOERROR, 0 answers';
+            if (res.status === 3) return 'NXDOMAIN';
+            if (res.status === 2) return 'SERVFAIL';
+            return 'status ' + res.status;
+          } catch { return 'network error'; }
+        }));
+        answerSets[label] = per;
+      }
+    } catch {
+      setStatus('warn', 'Could not reach the DNS resolvers. This is an inconclusive result, not a pass or fail.');
+      return;
+    }
+
+    const cell = (txt: string, cls = 'text-xs text-ink-dim') => { const td = document.createElement('td'); td.className = cls; td.textContent = txt; return td; };
+    for (const [label] of TYPES) {
+      const vals = answerSets[label];
+      const allSame = vals.every((v) => v === vals[0]);
+      const allNx = vals.every((v) => v.includes('NXDOMAIN'));
+      const allSf = vals.every((v) => v.includes('SERVFAIL'));
+      const disagree = !allSame && !allNx && !allSf;
+      let reading = 'Consistent answers: DNS agrees across resolvers.';
+      if (allNx && label === 'A') reading = 'NXDOMAIN everywhere: authoritative record or zone failure.';
+      else if (allSf) reading = 'SERVFAIL everywhere: DNSSEC chain or delegation failure.';
+      else if (disagree) reading = label === 'DS' ? 'Resolvers disagree on DNSSEC state: check the DS at the registrar.' : 'Resolvers disagree: propagation in flight or inconsistent authoritative data.';
+      else if (allSame && vals[0].includes('NOERROR, 0 answers')) reading = 'Consistent NODATA: no record of this type published.';
+      const tr = document.createElement('tr');
+      tr.append(
+        cell(label, 'font-mono text-xs text-accent font-semibold'),
+        cell(vals[0]), cell(vals[1]), cell(vals[2]),
+        cell(reading, 'text-xs font-medium text-ink'),
+      );
+      bodyEl.appendChild(tr);
+    }
+    outEl.classList.remove('hidden');
+    const aVals = answerSets['A'];
+    if (aVals.every((v) => v.includes('NXDOMAIN'))) setStatus('fail', 'NXDOMAIN on every resolver: the failure is authoritative. Fix the record or zone, or roll back the nameservers if the new host is unprovisioned.');
+    else if (aVals.every((v) => v.includes('SERVFAIL')) || answerSets['DS'].some((v) => v.includes('SERVFAIL'))) setStatus('fail', 'SERVFAIL pattern: check DNSSEC (the DS row) and delegation before touching records.');
+    else if (allConsistent(aVals)) setStatus('pass', 'All 3 resolvers agree: DNS is consistent. If the site is still down, the fault is at the origin server, not in DNS.');
+    else setStatus('warn', 'Resolvers disagree: propagation is in flight. Wait out the old TTL and verify the authoritative record while you wait.');
+
+    function allConsistent(vals: string[]) {
+      return vals.every((v) => v === vals[0]) && !vals[0].includes('NXDOMAIN') && !vals[0].includes('SERVFAIL');
+    }
+  });
+</script>
