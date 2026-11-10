@@ -23,6 +23,42 @@ const collectionSchema = {
   description: 'Every IANA DNS RCODE, browser DNS error string, and email DNS failure mapped to its root cause and diagnostic tool.',
 };
 
+interface HubCard {
+  href: string;
+  badge: string;
+  title: string;
+  desc: string;
+  cta: string;
+}
+
+const guideCards: HubCard[] = [
+  { href: '/website-not-resolving/', badge: 'Diagnostic Pillar', title: 'Website Not Resolving? DNS Causes and Fixes', desc: 'Follow a step-by-step diagnostic tree to isolate why a domain name fails to resolve across local networks and global resolvers.', cta: 'Read guide' },
+  { href: '/dns-probe-finished-nxdomain/', badge: 'Chromium Error', title: 'DNS_PROBE_FINISHED_NXDOMAIN: Causes and Fixes', desc: 'Fix Chrome RCODE 3 (NXDOMAIN) errors by testing public DoH resolvers, flushing stub caches, and verifying zone delegation.', cta: 'Read guide' },
+  { href: '/err-name-not-resolved/', badge: 'Chromium Error (-105)', title: 'ERR_NAME_NOT_RESOLVED: 6 Fixes for Chrome & Edge', desc: 'Resolve Chromium net_error -105 failures by clearing the HostResolver cache, checking Secure DNS templates, and resetting Winsock.', cta: 'Read guide' },
+  { href: '/dns-server-not-responding/', badge: 'OS Stub Timeout', title: '"DNS Server Not Responding": 9 Fixes for Windows & macOS', desc: 'Repair Windows and macOS recursive resolver timeouts by testing UDP port 53 reachability and switching to Anycast DNS servers.', cta: 'Read guide' },
+  { href: '/site-down-after-dns-change/', badge: 'Outage Recovery', title: 'Site Down After a DNS Change? Recovery Guide', desc: 'Triage post-migration website outages caused by stale TTL caches, unprovisioned zones, orphaned DS records, or SSL mode loops.', cta: 'Read guide' },
+  { href: '/email-not-working-after-dns-change/', badge: 'Mail Recovery', title: 'Email Stopped Working After DNS Change', desc: 'Restore broken inbound and outbound email after a nameserver switch by repairing MX, SPF, DKIM, and autodiscover records.', cta: 'Read guide' },
+  { href: '/mx-record-not-working/', badge: 'Mail Routing', title: 'MX Record Not Working? How to Fix Broken Mail Routing', desc: 'Diagnose and fix MX records that fail to resolve, point to CNAME aliases, or route mail to shadowed legacy servers.', cta: 'Read guide' },
+];
+
+const authCards: HubCard[] = [
+  { href: '/spf-permerror/', badge: 'SPF RFC 7208', title: 'SPF PermError: Causes and Fixes', desc: 'Fix permanent SPF evaluation failures caused by exceeding the 10-DNS-lookup limit, duplicate v=spf1 records, or syntax errors.', cta: 'Read guide' },
+  { href: '/spf-temperror/', badge: 'SPF RFC 7208', title: 'SPF TempError: Causes and Fixes', desc: 'Resolve transient SPF 4xx deferrals triggered by upstream DNS timeouts or SERVFAIL responses on included sender domains.', cta: 'Read guide' },
+  { href: '/dkim-not-signing/', badge: 'DKIM RFC 6376', title: 'DKIM Failing? Diagnosis and Fixes', desc: 'Repair DKIM signature verification failures caused by missing selector records, corrupted 2048-bit TXT strings, or body-hash changes.', cta: 'Read guide' },
+  { href: '/ssl-certificate-errors/', badge: 'TLS & PKI', title: 'SSL Certificate Errors: Causes and Fixes', desc: 'Fix browser HTTPS certificate warnings caused by wrong A record IPs, CAA issuance blocks, expired chains, or Cloudflare SSL loops.', cta: 'Read guide' },
+  { href: '/smtp-550-5-7-26/', badge: 'SMTP Bounce', title: 'SMTP 550 5.7.26: Unauthenticated Mail Rejected', desc: 'Resolve Gmail and Google Workspace 550 5.7.26 rejections by aligning SPF, DKIM, and DMARC records for bulk and transactional mail.', cta: 'Read guide' },
+  { href: '/smtp-554-5-4-14/', badge: 'SMTP Bounce', title: 'SMTP 554 5.4.14: Hop Count Exceeded Mail Loop', desc: 'Stop Microsoft 365 and Exchange 554 5.4.14 mail routing loops caused by misconfigured MX targets and split-delivery connectors.', cta: 'Read guide' },
+];
+
+const toolCards: HubCard[] = [
+  { href: '/dns-propagation-checker/', badge: 'Free DoH Tool', title: 'DNS Propagation Checker', desc: 'Compare live DNS answers and RCODEs across Cloudflare (1.1.1.1), Google (8.8.8.8), and AliDNS (223.5.5.5) simultaneously.', cta: 'Open tool' },
+  { href: '/delegation-checker/', badge: 'Free DoH Tool', title: 'DNS Delegation Checker', desc: 'Verify parent-to-child NS consistency, SOA serial synchronization, and in-bailiwick glue records to detect lame delegations.', cta: 'Open tool' },
+  { href: '/dnssec-checker/', badge: 'Free DoH Tool', title: 'DNSSEC Checker and Validator', desc: 'Inspect DS, DNSKEY, and RRSIG chains to pinpoint the exact cryptographic mismatch causing validating resolvers to return SERVFAIL.', cta: 'Open tool' },
+  { href: '/dns-resolver-tester/', badge: 'Free DoH Tool', title: 'DNS Resolver Tester', desc: 'Compare side-by-side responses and DNSSEC validation flags across major public recursive resolvers in one pass.', cta: 'Open tool' },
+  { href: '/ttl-checker/', badge: 'Free DoH Tool', title: 'DNS TTL Checker', desc: 'Inspect remaining cache timers and SOA negative-cache ceilings (RFC 2308) to see how long stale NXDOMAIN answers persist.', cta: 'Open tool' },
+  { href: '/flush-dns-cache/', badge: 'Operations Guide', title: 'How to Flush DNS Cache (All OS & Browsers)', desc: 'Clear stale local DNS cache entries on Windows, macOS, Linux, and Chromium browsers using exact command-line instructions.', cta: 'Open tool' },
+];
+
 const browserRows: [string, string, string, string][] = [
   ['DNS_PROBE_FINISHED_NXDOMAIN', 'Chromium / Chrome / Edge', 'RCODE 3 (NXDOMAIN) from every resolver, or a captive-portal DNS hijack returning it', 'The name genuinely does not resolve: check spelling, zone records, and domain expiry'],
   ['net::ERR_NAME_NOT_RESOLVED (-105)', 'Chromium network stack', 'Resolution failed at the stub-resolver layer before any RCODE: no upstream reachable or local config broken', 'Resolver reachability and local DNS settings, not the zone itself'],
@@ -30,34 +66,6 @@ const browserRows: [string, string, string, string][] = [
   ['DNS_PROBE_FINISHED_NO_INTERNET', 'Chromium / Chrome / Edge', 'No network path to any resolver: the DNS failure is a symptom of total connectivity loss', 'Physical/network layer first; DNS diagnostics only after connectivity returns'],
   ['DNS_PROBE_FINISHED_BAD_CONFIG', 'Chromium / Chrome / Edge', 'The OS resolver configuration is invalid (bad nameserver entry, broken VPN adapter)', 'Reset the adapter DNS settings to DHCP or a valid resolver'],
   ['getaddrinfo EAI_AGAIN / ENOTFOUND', 'Node.js and libc (containers, Docker)', 'EAI_AGAIN: resolver unreachable, retries exhausted; ENOTFOUND: resolver returned NXDOMAIN for the name', 'EAI_AGAIN is upstream reachability; ENOTFOUND maps to the zone-level NXDOMAIN'],
-];
-
-const guideCards: { href: string; title: string; desc: string }[] = [
-  { href: '/website-not-resolving/', title: 'Website Not Resolving? DNS Causes and Fixes', desc: 'The general diagnosis tree when a name refuses to resolve from anywhere.' },
-  { href: '/dns-probe-finished-nxdomain/', title: 'DNS_PROBE_FINISHED_NXDOMAIN: Causes and Fixes', desc: 'The browser NXDOMAIN error decoded, with the 6 fixes ordered by hit rate.' },
-  { href: '/err-name-not-resolved/', title: 'ERR_NAME_NOT_RESOLVED: 6 Fixes for Chrome & Edge', desc: 'The -105 resolution failure from the browser and OS side, fixed in order.' },
-  { href: '/dns-server-not-responding/', title: '"DNS Server Not Responding": 9 Fixes for Windows & macOS', desc: 'When the configured resolver itself stops answering, per-OS repairs.' },
-  { href: '/site-down-after-dns-change/', title: 'Site Down After a DNS Change? Recovery Guide', desc: 'Post-change outage triage: stale TTL, broken zones, orphaned DS, and rollback decisions.' },
-  { href: '/email-not-working-after-dns-change/', title: 'Email Stopped Working After DNS Change', desc: 'The MX, SPF, and propagation half of a migration gone wrong.' },
-  { href: '/mx-record-not-working/', title: 'MX Record Not Working? How to Fix Broken Mail Routing', desc: 'Missing MX sets, shadowed priorities, and local-exchanger misrouting.' },
-];
-
-const authCards: { href: string; title: string; desc: string }[] = [
-  { href: '/spf-permerror/', title: 'SPF PermError: Causes and Fixes', desc: 'The 10-lookup limit, multiple records, and void lookups that stop SPF evaluation.' },
-  { href: '/spf-temperror/', title: 'SPF TempError: Causes and Fixes', desc: 'Transient DNS failures during SPF evaluation and how receivers treat them.' },
-  { href: '/dkim-not-signing/', title: 'DKIM Failing? Diagnosis and Fixes', desc: 'Selector misses, key corruption, and signer misconfigurations diagnosed step by step.' },
-  { href: '/ssl-certificate-errors/', title: 'SSL Certificate Errors: Causes and Fixes', desc: 'Certificate warnings rooted in DNS misroutes, CAA blocks, and proxy modes.' },
-  { href: '/smtp-550-5-7-26/', title: 'SMTP 550 5.7.26: Unauthenticated Mail Rejected', desc: 'The Google authentication-required rejection and the SPF/DKIM/DMARC fix path.' },
-  { href: '/smtp-554-5-4-14/', title: 'SMTP 554 5.4.14: Hop Count Exceeded MX Loop', desc: 'MX loops that burn the hop counter and how to break the cycle.' },
-];
-
-const toolCards: { href: string; title: string; desc: string }[] = [
-  { href: '/dns-propagation-checker/', title: 'DNS Propagation Checker', desc: 'Compare answers across resolvers for any record type to spot stale caches.' },
-  { href: '/delegation-checker/', title: 'Delegation Checker', desc: 'Test every nameserver: does it resolve, answer, and agree with the set.' },
-  { href: '/dnssec-checker/', title: 'DNSSEC Checker', desc: 'Isolate the broken DS or RRSIG link behind a universal SERVFAIL.' },
-  { href: '/dns-resolver-tester/', title: 'DNS Resolver Tester', desc: 'Compare resolver answers side by side to catch filtering and hijacks.' },
-  { href: '/ttl-checker/', title: 'TTL Checker', desc: 'See every record\u2019s cache time at once before planning a change.' },
-  { href: '/flush-dns-cache/', title: 'Flush DNS Cache', desc: 'Clear Windows, macOS, Linux, and browser caches to retest cleanly.' },
 ];
 ---
 <BaseLayout
@@ -133,37 +141,85 @@ const toolCards: { href: string; title: string; desc: string }[] = [
           </tbody>
         </table>
       </div>
-      <p>Each string has a dedicated recovery guide with the fixes ordered by hit rate:</p>
-      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {guideCards.map((c) => (
-          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
-            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
-          </a>
-        ))}
-      </div>
+      <p>
+        Client-side stub errors like DNS_PROBE_FINISHED_NXDOMAIN and ERR_NAME_NOT_RESOLVED are the browser's rendering of upstream RCODE 3 and stub-resolver timeouts respectively: the fixes range from flushing the local cache to verifying that the authoritative zone still publishes the record. The 7 troubleshooting guides below cover each error string with its own recovery path:
+      </p>
+    </div>
 
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {guideCards.map((card) => (
+        <a href={card.href} class="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/50 p-5 no-underline transition hover:border-cyan-500/40 hover:bg-slate-900/80">
+          <div>
+            <span class="inline-flex items-center rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wider text-cyan-300">
+              {card.badge}
+            </span>
+            <h3 class="mt-3 font-display text-base font-semibold leading-snug text-white transition group-hover:text-cyan-300 break-words [overflow-wrap:anywhere]">
+              {card.title}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              {card.desc}
+            </p>
+          </div>
+          <span class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 transition group-hover:translate-x-0.5">
+            {card.cta} <span aria-hidden="true">-&gt;</span>
+          </span>
+        </a>
+      ))}
+    </div>
+
+    <div class="rich-text mt-8">
       <h2 id="email-ssl-dns-errors">2. Email Authentication (SPF/DMARC) and SSL/TLS DNS Error Guides</h2>
       <p>Email failures carry their own DNS-derived error surface: SPF evaluation codes, signature failures, and SMTP rejections that name a DNS cause. The TLS layer fails on DNS too, because certificates bind to whatever hostname the records actually route to. These guides decode each one:</p>
-      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {authCards.map((c) => (
-          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
-            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
-          </a>
-        ))}
-      </div>
+    </div>
 
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {authCards.map((card) => (
+        <a href={card.href} class="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/50 p-5 no-underline transition hover:border-cyan-500/40 hover:bg-slate-900/80">
+          <div>
+            <span class="inline-flex items-center rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wider text-cyan-300">
+              {card.badge}
+            </span>
+            <h3 class="mt-3 font-display text-base font-semibold leading-snug text-white transition group-hover:text-cyan-300 break-words [overflow-wrap:anywhere]">
+              {card.title}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              {card.desc}
+            </p>
+          </div>
+          <span class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 transition group-hover:translate-x-0.5">
+            {card.cta} <span aria-hidden="true">-&gt;</span>
+          </span>
+        </a>
+      ))}
+    </div>
+
+    <div class="rich-text mt-8">
       <h2 id="diagnostic-tools">3. Live Browser-Based DNS Error Diagnostic Tools</h2>
       <p>Every error above reduces to a question one of these tools answers in the browser: which resolvers disagree, whether the delegation chain holds, whether DNSSEC validates, and how long the failing caches persist. Run the one that matches your error string:</p>
-      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {toolCards.map((c) => (
-          <a href={c.href} class="group block rounded-2xl border border-line bg-panel/60 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-panel/80">
-            <h3 class="text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.title}</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-ink-dim">{c.desc}</p>
-          </a>
-        ))}
-      </div>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {toolCards.map((card) => (
+        <a href={card.href} class="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/50 p-5 no-underline transition hover:border-cyan-500/40 hover:bg-slate-900/80">
+          <div>
+            <span class="inline-flex items-center rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wider text-cyan-300">
+              {card.badge}
+            </span>
+            <h3 class="mt-3 font-display text-base font-semibold leading-snug text-white transition group-hover:text-cyan-300 break-words [overflow-wrap:anywhere]">
+              {card.title}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              {card.desc}
+            </p>
+          </div>
+          <span class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 transition group-hover:translate-x-0.5">
+            {card.cta} <span aria-hidden="true">-&gt;</span>
+          </span>
+        </a>
+      ))}
+    </div>
+
+    <div class="rich-text mt-8">
       <p>
         Read the RCODE first, confirm it with the matching tool, and the error message stops being a dead end: the code names the failing layer, and the tool shows the failing record.
       </p>
