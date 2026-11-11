@@ -12,7 +12,7 @@ interface HubCard {
 const spamWarmupCards: HubCard[] = [
   {
     href: '/why-emails-go-to-spam/',
-    badge: 'Deliverability Pillar',
+    badge: 'Configuration Guide',
     title: 'Why Your Emails Go to Spam (14 Causes)',
     desc: 'Complete diagnostic checklist covering authentication gaps, spam-trap hits, broken PTR records, content triggers, and low engagement.',
   },
@@ -120,19 +120,19 @@ const authFoundationsCards: HubCard[] = [
   },
   {
     href: '/spf-record/',
-    badge: 'Core Pillar',
+    badge: 'Core Specification',
     title: 'SPF Record: Complete Setup Guide',
     desc: 'Authorize your sending IPs and ESPs in v=spf1 while staying under the strict 10-DNS-lookup limit.',
   },
   {
     href: '/dkim/',
-    badge: 'Core Pillar',
+    badge: 'Core Specification',
     title: 'DKIM Explained: 2048-Bit Email Signing',
     desc: 'Publish _domainkey public keys, configure c=relaxed/relaxed canonicalization, and ensure signatures survive forwarding.',
   },
   {
     href: '/dmarc/',
-    badge: 'Core Pillar',
+    badge: 'Core Specification',
     title: 'DMARC: Alignment, Policies & Reporting',
     desc: 'Link SPF and DKIM to your visible From: address and advance safely from p=none to p=quarantine and p=reject.',
   },
@@ -144,7 +144,7 @@ const authFoundationsCards: HubCard[] = [
   },
   {
     href: '/ptr-record/',
-    badge: 'Reverse DNS Pillar',
+    badge: 'Record Reference',
     title: 'PTR Record: Forward-Confirmed rDNS',
     desc: 'Set up matching .in-addr.arpa and .ip6.arpa reverse DNS at your cloud host so Gmail (550-5.7.25) accepts your mail.',
   },
@@ -225,7 +225,7 @@ const collectionSchema = {
   '@type': 'CollectionPage',
   name: 'Email Deliverability: Inbox Placement, Blocklists, SMTP Bounces, and Warm-Up',
   url: 'https://promptdns.com/email-deliverability/',
-  description: 'Master hub for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools.',
+  description: 'Complete technical reference for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools.',
 };
 
 const breadcrumbSchema = {
@@ -253,7 +253,7 @@ const faqSchema = {
 
 <BaseLayout
   title="Email Deliverability: Inbox Placement, Blocklists, SMTP Bounces, and Warm-Up"
-  description="Master hub for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools."
+  description="Complete technical reference for email deliverability: inbox placement, domain warm-up schedules, SMTP 550 and 421 bounce fixes, Spamhaus/Barracuda delisting, and 8 free diagnostic tools."
   schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -269,14 +269,14 @@ const faqSchema = {
 
     <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Email deliverability is <strong class="text-ink">the rate at which your outbound emails land in the recipient's primary inbox rather than being routed to the spam folder or rejected with an SMTP bounce</strong>. Mailbox providers score sender reputation continuously. The 5 pillars combine authentication, IP reputation, infrastructure, list hygiene, and engagement.
+        Email deliverability is <strong class="text-ink">the rate at which your outbound emails land in the recipient's primary inbox rather than being routed to the spam folder or rejected with an SMTP bounce</strong>. Mailbox providers score sender reputation continuously. The 5 sequential filtering gates combine authentication, IP reputation, infrastructure, list hygiene, and engagement.
       </p>
     </div>
 
     <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#pillars">How the 5 Pillars of Email Deliverability Work Together</a></li>
+        <li><a href="#pillars">How the 5 Filtering Gates of Email Deliverability Work Together</a></li>
         <li><a href="#spam-warmup">1. Inbox Placement, Domain Warm-Up, and Bulk-Sender Compliance Guides</a></li>
         <li><a href="#bounces-blocklists">2. SMTP Bounce Codes and DNSBL Blacklist Delisting Guides</a></li>
         <li><a href="#auth-foundations">3. DNS Authentication Foundations for Deliverability</a></li>
@@ -286,20 +286,20 @@ const faqSchema = {
     </nav>
 
     <div class="mt-12 space-y-16">
-      <!-- Section 1: 5 Pillars Master Table -->
+      <!-- Section 1: 5 Filtering Gates Table -->
       <section id="pillars" class="scroll-mt-24">
         <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          How the 5 Pillars of Email Deliverability Work Together (Master Reference Table)
+          How the 5 Filtering Gates of Email Deliverability Work Together
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Email platforms frequently report a high "Delivery Rate" (Accepted Rate, the share of messages that received a <code>250 OK</code> response from the receiving server instead of bouncing), even when half of those accepted messages are silently routed into the recipient's spam folder. True <strong class="text-ink">Email Deliverability (Inbox Placement)</strong> requires passing 5 sequential filtering gates enforced by Gmail, Microsoft 365, Yahoo, and corporate spam gateways. The table below compares the 5 pillars of email deliverability by what receiving servers inspect, key technical thresholds, and primary failure symptoms.
+          Email platforms frequently report a high "Delivery Rate" (Accepted Rate, the share of messages that received a <code>250 OK</code> response from the receiving server instead of bouncing), even when half of those accepted messages are silently routed into the recipient's spam folder. True <strong class="text-ink">Email Deliverability (Inbox Placement)</strong> requires passing 5 sequential filtering gates enforced by Gmail, Microsoft 365, Yahoo, and corporate spam gateways. The table below compares the 5 filtering gates of email deliverability by what receiving servers inspect, key technical thresholds, and primary failure symptoms.
         </p>
 
         <div class="mt-6 overflow-x-auto">
           <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
             <thead>
               <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
-                <th class="px-4 py-3">Deliverability Pillar</th>
+                <th class="px-4 py-3">Filtering Gate</th>
                 <th class="px-4 py-3">What Receiving Mail Servers Inspect</th>
                 <th class="px-4 py-3">Key Technical Thresholds &amp; Rules</th>
                 <th class="px-4 py-3">Failure Symptom When Broken</th>
@@ -341,7 +341,7 @@ const faqSchema = {
         </div>
 
         <p class="mt-6 text-base leading-relaxed text-ink-dim">
-          Navigate this hub by diagnostic task: <strong class="text-ink">Section 1</strong> covers inbox placement, domain warm-up, and bulk-sender compliance, <strong class="text-ink">Section 2</strong> provides step-by-step fixes for SMTP bounce codes and DNSBL blocklist delisting, <strong class="text-ink">Section 3</strong> links to core authentication guides, and <strong class="text-ink">Section 4</strong> provides 8 free browser-based deliverability checkers.
+          Explore the guides by diagnostic task: <strong class="text-ink">Section 1</strong> covers inbox placement, domain warm-up, and bulk-sender compliance, <strong class="text-ink">Section 2</strong> provides step-by-step fixes for SMTP bounce codes and DNSBL blocklist delisting, <strong class="text-ink">Section 3</strong> links to core authentication guides, and <strong class="text-ink">Section 4</strong> provides 8 free browser-based deliverability checkers.
         </p>
       </section>
 

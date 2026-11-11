@@ -11,7 +11,7 @@ interface HubCard {
 const spfCards: HubCard[] = [
   {
     href: '/spf-record/',
-    badge: 'Pillar Guide',
+    badge: 'Protocol Standard',
     title: 'SPF Record: The Complete Guide',
     desc: 'How SPF evaluation works during SMTP delivery, mechanism lookup costs, the 7 RFC 7208 outcomes, and setup.',
   },
@@ -92,7 +92,7 @@ const spfCards: HubCard[] = [
 const dkimCards: HubCard[] = [
   {
     href: '/dkim/',
-    badge: 'Pillar Guide',
+    badge: 'Protocol Standard',
     title: 'DKIM Explained: Cryptographic Email Signing',
     desc: 'The 7-step signing and verification flow, header vs DNS tags, default ESP selectors, and replay protection.',
   },
@@ -149,13 +149,13 @@ const dkimCards: HubCard[] = [
 const dmarcCards: HubCard[] = [
   {
     href: '/dmarc/',
-    badge: 'Pillar Guide',
+    badge: 'Protocol Standard',
     title: 'DMARC: Policy, Alignment, and Reporting',
     desc: 'How DMARC unifies SPF and DKIM, the 6-step evaluation flow, 3-stage rollout, and 2026 compliance rules.',
   },
   {
     href: '/dmarc-record/',
-    badge: 'Pillar Guide',
+    badge: 'Protocol Standard',
     title: 'DMARC Record: Syntax & 8 Examples',
     desc: 'Tag-by-tag _dmarc TXT anatomy, 8 copy-paste production recipes, alignment matrix, and 7 syntax errors.',
   },
@@ -476,7 +476,7 @@ const collectionSchema = {
   '@type': 'CollectionPage',
   name: 'Email Authentication: The Complete Guide to SPF, DKIM, DMARC, BIMI, and MTA-STS',
   url: 'https://promptdns.com/email-authentication/',
-  description: 'Master hub for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks.',
+  description: 'Complete technical reference for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks.',
 };
 
 const breadcrumbSchema = {
@@ -504,7 +504,7 @@ const faqSchema = {
 
 <BaseLayout
   title="Email Authentication: The Complete Guide to SPF, DKIM, DMARC, BIMI, and MTA-STS"
-  description="Master hub for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks."
+  description="Complete technical reference for email authentication: complete guides for SPF (v=spf1), 2048-bit DKIM, DMARC enforcement (p=reject), BIMI, MTA-STS, and 44 ESP setup playbooks."
   schema={[collectionSchema, breadcrumbSchema, faqSchema]}
 >
   <div class="mx-auto max-w-4xl px-4 py-12">
@@ -541,7 +541,7 @@ const faqSchema = {
       <!-- Section 1: Protocol Overview -->
       <section id="stack" class="scroll-mt-24">
         <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          How the 7 Email Authentication Protocols Work Together (Master Reference Table)
+          How the 7 Email Authentication Protocols Work Together
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
           Simple Mail Transfer Protocol (<code>SMTP</code>, <code>RFC 5321</code>) operates without built-in sender identity verification, allowing any unauthenticated server on the internet to claim any <code>From:</code> address. The IETF and mailbox providers standardized 7 complementary DNS-backed protocols over the past two decades, where each layer closes a specific security gap left open by the layer beneath it. The table below compares all 7 email authentication and transport protocols by DNS record location, what each verifies, the gap it closes, and its governing specification.

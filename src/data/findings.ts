@@ -540,7 +540,7 @@ export const FINDINGS: Record<string, FindingDef> = {
       'Compare with a domain on a different provider to confirm it is the DNS, not the resolvers.',
       'Re-run this test a few times: single cold measurements are noisy.',
     ],
-    guide: { label: 'DNS providers hub', href: '/dns-providers/' },
+    guide: { label: 'DNS provider guides', href: '/dns-providers/' },
   },
 
   /* ---------------- DMARC Report Analyzer ---------------- */
