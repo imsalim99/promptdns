@@ -12,7 +12,7 @@ interface HubCard {
 const spamWarmupCards: HubCard[] = [
   {
     href: '/why-emails-go-to-spam/',
-    badge: 'Configuration Guide',
+    badge: 'Guide',
     title: 'Why Your Emails Go to Spam (14 Causes)',
     desc: 'Complete diagnostic checklist covering authentication gaps, spam-trap hits, broken PTR records, content triggers, and low engagement.',
   },
@@ -48,7 +48,7 @@ const spamWarmupCards: HubCard[] = [
   },
   {
     href: '/email-ports-587-465-25/',
-    badge: 'Transport Reference',
+    badge: 'Guide',
     title: 'Email Ports Explained: 25 vs 465 vs 587',
     desc: 'Understand when to use Port 25 (MTA-to-MTA relay), Port 587 (STARTTLS submission), and Port 465 (implicit TLS) for outbound mail.',
   },
@@ -63,7 +63,7 @@ const spamWarmupCards: HubCard[] = [
 const bouncesBlocklistsCards: HubCard[] = [
   {
     href: '/email-bounced-reasons/',
-    badge: 'Bounce Reference',
+    badge: 'Bounce Guide',
     title: 'Why Emails Bounce: Hard vs Soft Bounces',
     desc: 'Distinguish 4xx transient deferrals (full mailbox, throttling) from 5xx permanent hard bounces (invalid recipient, policy block).',
   },
@@ -114,25 +114,25 @@ const bouncesBlocklistsCards: HubCard[] = [
 const authFoundationsCards: HubCard[] = [
   {
     href: '/email-authentication/',
-    badge: 'Auth Stack',
+    badge: 'Guide',
     title: 'Email Authentication Guide (All 44 ESPs)',
     desc: 'Complete library of SPF, DKIM, DMARC, BIMI, MTA-STS, and TLS-RPT guides plus setup playbooks for 44 email platforms.',
   },
   {
     href: '/spf-record/',
-    badge: 'Core Specification',
+    badge: 'Guide',
     title: 'SPF Record: Complete Setup Guide',
     desc: 'Authorize your sending IPs and ESPs in v=spf1 while staying under the strict 10-DNS-lookup limit.',
   },
   {
     href: '/dkim/',
-    badge: 'Core Specification',
+    badge: 'Guide',
     title: 'DKIM Explained: 2048-Bit Email Signing',
     desc: 'Publish _domainkey public keys, configure c=relaxed/relaxed canonicalization, and ensure signatures survive forwarding.',
   },
   {
     href: '/dmarc/',
-    badge: 'Core Specification',
+    badge: 'Guide',
     title: 'DMARC: Alignment, Policies & Reporting',
     desc: 'Link SPF and DKIM to your visible From: address and advance safely from p=none to p=quarantine and p=reject.',
   },
@@ -144,7 +144,7 @@ const authFoundationsCards: HubCard[] = [
   },
   {
     href: '/ptr-record/',
-    badge: 'Record Reference',
+    badge: 'DNS Record',
     title: 'PTR Record: Forward-Confirmed rDNS',
     desc: 'Set up matching .in-addr.arpa and .ip6.arpa reverse DNS at your cloud host so Gmail (550-5.7.25) accepts your mail.',
   },
@@ -269,14 +269,14 @@ const faqSchema = {
 
     <div class="pd-answer mt-6" data-vs="answer">
       <p class="text-lg leading-relaxed text-ink-dim">
-        Email deliverability is <strong class="text-ink">the rate at which your outbound emails land in the recipient's primary inbox rather than being routed to the spam folder or rejected with an SMTP bounce</strong>. Mailbox providers score sender reputation continuously. The 5 sequential filtering gates combine authentication, IP reputation, infrastructure, list hygiene, and engagement.
+        Email deliverability is <strong class="text-ink">the rate at which your outbound emails land in the recipient's primary inbox rather than being routed to the spam folder or rejected with an SMTP bounce</strong>. Mailbox providers score sender reputation continuously. The 5 key factors combine authentication, IP reputation, infrastructure, list hygiene, and engagement.
       </p>
     </div>
 
     <nav class="pd-toc" aria-label="On this page">
       <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">On this page</p>
       <ul>
-        <li><a href="#pillars">How the 5 Filtering Gates of Email Deliverability Work Together</a></li>
+        <li><a href="#pillars">How the 5 Key Factors of Email Deliverability Work Together</a></li>
         <li><a href="#spam-warmup">1. Inbox Placement, Domain Warm-Up, and Bulk-Sender Compliance Guides</a></li>
         <li><a href="#bounces-blocklists">2. SMTP Bounce Codes and DNSBL Blacklist Delisting Guides</a></li>
         <li><a href="#auth-foundations">3. DNS Authentication Foundations for Deliverability</a></li>
@@ -286,20 +286,20 @@ const faqSchema = {
     </nav>
 
     <div class="mt-12 space-y-16">
-      <!-- Section 1: 5 Filtering Gates Table -->
+      <!-- Section 1: 5 Key Factors Table -->
       <section id="pillars" class="scroll-mt-24">
         <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          How the 5 Filtering Gates of Email Deliverability Work Together
+          How the 5 Key Factors of Email Deliverability Work Together
         </h2>
         <p class="mt-4 text-base leading-relaxed text-ink-dim">
-          Email platforms frequently report a high "Delivery Rate" (Accepted Rate, the share of messages that received a <code>250 OK</code> response from the receiving server instead of bouncing), even when half of those accepted messages are silently routed into the recipient's spam folder. True <strong class="text-ink">Email Deliverability (Inbox Placement)</strong> requires passing 5 sequential filtering gates enforced by Gmail, Microsoft 365, Yahoo, and corporate spam gateways. The table below compares the 5 filtering gates of email deliverability by what receiving servers inspect, key technical thresholds, and primary failure symptoms.
+          Email platforms frequently report a high "Delivery Rate" (Accepted Rate, the share of messages that received a <code>250 OK</code> response from the receiving server instead of bouncing), even when half of those accepted messages are silently routed into the recipient's spam folder. True <strong class="text-ink">Email Deliverability (Inbox Placement)</strong> requires passing 5 key factors enforced by Gmail, Microsoft 365, Yahoo, and corporate spam gateways. The table below compares the 5 key factors of email deliverability by what receiving servers inspect, key technical thresholds, and primary failure symptoms.
         </p>
 
         <div class="mt-6 overflow-x-auto">
           <table class="pdns-table border-collapse rounded-xl border border-line bg-panel/40 text-left text-sm text-ink-dim">
             <thead>
               <tr class="border-b border-line bg-panel/80 text-xs font-semibold uppercase tracking-wider text-ink">
-                <th class="px-4 py-3">Filtering Gate</th>
+                <th class="px-4 py-3">Key Factor</th>
                 <th class="px-4 py-3">What Receiving Mail Servers Inspect</th>
                 <th class="px-4 py-3">Key Technical Thresholds &amp; Rules</th>
                 <th class="px-4 py-3">Failure Symptom When Broken</th>
