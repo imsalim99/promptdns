@@ -1,4 +1,4 @@
-/** Deep editorial content for tool pages (Koray semantic-node layer).
+/** Editorial content for tool pages.
  *  Each entry: process, interpret, cli, errors[3], who, faqs[5-6]. */
 export interface ToolContent {
   title: string;
